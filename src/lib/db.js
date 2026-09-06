@@ -356,15 +356,27 @@ export async function addBarcodeProduct(userId, barcode, fields) {
 // AFCD names are written adjective-first ("Pie, savoury, meat, commercial"),
 // not in the word order someone actually types ("meat pie") — a single
 // substring match against the whole query would miss that entirely. Each
-// word gets its own ilike filter instead, and Supabase/PostgREST ANDs
-// repeated filters on the same column, so a match just needs every word
-// present somewhere in the name, in any order.
+// word gets its own filter instead, ANDed together by Supabase/PostgREST,
+// so a match just needs every word present somewhere in the name, in any
+// order.
+//
+// Each word matches at a word boundary (Postgres's `\m` = start-of-word),
+// not a bare substring — a plain "%dal%" matched "medallion" and "Pork,
+// medallion or loin steak" for a search like "dal" (a real, short
+// vegetarian dish name), which is exactly the kind of noise this avoids.
+// Anchoring only the start (not requiring `\M` at the end too) still lets
+// a prefix like "chick" find "chicken"/"chickpea".
+function wordBoundaryPattern(word) {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return `\\m${escaped}`;
+}
+
 export async function searchAfcdFoods(query, limit = 15) {
   const words = query.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return [];
   let q = supabase.from('afcd_foods').select('*');
   for (const word of words) {
-    q = q.ilike('name', `%${word}%`);
+    q = q.filter('name', 'imatch', wordBoundaryPattern(word));
   }
   const { data, error } = await q.limit(limit);
   if (error) throw error;
