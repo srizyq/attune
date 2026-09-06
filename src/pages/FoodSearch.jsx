@@ -11,6 +11,7 @@ import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
 import { getBarcodeProduct, addBarcodeProduct, searchAfcdFoods } from '../lib/db';
+import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
@@ -1280,13 +1281,17 @@ export default function FoodSearch() {
   const runLiveSearch = useCallback(async (q) => {
     setLiveLoading(true);
     setLiveError(null);
+    // Slang like "maccas" or "hsp" won't literally appear in any of these
+    // databases under that name — search the expanded form instead
+    // ("mcdonalds", "halal snack pack") when the query is recognised.
+    const searchQuery = expandFoodSlang(q) || q;
     // Three independent sources — run them together instead of one after
     // another, so a search takes as long as the slowest of the three
     // rather than the sum of all three.
     const [offResult, fatSecretResult, afcdResult] = await Promise.allSettled([
-      searchOpenFoodFacts(q),
-      searchFatSecret(q),
-      searchAfcd(q),
+      searchOpenFoodFacts(searchQuery),
+      searchFatSecret(searchQuery),
+      searchAfcd(searchQuery),
     ]);
     let off = [], fatSecretResults = [], afcd = [];
     if (offResult.status === "fulfilled") {

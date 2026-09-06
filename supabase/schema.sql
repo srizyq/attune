@@ -463,3 +463,29 @@ alter table public.afcd_foods enable row level security;
 
 create policy "afcd_foods: select any signed-in user" on public.afcd_foods
   for select using (auth.uid() is not null);
+
+-- ── afcd_foods: fuzzy fallback (typo tolerance) ────────────────────────────
+-- The app's normal AFCD search requires every search word as an exact
+-- substring (see searchAfcdFoods in src/lib/db.js), which is correct for
+-- word-order but still misses typos ("chiken" won't find "chicken"). This
+-- function is called only as a fallback when that exact search returns
+-- nothing, using Postgres's trigram similarity instead of substring
+-- matching so near-misses still resolve.
+create extension if not exists pg_trgm;
+
+create index if not exists afcd_foods_name_trgm_idx
+  on public.afcd_foods using gin (name gin_trgm_ops);
+
+create or replace function public.search_afcd_foods_fuzzy(search_query text, match_limit int default 15)
+returns setof public.afcd_foods
+language sql
+stable
+as $$
+  select *
+  from public.afcd_foods
+  where similarity(name, search_query) > 0.2
+  order by similarity(name, search_query) desc
+  limit match_limit;
+$$;
+
+grant execute on function public.search_afcd_foods_fuzzy(text, int) to authenticated;

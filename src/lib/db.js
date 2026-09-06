@@ -368,7 +368,15 @@ export async function searchAfcdFoods(query, limit = 15) {
   }
   const { data, error } = await q.limit(limit);
   if (error) throw error;
-  return data;
+  // Exact substring matching doesn't tolerate typos ("chiken" won't find
+  // "chicken") — only fall back to Postgres trigram similarity search
+  // when the strict match comes up completely empty, so a real exact hit
+  // is never displaced by a fuzzier, less certain one.
+  if (data.length > 0) return data;
+  const { data: fuzzyData, error: fuzzyError } = await supabase
+    .rpc('search_afcd_foods_fuzzy', { search_query: query.trim(), match_limit: limit });
+  if (fuzzyError) throw fuzzyError;
+  return fuzzyData;
 }
 
 // ─── trainer_clients ────────────────────────────────────────────────────────
