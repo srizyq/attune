@@ -352,6 +352,17 @@ export async function addBarcodeProduct(userId, barcode, fields) {
   return data;
 }
 
+// ─── afcd_foods (Australian Food Composition Database, read-only) ──────────
+export async function searchAfcdFoods(query, limit = 15) {
+  const { data, error } = await supabase
+    .from('afcd_foods')
+    .select('*')
+    .ilike('name', `%${query}%`)
+    .limit(limit);
+  if (error) throw error;
+  return data;
+}
+
 // ─── trainer_clients ────────────────────────────────────────────────────────
 
 export async function getMyClients(trainerId) {

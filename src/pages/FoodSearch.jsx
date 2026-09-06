@@ -10,7 +10,7 @@ import { useLastLoggedAmounts } from '../hooks/useLastLoggedAmounts';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
-import { getBarcodeProduct, addBarcodeProduct } from '../lib/db';
+import { getBarcodeProduct, addBarcodeProduct, searchAfcdFoods } from '../lib/db';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
@@ -162,6 +162,30 @@ async function searchFatSecret(q) {
       servingGrams: parseGramsFromServing(serving),
     };
   }).filter(Boolean);
+}
+
+// Australian Food Composition Database (FSANZ) — a read-only Supabase
+// table populated once from a government dataset (see
+// supabase/afcd_import.sql), covering real Australian foods FatSecret and
+// Open Food Facts often get wrong or don't have at all. All values are
+// per 100g, same convention as Open Food Facts.
+async function searchAfcd(q) {
+  const rows = await searchAfcdFoods(q);
+  return rows.map(row => ({
+    id: "afcd_" + row.id,
+    name: row.name,
+    meta: "100g · AFCD",
+    cuisine: "all",
+    cal: Math.round(row.calories),
+    protein: Math.round(row.protein_g * 10) / 10,
+    carbs: Math.round(row.carbs_g * 10) / 10,
+    fat: Math.round(row.fat_g * 10) / 10,
+    fibre: Math.round(row.fibre_g * 10) / 10,
+    sodium: Math.round(row.sodium_mg),
+    sugar: Math.round(row.sugar_g * 10) / 10,
+    source: "afcd",
+    servingGrams: 100,
+  }));
 }
 
 // ─── Barcode Scanner ──────────────────────────────────────────────────────────
@@ -1163,9 +1187,67 @@ export default function FoodSearch() {
   // AU-scoped) are kept separate so they can render in different sections.
   const [genericResults, setGenericResults] = useState([]);
   const [packagedLive, setPackagedLive] = useState([]);
+  const [afcdResults, setAfcdResults] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
   const searchTimer = useRef(null);
+
+  // "Can't find it? Estimate with AI" — a fallback for dishes no
+  // connected database has (regional/takeaway food), not a primary search
+  // path. Keyed to the exact query it ran for, so switching the search
+  // text doesn't leave a stale estimate visible.
+  const [aiEstimateQuery, setAiEstimateQuery] = useState(null);
+  const [aiEstimating, setAiEstimating] = useState(false);
+  const [aiEstimateError, setAiEstimateError] = useState(null);
+  const [aiEstimateResult, setAiEstimateResult] = useState(null);
+  const [aiLimitReached, setAiLimitReached] = useState(false);
+
+  async function handleAiEstimate() {
+    const description = query.trim();
+    if (!description) return;
+    setAiEstimateQuery(description);
+    setAiEstimating(true);
+    setAiEstimateError(null);
+    setAiLimitReached(false);
+    setAiEstimateResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/estimate-food', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ description }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setAiEstimateError(data.error || "Couldn't estimate this food. Try again.");
+        setAiLimitReached(!!data.limitReached);
+        return;
+      }
+      setAiEstimateResult({
+        id: 'ai_' + Date.now(),
+        name: data.name,
+        meta: `${data.portion || '1 serving'} · AI estimate${data.confidence === 'low' ? ' (low confidence)' : ''}`,
+        cuisine: 'all',
+        cal: Math.round(data.cal) || 0,
+        protein: Math.round((data.protein || 0) * 10) / 10,
+        carbs: Math.round((data.carbs || 0) * 10) / 10,
+        fat: Math.round((data.fat || 0) * 10) / 10,
+        fibre: Math.round((data.fibre || 0) * 10) / 10,
+        sodium: Math.round(data.sodium || 0),
+        sugar: Math.round((data.sugar || 0) * 10) / 10,
+        source: 'ai-estimate',
+        servingGrams: Math.round(data.servingGrams) || 100,
+      });
+    } catch (err) {
+      console.error('AI estimate error:', err);
+      setAiEstimateError("Couldn't reach the AI estimator. Check your connection and try again.");
+    } finally {
+      setAiEstimating(false);
+    }
+  }
 
   const inputRef = useRef(null);
 
@@ -1200,6 +1282,7 @@ export default function FoodSearch() {
     setLiveError(null);
     let off = [];
     let fatSecretResults = [];
+    let afcd = [];
     try {
       off = await searchOpenFoodFacts(q);
     } catch (err) {
@@ -1211,15 +1294,28 @@ export default function FoodSearch() {
     } catch (err) {
       console.error("FatSecret search error:", err);
     }
+    try {
+      afcd = await searchAfcd(q);
+    } catch (err) {
+      console.error("AFCD search error:", err);
+    }
     setGenericResults(fatSecretResults);
     setPackagedLive(off);
+    setAfcdResults(afcd);
     setLiveLoading(false);
   }, []);
 
   // Trigger search with debounce when query changes
   useEffect(() => {
     clearTimeout(searchTimer.current);
-    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setLiveLoading(false); setLiveError(null); return; }
+    // Any change to the search text invalidates a previous AI estimate —
+    // it was for different words, so keeping it visible (or its error)
+    // would be stale and misleading.
+    setAiEstimateQuery(null);
+    setAiEstimateResult(null);
+    setAiEstimateError(null);
+    setAiLimitReached(false);
+    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAfcdResults([]); setLiveLoading(false); setLiveError(null); return; }
     setLiveLoading(true);
     searchTimer.current = setTimeout(() => runLiveSearch(query.trim()), 500);
     return () => clearTimeout(searchTimer.current);
@@ -1227,9 +1323,10 @@ export default function FoodSearch() {
 
   const foodsResults = useMemo(() => {
     if (!query.trim()) return [];
-    // Custom foods first — they're the user's own data, so the most
-    // relevant match for their own search.
-    const combined = [...customFiltered, ...genericResults];
+    // Custom foods first (the user's own data), then AFCD (Australian
+    // government data — more accurate for local foods than FatSecret's
+    // generic entries), then FatSecret's broader generic coverage.
+    const combined = [...customFiltered, ...afcdResults, ...genericResults];
     const seen = new Set();
     return combined.filter(f => {
       const key = f.name.toLowerCase();
@@ -1237,7 +1334,7 @@ export default function FoodSearch() {
       seen.add(key);
       return true;
     });
-  }, [customFiltered, genericResults, query]);
+  }, [customFiltered, afcdResults, genericResults, query]);
 
   // Packaged/branded results (Open Food Facts, AU-scoped) shown in their
   // own demoted section below — this is what stops a search like "chicken
@@ -1492,6 +1589,53 @@ export default function FoodSearch() {
               <i className="ti ti-camera" style={{ fontSize: 14 }} /> Scan photo
             </div>
           </div>
+
+          {/* "Can't find it? Estimate with AI" — always visible whenever
+              there's a search query, not just on zero results, since a
+              real search can come back with plenty of results that are
+              all just wrong matches (e.g. searching "HSP" and getting
+              beer/sauce hits) rather than literally empty. Kept as a
+              subtle text link, not a button, since it's a fallback for
+              when the real databases miss something — not a primary way
+              to log food. */}
+          {!browsing && aiEstimateQuery !== query.trim() && (
+            <button
+              onClick={handleAiEstimate}
+              disabled={aiEstimating}
+              style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "0 0 14px", color: "var(--text-muted)", fontSize: 12.5, cursor: aiEstimating ? "default" : "pointer", fontFamily: "inherit" }}
+            >
+              Can't find "{query.trim()}"? <span style={{ color: "var(--accent)", fontWeight: 600 }}>{aiEstimating ? "Estimating…" : "Estimate with AI →"}</span>
+            </button>
+          )}
+
+          {!browsing && aiEstimateQuery === query.trim() && aiEstimateError && (
+            <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: "var(--danger)", marginBottom: 14 }}>
+              {aiEstimateError}
+              {!aiLimitReached && (
+                <button onClick={handleAiEstimate} style={{ display: "block", marginTop: 6, background: "none", border: "none", color: "var(--danger)", textDecoration: "underline", cursor: "pointer", fontSize: 12.5, padding: 0, fontFamily: "inherit" }}>Try again</button>
+              )}
+            </div>
+          )}
+
+          {!browsing && aiEstimateQuery === query.trim() && aiEstimateResult && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <i className="ti ti-sparkles" style={{ fontSize: 12 }} /> AI estimate
+              </div>
+              <FoodCard
+                food={aiEstimateResult}
+                isExpanded={expandedId === aiEstimateResult.id}
+                onToggle={() => handleToggle(aiEstimateResult.id)}
+                defaultMeal={activeMeal} selectedDate={selectedDate}
+                defaultTime={activeTime}
+                isPremium={isPremium}
+                onAdd={handleAdd}
+                addLabel={builderMode ? "+ Add to meal" : undefined}
+                isFavourite={favourites.isFavourite(aiEstimateResult.name)}
+                onToggleFavourite={() => favourites.toggle(aiEstimateResult)}
+              />
+            </div>
+          )}
 
           {/* Browsing (no search) — your own data: favourites, frequently
               logged, and recently logged. No curated/hardcoded content —

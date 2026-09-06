@@ -439,3 +439,27 @@ alter table public.profiles add column if not exists date_of_birth date;
 alter table public.profiles add column if not exists sex text check (sex in ('male', 'female', 'unspecified')) default 'unspecified';
 alter table public.profiles add column if not exists target_weight numeric;
 alter table public.profiles add column if not exists pace_kg_per_week numeric;
+
+-- ── afcd_foods ──────────────────────────────────────────────────────────────
+-- A read-only reference table of Australian foods from FSANZ's Australian
+-- Food Composition Database (Release 3, licensed CC BY-SA 3.0 AU — see
+-- https://www.foodstandards.gov.au/science-data/food-nutrient-databases/afcd).
+-- Values are per 100g. Populated once via supabase/afcd_import.sql, not
+-- user-contributed — no insert policy is granted, unlike barcode_products.
+create table if not exists public.afcd_foods (
+  id text primary key,
+  name text not null,
+  calories numeric not null default 0,
+  protein_g numeric default 0,
+  carbs_g numeric default 0,
+  fat_g numeric default 0,
+  fibre_g numeric default 0,
+  sodium_mg numeric default 0,
+  sugar_g numeric default 0,
+  created_at timestamptz default now()
+);
+
+alter table public.afcd_foods enable row level security;
+
+create policy "afcd_foods: select any signed-in user" on public.afcd_foods
+  for select using (auth.uid() is not null);
