@@ -1280,24 +1280,30 @@ export default function FoodSearch() {
   const runLiveSearch = useCallback(async (q) => {
     setLiveLoading(true);
     setLiveError(null);
-    let off = [];
-    let fatSecretResults = [];
-    let afcd = [];
-    try {
-      off = await searchOpenFoodFacts(q);
-    } catch (err) {
-      console.error("Open Food Facts search error:", err);
+    // Three independent sources — run them together instead of one after
+    // another, so a search takes as long as the slowest of the three
+    // rather than the sum of all three.
+    const [offResult, fatSecretResult, afcdResult] = await Promise.allSettled([
+      searchOpenFoodFacts(q),
+      searchFatSecret(q),
+      searchAfcd(q),
+    ]);
+    let off = [], fatSecretResults = [], afcd = [];
+    if (offResult.status === "fulfilled") {
+      off = offResult.value;
+    } else {
+      console.error("Open Food Facts search error:", offResult.reason);
       setLiveError("Packaged product search is temporarily unavailable — try again in a moment.");
     }
-    try {
-      fatSecretResults = await searchFatSecret(q);
-    } catch (err) {
-      console.error("FatSecret search error:", err);
+    if (fatSecretResult.status === "fulfilled") {
+      fatSecretResults = fatSecretResult.value;
+    } else {
+      console.error("FatSecret search error:", fatSecretResult.reason);
     }
-    try {
-      afcd = await searchAfcd(q);
-    } catch (err) {
-      console.error("AFCD search error:", err);
+    if (afcdResult.status === "fulfilled") {
+      afcd = afcdResult.value;
+    } else {
+      console.error("AFCD search error:", afcdResult.reason);
     }
     setGenericResults(fatSecretResults);
     setPackagedLive(off);
