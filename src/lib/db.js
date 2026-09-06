@@ -353,12 +353,20 @@ export async function addBarcodeProduct(userId, barcode, fields) {
 }
 
 // ─── afcd_foods (Australian Food Composition Database, read-only) ──────────
+// AFCD names are written adjective-first ("Pie, savoury, meat, commercial"),
+// not in the word order someone actually types ("meat pie") — a single
+// substring match against the whole query would miss that entirely. Each
+// word gets its own ilike filter instead, and Supabase/PostgREST ANDs
+// repeated filters on the same column, so a match just needs every word
+// present somewhere in the name, in any order.
 export async function searchAfcdFoods(query, limit = 15) {
-  const { data, error } = await supabase
-    .from('afcd_foods')
-    .select('*')
-    .ilike('name', `%${query}%`)
-    .limit(limit);
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  let q = supabase.from('afcd_foods').select('*');
+  for (const word of words) {
+    q = q.ilike('name', `%${word}%`);
+  }
+  const { data, error } = await q.limit(limit);
   if (error) throw error;
   return data;
 }
