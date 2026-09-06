@@ -112,6 +112,12 @@ body {
   color: var(--text-primary);
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* viewport-fit=cover lets the page draw under the notch/status bar —
+     without this, every page's own header would render partly hidden
+     behind it. No page has its own top bar handle this individually, so
+     it's pushed down here once, globally, matching how the bottom nav
+     already pads itself for the home-indicator area. */
+  padding-top: env(safe-area-inset-top);
 }
 
 h1, h2, h3, h4, h5 {
