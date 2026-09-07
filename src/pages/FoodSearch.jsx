@@ -127,6 +127,14 @@ function extraMicrosFromFatSecretServing(serving) {
     vitaminD: Math.round((parseFloat(serving.vitamin_d) || 0) * 10) / 10,
     calcium: Math.round(parseFloat(serving.calcium) || 0),
     iron: Math.round((parseFloat(serving.iron) || 0) * 10) / 10,
+    // Pro-gated micronutrients (see Nutrients.jsx) — FatSecret doesn't
+    // provide magnesium/zinc/B12/folate, only AFCD does; those four stay
+    // 0 for FatSecret-sourced foods, same as any other field a given
+    // source just doesn't carry.
+    vitaminA: Math.round(parseFloat(serving.vitamin_a) || 0),
+    vitaminC: Math.round((parseFloat(serving.vitamin_c) || 0) * 10) / 10,
+    polyunsaturatedFat: Math.round((parseFloat(serving.polyunsaturated_fat) || 0) * 10) / 10,
+    monounsaturatedFat: Math.round((parseFloat(serving.monounsaturated_fat) || 0) * 10) / 10,
   };
 }
 
@@ -184,6 +192,17 @@ async function searchAfcd(q) {
     fibre: Math.round(row.fibre_g * 10) / 10,
     sodium: Math.round(row.sodium_mg),
     sugar: Math.round(row.sugar_g * 10) / 10,
+    // Pro-gated micronutrients (see Nutrients.jsx) — AFCD is the one
+    // source that actually carries these; FatSecret only fills in
+    // vitamin A/C and mono/polyunsaturated fat.
+    vitaminA: Math.round(row.vitamin_a_mcg || 0),
+    vitaminC: Math.round((row.vitamin_c_mg || 0) * 10) / 10,
+    polyunsaturatedFat: Math.round((row.polyunsaturated_fat_g || 0) * 10) / 10,
+    monounsaturatedFat: Math.round((row.monounsaturated_fat_g || 0) * 10) / 10,
+    magnesium: Math.round((row.magnesium_mg || 0) * 10) / 10,
+    zinc: Math.round((row.zinc_mg || 0) * 10) / 10,
+    vitaminB12: Math.round((row.vitamin_b12_mcg || 0) * 10) / 10,
+    folate: Math.round(row.folate_mcg || 0),
     source: "afcd",
     servingGrams: 100,
   }));

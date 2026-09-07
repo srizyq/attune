@@ -42,5 +42,13 @@ export function scaleFood(food, servings) {
     vitaminD: round1((food.vitaminD || 0) * servings),
     calcium: Math.round((food.calcium || 0) * servings),
     iron: round1((food.iron || 0) * servings),
+    vitaminA: Math.round((food.vitaminA || 0) * servings),
+    vitaminC: round1((food.vitaminC || 0) * servings),
+    polyunsaturatedFat: round1((food.polyunsaturatedFat || 0) * servings),
+    monounsaturatedFat: round1((food.monounsaturatedFat || 0) * servings),
+    magnesium: round1((food.magnesium || 0) * servings),
+    zinc: round1((food.zinc || 0) * servings),
+    vitaminB12: round1((food.vitaminB12 || 0) * servings),
+    folate: round1((food.folate || 0) * servings),
   };
 }

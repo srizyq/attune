@@ -70,6 +70,14 @@ create table if not exists public.food_logs (
   vitamin_d_mcg numeric default 0,
   calcium_mg numeric default 0,
   iron_mg numeric default 0,
+  vitamin_a_mcg numeric default 0,
+  vitamin_c_mg numeric default 0,
+  polyunsaturated_fat_g numeric default 0,
+  monounsaturated_fat_g numeric default 0,
+  magnesium_mg numeric default 0,
+  zinc_mg numeric default 0,
+  vitamin_b12_mcg numeric default 0,
+  folate_mcg numeric default 0,
   serving_grams numeric,
   logged_at timestamptz,
   source text,
@@ -456,6 +464,14 @@ create table if not exists public.afcd_foods (
   fibre_g numeric default 0,
   sodium_mg numeric default 0,
   sugar_g numeric default 0,
+  vitamin_a_mcg numeric default 0,
+  vitamin_c_mg numeric default 0,
+  polyunsaturated_fat_g numeric default 0,
+  monounsaturated_fat_g numeric default 0,
+  magnesium_mg numeric default 0,
+  zinc_mg numeric default 0,
+  vitamin_b12_mcg numeric default 0,
+  folate_mcg numeric default 0,
   created_at timestamptz default now()
 );
 
@@ -489,3 +505,26 @@ as $$
 $$;
 
 grant execute on function public.search_afcd_foods_fuzzy(text, int) to authenticated;
+
+-- ── Pro micronutrients (schema update — run against an existing DB) ────────
+-- Same story as coach_pass above: the CREATE TABLE blocks above are a
+-- no-op against a DB that already has these tables, so add the new
+-- columns explicitly here too. These extra micronutrients (beyond the
+-- existing basics) are Pro-gated in the app — see Nutrients.jsx.
+alter table public.food_logs add column if not exists vitamin_a_mcg numeric default 0;
+alter table public.food_logs add column if not exists vitamin_c_mg numeric default 0;
+alter table public.food_logs add column if not exists polyunsaturated_fat_g numeric default 0;
+alter table public.food_logs add column if not exists monounsaturated_fat_g numeric default 0;
+alter table public.food_logs add column if not exists magnesium_mg numeric default 0;
+alter table public.food_logs add column if not exists zinc_mg numeric default 0;
+alter table public.food_logs add column if not exists vitamin_b12_mcg numeric default 0;
+alter table public.food_logs add column if not exists folate_mcg numeric default 0;
+
+alter table public.afcd_foods add column if not exists vitamin_a_mcg numeric default 0;
+alter table public.afcd_foods add column if not exists vitamin_c_mg numeric default 0;
+alter table public.afcd_foods add column if not exists polyunsaturated_fat_g numeric default 0;
+alter table public.afcd_foods add column if not exists monounsaturated_fat_g numeric default 0;
+alter table public.afcd_foods add column if not exists magnesium_mg numeric default 0;
+alter table public.afcd_foods add column if not exists zinc_mg numeric default 0;
+alter table public.afcd_foods add column if not exists vitamin_b12_mcg numeric default 0;
+alter table public.afcd_foods add column if not exists folate_mcg numeric default 0;

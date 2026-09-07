@@ -24,19 +24,31 @@ function MacroRow({ label, value, unit, target, color }) {
   );
 }
 
-function MicroCard({ icon, label, value, unit, guideline, color }) {
+// `locked` blurs the value/guideline and overlays a lock badge instead of
+// hiding the card entirely — free users see exactly what's on offer
+// (label, icon, guideline) without the actual number, then tap through
+// to Settings to upgrade rather than wondering why a nutrient vanished.
+function MicroCard({ icon, label, value, unit, guideline, color, locked, onUpgrade }) {
   return (
-    <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 18 }}>
+    <div
+      onClick={locked ? onUpgrade : undefined}
+      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 18, position: 'relative', cursor: locked ? 'pointer' : 'default' }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <div style={{ width: 32, height: 32, background: color + '22', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
           <i className={`ti ${icon}`} style={{ fontSize: 16 }} />
         </div>
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
       </div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 700, color: 'var(--text-primary)' }}>
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', filter: locked ? 'blur(6px)' : 'none', userSelect: locked ? 'none' : 'auto' }}>
         {value}<span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 400 }}>{unit}</span>
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{guideline}</div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, filter: locked ? 'blur(4px)' : 'none' }}>{guideline}</div>
+      {locked && (
+        <div style={{ position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border-active)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', fontSize: 11 }}>
+          <i className="ti ti-lock" />
+        </div>
+      )}
     </div>
   );
 }
@@ -88,11 +100,24 @@ export default function Nutrients() {
     vitaminD: t.vitaminD + (Number(row.vitamin_d_mcg) || 0),
     calcium: t.calcium + (Number(row.calcium_mg) || 0),
     iron: t.iron + (Number(row.iron_mg) || 0),
+    vitaminA: t.vitaminA + (Number(row.vitamin_a_mcg) || 0),
+    vitaminC: t.vitaminC + (Number(row.vitamin_c_mg) || 0),
+    vitaminB12: t.vitaminB12 + (Number(row.vitamin_b12_mcg) || 0),
+    folate: t.folate + (Number(row.folate_mcg) || 0),
+    magnesium: t.magnesium + (Number(row.magnesium_mg) || 0),
+    zinc: t.zinc + (Number(row.zinc_mg) || 0),
+    polyunsaturatedFat: t.polyunsaturatedFat + (Number(row.polyunsaturated_fat_g) || 0),
+    monounsaturatedFat: t.monounsaturatedFat + (Number(row.monounsaturated_fat_g) || 0),
   }), {
     cal: 0, protein: 0, carbs: 0, fat: 0, fibre: 0, sodium: 0, sugar: 0,
     saturatedFat: 0, transFat: 0, cholesterol: 0, potassium: 0,
     addedSugar: 0, vitaminD: 0, calcium: 0, iron: 0,
+    vitaminA: 0, vitaminC: 0, vitaminB12: 0, folate: 0,
+    magnesium: 0, zinc: 0, polyunsaturatedFat: 0, monounsaturatedFat: 0,
   });
+
+  const isPremium = !!profile?.is_premium;
+  const goUpgrade = () => navigate('/settings');
 
   const round1 = n => Math.round(n * 10) / 10;
 
@@ -154,6 +179,23 @@ export default function Nutrients() {
                 <MicroCard icon="ti-sun" label="Vitamin D" value={round1(totals.vitaminD)} unit="mcg" guideline="Guideline: 15mcg/day" color="var(--gold)" />
                 <MicroCard icon="ti-bone" label="Calcium" value={Math.round(totals.calcium)} unit="mg" guideline="Guideline: 1,000mg/day" color="var(--water-blue)" />
                 <MicroCard icon="ti-drop" label="Iron" value={round1(totals.iron)} unit="mg" guideline="Guideline: 8–18mg/day" color="var(--ai-purple)" />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>More micronutrients</span>
+                {!isPremium && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>PRO</span>
+                )}
+              </div>
+              <div className="grid-3" style={{ marginBottom: 20 }}>
+                <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-apple" label="Vitamin A" value={Math.round(totals.vitaminA)} unit="mcg" guideline="Guideline: 700–900mcg/day" color="var(--gold)" />
+                <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-lemon2" label="Vitamin C" value={round1(totals.vitaminC)} unit="mg" guideline="Guideline: 45mg/day" color="var(--accent)" />
+                <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-pill" label="Vitamin B12" value={round1(totals.vitaminB12)} unit="mcg" guideline="Guideline: 2.4mcg/day" color="var(--ai-purple)" />
+                <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-seeding" label="Folate" value={Math.round(totals.folate)} unit="mcg" guideline="Guideline: 400mcg/day" color="var(--water-blue)" />
+                <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-battery" label="Magnesium" value={round1(totals.magnesium)} unit="mg" guideline="Guideline: 310–420mg/day" color="var(--accent)" />
+                <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-shield" label="Zinc" value={round1(totals.zinc)} unit="mg" guideline="Guideline: 8–11mg/day" color="var(--gold)" />
+                <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-fish" label="Polyunsaturated fat" value={round1(totals.polyunsaturatedFat)} unit="g" guideline="A source of essential fatty acids" color="var(--water-blue)" />
+                <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-droplet-half-2" label="Monounsaturated fat" value={round1(totals.monounsaturatedFat)} unit="g" guideline="Guideline: favour over saturated fat" color="var(--ai-purple)" />
               </div>
 
               {logs.length === 0 && (
