@@ -93,6 +93,14 @@
 
 html {
   scroll-behavior: smooth;
+  /* Safari's automatic text-size inflation ("boost small text for
+     readability") scales up rendered text without reflowing fixed-width
+     containers around it — a rounded pill button sized for its label at
+     100% ends up with text too wide for it, cropped at both edges. This
+     is a distinct mechanism from pinch-zoom (already locked down via the
+     viewport meta tag) and needed its own fix. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html, body {
