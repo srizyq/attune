@@ -1214,6 +1214,22 @@ export default function FoodSearch() {
   const [createFoodOpen, setCreateFoodOpen] = useState(false);
   // Dashboard's "Saved meals" shortcut links here with { openSavedMeals: true }.
   const [savedMealsOpen, setSavedMealsOpen] = useState(!!location.state?.openSavedMeals);
+  // The quick-action sheet ("+" in the bottom nav) is present on every
+  // page, including this one — tapping it while already on /food
+  // re-navigates to the SAME route with new state, which React Router
+  // doesn't remount. The useState initializers above only ever read
+  // location.state once, on the original mount, so a same-route
+  // re-navigation left these stuck at their stale value and none of the
+  // requested modals opened. Re-syncing here on every location.state
+  // change (a fresh navigate() call always produces a new state object,
+  // even to the same route) fixes it without affecting cross-route loads,
+  // which already worked via the initializer above.
+  useEffect(() => {
+    if (location.state?.openScan) setScanOpen(true);
+    if (location.state?.openPhotoScan) setPhotoScanOpen(true);
+    if (location.state?.openMenuScan) setMenuScanOpen(true);
+    if (location.state?.openSavedMeals) setSavedMealsOpen(true);
+  }, [location.state]);
   const [builderMode, setBuilderMode] = useState(false);
   const [builderItems, setBuilderItems] = useState([]);
   const [builderReviewOpen, setBuilderReviewOpen] = useState(false);
