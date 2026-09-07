@@ -880,7 +880,7 @@ export default function Dashboard() {
                   chartDays={chartDays}
                   chartRange={chartRange}
                   setChartRange={setChartRange}
-                  onChartClick={() => navigate('/nutrients', { state: { date: viewedDate } })}
+                  onChartClick={() => navigate('/expenditure')}
                   latestWeight={latestWeight}
                   onWeightClick={() => setShowWeightModal(true)}
                   glasses={glasses}
