@@ -309,6 +309,12 @@ async function lookupSharedBarcodeProduct(barcode) {
 
 const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', cal: '', protein: '', carbs: '', fat: '', fibre: '', sodium: '', sugar: '' };
 
+// ─── Barcode scan — menu/plate photo scanning live elsewhere as
+//    MenuScanModal/PhotoScanModal, proxied through server-side /api routes
+//    so the vision API key never reaches the browser. Owns its own modal
+//    chrome (no separate ScanModal wrapper) since it needs to switch
+//    between a full-screen camera step and a normal modal card depending
+//    on internal state. ─────────────────────────────────────────────────
 function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, isPremium, onCreateCustom, onSearchManually }) {
   const { user } = useAuth();
   const videoRef = useRef(null);
@@ -327,6 +333,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const [time, setTime] = useState(defaultTime);
   const [amount, setAmount] = useState(1);
   const [unit, setUnit] = useState("serving");
+  const { closing, close } = useClosingTransition(onClose);
 
   // "Add this product" — offered when neither FatSecret, Open Food
   // Facts, nor the shared barcode_products table has this barcode.
@@ -340,13 +347,6 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const [labelError, setLabelError] = useState(null);
   const [labelPreview, setLabelPreview] = useState(null);
   const [savingProduct, setSavingProduct] = useState(false);
-
-  // Jump straight into the camera on open — no reason to make someone tap
-  // "Start scanning" first when they already tapped "Scan barcode" to get
-  // here. Deliberately mount-only: startScanner/stopScanner recreate every
-  // render, but re-running this on every render would restart the camera.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { startScanner(); return () => stopScanner(); }, []);
 
   async function startScanner() {
     setError(null); setResult(null); setLooking(true);
@@ -403,6 +403,13 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
     if (controlsRef.current) { try { controlsRef.current.stop(); } catch { /* already stopped */ } controlsRef.current = null; }
     setLooking(false);
   }
+
+  // Jump straight into the camera on open — no reason to make someone tap
+  // "Start scanning" first when they already tapped "Scan barcode" to get
+  // here. Deliberately mount-only: startScanner/stopScanner recreate every
+  // render, but re-running this on every render would restart the camera.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { startScanner(); return () => stopScanner(); }, []);
 
   async function lookupBarcode(barcode) {
     setScannedBarcode(barcode);
@@ -535,16 +542,66 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const gramsEquivalent = Math.round(servings * servingGrams);
   const scaled = result ? { ...scaleFood(result, servings || 0), servingGrams: gramsEquivalent } : null;
 
+  // The scanning camera is its own full-screen step — same treatment as
+  // PhotoScanModal/MenuScanModal — not squeezed into the modal card.
+  // Covers the whole pre-result lifecycle: opening, actively looking, and
+  // the brief lookup spinner right after a barcode is detected. An error
+  // (camera access denied, or "product not found") deliberately falls
+  // through to the modal-card branch below instead, since that's where
+  // the fallback actions (search manually, create custom food, add this
+  // product) already live.
+  const cameraStep = !result && !error && !addingProduct;
+
+  if (cameraStep) {
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#000" }}>
+        <video ref={videoRef} playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", display: looking ? "block" : "none" }} />
+
+        {!looking && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, color: "#555" }}>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid #333", borderTopColor: "#8fbc8f", animation: "spin 0.8s linear infinite" }} />
+            <div style={{ fontSize: 12 }}>Opening camera…</div>
+          </div>
+        )}
+
+        <button
+          onClick={close}
+          aria-label="Close camera"
+          title="Close"
+          style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: 16, width: 38, height: 38, borderRadius: "50%", background: "rgba(20,20,20,0.6)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+        >
+          ✕
+        </button>
+
+        {looking && (
+          <>
+            <div style={{ position: "absolute", top: "calc(24px + env(safe-area-inset-top))", left: 0, right: 0, textAlign: "center", fontSize: 13, color: "#ccc", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+              Point your camera at a barcode
+            </div>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+              <div style={{ width: "70%", height: 2, background: "#8fbc8f", opacity: 0.7, boxShadow: "0 0 8px #8fbc8f", borderRadius: 2 }} />
+            </div>
+          </>
+        )}
+
+        {scanning && (
+          <div style={{ position: "absolute", bottom: "calc(40px + env(safe-area-inset-bottom))", left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "#ccc", fontSize: 13 }}>
+            <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #444", borderTopColor: "#8fbc8f", animation: "spin 0.8s linear infinite" }} />
+            Looking up product…
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div>
-      {!result && !addingProduct && (
-        <div style={{ position: "relative", marginBottom: 14 }}>
-          <video ref={videoRef} style={{ width: "100%", borderRadius: 10, background: "#0a0a0a", display: looking ? "block" : "none", maxHeight: 220, objectFit: "cover" }} />
-          {looking && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}><div style={{ width: "70%", height: 2, background: "#8fbc8f", opacity: 0.7, boxShadow: "0 0 8px #8fbc8f", borderRadius: 2 }} /></div>}
-          {!looking && <div style={{ height: 180, border: "1px dashed var(--border-default)", borderRadius: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}><i className="ti ti-barcode" style={{ fontSize: 36, color: "var(--text-hint)" }} /><div style={{ fontSize: 13, color: "var(--text-muted)" }}>Point your camera at a barcode</div><div style={{ fontSize: 11, color: "var(--text-hint)" }}>Works with most packaged foods</div></div>}
-        </div>
-      )}
-      {scanning && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "20px 0", color: "var(--text-muted)", fontSize: 13 }}><div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid var(--text-hint)", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite" }} />Looking up product…</div>}
+    <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 24 }}>
+    <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
+        <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"}</span>
+        <button onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
+      </div>
+      <div style={{ padding: 20 }}>
       {error && !addingProduct && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
@@ -660,33 +717,8 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Scan again</button>
         </div>
       )}
-      {!result && !scanning && !addingProduct && (
-        <button onClick={looking ? stopScanner : startScanner} style={{ width: "100%", background: looking ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: looking ? "var(--danger)" : "#0f0f0f", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "background 0.2s" }}>
-          <i className={`ti ${looking ? "ti-x" : "ti-camera"}`} style={{ fontSize: 15 }} />
-          {looking ? "Stop camera" : "Start scanning"}
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ─── Scan Modal (barcode) — menu/plate photo scanning live elsewhere as
-//    MenuScanModal/PhotoScanModal, proxied through server-side /api routes
-//    so the vision API key never reaches the browser. ─────────────────────
-
-function ScanModal({ onClose, onAddFood, defaultMeal, defaultTime, selectedDate, isPremium, onCreateCustom, onSearchManually }) {
-  const { closing, close } = useClosingTransition(onClose);
-  return (
-    <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>Scan barcode</span>
-          <button onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
-        </div>
-        <div style={{ padding: 20 }}>
-          <BarcodeScanner onAddFood={onAddFood} onClose={onClose} defaultMeal={defaultMeal} defaultTime={defaultTime} selectedDate={selectedDate} isPremium={isPremium} onCreateCustom={onCreateCustom} onSearchManually={onSearchManually} />
-        </div>
       </div>
+    </div>
     </div>
   );
 }
@@ -1870,7 +1902,7 @@ export default function FoodSearch() {
 
       {/* Scan modal */}
       {scanOpen && (
-        <ScanModal
+        <BarcodeScanner
           onClose={() => setScanOpen(false)}
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}

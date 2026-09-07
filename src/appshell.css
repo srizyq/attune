@@ -88,6 +88,14 @@
     right: 0;
     bottom: 0;
     height: 58px;
+    /* Overrides the global border-box reset for this element specifically
+       — with border-box, padding-bottom below would carve into the fixed
+       58px height instead of adding to it, squishing the actual icon row
+       down to ~24px on a phone with a home indicator (the safe-area inset
+       is ~34px) and turning the stretch-to-fill "+" button into a wide
+       oval instead of a rounded square. content-box keeps 58px as pure
+       content height regardless of the safe-area inset. */
+    box-sizing: content-box;
     background: var(--bg-primary, #0f0f0f);
     border-top: 1px solid var(--border-default, #1e1e1e);
     z-index: 100;
