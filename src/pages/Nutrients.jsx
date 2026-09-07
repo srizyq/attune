@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
@@ -42,9 +43,32 @@ function MicroCard({ icon, label, value, unit, guideline, color }) {
 
 export default function Nutrients() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile } = useProfile();
   const today = todayLocalDate();
-  const { logs, loading } = useFoodLogs(today);
+
+  // Dashboard's chart card / macro grid link here with the day currently
+  // being viewed (which may be a past day), so this always matches
+  // whichever day's Dashboard you tapped through from, not always today.
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const requested = location.state?.date;
+    return requested && requested <= today ? requested : today;
+  });
+  useEffect(() => {
+    const requested = location.state?.date;
+    if (requested && requested <= today) setSelectedDate(requested);
+  }, [location.state, today]);
+
+  const isToday = selectedDate === today;
+  function shiftDate(days) {
+    const d = new Date(selectedDate + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    const next = todayLocalDate(d);
+    if (next > today) return;
+    setSelectedDate(next);
+  }
+
+  const { logs, loading } = useFoodLogs(selectedDate);
 
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
 
@@ -82,13 +106,24 @@ export default function Nutrients() {
             <i className="ti ti-arrow-left" />
           </button>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>Nutrients</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 4, background: isToday ? 'transparent' : '#1a1508', border: isToday ? 'none' : '1px solid #4a3a1a', borderRadius: 7, padding: isToday ? 0 : '3px 4px' }}>
+            <button onClick={() => shiftDate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, display: 'flex', padding: 3 }} aria-label="Previous day">
+              <i className="ti ti-chevron-left" />
+            </button>
+            <span style={{ fontSize: 12, color: isToday ? 'var(--text-muted)' : 'var(--gold)', minWidth: 74, textAlign: 'center' }}>
+              {isToday ? 'Today' : new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+            </span>
+            <button onClick={() => shiftDate(1)} disabled={isToday} style={{ background: 'none', border: 'none', color: isToday ? 'var(--border-default)' : 'var(--text-muted)', cursor: isToday ? 'default' : 'pointer', fontSize: 15, display: 'flex', padding: 3 }} aria-label="Next day">
+              <i className="ti ti-chevron-right" />
+            </button>
+          </div>
         </div>
 
         <div className="page-pad" style={{ maxWidth: 700 }}>
           {loading ? null : (
             <>
               <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Today's calories</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{isToday ? "Today's calories" : 'Calories'}</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
                   {Math.round(totals.cal).toLocaleString()}
                   {profile?.calorie_target ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 400 }}> / {profile.calorie_target.toLocaleString()} kcal</span> : ' kcal'}
@@ -123,7 +158,7 @@ export default function Nutrients() {
 
               {logs.length === 0 && (
                 <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)', fontSize: 13, background: 'var(--bg-subtle)', border: '1px dashed var(--border-strong)', borderRadius: 10 }}>
-                  Nothing logged today yet — log some food to see your full nutrient breakdown here.
+                  {isToday ? 'Nothing logged today yet — log some food to see your full nutrient breakdown here.' : 'Nothing logged on this day.'}
                 </div>
               )}
             </>

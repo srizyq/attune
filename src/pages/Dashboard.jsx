@@ -880,7 +880,7 @@ export default function Dashboard() {
                   chartDays={chartDays}
                   chartRange={chartRange}
                   setChartRange={setChartRange}
-                  onChartClick={() => navigate('/nutrients')}
+                  onChartClick={() => navigate('/nutrients', { state: { date: viewedDate } })}
                   latestWeight={latestWeight}
                   onWeightClick={() => setShowWeightModal(true)}
                   glasses={glasses}
@@ -902,7 +902,7 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="grid-3-fixed" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 16, overflow: 'hidden', marginBottom: '20px', gap: 0 }}>
+          <div className="grid-3-fixed" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 16, overflow: 'hidden', marginBottom: '20px', gap: 0, cursor: 'pointer' }}>
             <div style={{ borderRight: '1px solid var(--border-default)' }}><MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={ACCENT} /></div>
             <div style={{ borderRight: '1px solid var(--border-default)' }}><MacroCell label="Carbs" value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} /></div>
             <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} />
