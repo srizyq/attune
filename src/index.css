@@ -113,6 +113,11 @@ html, body {
      legitimately scroll horizontally (Settings tabs, Dashboard
      favourites) are unaffected. */
   overscroll-behavior-x: none;
+  /* Same tell, vertical axis: without this, scrolling past the top/bottom
+     of any page rubber-bands and reveals blank space behind the content —
+     the classic "this is a webpage in a frame" giveaway. Inner scroll
+     containers keep their own contained bounce, which reads as native. */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -126,6 +131,21 @@ body {
      it's pushed down here once, globally, matching how the bottom nav
      already pads itself for the home-indicator area. */
   padding-top: env(safe-area-inset-top);
+  /* Suppresses three classic "this is a webpage" tells: the gray/blue
+     flash on every tap, the native copy/share callout on long-press, and
+     accidental text selection when dragging across UI chrome. Real
+     content the user should be able to select/copy (food names, notes,
+     numbers) opts back in explicitly below. */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea, [contenteditable="true"], .selectable-text {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 h1, h2, h3, h4, h5 {
@@ -193,4 +213,30 @@ h1, h2, h3, h4, h5 {
 @keyframes button-press { from { transform: scale(1); } to { transform: scale(0.97); } }
 button:not(:disabled):active {
   animation: button-press 160ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+/* Route transitions — see App.jsx's AnimatedRoutes. Tab switches (bottom
+   nav) get a soft cross-dissolve + rise, like iOS switching tabs; drilling
+   into a page (settings, a chart detail) slides in from the right like a
+   native push, and going back slides in from the left. */
+@keyframes route-fade-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes route-slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes route-slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.route-anim-tab { animation: route-fade-rise 180ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.route-anim-push { animation: route-slide-in-right 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.route-anim-pop { animation: route-slide-in-left 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes route-fade-rise { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes route-slide-in-right { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes route-slide-in-left { from { opacity: 0; } to { opacity: 1; } }
 }

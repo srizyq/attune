@@ -1,5 +1,6 @@
 // src/App.jsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
 import { AuthProvider } from './context/AuthProvider'
 import { useAuth } from './hooks/useAuth'
 import RequireAuth from './components/RequireAuth'
@@ -21,32 +22,64 @@ import DailyLog from "./pages/DailyLog";
 import Coach from "./pages/Coach";
 import DashboardRedesignHarness from "./prototypes/dashboard-redesign/Harness";
 
+// Bottom-nav destinations switch between each other like iOS tabs (a soft
+// cross-dissolve + slight rise); everything else is reached by drilling in
+// from one of those pages (a settings icon, a chart tap, a back-arrow
+// header) and gets a native-style push slide instead. Onboarding/login/the
+// prototype harness are excluded — first-run and dev-only surfaces don't
+// need this.
+const TAB_PATHS = new Set(['/dashboard', '/food', '/progress', '/insights', '/log']);
+function routeAnimClass(pathname) {
+  return TAB_PATHS.has(pathname) ? 'route-anim-tab' : 'route-anim-push';
+}
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  const navType = useNavigationType(); // 'PUSH' | 'POP' | 'REPLACE'
+  const [renderedLocation, setRenderedLocation] = useState(location);
+  const [animClass, setAnimClass] = useState('');
+
+  useEffect(() => {
+    if (location.pathname === renderedLocation.pathname) return;
+    const base = routeAnimClass(location.pathname);
+    const direction = navType === 'POP' && base === 'route-anim-push' ? 'route-anim-pop' : base;
+    setRenderedLocation(location);
+    setAnimClass(direction);
+  }, [location, renderedLocation, navType]);
+
+  return (
+    <div key={renderedLocation.pathname} className={animClass} onAnimationEnd={() => setAnimClass('')}>
+      <Routes location={renderedLocation}>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/onboarding" element={<Navigate to="/onboarding/welcome" replace />} />
+        <Route path="/onboarding/welcome" element={<Welcome />} />
+        <Route path="/onboarding/step1" element={<Step1 />} />
+        <Route path="/onboarding/step2" element={<Step2 />} />
+        <Route path="/onboarding/step3" element={<Step3 />} />
+        <Route path="/onboarding/step4" element={<Step4 />} />
+        <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+        <Route path="/food" element={<RequireAuth><FoodSearch /></RequireAuth>} />
+        <Route path="/progress" element={<RequireAuth><Progress /></RequireAuth>} />
+        <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
+        <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />
+        <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />
+        <Route path="/insights" element={<RequireAuth><AIInsights /></RequireAuth>} />
+        <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+        <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+        <Route path="/prototypes/dashboard-redesign" element={<DashboardRedesignHarness />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/onboarding" element={<Navigate to="/onboarding/welcome" replace />} />
-          <Route path="/onboarding/welcome" element={<Welcome />} />
-          <Route path="/onboarding/step1" element={<Step1 />} />
-          <Route path="/onboarding/step2" element={<Step2 />} />
-          <Route path="/onboarding/step3" element={<Step3 />} />
-          <Route path="/onboarding/step4" element={<Step4 />} />
-          <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
-          <Route path="/food" element={<RequireAuth><FoodSearch /></RequireAuth>} />
-          <Route path="/progress" element={<RequireAuth><Progress /></RequireAuth>} />
-          <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
-          <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />
-          <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />
-          <Route path="/insights" element={<RequireAuth><AIInsights /></RequireAuth>} />
-          <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
-          <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
-          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-          <Route path="/prototypes/dashboard-redesign" element={<DashboardRedesignHarness />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AnimatedRoutes />
       </BrowserRouter>
     </AuthProvider>
   )
