@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useFoodLogs } from '../hooks/useFoodLogs';
@@ -18,12 +18,21 @@ export default function DailyLog() {
   const { profile } = useProfile();
   const isPremium = !!profile?.is_premium;
   const today = todayLocalDate();
-  // The Progress page calendar links here with a specific date to jump
-  // straight to that day instead of always landing on today.
+  // No current caller passes a date here (Progress's calendar now opens
+  // the past-day Dashboard instead), but AppNav's "Daily log" bottom-nav
+  // icon is present on this page too — a same-route re-navigation
+  // wouldn't re-run this initializer, so a future caller relying on it
+  // would silently no-op exactly like Scan menu did on /food. Resyncing
+  // on every location.state change instead of only at mount avoids that
+  // regardless of who calls it next.
   const [selectedDate, setSelectedDate] = useState(() => {
     const requested = location.state?.date;
     return requested && requested <= today ? requested : today;
   });
+  useEffect(() => {
+    const requested = location.state?.date;
+    if (requested && requested <= today) setSelectedDate(requested);
+  }, [location.state, today]);
   const isToday = selectedDate === today;
   const { meals, dayTimeline, loading, deleteFood, updateFood } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
