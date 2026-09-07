@@ -15,7 +15,7 @@ export function useFrequentFoods(limit = 6) {
   const refetch = useCallback(async () => {
     if (!user) { setRows([]); setLoading(false); return; }
     setLoading(true);
-    const logs = await getRecentFoodLogs(user.id, 200);
+    const logs = await getRecentFoodLogs(user.id, 300);
     const counts = new Map();
     for (const row of logs) {
       const key = row.food_name.trim().toLowerCase();

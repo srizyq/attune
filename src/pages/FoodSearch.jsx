@@ -1142,11 +1142,14 @@ export default function FoodSearch() {
     setExpandedId(null);
   }
   const { addFood: addFoodLog } = useFoodLogs(selectedDate);
-  const { rows: recentRows, loading: recentLoading, refetch: refetchRecent } = useRecentFoods(6);
+  // 20, not 6 — now that Recently/Frequently logged each get their own
+  // full tab instead of a short stacked preview, they can afford to
+  // actually show enough history to find yesterday's food in.
+  const { rows: recentRows, loading: recentLoading, refetch: refetchRecent } = useRecentFoods(20);
   const customFoods = useCustomFoods();
   const savedMeals = useSavedMeals();
   const favourites = useFavouriteFoods();
-  const frequent = useFrequentFoods(6);
+  const frequent = useFrequentFoods(20);
   const lastLogged = useLastLoggedAmounts();
   const [query, setQuery] = useState("");
   // Dashboard's per-meal "+ Add food" links here with the meal it was
@@ -1360,6 +1363,10 @@ export default function FoodSearch() {
   const allResults = useMemo(() => [...foodsResults, ...packagedResults], [foodsResults, packagedResults]);
 
   const browsing = query === "";
+  // Favourites/Frequently logged/Recently logged as tabs instead of a
+  // stacked scroll — all three are now one tap away instead of requiring
+  // a scroll past everything else to reach the bottom two.
+  const [browseTab, setBrowseTab] = useState('favourites');
 
   const recentFoods = useMemo(() => recentRows.map(row => {
     const lastAmount = row.logged_amount != null ? Number(row.logged_amount) : null;
@@ -1649,15 +1656,46 @@ export default function FoodSearch() {
           )}
 
           {/* Browsing (no search) — your own data: favourites, frequently
-              logged, and recently logged. No curated/hardcoded content —
-              a search now finds real food via FatSecret, so a fake
-              "Popular foods" list would only get in the way. */}
+              logged, and recently logged, as tabs rather than a stacked
+              scroll — all three are one tap away instead of needing a
+              scroll past everything to reach the bottom two. No curated/
+              hardcoded content — a search now finds real food via
+              FatSecret, so a fake "Popular foods" list would only get in
+              the way. */}
           {browsing && (
             <>
-              {favouriteFoods.length > 0 && (
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Favourites</div>
-                  {favouriteFoods.map(food => (
+              <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
+                {[
+                  { id: "favourites", label: "Favourites" },
+                  { id: "frequent", label: "Frequently logged" },
+                  { id: "recent", label: "Recently logged" },
+                ].map(tab => {
+                  const isActive = browseTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setBrowseTab(tab.id)}
+                      style={{
+                        flex: "0 0 auto", padding: "8px 14px", borderRadius: 20,
+                        border: `1px solid ${isActive ? "var(--border-active)" : "var(--border-default)"}`,
+                        background: isActive ? "var(--accent-bg)" : "var(--bg-subtle)",
+                        color: isActive ? "var(--accent)" : "var(--text-muted)",
+                        fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {browseTab === "favourites" && (
+                favouriteFoods.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "20px", color: "var(--text-hint)", fontSize: 13, background: "var(--bg-subtle)", border: "1px dashed var(--border-default)", borderRadius: 10 }}>
+                    Tap the star on any food to save it here
+                  </div>
+                ) : (
+                  favouriteFoods.map(food => (
                     <FoodCard
                       key={food.id}
                       food={food}
@@ -1671,14 +1709,17 @@ export default function FoodSearch() {
                       isFavourite={true}
                       onToggleFavourite={() => favourites.toggle(food)}
                     />
-                  ))}
-                </div>
+                  ))
+                )
               )}
 
-              {frequentFoods.length > 0 && (
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Frequently logged</div>
-                  {frequentFoods.map(food => (
+              {browseTab === "frequent" && (
+                frequentFoods.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "20px", color: "var(--text-hint)", fontSize: 13, background: "var(--bg-subtle)", border: "1px dashed var(--border-default)", borderRadius: 10 }}>
+                    Log the same food more than once to see it here
+                  </div>
+                ) : (
+                  frequentFoods.map(food => (
                     <FoodCard
                       key={food.id}
                       food={food}
@@ -1692,13 +1733,12 @@ export default function FoodSearch() {
                       isFavourite={favourites.isFavourite(food.name)}
                       onToggleFavourite={() => favourites.toggle(food)}
                     />
-                  ))}
-                </div>
+                  ))
+                )
               )}
 
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Recently logged</div>
-                {recentLoading ? null : recentFoods.length === 0 ? (
+              {browseTab === "recent" && (
+                recentLoading ? null : recentFoods.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "20px", color: "var(--text-hint)", fontSize: 13, background: "var(--bg-subtle)", border: "1px dashed var(--border-default)", borderRadius: 10 }}>
                     Log some food to see it here
                   </div>
@@ -1718,8 +1758,8 @@ export default function FoodSearch() {
                       onToggleFavourite={() => favourites.toggle(food)}
                     />
                   ))
-                )}
-              </div>
+                )
+              )}
             </>
           )}
 

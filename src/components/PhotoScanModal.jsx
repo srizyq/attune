@@ -153,6 +153,15 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     }
   }
 
+  // The camera itself renders full-screen, outside the modal card entirely
+  // — it's the active step and should feel like an actual camera app, not
+  // a cramped preview box inside a dialog. Once there's a photo (or the
+  // camera failed and library-picker fallback was used), everything else
+  // — review, analysis, results — uses the normal modal card layout.
+  if (!preview) {
+    return <CameraCapture onCapture={handleFile} hint="Line up a clear, well-lit shot" fullScreen onClose={close} />;
+  }
+
   return (
     <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: '#141414', border: '1px solid #2a2a2a', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '85vh', overflowY: 'auto' }}>
@@ -161,13 +170,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           <button onClick={close} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
-          {!preview && (
-            <CameraCapture onCapture={handleFile} hint="Line up a clear, well-lit shot" />
-          )}
-
-          {preview && (
-            <img src={preview} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
-          )}
+          <img src={preview} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
 
           {analyzing && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '20px 0', color: '#555', fontSize: 13 }}>

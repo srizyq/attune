@@ -11,7 +11,13 @@ import { useEffect, useRef, useState } from 'react';
 // or whatever the user picked from their library) so callers can hand it
 // straight to their existing handleFile(file) pipeline unchanged — this
 // component only owns "get an image", not what happens to it afterward.
-export default function CameraCapture({ onCapture, hint }) {
+//
+// `fullScreen` renders the camera edge-to-edge over the whole viewport
+// (a fixed overlay, not embedded in a modal card) — feels like an actual
+// camera app instead of a cramped preview box. Callers switch to this
+// mode only while the camera itself is the active step, then fall back
+// to their own modal layout once there's a photo to review.
+export default function CameraCapture({ onCapture, hint, fullScreen = false, onClose }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -57,8 +63,12 @@ export default function CameraCapture({ onCapture, hint }) {
     }, 'image/jpeg', 0.9);
   }
 
+  const containerStyle = fullScreen
+    ? { position: 'fixed', inset: 0, zIndex: 200, background: '#000' }
+    : { position: 'relative', marginBottom: 14, borderRadius: 10, overflow: 'hidden', background: '#0a0a0a', height: 260 };
+
   return (
-    <div style={{ position: 'relative', marginBottom: 14 }}>
+    <div style={fullScreen ? { position: 'fixed', inset: 0, zIndex: 200 } : { position: 'relative', marginBottom: 14 }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -68,7 +78,7 @@ export default function CameraCapture({ onCapture, hint }) {
       />
 
       {!error ? (
-        <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', background: '#0a0a0a', height: 260 }}>
+        <div style={containerStyle}>
           <video ref={videoRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', display: ready ? 'block' : 'none' }} />
           {!ready && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#555' }}>
@@ -76,19 +86,45 @@ export default function CameraCapture({ onCapture, hint }) {
               <div style={{ fontSize: 12 }}>Opening camera…</div>
             </div>
           )}
+
+          {fullScreen && onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Close camera"
+              title="Close"
+              style={{
+                position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16,
+                width: 38, height: 38, borderRadius: '50%',
+                background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.25)',
+                color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}
+            >
+              ✕
+            </button>
+          )}
+
           {ready && hint && (
-            <div style={{ position: 'absolute', top: 10, left: 0, right: 0, textAlign: 'center', fontSize: 11, color: '#ccc', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{hint}</div>
+            <div style={{
+              position: 'absolute',
+              top: fullScreen ? 'calc(24px + env(safe-area-inset-top))' : 10,
+              left: 0, right: 0, textAlign: 'center',
+              fontSize: fullScreen ? 13 : 11, color: '#ccc', textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+            }}>{hint}</div>
           )}
           {ready && (
-            <div style={{ position: 'absolute', bottom: 14, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{
+              position: 'absolute',
+              bottom: fullScreen ? 'calc(32px + env(safe-area-inset-bottom))' : 14,
+              left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Choose from library"
                 title="Choose from library"
                 style={{
-                  position: 'absolute', left: 18, width: 40, height: 40, borderRadius: '50%',
+                  position: 'absolute', left: fullScreen ? 32 : 18, width: fullScreen ? 48 : 40, height: fullScreen ? 48 : 40, borderRadius: '50%',
                   background: 'rgba(20,20,20,0.7)', border: '1px solid rgba(255,255,255,0.25)',
-                  color: '#e8e8e8', fontSize: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  color: '#e8e8e8', fontSize: fullScreen ? 20 : 17, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                 }}
               >
                 <i className="ti ti-photo" />
@@ -98,7 +134,7 @@ export default function CameraCapture({ onCapture, hint }) {
                 aria-label="Take photo"
                 title="Take photo"
                 style={{
-                  width: 62, height: 62, borderRadius: '50%', background: '#fff',
+                  width: fullScreen ? 74 : 62, height: fullScreen ? 74 : 62, borderRadius: '50%', background: '#fff',
                   border: '4px solid rgba(255,255,255,0.4)', cursor: 'pointer', padding: 0,
                 }}
               />
@@ -106,7 +142,18 @@ export default function CameraCapture({ onCapture, hint }) {
           )}
         </div>
       ) : (
-        <div style={{ height: 180, border: '1px dashed #2a2a2a', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 20px', textAlign: 'center' }}>
+        <div style={fullScreen
+          ? { position: 'fixed', inset: 0, background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 32px', textAlign: 'center' }
+          : { height: 180, border: '1px dashed #2a2a2a', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 20px', textAlign: 'center' }}>
+          {fullScreen && onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Close camera"
+              style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(40,40,40,0.8)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+          )}
           <i className="ti ti-camera-off" style={{ fontSize: 32, color: '#555' }} />
           <div style={{ fontSize: 12, color: '#777' }}>{error}</div>
           <button

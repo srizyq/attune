@@ -129,6 +129,13 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
 
   const picked = pickedIndex !== null ? recommendations?.[pickedIndex] : null;
 
+  // Same pattern as PhotoScanModal — the camera is its own full-screen
+  // step, not squeezed into the modal card, so it feels like an actual
+  // camera rather than a small embedded preview.
+  if (!preview) {
+    return <CameraCapture onCapture={handleFile} hint="Fit the whole menu section in frame" fullScreen onClose={close} />;
+  }
+
   return (
     <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: '#141414', border: '1px solid #2a2a2a', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '85vh', overflowY: 'auto' }}>
@@ -137,10 +144,6 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
           <button onClick={close} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
-          {!preview && (
-            <CameraCapture onCapture={handleFile} hint="Fit the whole menu section in frame" />
-          )}
-
           {preview && !picked && (
             <img src={preview} alt="" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
           )}

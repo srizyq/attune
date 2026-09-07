@@ -12,7 +12,10 @@ export function useRecentFoods(limit = 6) {
   const refetch = useCallback(async () => {
     if (!user) { setRows([]); setLoading(false); return; }
     setLoading(true);
-    const logs = await getRecentFoodLogs(user.id, 40);
+    // Raw rows fetched, before dedup-by-name — needs real headroom above
+    // `limit` so a food from yesterday (or earlier) isn't excluded just
+    // because today alone already produced dozens of log rows.
+    const logs = await getRecentFoodLogs(user.id, Math.max(120, limit * 6));
     const seen = new Set();
     const unique = [];
     for (const row of logs) {
