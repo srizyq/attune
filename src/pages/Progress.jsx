@@ -10,7 +10,7 @@ import { useHistory } from "../hooks/useHistory";
 import { useWeightLogs } from "../hooks/useWeightLogs";
 import { useTheme } from "../hooks/useTheme";
 import { todayLocalDate, dateNDaysAgo, dateRange, streakFor, computeStreak } from "../lib/patterns";
-import { computeTrendWeight, computeExpenditureHistory, toKg, fromKg } from "../lib/adaptiveTDEE";
+import { computeTrendWeight, toKg, fromKg } from "../lib/adaptiveTDEE";
 import AppNav from "../components/AppNav";
 import LogCalendar from "../components/LogCalendar";
 import StreakItem from "../components/StreakItem";
@@ -161,17 +161,6 @@ export default function Progress() {
   );
   const weightUnit = profile?.unit === "imperial" ? "lb" : "kg";
 
-  // Expenditure history needs calorie data spanning the same window as
-  // the weight chart, which can run much longer than the 7/30/90-day
-  // stat range above — a separate fetch scoped to weightRange rather
-  // than reusing `dailyData`. "All time" has no real startDate in
-  // WEIGHT_RANGES; getFoodLogsForRange needs a concrete date, so it
-  // falls back to a 5-year lookback as a practical stand-in for "all".
-  const { dailyData: expenditureDailyData } = useHistory(
-    dateNDaysAgo((weightRangeDays || 1825) - 1),
-    today
-  );
-
   const calorieTarget = profile?.calorie_target || null;
   const proteinTarget = profile?.protein_g || null;
 
@@ -272,27 +261,6 @@ export default function Progress() {
         borderWidth: 2,
       },
     ],
-  };
-
-  // Expenditure history: a rolling re-estimate of maintenance calories
-  // over time (see lib/adaptiveTDEE.js), not just the single current
-  // snapshot Settings shows — needs calorie data spanning the same
-  // window as the weight chart above, which expenditureDailyData covers.
-  const expenditureHistory = useMemo(
-    () => computeExpenditureHistory(weightLogs, expenditureDailyData.map(d => ({ date: d.date, calories: d.calories }))),
-    [weightLogs, expenditureDailyData]
-  );
-  const expenditureChartData = {
-    labels: expenditureHistory.map(p => new Date(p.date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })),
-    datasets: [{
-      label: "Estimated maintenance",
-      data: expenditureHistory.map(p => p.tdee),
-      borderColor: AI_PURPLE,
-      backgroundColor: AI_PURPLE + "22",
-      fill: true,
-      tension: 0.3,
-      pointRadius: expenditureHistory.length > 20 ? 0 : 3,
-    }],
   };
 
   const chartOptions = {
@@ -448,17 +416,19 @@ export default function Progress() {
             )}
           </div>
 
-          {/* expenditure chart */}
-          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 12, padding: 20, marginBottom: 24 }}>
-            <div style={{ marginBottom: 16 }}>
+          {/* Estimated maintenance now lives on its own page (/expenditure)
+              with real Average/Difference stats and a longer Pro-gated
+              range picker — this used to duplicate that exact chart, so
+              it's now just a handoff instead of a second copy. */}
+          <div
+            onClick={() => navigate("/expenditure")}
+            style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+          >
+            <div>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 2 }}>Estimated maintenance</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>How your true maintenance calories have moved, based on your logged weight and food</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>See how your true maintenance calories have moved over time</div>
             </div>
-            {weightLoading ? null : expenditureHistory.length > 1 ? (
-              <div style={{ height: 220 }}><Line data={expenditureChartData} options={chartOptions} /></div>
-            ) : (
-              <EmptyChartBox icon="ti-chart-line" message="Log weight and food consistently for a couple of weeks to see this trend" />
-            )}
+            <i className="ti ti-chevron-right" style={{ fontSize: 18, color: "var(--text-muted)" }} />
           </div>
 
           {/* bottom row */}
