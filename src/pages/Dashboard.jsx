@@ -1,5 +1,5 @@
 // src/pages/Dashboard.jsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
@@ -326,6 +326,114 @@ function DashboardHero({ consumed, target, chartDays, chartRange, setChartRange,
 // dead space under the shorter page. Drag tracking is plain pointer
 // events in px (not CSS scroll-snap) so the height and transform can be
 // driven together from the same piece of state.
+// Restored per explicit request — swipe (or tap the dots) to get from the
+// calorie/weight/water glance to the logging calendar. Drag tracking is
+// plain pointer events in px (not CSS scroll-snap) so the height and
+// transform can be driven together from the same piece of state.
+function SwipePager({ pages }) {
+  const [page, setPage] = useState(0);
+  const [animate, setAnimate] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [height, setHeight] = useState(undefined);
+  const [dragX, setDragX] = useState(0);
+  const containerRef = useRef(null);
+  const pageRefs = useRef([]);
+  const drag = useRef({ startX: 0, dx: 0, dragging: false });
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => setContainerWidth(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Re-measures whenever the active page's own content changes size (e.g.
+  // the calendar swapping between a 5-row and 6-row month), not just when
+  // the page index changes.
+  useLayoutEffect(() => {
+    const el = pageRefs.current[page];
+    if (!el) return;
+    const measure = () => setHeight(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [page]);
+
+  function onPointerDown(e) {
+    if (pages.length < 2) return;
+    drag.current = { startX: e.clientX, dx: 0, dragging: true };
+    setAnimate(false);
+  }
+  function onPointerMove(e) {
+    if (!drag.current.dragging) return;
+    let dx = e.clientX - drag.current.startX;
+    if ((page === 0 && dx > 0) || (page === pages.length - 1 && dx < 0)) dx *= 0.35;
+    drag.current.dx = dx;
+    setDragX(dx);
+  }
+  function onPointerUp() {
+    if (!drag.current.dragging) return;
+    drag.current.dragging = false;
+    const dx = drag.current.dx;
+    const threshold = Math.max(40, containerWidth * 0.18);
+    setAnimate(true);
+    setDragX(0);
+    if (dx < -threshold && page < pages.length - 1) setPage(p => p + 1);
+    else if (dx > threshold && page > 0) setPage(p => p - 1);
+  }
+
+  const offset = -page * containerWidth + dragX;
+
+  return (
+    <div>
+      <div
+        ref={containerRef}
+        style={{ overflow: 'hidden', borderRadius: 16, height, transition: animate ? 'height 0.25s ease' : 'none' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            width: containerWidth ? containerWidth * pages.length : '100%',
+            transform: `translateX(${offset}px)`,
+            transition: animate ? 'transform 0.25s ease' : 'none',
+            touchAction: 'pan-y',
+          }}
+        >
+          {pages.map((p, i) => (
+            <div key={i} ref={el => { pageRefs.current[i] = el; }} style={{ width: containerWidth || '100%', flexShrink: 0 }}>
+              {p}
+            </div>
+          ))}
+        </div>
+      </div>
+      {pages.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+          {pages.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setAnimate(true); setPage(i); }}
+              aria-label={`Page ${i + 1} of ${pages.length}`}
+              style={{
+                width: i === page ? 16 : 6, height: 6, borderRadius: 99, border: 'none', padding: 0, cursor: 'pointer',
+                background: i === page ? 'var(--accent)' : 'var(--border-strong)', transition: 'width 0.2s ease, background 0.2s ease',
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MacroCell({ label, value, target, color }) {
   return (
     <div style={{ padding: '14px 10px' }}>
@@ -736,36 +844,37 @@ export default function Dashboard() {
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
           {isGuest && <GuestBanner daysRemaining={daysRemaining} onSave={() => navigate('/settings')} />}
 
-          {/* Calorie/weight/water glance, then the logging calendar below
-              it — previously swiped between as two pages of one carousel,
-              removed in favour of plain stacking (no swipe gestures). */}
+          {/* Hero/calendar pager — swipe (or use the dots) to get from the
+              calorie/weight/water glance to the logging calendar. Restored
+              per explicit request after a brief stacked-layout experiment. */}
           <div style={{ marginBottom: '16px' }}>
-            <DashboardHero
-              consumed={consumed}
-              target={calorieTarget}
-              chartDays={chartDays}
-              chartRange={chartRange}
-              setChartRange={setChartRange}
-              onChartClick={() => navigate('/expenditure')}
-              latestWeight={latestWeight}
-              onWeightClick={() => setShowWeightModal(true)}
-              glasses={glasses}
-              setGlasses={setGlasses}
-            />
-          </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <LogCalendar
-              month={calMonth}
-              byDate={calByDate}
-              calorieTarget={calorieTarget}
-              loading={calLoading}
-              onPrevMonth={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-              onNextMonth={() => canGoNextMonth && setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
-              canGoNext={canGoNextMonth}
-              onSelectDay={(date) => navigate('/dashboard', { state: { date } })}
-              compact
-              streak={streak}
+            <SwipePager
+              pages={[
+                <DashboardHero
+                  consumed={consumed}
+                  target={calorieTarget}
+                  chartDays={chartDays}
+                  chartRange={chartRange}
+                  setChartRange={setChartRange}
+                  onChartClick={() => navigate('/expenditure')}
+                  latestWeight={latestWeight}
+                  onWeightClick={() => setShowWeightModal(true)}
+                  glasses={glasses}
+                  setGlasses={setGlasses}
+                />,
+                <LogCalendar
+                  month={calMonth}
+                  byDate={calByDate}
+                  calorieTarget={calorieTarget}
+                  loading={calLoading}
+                  onPrevMonth={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+                  onNextMonth={() => canGoNextMonth && setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+                  canGoNext={canGoNextMonth}
+                  onSelectDay={(date) => navigate('/dashboard', { state: { date } })}
+                  compact
+                  streak={streak}
+                />,
+              ]}
             />
           </div>
 
