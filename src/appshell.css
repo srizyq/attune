@@ -74,6 +74,12 @@
    fixed bottom nav on mobile/tablet so it never covers content. */
 .app-content-pad {
   padding-bottom: 0;
+  /* Without this, a nested `overflow: auto` div on iOS has zero momentum
+     — it stops dead the instant your finger lifts instead of gliding on,
+     which is what "rigid"/"stuck" scrolling actually is. Native full-page
+     scroll gets this for free; a scrollable div nested inside the app
+     shell (every page uses this class) does not, unless told to. */
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 860px) {
