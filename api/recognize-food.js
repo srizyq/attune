@@ -27,7 +27,11 @@ Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly
 
 If the photo doesn't clearly show food, reply with exactly: {"error": "No food detected in this photo."}
 
-Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal. This is a best-effort visual estimate, not a lab measurement — use your best judgement on typical portion sizes and preparation (e.g. oil/butter used in cooking, dressing on a salad).`;
+Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal. This is a best-effort visual estimate, not a lab measurement — use your best judgement on typical portion sizes and preparation (e.g. oil/butter used in cooking, dressing on a salad).
+
+Two things that commonly go wrong on packaged/branded products specifically:
+- If the photo shows a branded product's packaging with no actual nutrition facts panel visible, you have no real data for calories/carbs/fat — you're guessing from the product category alone. That is at most "medium" confidence, never "high", regardless of how confidently you can name the product.
+- Don't let a front-of-pack marketing claim about ONE macro (e.g. "30g protein", "high protein") make you assume the others are low. A real product highlighting its protein content can still carry substantial carbs and fat from its actual base ingredients (whole milk, oats, added sugar, etc.) — estimate those independently from what the product actually is (a milk-based smoothie, a bar, a shake), not from which number the packaging chose to headline.`;
 
 // Correction mode — the user is looking at the same photo and telling us
 // what's actually wrong with a first-pass estimate (wrong food, wrong
