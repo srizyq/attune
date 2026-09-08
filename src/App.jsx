@@ -21,6 +21,8 @@ import Expenditure from "./pages/Expenditure";
 import DailyLog from "./pages/DailyLog";
 import Coach from "./pages/Coach";
 import DashboardRedesignHarness from "./prototypes/dashboard-redesign/Harness";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 // Bottom-nav destinations switch between each other like iOS tabs (a soft
 // cross-dissolve + slight rise); everything else is reached by drilling in
@@ -52,6 +54,8 @@ function AnimatedRoutes() {
       <Routes location={renderedLocation}>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/onboarding" element={<Navigate to="/onboarding/welcome" replace />} />
         <Route path="/onboarding/welcome" element={<Welcome />} />
         <Route path="/onboarding/step1" element={<Step1 />} />

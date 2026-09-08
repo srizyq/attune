@@ -79,6 +79,7 @@ export default function Step4() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [upgraded, setUpgraded] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const userIdRef = useRef(null);
 
   useEffect(() => {
@@ -253,19 +254,34 @@ export default function Step4() {
           )}
         </div>
 
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: '14px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={e => setAgreed(e.target.checked)}
+            style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--accent)' }}
+          />
+          <span>
+            I agree to the{' '}
+            <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Terms of Service</a>
+            {' '}and{' '}
+            <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a>
+          </span>
+        </label>
+
         <button
           onClick={handleUpgrade}
-          disabled={!email || password.length < 8 || loading || !!prepError}
+          disabled={!email || password.length < 8 || loading || !!prepError || !agreed}
           style={{
             width: '100%',
             padding: '16px',
-            background: email && password.length >= 8 ? 'var(--accent)' : 'var(--bg-card)',
-            border: `1px solid ${email && password.length >= 8 ? 'var(--accent)' : 'var(--border-default)'}`,
+            background: email && password.length >= 8 && agreed ? 'var(--accent)' : 'var(--bg-card)',
+            border: `1px solid ${email && password.length >= 8 && agreed ? 'var(--accent)' : 'var(--border-default)'}`,
             borderRadius: '10px',
-            color: email && password.length >= 8 ? '#0f0f0f' : 'var(--text-hint)',
+            color: email && password.length >= 8 && agreed ? '#0f0f0f' : 'var(--text-hint)',
             fontSize: '15px',
             fontWeight: 600,
-            cursor: email && password.length >= 8 && !loading ? 'pointer' : 'not-allowed',
+            cursor: email && password.length >= 8 && agreed && !loading ? 'pointer' : 'not-allowed',
             fontFamily: "'DM Sans', sans-serif",
             transition: 'all 0.2s ease',
             marginBottom: '14px',

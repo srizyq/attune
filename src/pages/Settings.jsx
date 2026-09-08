@@ -922,6 +922,11 @@ export default function Settings() {
             <a href="https://platform.fatsecret.com" target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--text-hint)' }}>
               Powered by fatsecret Platform API
             </a>
+            <div style={{ marginTop: 8 }}>
+              <a href="/terms" target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--text-hint)' }}>Terms of Service</a>
+              <span style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 8px' }}>·</span>
+              <a href="/privacy" target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--text-hint)' }}>Privacy Policy</a>
+            </div>
           </div>
         </div>
       </div>
@@ -986,6 +991,7 @@ export default function Settings() {
 function UpgradeForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [status, setStatus] = useState(null); // null | 'loading' | 'done' | error string
 
   async function handleUpgrade() {
@@ -1018,9 +1024,23 @@ function UpgradeForm() {
         style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", outline: 'none' }}
       />
       {status && status !== 'loading' && <span style={{ color: 'var(--danger)', fontSize: '12px' }}>{status}</span>}
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer', marginTop: '4px' }}>
+        <input
+          type="checkbox"
+          checked={agreed}
+          onChange={e => setAgreed(e.target.checked)}
+          style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--accent)' }}
+        />
+        <span>
+          I agree to the{' '}
+          <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Terms of Service</a>
+          {' '}and{' '}
+          <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a>
+        </span>
+      </label>
       <button
         onClick={handleUpgrade}
-        disabled={!email || password.length < 8 || status === 'loading'}
+        disabled={!email || password.length < 8 || status === 'loading' || !agreed}
         style={{
           padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)',
           borderRadius: '8px', color: '#0f0f0f', fontSize: '13px', fontWeight: 600,
