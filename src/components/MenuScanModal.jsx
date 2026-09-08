@@ -38,10 +38,10 @@ function hasModification(text) {
 function MacroGrid({ pick }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{pick.cal}</div><div style={{ fontSize: 10, color: '#555' }}>kcal</div></div>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{pick.protein}g</div><div style={{ fontSize: 10, color: '#555' }}>Protein</div></div>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#6aabcf' }}>{pick.carbs}g</div><div style={{ fontSize: 10, color: '#555' }}>Carbs</div></div>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#9f97e8' }}>{pick.fat}g</div><div style={{ fontSize: 10, color: '#555' }}>Fat</div></div>
+      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{pick.cal}</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>kcal</div></div>
+      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{pick.protein}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Protein</div></div>
+      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#6aabcf' }}>{pick.carbs}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Carbs</div></div>
+      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#9f97e8' }}>{pick.fat}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Fat</div></div>
     </div>
   );
 }
@@ -168,7 +168,7 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: '#141414', border: '1px solid #2a2a2a', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '85vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #1e1e1e', position: 'sticky', top: 0, background: '#141414', zIndex: 10 }}>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#e8e8e8' }}>{picked ? 'Confirm pick' : 'Scan a menu'}</span>
-          <button onClick={close} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
+          <button onClick={close} style={{ background: 'none', border: 'none', color: '#8a8a8a', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
           {preview && !picked && (
@@ -176,7 +176,7 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
           )}
 
           {analyzing && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '20px 0', color: '#555', fontSize: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '20px 0', color: '#8a8a8a', fontSize: 13 }}>
               <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#8fbc8f', animation: 'spin 0.8s linear infinite' }} />
               Reading menu & matching to your goal…
             </div>
@@ -221,7 +221,7 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
                       <span style={{ fontSize: 10, fontWeight: 700, color: '#0f0f0f', background: i === 0 ? '#8fbc8f' : '#3a3a3a', borderRadius: 5, padding: '2px 6px' }}>#{i + 1}</span>
                       <span style={{ fontSize: 14, color: '#e8e8e8', fontWeight: 600 }}>{pick.name}</span>
                     </div>
-                    <div style={{ fontSize: 12, color: '#777', marginBottom: hasModification(pick.modifications) ? 2 : 10, lineHeight: 1.4 }}>{pick.items}</div>
+                    <div style={{ fontSize: 12, color: '#8a8a8a', marginBottom: hasModification(pick.modifications) ? 2 : 10, lineHeight: 1.4 }}>{pick.items}</div>
                     {hasModification(pick.modifications) && (
                       <div style={{ fontSize: 11, color: '#e8c468', marginBottom: 10 }}>Modified: {pick.modifications}</div>
                     )}
@@ -229,7 +229,7 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
                   </button>
                 ))}
               </div>
-              <button onClick={reset} style={{ width: '100%', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 12, color: '#666', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Try another photo</button>
+              <button onClick={reset} style={{ width: '100%', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 12, color: '#8a8a8a', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Try another photo</button>
             </div>
           )}
 
@@ -238,13 +238,13 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
             <div style={{ marginTop: 0 }}>
               <div style={{ background: '#181818', border: '1px solid #3a5a3a', borderRadius: 10, padding: 14, marginBottom: 12 }}>
                 <div style={{ fontSize: 14, color: '#e8e8e8', fontWeight: 600, marginBottom: 4 }}>{picked.name}</div>
-                <div style={{ fontSize: 12, color: '#777', marginBottom: hasModification(picked.modifications) ? 2 : 10, lineHeight: 1.4 }}>{picked.items}</div>
+                <div style={{ fontSize: 12, color: '#8a8a8a', marginBottom: hasModification(picked.modifications) ? 2 : 10, lineHeight: 1.4 }}>{picked.items}</div>
                 {hasModification(picked.modifications) && (
                   <div style={{ fontSize: 11, color: '#e8c468', marginBottom: 10 }}>Modified: {picked.modifications}</div>
                 )}
                 <MacroGrid pick={picked} />
               </div>
-              <p style={{ fontSize: 11, color: '#555', margin: '0 0 14px', lineHeight: 1.5 }}>
+              <p style={{ fontSize: 11, color: '#8a8a8a', margin: '0 0 14px', lineHeight: 1.5 }}>
                 This is an AI estimate based on the menu photo, not verified nutrition data — review before adding.
               </p>
               <div style={{ display: 'flex', gap: 8 }}>

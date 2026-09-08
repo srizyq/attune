@@ -192,13 +192,13 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: '#141414', border: '1px solid #2a2a2a', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '85vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #1e1e1e', position: 'sticky', top: 0, background: '#141414', zIndex: 10 }}>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#e8e8e8' }}>Scan food photo</span>
-          <button onClick={close} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
+          <button onClick={close} style={{ background: 'none', border: 'none', color: '#8a8a8a', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
           <img src={preview} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
 
           {analyzing && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '20px 0', color: '#555', fontSize: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '20px 0', color: '#8a8a8a', fontSize: 13 }}>
               <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#8fbc8f', animation: 'spin 0.8s linear infinite' }} />
               Analyzing photo…
             </div>
@@ -233,15 +233,15 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
               </div>
               <div style={{ background: '#181818', border: '1px solid #3a5a3a', borderRadius: 10, padding: 14, marginBottom: 12 }}>
                 <div style={{ fontSize: 14, color: '#e8e8e8', fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
-                {result.portion && <div style={{ fontSize: 12, color: '#555', marginBottom: 10 }}>{result.portion}</div>}
+                {result.portion && <div style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 10 }}>{result.portion}</div>}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{result.cal}</div><div style={{ fontSize: 10, color: '#555' }}>kcal</div></div>
-                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{result.protein}g</div><div style={{ fontSize: 10, color: '#555' }}>Protein</div></div>
-                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#6aabcf' }}>{result.carbs}g</div><div style={{ fontSize: 10, color: '#555' }}>Carbs</div></div>
-                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#9f97e8' }}>{result.fat}g</div><div style={{ fontSize: 10, color: '#555' }}>Fat</div></div>
+                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{result.cal}</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>kcal</div></div>
+                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{result.protein}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Protein</div></div>
+                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#6aabcf' }}>{result.carbs}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Carbs</div></div>
+                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#9f97e8' }}>{result.fat}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Fat</div></div>
                 </div>
               </div>
-              <p style={{ fontSize: 11, color: '#555', margin: '0 0 14px', lineHeight: 1.5 }}>
+              <p style={{ fontSize: 11, color: '#8a8a8a', margin: '0 0 14px', lineHeight: 1.5 }}>
                 This is a visual estimate, not verified nutrition data — review before adding, and adjust later if it's off.
               </p>
 
@@ -250,7 +250,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                   as many times as needed; each correction re-sends the
                   same photo + this comment + the current estimate. */}
               <div style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 11, color: '#777', marginBottom: 5, display: 'block' }}>Not quite right? Tell it what's wrong</label>
+                <label style={{ fontSize: 11, color: '#8a8a8a', marginBottom: 5, display: 'block' }}>Not quite right? Tell it what's wrong</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
                     type="text"
@@ -289,7 +289,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                     {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 )}
-                <button onClick={reset} style={{ background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: '#666', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Retake</button>
+                <button onClick={reset} style={{ background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: '#8a8a8a', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Retake</button>
               </div>
               <button
                 onClick={handleAdd}
@@ -299,7 +299,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                 {adding ? 'Adding…' : isPremium ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
               </button>
               {onCreateCustom && (
-                <button onClick={onCreateCustom} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#555', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                <button onClick={onCreateCustom} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#8a8a8a', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
                   Not quite right? Create a custom food instead
                 </button>
               )}
