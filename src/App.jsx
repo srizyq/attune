@@ -42,7 +42,17 @@ function AnimatedRoutes() {
   const [animClass, setAnimClass] = useState('');
 
   useEffect(() => {
-    if (location.pathname === renderedLocation.pathname) return;
+    if (location.pathname === renderedLocation.pathname) {
+      // Same route, but this still fired because `location` itself
+      // changed — a same-page re-navigation carrying new location.state
+      // (a calendar day click, a chart click, anything that re-navigates
+      // to the page you're already on with a different date/flag). Sync
+      // it so useLocation() inside <Routes> isn't stuck on a stale
+      // snapshot, just without a transition animation since it isn't a
+      // real page change.
+      setRenderedLocation(location);
+      return;
+    }
     const base = routeAnimClass(location.pathname);
     const direction = navType === 'POP' && base === 'route-anim-push' ? 'route-anim-pop' : base;
     setRenderedLocation(location);
