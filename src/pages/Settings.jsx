@@ -7,6 +7,7 @@ import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
 import { pushSupported } from '../lib/pushNotifications';
 import { supabase } from '../lib/supabase';
 import { goalMacroSplits, calcCalories, buildTargets, splitFromGrams } from '../lib/calorieTargets';
+import { MICRO_NUTRIENTS } from '../lib/microNutrients';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { useTheme } from '../hooks/useTheme';
 import { useMyTrainers } from '../hooks/useCoach';
@@ -248,6 +249,10 @@ export default function Settings() {
   const [customCal, setCustomCal] = useState(2000);
   const [proteinPct, setProteinPct] = useState(30);
   const [fatPct, setFatPct] = useState(30);
+  // Pro-only custom micronutrient targets. Kept as strings (not numbers)
+  // so an input can sit genuinely empty — a nutrient absent here means
+  // "use the default guideline" (see Nutrients.jsx's MicroCard), not "0".
+  const [microTargets, setMicroTargets] = useState({});
 
   // Baseline snapshot of the goals-tab draft fields as of the last
   // profile sync (initial load, or right after a save resolves and
@@ -260,7 +265,8 @@ export default function Settings() {
     Number(form.weight) !== baseline.weight || Number(form.height) !== baseline.height ||
     form.goal !== baseline.goal || form.activity !== baseline.activity ||
     calMode !== baseline.calMode || customCal !== baseline.customCal ||
-    proteinPct !== baseline.proteinPct || fatPct !== baseline.fatPct
+    proteinPct !== baseline.proteinPct || fatPct !== baseline.fatPct ||
+    JSON.stringify(microTargets) !== JSON.stringify(baseline.microTargets)
   );
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupClosing, setPopupClosing] = useState(false);
@@ -323,9 +329,14 @@ export default function Settings() {
       if (syncedMode === 'adaptive') refreshAdaptive(profile.goal || 'maintain');
     }
     if (profile.reminder_time) setReminderTimeInput(profile.reminder_time);
+    const syncedMicroTargets = Object.fromEntries(
+      Object.entries(profile.micro_targets || {}).map(([k, v]) => [k, String(v)])
+    );
+    setMicroTargets(syncedMicroTargets);
     setBaseline({
       ...syncedForm, age: Number(syncedForm.age), weight: Number(syncedForm.weight), height: Number(syncedForm.height),
       calMode: syncedMode, customCal: syncedCal, proteinPct: syncedProtein, fatPct: syncedFat,
+      microTargets: syncedMicroTargets,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
@@ -360,6 +371,14 @@ export default function Settings() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Drop empty/invalid entries so clearing an input actually removes
+      // the target (falls back to the default guideline) instead of
+      // saving it as 0 or "".
+      const cleanedMicroTargets = Object.fromEntries(
+        Object.entries(microTargets)
+          .map(([k, v]) => [k, Number(v)])
+          .filter(([, v]) => Number.isFinite(v) && v > 0)
+      );
       await saveProfile({
         unit: form.unit,
         age: Number(form.age),
@@ -373,6 +392,7 @@ export default function Settings() {
         carbs_g: preview.carbs.g,
         fat_g: preview.fat.g,
         water_target: preview.water,
+        micro_targets: cleanedMicroTargets,
       });
       // No need to touch popup state here — saveProfile updates `profile`,
       // which re-runs the sync effect above and refreshes `baseline` to
@@ -644,6 +664,62 @@ export default function Settings() {
               </Card>
 
               </div>
+
+              <Card>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <SectionLabel>Micronutrient targets</SectionLabel>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>PRO</span>
+                </div>
+                {!profile?.is_premium ? (
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>
+                      {MICRO_NUTRIENTS.slice(0, 6).map(n => (
+                        <div key={n.key} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, padding: '10px 12px' }}>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>{n.label}</div>
+                          <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600 }}>—{n.unit}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center', padding: 20 }}>
+                      <i className="ti ti-lock" style={{ fontSize: 20, color: 'var(--accent)' }} />
+                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 340 }}>
+                        Set your own target for every nutrient on the Nutrients page instead of the default guideline — Pro only.
+                      </p>
+                      <button
+                        onClick={() => setTab('account')}
+                        style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                      >
+                        Upgrade to Pro
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 16px' }}>
+                      Leave a field blank to use the default guideline instead.
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+                      {MICRO_NUTRIENTS.map(n => (
+                        <div key={n.key}>
+                          <label style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>{n.label}</label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <input
+                              type="number"
+                              min="0"
+                              inputMode="decimal"
+                              value={microTargets[n.key] ?? ''}
+                              onChange={e => setMicroTargets(t => ({ ...t, [n.key]: e.target.value }))}
+                              placeholder="Default"
+                              style={{ width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '8px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+                            />
+                            <span style={{ fontSize: 12, color: 'var(--text-hint)', flexShrink: 0 }}>{n.unit}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </Card>
             </>
           )}
 

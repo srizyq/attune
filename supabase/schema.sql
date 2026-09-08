@@ -35,6 +35,14 @@ create table if not exists public.profiles (
   photo_scans_period_start date not null default current_date,
   menu_scans_used int not null default 0,
   menu_scans_period_start date not null default current_date,
+  -- Pro-only custom micronutrient targets, keyed by the same camelCase
+  -- names Nutrients.jsx already uses for totals (fibre, sodium, sugar,
+  -- saturatedFat, transFat, cholesterol, addedSugar, potassium, vitaminD,
+  -- calcium, iron, vitaminA, vitaminC, vitaminB12, folate, magnesium,
+  -- zinc, polyunsaturatedFat, monounsaturatedFat) — value is a plain
+  -- number in that nutrient's display unit. A nutrient missing from this
+  -- object means "use the default guideline", not "target is 0".
+  micro_targets jsonb not null default '{}'::jsonb,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -528,3 +536,7 @@ alter table public.afcd_foods add column if not exists magnesium_mg numeric defa
 alter table public.afcd_foods add column if not exists zinc_mg numeric default 0;
 alter table public.afcd_foods add column if not exists vitamin_b12_mcg numeric default 0;
 alter table public.afcd_foods add column if not exists folate_mcg numeric default 0;
+
+-- ── Pro custom micronutrient targets (schema update — run against an
+-- existing DB) ──────────────────────────────────────────────────────────
+alter table public.profiles add column if not exists micro_targets jsonb not null default '{}'::jsonb;
