@@ -45,6 +45,17 @@ export function ThemeProvider({ children }) {
     try { localStorage.setItem(THEME_CACHE_KEY, resolved); } catch { /* ignore */ }
   }, [profile]);
 
+  // data-theme lives on the wrapper div below, not body — deliberately,
+  // per the note above. But body's own background (from index.css's
+  // untouched :root default) still paints the safe-area-inset-top strip
+  // at the very top of the screen, so a light-theme user was seeing a
+  // permanent black bar up there no matter what page they were on. Body
+  // isn't inside the theme-scoped wrapper, so the only way to keep it in
+  // sync is to set it directly, right here where theme actually changes.
+  useEffect(() => {
+    document.body.style.background = theme === 'light' ? '#ffffff' : '#0f0f0f';
+  }, [theme]);
+
   const setTheme = useCallback((next) => {
     setThemeState(next);
     try { localStorage.setItem(THEME_CACHE_KEY, next); } catch { /* ignore */ }
