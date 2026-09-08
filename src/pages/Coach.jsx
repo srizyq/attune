@@ -21,6 +21,7 @@ import LogItemRow from '../components/LogItemRow';
 import LogoMark from '../components/LogoMark';
 import StreakItem from '../components/StreakItem';
 import MicroCard from '../components/MicroCard';
+import MacroPreviewBar from '../components/MacroPreviewBar';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
@@ -31,6 +32,19 @@ const AI_PURPLE = '#9f97e8';
 const RANGES = [{ id: 7, label: '7 days' }, { id: 30, label: '30 days' }, { id: 90, label: '90 days' }];
 const GOAL_LABELS = { lose: 'Lose weight', maintain: 'Stay balanced', build: 'Build muscle' };
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
+// Mirrors the section layout on the client's own Nutrients page — same
+// grouping, just data-driven off MICRO_NUTRIENTS here instead of one
+// hardcoded MicroCard per nutrient.
+const MICRO_GROUPS = [
+  { label: 'Other nutrients', keys: ['fibre', 'sodium', 'sugar'] },
+  { label: 'Fat breakdown', keys: ['saturatedFat', 'transFat', 'cholesterol'] },
+  { label: 'Vitamins & minerals', keys: ['addedSugar', 'potassium', 'vitaminD', 'calcium', 'iron'] },
+  { label: 'More micronutrients', keys: ['vitaminA', 'vitaminC', 'vitaminB12', 'folate', 'magnesium', 'zinc', 'polyunsaturatedFat', 'monounsaturatedFat'] },
+];
+function timeOfDayGreeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+}
 
 function generateInviteCode() {
   let code = '';
@@ -137,6 +151,19 @@ export default function Coach() {
   const [copied, setCopied] = useState(false);
   const [codeError, setCodeError] = useState(null);
 
+  // Rows resolve their own "logged today" status independently (see
+  // ClientPreviewRow) and report it up here for both the header greeting
+  // and the list's own summary line — the list itself never reorders as
+  // each one resolves, which would be distracting while a trainer is
+  // actively looking at it.
+  const [statusById, setStatusById] = useState({});
+  const reportStatus = useCallback((id, status) => {
+    setStatusById(prev => ({ ...prev, [id]: status }));
+  }, []);
+  const resolvedStatuses = Object.values(statusById);
+  const loggedTodayCount = resolvedStatuses.filter(s => s.loggedToday).length;
+  const allLoggedToday = clients.length > 0 && resolvedStatuses.length === clients.length && loggedTodayCount === clients.length;
+
   // Coach Mode requires the pass — a direct /coach visit without it (or
   // after the pass lapses) bounces back to Settings rather than showing an
   // empty dashboard.
@@ -199,7 +226,15 @@ export default function Coach() {
                 Coach Mode
               </h2>
               <p style={{ color: 'var(--text-hint)', fontSize: 13, margin: '2px 0 0' }}>
-                {selectedClient ? (selectedClient.name || 'Client') : 'Your connected clients'}
+                {selectedClient ? (selectedClient.name || 'Client') : (
+                  clients.length === 0
+                    ? `${timeOfDayGreeting()} — invite your first client below`
+                    : resolvedStatuses.length === 0
+                    ? `${timeOfDayGreeting()} — checking in on your clients…`
+                    : allLoggedToday
+                    ? `${timeOfDayGreeting()} — everyone's logged today`
+                    : `${timeOfDayGreeting()} — ${loggedTodayCount}/${clients.length} clients logged today`
+                )}
               </p>
             </div>
           </div>
@@ -225,6 +260,10 @@ export default function Coach() {
               onCopy={handleCopyCode}
               onSelect={setSelectedClient}
               onRevoke={revoke}
+              onStatus={reportStatus}
+              loggedTodayCount={loggedTodayCount}
+              resolvedCount={resolvedStatuses.length}
+              allLoggedToday={allLoggedToday}
             />
           ) : (
             <ClientDetailView client={selectedClient} />
@@ -236,18 +275,14 @@ export default function Coach() {
 }
 
 // ─── Client list + invite code ────────────────────────────────────────────────
-function ClientListView({ profile, clients, loading, generating, codeError, copied, onGenerate, onCopy, onSelect, onRevoke }) {
+const INVITE_STEPS = [
+  { icon: 'ti-sparkles', text: 'Generate a code' },
+  { icon: 'ti-share-3', text: 'Share it with your client' },
+  { icon: 'ti-link', text: 'They connect in Settings — food, weight and check-ins show up here' },
+];
+
+function ClientListView({ profile, clients, loading, generating, codeError, copied, onGenerate, onCopy, onSelect, onRevoke, onStatus, loggedTodayCount, resolvedCount, allLoggedToday }) {
   const hasClients = clients.length > 0;
-  // Rows resolve their own "logged today" status independently (see
-  // ClientPreviewRow) and report it up here just for the summary line —
-  // the list itself never reorders as each one resolves, which would be
-  // distracting while a trainer is actively looking at it.
-  const [statusById, setStatusById] = useState({});
-  const reportStatus = useCallback((id, status) => {
-    setStatusById(prev => ({ ...prev, [id]: status }));
-  }, []);
-  const resolved = Object.values(statusById);
-  const loggedTodayCount = resolved.filter(s => s.loggedToday).length;
 
   return (
     <div className="grid-2" style={{ alignItems: 'start' }}>
@@ -283,9 +318,16 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
             </div>
           </>
         ) : (
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px', lineHeight: 1.6 }}>
-            Generate a code and share it with a client — once they enter it, their food, weight and check-ins show up here.
-          </p>
+          <div style={{ marginBottom: 18 }}>
+            {INVITE_STEPS.map((step, i) => (
+              <div key={step.text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < INVITE_STEPS.length - 1 ? 14 : 0 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--accent)', fontSize: 13 }}>
+                  <i className={`ti ${step.icon}`} />
+                </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>{step.text}</p>
+              </div>
+            ))}
+          </div>
         )}
         {codeError && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 12px' }}>{codeError}</p>}
         <button
@@ -301,10 +343,16 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
       <Card style={{ marginBottom: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <SectionLabel icon="ti-users">Your clients</SectionLabel>
-          {hasClients && resolved.length > 0 && (
-            <span style={{ color: loggedTodayCount === resolved.length ? 'var(--accent)' : 'var(--gold)', fontSize: 12, fontWeight: 600, marginBottom: 18 }}>
-              {loggedTodayCount}/{resolved.length} logged today
-            </span>
+          {hasClients && resolvedCount > 0 && (
+            allLoggedToday ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent)', fontSize: 12, fontWeight: 600, marginBottom: 18 }}>
+                <i className="ti ti-circle-check" /> All caught up
+              </span>
+            ) : (
+              <span style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 600, marginBottom: 18 }}>
+                {loggedTodayCount}/{resolvedCount} logged today
+              </span>
+            )
           )}
         </div>
         {loading ? (
@@ -318,7 +366,7 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
           </div>
         ) : (
           clients.map((row, i) => (
-            <ClientPreviewRow key={row.id} row={row} index={i} onSelect={onSelect} onRevoke={onRevoke} onStatus={reportStatus} />
+            <ClientPreviewRow key={row.id} row={row} index={i} onSelect={onSelect} onRevoke={onRevoke} onStatus={onStatus} />
           ))
         )}
       </Card>
@@ -735,23 +783,26 @@ function ClientDetailView({ client }) {
             {comments.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No comments yet.</p>
             ) : (
-              comments.map(c => (
-                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border-default)' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>{c.body}</p>
-                    <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '4px 0 0' }}>
-                      {c.comment_date ? `On ${c.comment_date} · ` : ''}{new Date(c.created_at).toLocaleString()}
-                    </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {comments.map(c => (
+                  <div key={c.id} className="stagger-item" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button
+                      onClick={() => removeComment(c.id)}
+                      className="btn-press"
+                      style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 13, flexShrink: 0, alignSelf: 'flex-end', padding: 4 }}
+                      title="Delete"
+                    >
+                      <i className="ti ti-trash" />
+                    </button>
+                    <div style={{ maxWidth: '80%', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: '14px 14px 4px 14px', padding: '10px 14px' }}>
+                      <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>{c.body}</p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '4px 0 0', textAlign: 'right' }}>
+                        {c.comment_date ? `On ${c.comment_date} · ` : ''}{new Date(c.created_at).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => removeComment(c.id)}
-                    className="btn-press"
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14, flexShrink: 0 }}
-                  >
-                    <i className="ti ti-trash" />
-                  </button>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </Card>
         </div>
@@ -765,20 +816,28 @@ function ClientDetailView({ client }) {
         ) : !hasAnyFood ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Nothing logged this day.</p>
         ) : (
-          <div className="grid-3">
-            {MICRO_NUTRIENTS.map(n => (
-              <MicroCard
-                key={n.key}
-                icon={n.icon}
-                label={n.label}
-                value={n.unit === 'g' || n.unit === 'mg' ? round1(microTotals[n.key]) : Math.round(microTotals[n.key])}
-                unit={n.unit}
-                guideline={n.guideline}
-                target={microTargets[n.key]}
-                color={n.color}
-              />
-            ))}
-          </div>
+          MICRO_GROUPS.map((group, gi) => (
+            <div key={group.label} style={{ marginBottom: gi < MICRO_GROUPS.length - 1 ? 20 : 0 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{group.label}</div>
+              <div className="grid-3">
+                {group.keys.map(key => {
+                  const n = MICRO_NUTRIENTS.find(m => m.key === key);
+                  return (
+                    <MicroCard
+                      key={key}
+                      icon={n.icon}
+                      label={n.label}
+                      value={n.unit === 'g' || n.unit === 'mg' ? round1(microTotals[key]) : Math.round(microTotals[key])}
+                      unit={n.unit}
+                      guideline={n.guideline}
+                      target={microTargets[key]}
+                      color={n.color}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))
         )}
       </Card>
     </div>
@@ -796,6 +855,16 @@ function TargetsForm({ client, onSave, onCancel }) {
   const [fatG, setFatG] = useState(client.fat_g ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Live preview as the trainer types — protein/carbs at 4 kcal/g, fat at
+  // 9 kcal/g, each bar's share relative to the macros' own calorie total
+  // (not the separately-typed calorie target, which the trainer may not
+  // have reconciled to the gram values yet).
+  const proteinCal = Math.round((Number(proteinG) || 0) * 4);
+  const carbsCal = Math.round((Number(carbsG) || 0) * 4);
+  const fatCal = Math.round((Number(fatG) || 0) * 9);
+  const macroCalTotal = proteinCal + carbsCal + fatCal;
+  const hasMacros = macroCalTotal > 0;
 
   const handleSave = async () => {
     setSaving(true);
@@ -834,6 +903,19 @@ function TargetsForm({ client, onSave, onCancel }) {
           <input type="number" min="0" value={fatG} onChange={e => setFatG(e.target.value)} style={fieldStyle} />
         </div>
       </div>
+      {hasMacros && (
+        <div style={{ marginBottom: 6 }}>
+          <MacroPreviewBar label="Protein" grams={Number(proteinG) || 0} calories={proteinCal} pct={proteinCal / macroCalTotal} color="var(--accent)" />
+          <MacroPreviewBar label="Carbs" grams={Number(carbsG) || 0} calories={carbsCal} pct={carbsCal / macroCalTotal} color="var(--water-blue)" />
+          <MacroPreviewBar label="Fat" grams={Number(fatG) || 0} calories={fatCal} pct={fatCal / macroCalTotal} color="var(--ai-purple)" />
+          <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '2px 0 0' }}>
+            Adds up to {macroCalTotal.toLocaleString()} kcal from macros
+            {calorieTarget !== '' && Math.abs(macroCalTotal - Number(calorieTarget)) > Number(calorieTarget) * 0.05
+              ? ` — doesn't quite match the ${Number(calorieTarget).toLocaleString()} kcal target above`
+              : ''}
+          </p>
+        </div>
+      )}
       {error && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 10px' }}>{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button
