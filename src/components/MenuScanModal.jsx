@@ -136,6 +136,33 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
     return <CameraCapture onCapture={handleFile} hint="Fit the whole menu section in frame" fullScreen onClose={close} />;
   }
 
+  // Keep the captured photo full-screen through the analyzing wait too —
+  // shrinking it into a small card the instant analysis starts read as an
+  // abrupt downgrade from the full-screen camera a moment earlier. Once
+  // there are recommendations or an error to show, the normal modal card
+  // takes over.
+  if (!recommendations && !error) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#000' }}>
+        <img src={preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <button
+          onClick={close}
+          aria-label="Close"
+          title="Close"
+          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          ✕
+        </button>
+        {analyzing && (
+          <div style={{ position: 'absolute', bottom: 'calc(40px + env(safe-area-inset-bottom))', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#fff', fontSize: 13, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#8fbc8f', animation: 'spin 0.8s linear infinite' }} />
+            Reading menu & matching to your goal…
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: '#141414', border: '1px solid #2a2a2a', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '85vh', overflowY: 'auto' }}>

@@ -155,11 +155,36 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
 
   // The camera itself renders full-screen, outside the modal card entirely
   // — it's the active step and should feel like an actual camera app, not
-  // a cramped preview box inside a dialog. Once there's a photo (or the
-  // camera failed and library-picker fallback was used), everything else
-  // — review, analysis, results — uses the normal modal card layout.
+  // a cramped preview box inside a dialog.
   if (!preview) {
     return <CameraCapture onCapture={handleFile} hint="Line up a clear, well-lit shot" fullScreen onClose={close} />;
+  }
+
+  // The captured photo stays full-screen through the analyzing wait too —
+  // shrinking it into a small card immediately after a full-screen camera
+  // read as an abrupt, "cropped" downgrade. Once there's an actual result
+  // or error to show, the normal modal card takes over since there's real
+  // content (macros, retry actions) that needs a scrollable layout.
+  if (!result && !error) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#000' }}>
+        <img src={preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <button
+          onClick={close}
+          aria-label="Close"
+          title="Close"
+          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          ✕
+        </button>
+        {analyzing && (
+          <div style={{ position: 'absolute', bottom: 'calc(40px + env(safe-area-inset-bottom))', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#fff', fontSize: 13, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#8fbc8f', animation: 'spin 0.8s linear infinite' }} />
+            Analyzing photo…
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
