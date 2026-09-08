@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from '../../components/OnboardingLayout';
 import { supabase } from '../../lib/supabase';
-import { getProfile, upsertProfile } from '../../lib/db';
+import { getProfile, upsertProfile, upsertWeightLog } from '../../lib/db';
+import { todayLocalDate } from '../../lib/patterns';
 
 // Writing to `profiles` immediately after a fresh signInAnonymously()
 // can occasionally hit "new row violates row-level security policy"
@@ -13,7 +14,13 @@ import { getProfile, upsertProfile } from '../../lib/db';
 // the standard, low-risk way to ride out a timing window like this
 // rather than surfacing a scary error for what's really just "try again
 // in a moment."
-async function withRetry(fn, attempts = 3, delayMs = 250) {
+// Bumped from 3 attempts/250ms (750ms total budget) to 5/400ms (2s) —
+// caught this race firing for real while testing the weight_logs seed
+// added alongside the profile upsert below: two sequential writes in the
+// same post-signInAnonymously() window means twice the exposure to the
+// exact timing race this retry exists for, so the original budget wasn't
+// generous enough anymore.
+async function withRetry(fn, attempts = 5, delayMs = 400) {
   let lastErr;
   for (let i = 0; i < attempts; i++) {
     try {
@@ -81,10 +88,26 @@ export default function Step4() {
   const [upgraded, setUpgraded] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const userIdRef = useRef(null);
+  // Guards against this whole block running twice — React's StrictMode
+  // double-invokes effects in dev specifically to catch ones that aren't
+  // safe to run more than once, and this one wasn't: a second invocation
+  // would re-read sessionStorage after the first had already cleared it,
+  // silently upserting the profile again with an empty draft and wiping
+  // out the goal/stats/targets the first invocation had just written.
+  // Set synchronously before the first `await` so a second invocation
+  // (which React fires only after this one has already yielded once)
+  // always sees it as already claimed.
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
     (async () => {
+      if (hasRunRef.current) return;
+      hasRunRef.current = true;
+      // Captured once, up front, rather than re-read after other async
+      // work — the one thing that made the double-invocation bug above
+      // possible was reading sessionStorage a second time instead of
+      // trusting a value already in hand.
+      const rawDraft = sessionStorage.getItem('attune_onboarding');
       try {
         // Reuse an existing session if one's already there (e.g. you hit
         // "skip" a second time, or came back via the browser's back
@@ -96,7 +119,6 @@ export default function Step4() {
           if (anonError) throw anonError;
           userId = data.user.id;
         }
-        if (cancelled) return;
         userIdRef.current = userId;
         // Only seed the profile from the draft if one doesn't already
         // exist — revisiting this screen (browser back, "skip" a second
@@ -106,19 +128,26 @@ export default function Step4() {
         // data back to null on every repeat visit.
         const existingProfile = await withRetry(() => getProfile(userId));
         if (!existingProfile) {
-          const draft = JSON.parse(sessionStorage.getItem('attune_onboarding') || '{}');
+          const draft = JSON.parse(rawDraft || '{}');
           await withRetry(() => upsertProfile(userId, draftToProfileFields(draft)));
+          // The weight collected during onboarding only ever reached
+          // profiles.weight — Dashboard's weight tile and Progress' weight
+          // chart both read from weight_logs instead, which stayed empty,
+          // so a freshly onboarded account looked like it had never logged
+          // a weight at all. Seed today's entry from the same value.
+          if (draft.weight) {
+            await withRetry(() => upsertWeightLog(userId, todayLocalDate(), Number(draft.weight), draft.unit === 'imperial' ? 'lb' : 'kg'));
+          }
         }
         sessionStorage.removeItem('attune_onboarding');
         sessionStorage.removeItem('attune_preauth_theme');
       } catch (err) {
         console.error('Failed to prepare guest session:', err);
-        if (!cancelled) setPrepError("Couldn't set things up — try again.");
+        setPrepError("Couldn't set things up — try again.");
       } finally {
-        if (!cancelled) setPreparing(false);
+        setPreparing(false);
       }
     })();
-    return () => { cancelled = true; };
   }, []);
 
   async function handleUpgrade() {

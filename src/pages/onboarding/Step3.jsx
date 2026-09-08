@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from '../../components/OnboardingLayout';
+import Slider from '../../components/Slider';
 import { activityMultipliers, calcBMR, calcGoalAdjustment, goalMacroSplits } from '../../lib/calorieTargets';
 
 function ageFromDOB(dob) {
@@ -65,6 +66,26 @@ export default function Step3() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [targets, setTargets] = useState(null);
+  const [editingMacros, setEditingMacros] = useState(false);
+
+  // Recomputes grams/calories for all three macros from a protein/fat
+  // split — carbs always fill whatever's left, same convention as
+  // Settings' own macro-split editor (which this reuses the Slider from).
+  // Calorie target itself isn't touched here, only how it's divided up.
+  function applyMacroSplit(proteinPct, fatPct) {
+    setTargets(t => {
+      const carbsPct = Math.max(0, 1 - proteinPct - fatPct);
+      const proteinCal = t.calories * proteinPct;
+      const carbsCal = t.calories * carbsPct;
+      const fatCal = t.calories * fatPct;
+      return {
+        ...t,
+        protein: { g: Math.round(proteinCal / 4), cal: Math.round(proteinCal), pct: proteinPct },
+        carbs: { g: Math.round(carbsCal / 4), cal: Math.round(carbsCal), pct: carbsPct },
+        fat: { g: Math.round(fatCal / 9), cal: Math.round(fatCal), pct: fatPct },
+      };
+    });
+  }
 
   useEffect(() => {
     const saved = JSON.parse(sessionStorage.getItem('attune_onboarding') || '{}');
@@ -172,12 +193,34 @@ export default function Step3() {
           padding: '24px',
           marginBottom: '16px',
         }}>
-          <p style={{ color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '20px' }}>
-            macro breakdown
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+              macro breakdown
+            </p>
+            <button
+              onClick={() => setEditingMacros(e => !e)}
+              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <i className={`ti ${editingMacros ? 'ti-check' : 'ti-pencil'}`} style={{ fontSize: 13 }} />
+              {editingMacros ? 'Done' : 'Edit'}
+            </button>
+          </div>
           <MacroBar label="Protein"       grams={targets.protein.g} calories={targets.protein.cal} pct={targets.protein.pct} color="var(--accent)" delay={0}   />
+          {editingMacros && (
+            <div style={{ marginTop: '-10px', marginBottom: '16px' }}>
+              <Slider value={Math.round(targets.protein.pct * 100)} min={10} max={60} onChange={v => applyMacroSplit(v / 100, targets.fat.pct)} color="var(--accent)" />
+            </div>
+          )}
           <MacroBar label="Carbohydrates" grams={targets.carbs.g}   calories={targets.carbs.cal}   pct={targets.carbs.pct}   color="var(--water-blue)" delay={100} />
+          {editingMacros && (
+            <p style={{ color: 'var(--text-hint)', fontSize: '11px', margin: '-10px 0 16px' }}>Carbs fill whatever's left, so the split always totals 100%.</p>
+          )}
           <MacroBar label="Fat"           grams={targets.fat.g}     calories={targets.fat.cal}      pct={targets.fat.pct}     color="var(--ai-purple)" delay={200} />
+          {editingMacros && (
+            <div style={{ marginTop: '-10px' }}>
+              <Slider value={Math.round(targets.fat.pct * 100)} min={10} max={50} onChange={v => applyMacroSplit(targets.protein.pct, v / 100)} color="var(--ai-purple)" />
+            </div>
+          )}
         </div>
 
         {/* Water target */}

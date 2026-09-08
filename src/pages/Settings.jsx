@@ -12,6 +12,7 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { useTheme } from '../hooks/useTheme';
 import { useMyTrainers } from '../hooks/useCoach';
 import AppNav from '../components/AppNav';
+import Slider from '../components/Slider';
 import MacroPreviewBar from '../components/MacroPreviewBar';
 
 // ─── Reusable bits ──────────────────────────────────────────────────────────────
@@ -129,30 +130,6 @@ function Toggle({ on, onChange }) {
         transition: 'left 0.2s',
       }} />
     </button>
-  );
-}
-
-function Slider({ value, min, max, step = 1, onChange, color = 'var(--accent)' }) {
-  const pct = ((value - min) / (max - min)) * 100;
-  return (
-    <input
-      type="range"
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      onChange={e => onChange(Number(e.target.value))}
-      style={{
-        width: '100%',
-        appearance: 'none',
-        WebkitAppearance: 'none',
-        height: '6px',
-        borderRadius: '99px',
-        background: `linear-gradient(to right, ${color} ${pct}%, var(--border-default) ${pct}%)`,
-        outline: 'none',
-        cursor: 'pointer',
-      }}
-    />
   );
 }
 
@@ -419,6 +396,10 @@ export default function Settings() {
   };
 
   const isGuest = !!user?.is_anonymous;
+  // See Dashboard.jsx's GuestBanner for the full reasoning — an anonymous
+  // user with an email already submitted "Create account" and just hasn't
+  // confirmed it yet, which otherwise looks identical to plain guest mode.
+  const pendingConfirmation = isGuest && !!user?.email;
   const daysRemaining = user?.created_at
     ? Math.max(0, 7 - Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000))
     : 7;
@@ -467,47 +448,42 @@ export default function Settings() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600 }}>{profile?.name || 'Your name'}</div>
               <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
-                {isGuest ? `Guest mode · ${daysRemaining} days left` : (user?.email || 'View profile')}
+                {pendingConfirmation ? `Check your email to confirm · ${user.email}` : isGuest ? `Guest mode · ${daysRemaining} days left` : (user?.email || 'View profile')}
               </div>
             </div>
             <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16, flexShrink: 0 }} />
           </button>
         </div>
 
-        {/* Tabs — touchAction/overscrollBehavior constrain this row to
+        {/* Tabs — a filled-pill segmented control (matching the Theme
+            toggle and Calculated/Custom/Adaptive buttons elsewhere in this
+            same page) instead of the old thin-underline style, which read
+            as plain text labels rather than obviously tappable buttons.
+            touchAction/overscrollBehavior constrain this row to
             horizontal-only: without them, a drag here can read as a
             vertical gesture too and bounce the whole page diagonally
             (iOS's scroll-chaining kicking in once the horizontal scroll
             hits its own edge), instead of staying contained to this row. */}
-        <div className="page-pad-top" style={{ display: 'flex', gap: '4px', overflowX: 'auto', touchAction: 'pan-x', overscrollBehaviorX: 'contain', paddingTop: 16, borderBottom: '1px solid var(--border-default)' }}>
+        <div className="page-pad-top" style={{ display: 'flex', gap: '8px', overflowX: 'auto', touchAction: 'pan-x', overscrollBehaviorX: 'contain', paddingTop: 16, paddingBottom: 16, borderBottom: '1px solid var(--border-default)' }}>
           {TABS.map(t => {
             const sel = tab === t.id;
             return (
               <button
-                // Keyed on selection state, not just id — iOS Safari has a
-                // known bug where a border-bottom on a child of an
-                // overflow-x:auto flex row doesn't repaint on a style-only
-                // change, leaving the previous tab's underline stuck on
-                // screen. Changing the key forces React to tear down and
-                // recreate the button whenever its selected state flips,
-                // which sidesteps the stale paint instead of hoping a
-                // repaint happens on its own.
-                key={`${t.id}-${sel}`}
+                key={t.id}
                 onClick={() => setTab(t.id)}
                 style={{
-                  padding: '10px 14px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderBottom: `2px solid ${sel ? 'var(--accent)' : 'transparent'}`,
-                  color: sel ? 'var(--text-primary)' : 'var(--text-muted)',
-                  fontSize: '14px',
-                  fontWeight: sel ? 600 : 400,
+                  padding: '9px 16px',
+                  background: sel ? 'var(--accent-bg)' : 'var(--bg-subtle)',
+                  border: `1px solid ${sel ? 'var(--border-active)' : 'var(--border-default)'}`,
+                  borderRadius: '20px',
+                  color: sel ? 'var(--accent)' : 'var(--text-muted)',
+                  fontSize: '13px',
+                  fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: "'DM Sans', sans-serif",
-                  marginBottom: '-1px',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
-                  transform: 'translateZ(0)',
+                  transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                 }}
               >
                 {t.label}
@@ -846,11 +822,12 @@ export default function Settings() {
             <div className="grid-2" style={{ alignItems: 'start' }}>
               <Card style={{ marginBottom: 0 }}>
                 <SectionLabel>Account</SectionLabel>
-                <FieldRow label="Status" hint={isGuest ? `Guest mode · ${daysRemaining} days left` : 'Signed in'}>
+                <FieldRow label="Status" hint={pendingConfirmation ? 'Pending email confirmation' : isGuest ? `Guest mode · ${daysRemaining} days left` : 'Signed in'}>
                   {!isGuest && <span style={{ color: 'var(--accent)', fontSize: '13px' }}>{user?.email}</span>}
+                  {pendingConfirmation && <span style={{ color: 'var(--accent)', fontSize: '13px' }}>{user.email}</span>}
                 </FieldRow>
-                {isGuest && <UpgradeForm />}
-                {isGuest && (
+                {pendingConfirmation ? <ResendConfirmation email={user.email} /> : isGuest && <UpgradeForm />}
+                {isGuest && !pendingConfirmation && (
                   <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '16px 0 0' }}>
                     Already have an account?{' '}
                     <span onClick={() => navigate('/login')} style={{ color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}>
@@ -973,6 +950,47 @@ export default function Settings() {
 }
 
 // ─── Upgrade guest → real account ────────────────────────────────────────────
+// Shown instead of UpgradeForm once "Create account" has already been
+// submitted — asking for email/password again would be redundant (and
+// confusing, since re-submitting the same email errors as "already
+// registered"). All that's left to do is confirm the email that's
+// already on file, or resend it if it didn't arrive.
+function ResendConfirmation({ email }) {
+  const [state, setState] = useState(null); // null | 'sending' | 'sent' | error string
+
+  async function resend() {
+    setState('sending');
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    setState(error ? (error.message || 'Could not resend — try again.') : 'sent');
+  }
+
+  return (
+    <div style={{ marginTop: '14px' }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.5 }}>
+        Check <span style={{ color: 'var(--text-secondary)' }}>{email}</span> for a confirmation link — everything you've already logged stays right where it is.
+      </p>
+      {state === 'sent' ? (
+        <span style={{ color: 'var(--accent)', fontSize: '13px' }}>Confirmation email sent.</span>
+      ) : (
+        <button
+          onClick={resend}
+          disabled={state === 'sending'}
+          style={{
+            padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
+            borderRadius: '8px', color: 'var(--accent)', fontSize: '13px', fontWeight: 600,
+            cursor: state === 'sending' ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          {state === 'sending' ? 'Sending…' : 'Resend confirmation email'}
+        </button>
+      )}
+      {state && state !== 'sending' && state !== 'sent' && (
+        <div style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '8px' }}>{state}</div>
+      )}
+    </div>
+  );
+}
+
 function UpgradeForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

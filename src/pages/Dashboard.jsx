@@ -2,6 +2,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 import { useProfile } from '../hooks/useProfile';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { useCheckins } from '../hooks/useCheckins';
@@ -570,17 +571,41 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood }) {
 }
 
 // ─── Guest Banner ─────────────────────────────────────────────────────────────
-function GuestBanner({ daysRemaining, onSave }) {
+function GuestBanner({ daysRemaining, onSave, pendingConfirmation, email }) {
   const [visible, setVisible] = useState(true);
+  const [resendState, setResendState] = useState(null); // null | 'sending' | 'sent' | error string
   if (!visible) return null;
+
+  async function resend() {
+    setResendState('sending');
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    setResendState(error ? (error.message || 'Could not resend — try again.') : 'sent');
+  }
+
   return (
     <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '12px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ color: 'var(--accent)', fontSize: '14px' }}>🌿</span>
-        <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-          Guest mode — <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{daysRemaining} days</span> remaining.
-          <button onClick={onSave} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: 'pointer', marginLeft: '4px', padding: 0, textDecoration: 'underline' }}>Save your data →</button>
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <span style={{ color: 'var(--accent)', fontSize: '14px' }}>{pendingConfirmation ? '✉️' : '🌿'}</span>
+        {pendingConfirmation ? (
+          <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+            Almost there — check <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{email}</span> to confirm your account.
+            {resendState === 'sent' ? (
+              <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>Sent!</span>
+            ) : (
+              <button onClick={resend} disabled={resendState === 'sending'} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: resendState === 'sending' ? 'default' : 'pointer', marginLeft: '4px', padding: 0, textDecoration: 'underline' }}>
+                {resendState === 'sending' ? 'Sending…' : 'Resend email'}
+              </button>
+            )}
+            {resendState && resendState !== 'sending' && resendState !== 'sent' && (
+              <span style={{ color: 'var(--danger)', display: 'block', marginTop: 4 }}>{resendState}</span>
+            )}
+          </span>
+        ) : (
+          <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+            Guest mode — <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{daysRemaining} days</span> remaining.
+            <button onClick={onSave} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: 'pointer', marginLeft: '4px', padding: 0, textDecoration: 'underline' }}>Save your data →</button>
+          </span>
+        )}
       </div>
       <button onClick={() => setVisible(false)} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>×</button>
     </div>
@@ -780,6 +805,13 @@ export default function Dashboard() {
   const name = profile?.name || 'there';
   const { note: coachNote, dismiss: dismissCoachNote } = useCoachNote('general');
   const isGuest = !!user?.is_anonymous;
+  // An anonymous user with an email on their record already submitted the
+  // "Create account" form — Supabase keeps is_anonymous true until the
+  // confirmation link is clicked, so this is the one signal that tells
+  // "never signed up" apart from "signed up, just needs to confirm email".
+  // Both looked identical as plain "Guest mode" before, which is exactly
+  // what made a friend's real signup look like it silently failed.
+  const pendingConfirmation = isGuest && !!user?.email;
   const daysRemaining = user?.created_at
     ? Math.max(0, 7 - Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000))
     : 7;
@@ -845,7 +877,7 @@ export default function Dashboard() {
         </div>
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
-          {isGuest && <GuestBanner daysRemaining={daysRemaining} onSave={() => navigate('/settings')} />}
+          {isGuest && <GuestBanner daysRemaining={daysRemaining} onSave={() => navigate('/settings')} pendingConfirmation={pendingConfirmation} email={user?.email} />}
           {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} style={{ marginBottom: 16 }} />}
 
           {/* Hero/calendar pager — swipe (or use the dots) to get from the

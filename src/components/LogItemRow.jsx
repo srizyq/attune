@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { round1 } from '../lib/format';
 import { scaleFood, UNITS, amountToServings } from '../lib/foodMath';
 import { dateToHHMM, timeStringToDate } from '../lib/mealTime';
+import RecalculatePhotoModal from './RecalculatePhotoModal';
 
 const MEAL_OPTIONS = [
   { value: 'breakfast', label: 'Breakfast' },
@@ -59,24 +60,28 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   // actually know what this item weighs.
   const hasKnownWeight = !!item.servingGrams;
 
-  const [amount, setAmount] = useState(hasKnownWeight ? String(item.servingGrams) : '1');
+  const [amount, setAmount] = useState(hasKnownWeight ? String(item.servingGrams) : String(item.cal));
   const [unit, setUnit] = useState(hasKnownWeight ? 'g' : 'serving');
   const [meal, setMeal] = useState(item.meal);
   const [time, setTime] = useState(() => dateToHHMM(effectiveLoggedAt(item)));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [recalcOpen, setRecalcOpen] = useState(false);
 
   // Reset whenever this row opens, so stale edits from a previous expand
   // don't linger if you collapse without saving. Deliberately NOT "1
-  // serving" for known-weight items — "serving" would mean "whatever's
-  // currently saved", which silently redefines itself on every edit (e.g.
-  // scaling to 10x and saving makes 10x the new "1 serving" forever after,
-  // compounding on the next edit). Grams are an absolute, stable anchor
-  // instead: the box always shows and edits the item's real current
-  // weight, so typing the same number back always gives the same result.
+  // serving" for either case — "serving" would mean "whatever's currently
+  // saved", which silently redefines itself on every edit (e.g. scaling to
+  // 10x and saving makes 10x the new "1 serving" forever after, compounding
+  // on the next edit). Known-weight items anchor to grams; items with no
+  // real weight on record (e.g. an AI photo estimate, which deliberately
+  // never gets a servingGrams — see PhotoScanModal) anchor to their current
+  // calories instead, since that's an absolute number, not a self-relative
+  // ratio. Either way, the box always shows the item's real current value,
+  // so typing the same number back always gives the same result.
   useEffect(() => {
     if (!isExpanded) return;
-    setAmount(hasKnownWeight ? String(item.servingGrams) : '1');
+    setAmount(hasKnownWeight ? String(item.servingGrams) : String(item.cal));
     setUnit(hasKnownWeight ? 'g' : 'serving');
     setMeal(item.meal);
     setTime(dateToHHMM(effectiveLoggedAt(item)));
@@ -87,7 +92,13 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   // that caused the bug above.
   const availableUnits = hasKnownWeight ? UNITS.filter(u => u.id !== 'serving') : UNITS.filter(u => u.id === 'serving');
   const servingGrams = item.servingGrams || 100;
-  const servings = amountToServings(Number(amount) || 0, unit, servingGrams);
+  // No-known-weight items scale off calories directly (a stable absolute
+  // anchor) instead of amountToServings' "amount relative to current
+  // serving" math, which is exactly the self-redefining ratio this whole
+  // effect is written to avoid.
+  const servings = hasKnownWeight
+    ? amountToServings(Number(amount) || 0, unit, servingGrams)
+    : (Number(amount) || 0) / (item.cal || 1);
   const gramsEquivalent = Math.round(servings * servingGrams);
   const preview = scaleFood(item, servings || 0);
 
@@ -119,6 +130,26 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
     }
   }
 
+  // A fresh AI photo estimate replaces this item's name/nutrition
+  // directly — servingGrams resets to null since a new photo estimate is
+  // no more a real measured weight than the original one was (see
+  // PhotoScanModal, which never sets it either). Meal/time follow the
+  // same save-payload shape as handleSave so this doesn't silently
+  // discard whatever the user already changed in the open edit form.
+  async function handleRecalculate(result) {
+    await onSave({
+      ...item,
+      name: result.name,
+      cal: result.cal,
+      protein: result.protein,
+      carbs: result.carbs,
+      fat: result.fat,
+      servingGrams: null,
+      meal: isPremium ? item.meal : meal,
+      loggedAt: isPremium ? timeStringToDate(time, effectiveLoggedAt(item)) : (item.loggedAt ? new Date(item.loggedAt) : null),
+    });
+  }
+
   return (
     <div style={{ borderBottom: '1px solid var(--border-default)' }}>
       <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', cursor: 'pointer' }}>
@@ -146,27 +177,36 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
         ) : (
         <div style={{ padding: '4px 18px 16px', background: 'var(--bg-subtle)' }}>
           <div style={{ marginBottom: 12 }}>
-            <label style={labelStyle}>{hasKnownWeight ? `Amount (currently ${item.servingGrams}g)` : 'Amount ("1 serving" = what\'s currently logged)'}</label>
+            <label style={labelStyle}>{hasKnownWeight ? `Amount (currently ${item.servingGrams}g)` : `Calories (currently ${item.cal})`}</label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <input style={{ ...fieldStyle, width: 90 }} type="number" min="0" step="any" value={amount} onChange={e => setAmount(e.target.value)} />
-              <div style={{ display: 'flex', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2 }}>
-                {availableUnits.map(u => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => setUnit(u.id)}
-                    style={{
-                      background: unit === u.id ? 'var(--accent-bg)' : 'transparent', border: 'none', borderRadius: 18,
-                      padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                      color: unit === u.id ? C.green : 'var(--text-muted)', transition: 'background 0.15s, color 0.15s',
-                    }}
-                  >
-                    {u.label}
-                  </button>
-                ))}
-              </div>
+              {hasKnownWeight && (
+                <div style={{ display: 'flex', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2 }}>
+                  {availableUnits.map(u => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => setUnit(u.id)}
+                      style={{
+                        background: unit === u.id ? 'var(--accent-bg)' : 'transparent', border: 'none', borderRadius: 18,
+                        padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                        color: unit === u.id ? C.green : 'var(--text-muted)', transition: 'background 0.15s, color 0.15s',
+                      }}
+                    >
+                      {u.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            {!hasKnownWeight && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>No serving size on record for this item — only relative scaling is available (1 = what's currently logged). Delete and re-add it via search for gram-accurate editing.</div>}
+            {!hasKnownWeight && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>No serving weight on record for this item — edit calories directly and protein/carbs/fat scale with it. Delete and re-add it via search for gram-accurate editing.</div>}
+            <button
+              type="button"
+              onClick={() => setRecalcOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 8, padding: 0 }}
+            >
+              <i className="ti ti-camera" style={{ fontSize: 13 }} /> Recalculate with a new photo
+            </button>
           </div>
           <div style={{ marginBottom: 16 }}>
             {isPremium ? (
@@ -203,6 +243,13 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
         )}
         </div>
       </div>
+      {recalcOpen && (
+        <RecalculatePhotoModal
+          itemName={item.name}
+          onClose={() => setRecalcOpen(false)}
+          onApply={handleRecalculate}
+        />
+      )}
     </div>
   );
 }
