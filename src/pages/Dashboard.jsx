@@ -8,10 +8,8 @@ import { useCheckins } from '../hooks/useCheckins';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
-import { useFavouriteFoods } from '../hooks/useFavouriteFoods';
 import { todayLocalDate, dateNDaysAgo, dateRange, generateInsights, computeStreak } from '../lib/patterns';
 import { goalMacroSplits, buildTargets } from '../lib/calorieTargets';
-import { getCategoryStyle } from '../lib/foodCategories';
 import { toKg, fromKg } from '../lib/adaptiveTDEE';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import AppNav from '../components/AppNav';
@@ -343,49 +341,33 @@ function MacroCell({ label, value, target, color }) {
 // log the default 1 serving" behaviour as the Food Search quick-add
 // button (Phase 4), not decorative. Nothing renders if there are none
 // yet, rather than showing empty/fake placeholders. ─────────────────────
-function FavouritesRow({ favourites, onQuickAdd }) {
-  const [addedId, setAddedId] = useState(null);
-  if (!favourites.length) return null;
-
-  function handleAdd(fav) {
-    const style = getCategoryStyle({ name: fav.name });
-    onQuickAdd(fav);
-    setAddedId(fav.id);
-    setTimeout(() => setAddedId(prev => (prev === fav.id ? null : prev)), 1100);
-    return style;
-  }
-
+// ─── Activity placeholder ───────────────────────────────────────────────────
+// No real data source yet — Apple Health / Google Fit / Health Connect are
+// native-only APIs, unreachable from a PWA. This reserves the visual slot
+// and communicates the roadmap so wiring in a real Capacitor health plugin
+// later is a data change, not a layout change.
+function ActivityRow() {
   return (
     <div style={{ marginBottom: 20 }}>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12, letterSpacing: '0.04em' }}>FAVOURITES</div>
-      <div style={{ display: 'flex', gap: 18, overflowX: 'auto', touchAction: 'pan-x', overscrollBehaviorX: 'contain' }}>
-        {favourites.map(fav => {
-          const style = getCategoryStyle({ name: fav.name });
-          const justAdded = addedId === fav.id;
-          return (
-            <div key={fav.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <div style={{ position: 'relative', width: 48, height: 48 }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: style.color + '1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, color: style.color }}>
-                  <i className={`ti ${style.icon}`} />
-                </div>
-                <button
-                  onClick={() => handleAdd(fav)}
-                  disabled={justAdded}
-                  title={`Quick add — 1 serving`}
-                  style={{
-                    position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: '50%',
-                    background: justAdded ? 'var(--accent-bg)' : 'var(--accent)', border: `2px solid ${justAdded ? 'var(--accent-border)' : 'var(--bg-primary)'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: justAdded ? 'default' : 'pointer', padding: 0,
-                  }}
-                >
-                  <i className={`ti ${justAdded ? 'ti-check' : 'ti-plus'}`} style={{ fontSize: 10, color: justAdded ? 'var(--accent)' : '#0f0f0f' }} />
-                </button>
-              </div>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis' }}>{fav.name}</span>
-            </div>
-          );
-        })}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>ACTIVITY</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>COMING SOON</span>
       </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 16, overflow: 'hidden' }}>
+        <div style={{ borderRight: '1px solid var(--border-default)', padding: '14px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+            <i className="ti ti-walk" style={{ fontSize: 13 }} /> STEPS
+          </div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--text-hint)' }}>—</div>
+        </div>
+        <div style={{ padding: '14px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+            <i className="ti ti-flame" style={{ fontSize: 13 }} /> BURNED
+          </div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--text-hint)' }}>—</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 8 }}>Will sync from Apple Health / Google Fit once the native app ships.</div>
     </div>
   );
 }
@@ -601,7 +583,7 @@ export default function Dashboard() {
   const isViewingToday = viewedDate === today;
   const { profile, save: saveProfile } = useProfile();
   const isPremium = !!profile?.is_premium;
-  const { meals, dayTimeline, deleteFood, updateFood, addFood } = useFoodLogs(viewedDate);
+  const { meals, dayTimeline, deleteFood, updateFood } = useFoodLogs(viewedDate);
   const { checkin, save: saveCheckin } = useCheckins(viewedDate);
   // 90 days (not 30) so the pattern engine's more specific candidates
   // (fibre, hydration, sugar, breakfast) have a real chance to each reach
@@ -613,7 +595,6 @@ export default function Dashboard() {
   const { logs: weightLogs, latest: latestWeight, logWeight } = useWeightLogs(dateNDaysAgo(89), today);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const { closing: weightModalClosing, close: closeWeightModal } = useClosingTransition(() => setShowWeightModal(false));
-  const favourites = useFavouriteFoods();
 
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(viewedDate + 'T00:00:00'); d.setDate(1); return d; });
   // Clicking a streak dot or a calendar day re-navigates to this same
@@ -732,15 +713,6 @@ export default function Dashboard() {
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening';
   const dateStr = new Date(viewedDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  async function quickAddFavourite(fav) {
-    const food = {
-      name: fav.name, cal: fav.calories, protein: fav.protein_g, carbs: fav.carbs_g, fat: fav.fat_g,
-      fibre: fav.fibre_g, sodium: fav.sodium_mg, sugar: fav.sugar_g, servingGrams: fav.serving_grams,
-      source: 'favourite',
-    };
-    await addFood(food, isPremium ? null : 'snacks', isPremium ? new Date() : null);
-  }
-
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'DM Sans', sans-serif" }}>
       <AppNav active="dashboard" initials={initials} />
@@ -803,7 +775,7 @@ export default function Dashboard() {
             <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} />
           </div>
 
-          <FavouritesRow favourites={favourites.rows} onQuickAdd={quickAddFavourite} />
+          <ActivityRow />
 
           <ShortcutRow navigate={navigate} date={viewedDate} />
 

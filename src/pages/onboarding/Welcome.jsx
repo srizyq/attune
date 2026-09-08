@@ -67,6 +67,19 @@ export default function Welcome() {
       >
         Already have an account? <span style={{ color: 'var(--accent)' }}>Log in</span>
       </Link>
+
+      {/* This is the very first screen — including for the guest path,
+          where a real (anonymous) account and profile row get created a
+          few screens later without ever showing the explicit "I agree"
+          checkbox that real signup has. Continuing past here is the
+          actual first data-collecting step, so notice belongs here,
+          before Step1 asks anything. */}
+      <p style={{ marginTop: '28px', maxWidth: '320px', textAlign: 'center', color: 'var(--text-hint)', fontSize: '12px', lineHeight: 1.6 }}>
+        By continuing, you agree to our{' '}
+        <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)' }}>Terms of Service</a>
+        {' '}and{' '}
+        <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)' }}>Privacy Policy</a>.
+      </p>
     </div>
   );
 }

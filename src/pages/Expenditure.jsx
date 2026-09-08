@@ -148,6 +148,22 @@ export default function Expenditure() {
             </>
           )}
 
+          {/* No real data source yet — Apple Health / Health Connect are
+              native-only APIs. Real "calories burned" would sit right
+              here alongside the estimate above, since it's the one input
+              that could actually validate or refine this exact TDEE
+              calculation instead of inferring it purely from weight
+              and intake changes. */}
+          <div style={{ background: 'var(--bg-subtle)', border: '1px dashed var(--border-default)', borderRadius: 12, padding: 20, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-hint)', fontSize: 18, flexShrink: 0 }}>
+              <i className="ti ti-flame" />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Real calories burned — coming soon</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>Once connected to Apple Health or Google Fit, actual burned calories will show here alongside the estimate above.</div>
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {RANGES.map(r => {
               const locked = r.pro && !isPremium;
