@@ -97,7 +97,7 @@ export default function Privacy() {
 
       <Section title="10. Contact">
         <P>
-          For any privacy question or request, contact: <b>[contact email — to be added]</b>
+          For any privacy question or request, contact: <b>attun3app@gmail.com</b>
         </P>
       </Section>
     </LegalPageLayout>

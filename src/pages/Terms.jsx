@@ -110,7 +110,7 @@ export default function Terms() {
 
       <Section title="12. Contact">
         <P>
-          Questions about these terms: <b>[contact email — to be added]</b>
+          Questions about these terms: <b>attun3app@gmail.com</b>
         </P>
       </Section>
     </LegalPageLayout>
