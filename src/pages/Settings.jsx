@@ -92,7 +92,7 @@ function Segmented({ value, onChange, options }) {
               transition: 'all 0.15s',
             }}
           >
-            <div style={{ fontSize: '18px', marginBottom: '4px' }}>{o.emoji}</div>
+            <i className={`ti ${o.icon}`} style={{ fontSize: '20px', marginBottom: '4px', display: 'block', color: sel ? 'var(--accent)' : 'var(--text-muted)' }} />
             <div style={{ color: sel ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '14px', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>{o.label}</div>
             {o.desc && <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>{o.desc}</div>}
           </button>
@@ -523,9 +523,9 @@ export default function Settings() {
                   value={form.goal}
                   onChange={applyGoalSplit}
                   options={[
-                    { value: 'lose',     emoji: '📉', label: 'Lose weight',  desc: '−400 kcal/day' },
-                    { value: 'maintain', emoji: '⚖️', label: 'Maintain',     desc: 'At maintenance' },
-                    { value: 'build',    emoji: '💪', label: 'Build muscle', desc: '+300 kcal/day' },
+                    { value: 'lose',     icon: 'ti-trending-down', label: 'Lose weight',  desc: '−400 kcal/day' },
+                    { value: 'maintain', icon: 'ti-scale',         label: 'Maintain',     desc: 'At maintenance' },
+                    { value: 'build',    icon: 'ti-barbell',       label: 'Build muscle', desc: '+300 kcal/day' },
                   ]}
                 />
                 <div style={{ marginTop: '16px' }}>
