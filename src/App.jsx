@@ -23,6 +23,7 @@ import Coach from "./pages/Coach";
 import DashboardRedesignHarness from "./prototypes/dashboard-redesign/Harness";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import { locationChanged, isPageTransition } from './lib/routeTransition';
 
 // Bottom-nav destinations switch between each other like iOS tabs (a soft
 // cross-dissolve + slight rise); everything else is reached by drilling in
@@ -42,14 +43,11 @@ function AnimatedRoutes() {
   const [animClass, setAnimClass] = useState('');
 
   useEffect(() => {
-    if (location.pathname === renderedLocation.pathname) {
-      // Same route, but this still fired because `location` itself
-      // changed — a same-page re-navigation carrying new location.state
-      // (a calendar day click, a chart click, anything that re-navigates
-      // to the page you're already on with a different date/flag). Sync
-      // it so useLocation() inside <Routes> isn't stuck on a stale
-      // snapshot, just without a transition animation since it isn't a
-      // real page change.
+    if (!locationChanged(location, renderedLocation)) return;
+    if (!isPageTransition(location, renderedLocation)) {
+      // Same route, new state — a calendar day click, a re-opened scan
+      // modal — must still update, just without a transition animation
+      // since it isn't a real page change. See routeTransition.js.
       setRenderedLocation(location);
       return;
     }
