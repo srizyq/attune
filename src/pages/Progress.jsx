@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, BarElement, Tooltip, Legend, Filler,
+  LineElement, Tooltip, Legend, Filler,
 } from "chart.js";
-import { Line, Bar } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import { useProfile } from "../hooks/useProfile";
 import { useHistory } from "../hooks/useHistory";
 import { useWeightLogs } from "../hooks/useWeightLogs";
@@ -15,7 +15,7 @@ import AppNav from "../components/AppNav";
 import LogCalendar from "../components/LogCalendar";
 import StreakItem from "../components/StreakItem";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
 const WEIGHT_RANGES = [
   { id: "7d", label: "1 week", days: 7 },
@@ -188,41 +188,6 @@ export default function Progress() {
     ? streakFor(badgeData, d => d.protein_g >= proteinTarget * 0.9)
     : 0;
 
-  const labels = filledDays.map(d => new Date(d.date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" }));
-
-  const calorieChartData = {
-    labels,
-    datasets: [
-      {
-        label: "Calories",
-        data: filledDays.map(d => d.calories || null),
-        borderColor: ACCENT,
-        backgroundColor: ACCENT + "22",
-        fill: true,
-        tension: 0.3,
-        spanGaps: true,
-        pointRadius: range > 30 ? 0 : 3,
-      },
-      ...(calorieTarget ? [{
-        label: "Goal",
-        data: filledDays.map(() => calorieTarget),
-        borderColor: chartTextMuted,
-        borderDash: [4, 4],
-        pointRadius: 0,
-        fill: false,
-      }] : []),
-    ],
-  };
-
-  const macroChartData = {
-    labels,
-    datasets: [
-      { label: "Protein", data: filledDays.map(d => d.protein_g || 0), backgroundColor: ACCENT },
-      { label: "Carbs", data: filledDays.map(d => d.carbs_g || 0), backgroundColor: WATER_BLUE },
-      { label: "Fat", data: filledDays.map(d => d.fat_g || 0), backgroundColor: AI_PURPLE },
-    ],
-  };
-
   // Trend weight (smoothed) plotted alongside the raw daily entries —
   // both converted through the same kg-based conversion into whatever
   // unit the profile currently displays in, rather than the old
@@ -272,14 +237,6 @@ export default function Progress() {
     scales: {
       x: { ticks: { color: chartTextMuted, font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: chartGrid } },
       y: { ticks: { color: chartTextMuted, font: { size: 10 } }, grid: { color: chartGrid } },
-    },
-  };
-
-  const stackedOptions = {
-    ...chartOptions,
-    scales: {
-      x: { ...chartOptions.scales.x, stacked: true },
-      y: { ...chartOptions.scales.y, stacked: true },
     },
   };
 
@@ -368,28 +325,6 @@ export default function Progress() {
               canGoNext={canGoNextMonth}
               onSelectDay={(date) => navigate("/dashboard", { state: { date } })}
             />
-          </div>
-
-          {/* charts */}
-          <div className="grid-2" style={{ marginBottom: 24 }}>
-            <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 12, padding: 20 }}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 2 }}>Calories vs goal</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>Daily intake over the last {range} days</div>
-              {hasData ? (
-                <div style={{ height: 200 }}><Line data={calorieChartData} options={chartOptions} /></div>
-              ) : (
-                <EmptyChartBox icon="ti-chart-line" message="Log at least 1 day to see your calorie chart" />
-              )}
-            </div>
-            <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 12, padding: 20 }}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 2 }}>Macro breakdown</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>Protein, carbs &amp; fat per day</div>
-              {hasData ? (
-                <div style={{ height: 200 }}><Bar data={macroChartData} options={stackedOptions} /></div>
-              ) : (
-                <EmptyChartBox icon="ti-chart-bar" message="Log at least 1 day to see your macro chart" />
-              )}
-            </div>
           </div>
 
           {/* weight chart */}

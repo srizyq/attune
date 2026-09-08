@@ -2,19 +2,21 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, Tooltip, Filler,
+  LineElement, BarElement, Tooltip, Legend, Filler,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import { useProfile } from '../hooks/useProfile';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { useTheme } from '../hooks/useTheme';
-import { todayLocalDate, dateNDaysAgo } from '../lib/patterns';
+import { todayLocalDate, dateNDaysAgo, dateRange } from '../lib/patterns';
 import { computeExpenditureHistory } from '../lib/adaptiveTDEE';
 import AppNav from '../components/AppNav';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
+const ACCENT = '#8fbc8f';
+const WATER_BLUE = '#6aabcf';
 const AI_PURPLE = '#9f97e8';
 
 // computeExpenditureHistory needs a 21-day window of history *before* its
@@ -76,6 +78,69 @@ export default function Expenditure() {
   const isLight = theme === 'light';
   const chartTextMuted = isLight ? '#6b6b6b' : '#666666';
   const chartGrid = isLight ? '#e7e7e5' : '#2a2a2a';
+
+  // Moved here from Progress.jsx — "what you actually ate" charts, gated
+  // on just having *any* logged days (loggedDaysInRange, already computed
+  // above), independent of hasEnoughData's 21-day TDEE requirement so
+  // they don't disappear just because the expenditure trend can't be
+  // computed yet.
+  const allDisplayDates = useMemo(() => dateRange(displayStart, today), [displayStart, today]);
+  const filledDays = useMemo(() => {
+    const byDate = new Map(dailyData.map(d => [d.date, d]));
+    return allDisplayDates.map(date => byDate.get(date) || { date, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 });
+  }, [allDisplayDates, dailyData]);
+  const dayLabels = filledDays.map(d => new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }));
+  const calorieTarget = profile?.calorie_target || null;
+
+  const calorieChartData = {
+    labels: dayLabels,
+    datasets: [
+      {
+        label: 'Calories',
+        data: filledDays.map(d => d.calories || null),
+        borderColor: ACCENT,
+        backgroundColor: ACCENT + '22',
+        fill: true,
+        tension: 0.3,
+        spanGaps: true,
+        pointRadius: filledDays.length > 30 ? 0 : 3,
+      },
+      ...(calorieTarget ? [{
+        label: 'Goal',
+        data: filledDays.map(() => calorieTarget),
+        borderColor: chartTextMuted,
+        borderDash: [4, 4],
+        pointRadius: 0,
+        fill: false,
+      }] : []),
+    ],
+  };
+
+  const macroChartData = {
+    labels: dayLabels,
+    datasets: [
+      { label: 'Protein', data: filledDays.map(d => d.protein_g || 0), backgroundColor: ACCENT },
+      { label: 'Carbs', data: filledDays.map(d => d.carbs_g || 0), backgroundColor: WATER_BLUE },
+      { label: 'Fat', data: filledDays.map(d => d.fat_g || 0), backgroundColor: AI_PURPLE },
+    ],
+  };
+
+  const chartOptionsWithLegend = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: chartTextMuted, boxWidth: 10, font: { size: 11 } } } },
+    scales: {
+      x: { ticks: { color: chartTextMuted, font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: chartGrid } },
+      y: { ticks: { color: chartTextMuted, font: { size: 10 } }, grid: { color: chartGrid } },
+    },
+  };
+  const stackedOptions = {
+    ...chartOptionsWithLegend,
+    scales: {
+      x: { ...chartOptionsWithLegend.scales.x, stacked: true },
+      y: { ...chartOptionsWithLegend.scales.y, stacked: true },
+    },
+  };
 
   const chartData = {
     labels: displayHistory.map(p => new Date(p.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })),
@@ -144,6 +209,22 @@ export default function Expenditure() {
 
               <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
                 <div style={{ height: 240 }}><Line data={chartData} options={chartOptions} /></div>
+              </div>
+            </>
+          )}
+
+          {!loading && loggedDaysInRange.length > 0 && (
+            <>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Calories vs goal</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Daily intake over this range</div>
+                <div style={{ height: 200 }}><Line data={calorieChartData} options={chartOptionsWithLegend} /></div>
+              </div>
+
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Macro breakdown</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Protein, carbs &amp; fat per day</div>
+                <div style={{ height: 200 }}><Bar data={macroChartData} options={stackedOptions} /></div>
               </div>
             </>
           )}
