@@ -43,10 +43,13 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   const [adding, setAdding] = useState(false);
   const [comment, setComment] = useState('');
   const [correcting, setCorrecting] = useState(false);
+  const [hasCorrected, setHasCorrected] = useState(false);
   // Separate from the main `error`/`limitReached` pair so a failed
   // correction attempt doesn't blow away the perfectly good result
   // already on screen — it shows inline near the comment box instead.
   const [correctionError, setCorrectionError] = useState(null);
+  const [readingLabel, setReadingLabel] = useState(false);
+  const [labelError, setLabelError] = useState(null);
   const { closing, close } = useClosingTransition(onClose);
 
   async function handleFile(file) {
@@ -111,11 +114,52 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
       }
       setResult(data);
       setComment('');
+      setHasCorrected(true);
     } catch (err) {
       console.error(err);
       setCorrectionError("Couldn't apply that correction. Check your connection and try again.");
     } finally {
       setCorrecting(false);
+    }
+  }
+
+  // Offered when the photo-scan result flags a visible nutrition label —
+  // re-reads the SAME photo (no new capture needed) through the label
+  // endpoint, which transcribes the label's printed numbers instead of
+  // estimating from what the food looks like. Keeps the AI-guessed name,
+  // since a nutrition panel rarely carries a clean marketing name.
+  async function handleReadLabel() {
+    if (!preview) return;
+    setReadingLabel(true);
+    setLabelError(null);
+    try {
+      const base64 = preview.split(',')[1];
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/recognize-label', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ image: base64, mediaType: 'image/jpeg' }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setLabelError(data.error || "Couldn't read the label. Try a closer, well-lit photo of it.");
+        return;
+      }
+      setResult(prev => ({
+        ...prev,
+        portion: data.serving || prev.portion,
+        cal: data.cal, protein: data.protein, carbs: data.carbs, fat: data.fat,
+        confidence: 'high',
+        labelVisible: false,
+      }));
+    } catch (err) {
+      console.error(err);
+      setLabelError("Couldn't read the label. Check your connection and try again.");
+    } finally {
+      setReadingLabel(false);
     }
   }
 
@@ -126,6 +170,8 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     setLimitReached(false);
     setComment('');
     setCorrectionError(null);
+    setHasCorrected(false);
+    setLabelError(null);
   }
 
   async function handleAdd() {
@@ -245,6 +291,31 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                 This is a visual estimate, not verified nutrition data — review before adding, and adjust later if it's off.
               </p>
 
+              {/* The photo itself can carry a real nutrition panel (a
+                  packaged product shot from the front) — offering to
+                  re-read it via OCR gets exact printed numbers instead of
+                  a visual guess, using the same photo, no new capture. */}
+              {result.labelVisible && (
+                <div style={{ background: '#0f1a0f', border: '1px solid #3a5a3a', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, color: '#8fbc8f', marginBottom: 6, lineHeight: 1.5 }}>
+                    This photo shows a nutrition label — read it for exact numbers instead of an estimate?
+                  </div>
+                  <button
+                    onClick={handleReadLabel}
+                    disabled={readingLabel}
+                    style={{
+                      background: readingLabel ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 7,
+                      padding: '7px 14px', fontSize: 12, fontWeight: 600,
+                      color: readingLabel ? '#8a8a8a' : '#0f0f0f', cursor: readingLabel ? 'not-allowed' : 'pointer',
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    {readingLabel ? 'Reading label…' : 'Read exact label'}
+                  </button>
+                  {labelError && <div style={{ marginTop: 8, fontSize: 12, color: '#c07070' }}>{labelError}</div>}
+                </div>
+              )}
+
               {/* Always visible, not gated behind a "this is wrong" toggle —
                   correcting is free (doesn't cost a scan) and can be done
                   as many times as needed; each correction re-sends the
@@ -299,8 +370,14 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                 {adding ? 'Adding…' : isPremium ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
               </button>
               {onCreateCustom && (
-                <button onClick={onCreateCustom} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#8a8a8a', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
-                  Not quite right? Create a custom food instead
+                <button onClick={() => onCreateCustom(result)} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#8a8a8a', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                  {hasCorrected
+                    // Once you've corrected it, saving it as a custom food
+                    // means this exact dish never needs an AI guess again —
+                    // the whole point of the correction loop, made explicit
+                    // instead of requiring you to notice it's possible.
+                    ? 'Save as custom food — skip the AI guess next time'
+                    : 'Not quite right? Save as a custom food instead'}
                 </button>
               )}
             </div>

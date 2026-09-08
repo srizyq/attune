@@ -764,15 +764,18 @@ const labelStyle = { fontSize: 11, color: "var(--text-muted)", marginBottom: 5, 
 
 // ─── Create a custom food ───────────────────────────────────────────────────
 
-function CreateFoodModal({ onClose, onCreate, initialName }) {
-  const [name, setName] = useState(initialName || "");
+function CreateFoodModal({ onClose, onCreate, initialName, initialFood }) {
+  // initialFood (a photo/menu scan result, post-correction if any) takes
+  // priority over initialName — pre-filling every field means saving what
+  // you already corrected the AI to get right, not just the name.
+  const [name, setName] = useState(initialFood?.name || initialName || "");
   const [brand, setBrand] = useState("");
-  const [servingLabel, setServingLabel] = useState("1 serving");
+  const [servingLabel, setServingLabel] = useState(initialFood?.portion || "1 serving");
   const [servingGrams, setServingGrams] = useState("");
-  const [cal, setCal] = useState("");
-  const [protein, setProtein] = useState("");
-  const [carbs, setCarbs] = useState("");
-  const [fat, setFat] = useState("");
+  const [cal, setCal] = useState(initialFood?.cal ?? "");
+  const [protein, setProtein] = useState(initialFood?.protein ?? "");
+  const [carbs, setCarbs] = useState(initialFood?.carbs ?? "");
+  const [fat, setFat] = useState(initialFood?.fat ?? "");
   const [fibre, setFibre] = useState("");
   const [sodium, setSodium] = useState("");
   const [sugar, setSugar] = useState("");
@@ -1231,6 +1234,11 @@ export default function FoodSearch() {
   // The quick-action sheet's "Scan menu" does the same with openMenuScan.
   const [menuScanOpen, setMenuScanOpen] = useState(!!location.state?.openMenuScan);
   const [createFoodOpen, setCreateFoodOpen] = useState(false);
+  // Set when "Save as custom food" is used from a photo/menu scan result —
+  // pre-fills the form with the AI estimate (post-correction, if any)
+  // instead of a blank form, so a food you've already corrected once
+  // never needs an AI guess again.
+  const [createFoodPrefill, setCreateFoodPrefill] = useState(null);
   // Dashboard's "Saved meals" shortcut links here with { openSavedMeals: true }.
   const [savedMealsOpen, setSavedMealsOpen] = useState(!!location.state?.openSavedMeals);
   // The quick-action sheet ("+" in the bottom nav) is present on every
@@ -1943,7 +1951,7 @@ export default function FoodSearch() {
           defaultTime={activeTime}
           isPremium={isPremium}
           onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); setToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
-          onCreateCustom={() => { setScanOpen(false); setCreateFoodOpen(true); }}
+          onCreateCustom={() => { setScanOpen(false); setCreateFoodPrefill(null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
       )}
@@ -1956,7 +1964,7 @@ export default function FoodSearch() {
           defaultTime={activeTime}
           isPremium={isPremium}
           onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); setToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
-          onCreateCustom={() => { setPhotoScanOpen(false); setCreateFoodOpen(true); }}
+          onCreateCustom={(prefill) => { setPhotoScanOpen(false); setCreateFoodPrefill(prefill || null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setPhotoScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
       )}
@@ -1974,8 +1982,9 @@ export default function FoodSearch() {
       {/* Create a custom food */}
       {createFoodOpen && (
         <CreateFoodModal
-          onClose={() => setCreateFoodOpen(false)}
+          onClose={() => { setCreateFoodOpen(false); setCreateFoodPrefill(null); }}
           initialName={query}
+          initialFood={createFoodPrefill}
           onCreate={async (food) => {
             await customFoods.create(food);
             setToast(`"${food.name}" saved as a custom food`);

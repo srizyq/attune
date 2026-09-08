@@ -23,11 +23,15 @@ const FREE_MONTHLY_SCAN_LIMIT = 5;
 const PROMPT = `You're looking at a photo of food. Identify what's in it and estimate its nutrition.
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"name": "short food name", "portion": "estimated portion, e.g. '1 medium bowl (~350g)'", "cal": number, "protein": number, "carbs": number, "fat": number, "confidence": "low" | "medium" | "high"}
+{"name": "short food name", "portion": "estimated portion, e.g. '1 medium bowl (~350g)'", "cal": number, "protein": number, "carbs": number, "fat": number, "confidence": "low" | "medium" | "high", "labelVisible": boolean}
 
 If the photo doesn't clearly show food, reply with exactly: {"error": "No food detected in this photo."}
 
 Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal. This is a best-effort visual estimate, not a lab measurement — use your best judgement on typical portion sizes and preparation (e.g. oil/butter used in cooking, dressing on a salad).
+
+Portion size is the single biggest source of error in a visual estimate. If the photo shows a real-world reference object at a known typical size — a hand, standard cutlery, a coin, a credit card, a standard dinner plate (~27cm) or bowl — use it to calibrate the scale of the food instead of guessing portion size from the food alone. Say so implicitly through a tighter, more confident portion estimate; you don't need to name the reference object in the output.
+
+labelVisible: true only if an actual printed nutrition facts / information panel (with real numbers on it) is legibly visible somewhere in the photo — not just packaging or a brand name. This lets the app offer to re-read the label directly instead of estimating.
 
 Two things that commonly go wrong on packaged/branded products specifically:
 - If the photo shows a branded product's packaging with no actual nutrition facts panel visible, you have no real data for calories/carbs/fat — you're guessing from the product category alone. That is at most "medium" confidence, never "high", regardless of how confidently you can name the product.
@@ -48,7 +52,9 @@ User's correction: "${comment}"
 Re-identify the food and re-estimate its nutrition, taking the user's correction as ground truth (e.g. if they say it's actually a different food, or a different portion size, trust that over the photo's first impression).
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"name": "short food name", "portion": "estimated portion, e.g. '1 medium bowl (~350g)'", "cal": number, "protein": number, "carbs": number, "fat": number, "confidence": "low" | "medium" | "high"}
+{"name": "short food name", "portion": "estimated portion, e.g. '1 medium bowl (~350g)'", "cal": number, "protein": number, "carbs": number, "fat": number, "confidence": "low" | "medium" | "high", "labelVisible": boolean}
+
+labelVisible: true only if an actual printed nutrition facts panel (with real numbers) is legibly visible in the photo.
 
 If the correction makes it clear this isn't food at all, reply with exactly: {"error": "No food detected in this photo."}
 
