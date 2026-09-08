@@ -5,6 +5,8 @@ import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
 import { hourToHHMM } from '../lib/mealTime';
 import AppNav from '../components/AppNav';
+import CoachNote from '../components/CoachNote';
+import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import HourlyTimeline from '../components/HourlyTimeline';
 import DaySelector from '../components/DaySelector';
@@ -34,6 +36,7 @@ export default function DailyLog() {
     if (requested && requested <= today) setSelectedDate(requested);
   }, [location.state, today]);
   const isToday = selectedDate === today;
+  const { note: nutritionCoachNote, dismiss: dismissNutritionCoachNote } = useCoachNote('nutrition', selectedDate);
   const { meals, dayTimeline, loading, deleteFood, updateFood } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
@@ -71,6 +74,8 @@ export default function DailyLog() {
               )}
             </div>
           </div>
+
+          {nutritionCoachNote && <CoachNote note={nutritionCoachNote} onDismiss={dismissNutritionCoachNote} style={{ marginBottom: 20 }} />}
 
           {loading ? null : isPremium ? (
             <HourlyTimeline

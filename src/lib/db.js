@@ -469,10 +469,10 @@ export async function getTrainerComments(trainerId, clientId) {
   return data;
 }
 
-export async function addTrainerComment(trainerId, clientId, body, commentDate = null) {
+export async function addTrainerComment(trainerId, clientId, body, commentDate = null, category = 'general') {
   const { data, error } = await supabase
     .from('trainer_comments')
-    .insert({ trainer_id: trainerId, client_id: clientId, body, comment_date: commentDate })
+    .insert({ trainer_id: trainerId, client_id: clientId, body, comment_date: commentDate, category })
     .select()
     .single();
   if (error) throw error;
@@ -482,6 +482,23 @@ export async function addTrainerComment(trainerId, clientId, body, commentDate =
 export async function deleteTrainerComment(id) {
   const { error } = await supabase.from('trainer_comments').delete().eq('id', id);
   if (error) throw error;
+}
+
+// Client-side read of their own most recent coach comment in a category —
+// 'weight'/'general' just want the latest ever; 'nutrition' on Daily Log
+// passes `date` to match that exact day's comment_date instead.
+export async function getLatestCoachComment(clientId, category, date = null) {
+  let query = supabase
+    .from('trainer_comments')
+    .select('id, body, created_at, comment_date, trainer:profiles!trainer_comments_trainer_id_fkey(name)')
+    .eq('client_id', clientId)
+    .eq('category', category)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  if (date) query = query.eq('comment_date', date);
+  const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 // ─── push_subscriptions ─────────────────────────────────────────────────────

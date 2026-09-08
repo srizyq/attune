@@ -41,6 +41,15 @@ const MICRO_GROUPS = [
   { label: 'Vitamins & minerals', keys: ['addedSugar', 'potassium', 'vitaminD', 'calcium', 'iron'] },
   { label: 'More micronutrients', keys: ['vitaminA', 'vitaminC', 'vitaminB12', 'folate', 'magnesium', 'zinc', 'polyunsaturatedFat', 'monounsaturatedFat'] },
 ];
+// Where each category routes to on the client's own app — shown as the
+// picker in the composer and the tag on each posted comment.
+const COMMENT_CATEGORIES = [
+  { id: 'general', label: 'General', icon: 'ti-message-circle', color: 'var(--text-muted)' },
+  { id: 'weight', label: 'Weight', icon: 'ti-scale', color: ACCENT },
+  { id: 'nutrition', label: 'Nutrition', icon: 'ti-clipboard-list', color: WATER_BLUE },
+  { id: 'checkin', label: 'Check-in', icon: 'ti-mood-smile', color: AI_PURPLE },
+];
+
 function timeOfDayGreeting() {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
@@ -436,6 +445,7 @@ function ClientDetailView({ client }) {
   const [range, setRange] = useState(7);
   const [checkin, setCheckin] = useState(null);
   const [commentBody, setCommentBody] = useState('');
+  const [commentCategory, setCommentCategory] = useState('general');
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
 
@@ -567,7 +577,7 @@ function ClientDetailView({ client }) {
     const body = commentBody.trim();
     if (!body) return;
     setCommentBody('');
-    await addComment(body, date);
+    await addComment(body, date, commentCategory);
   };
 
   // Full micronutrient breakdown for the selected day — same nutrient
@@ -763,6 +773,28 @@ function ClientDetailView({ client }) {
 
           <Card style={{ marginBottom: 0 }}>
             <SectionLabel icon="ti-message-circle">Comments</SectionLabel>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+              {COMMENT_CATEGORIES.map(cat => {
+                const selected = commentCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCommentCategory(cat.id)}
+                    className="btn-press"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 20,
+                      background: selected ? cat.color + '22' : 'var(--bg-primary)',
+                      border: `1px solid ${selected ? cat.color : 'var(--border-default)'}`,
+                      color: selected ? cat.color : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    <i className={`ti ${cat.icon}`} style={{ fontSize: 12 }} />
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
               <input
                 value={commentBody}
@@ -795,6 +827,15 @@ function ClientDetailView({ client }) {
                       <i className="ti ti-trash" />
                     </button>
                     <div style={{ maxWidth: '80%', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: '14px 14px 4px 14px', padding: '10px 14px' }}>
+                      {(() => {
+                        const cat = COMMENT_CATEGORIES.find(x => x.id === c.category) || COMMENT_CATEGORIES[0];
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
+                            <i className={`ti ${cat.icon}`} style={{ fontSize: 11, color: cat.color }} />
+                            <span style={{ fontSize: 10, fontWeight: 700, color: cat.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{cat.label}</span>
+                          </div>
+                        );
+                      })()}
                       <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>{c.body}</p>
                       <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '4px 0 0', textAlign: 'right' }}>
                         {c.comment_date ? `On ${c.comment_date} · ` : ''}{new Date(c.created_at).toLocaleString()}

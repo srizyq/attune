@@ -13,6 +13,8 @@ import { goalMacroSplits, buildTargets } from '../lib/calorieTargets';
 import { toKg, fromKg } from '../lib/adaptiveTDEE';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import AppNav from '../components/AppNav';
+import CoachNote from '../components/CoachNote';
+import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
 import HourlyTimeline from '../components/HourlyTimeline';
@@ -776,6 +778,7 @@ export default function Dashboard() {
   }, [profile, computeAdaptive]);
 
   const name = profile?.name || 'there';
+  const { note: coachNote, dismiss: dismissCoachNote } = useCoachNote('general');
   const isGuest = !!user?.is_anonymous;
   const daysRemaining = user?.created_at
     ? Math.max(0, 7 - Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000))
@@ -843,6 +846,7 @@ export default function Dashboard() {
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
           {isGuest && <GuestBanner daysRemaining={daysRemaining} onSave={() => navigate('/settings')} />}
+          {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} style={{ marginBottom: 16 }} />}
 
           {/* Hero/calendar pager — swipe (or use the dots) to get from the
               calorie/weight/water glance to the logging calendar. Restored

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './useAuth';
 import {
   getMyClients, getMyTrainers, redeemCoachInviteCode, revokeClientLink,
-  getTrainerComments, addTrainerComment, deleteTrainerComment,
+  getTrainerComments, addTrainerComment, deleteTrainerComment, getLatestCoachComment,
   getFoodLogsForDate,
 } from '../lib/db';
 import { mapRow } from './useFoodLogs';
@@ -127,9 +127,9 @@ export function useTrainerComments(clientId) {
 
   useEffect(() => { refetch(); }, [refetch]);
 
-  const addComment = useCallback(async (body, commentDate = null) => {
+  const addComment = useCallback(async (body, commentDate = null, category = 'general') => {
     if (!user || !clientId) return;
-    await addTrainerComment(user.id, clientId, body, commentDate);
+    await addTrainerComment(user.id, clientId, body, commentDate, category);
     await refetch();
   }, [user, clientId, refetch]);
 
@@ -139,4 +139,29 @@ export function useTrainerComments(clientId) {
   }, [refetch]);
 
   return { comments, loading, addComment, removeComment };
+}
+
+// Client-side: the signed-in user's own most recent coach comment in one
+// category, for surfacing on their own Dashboard/Progress/Daily Log —
+// `date` (Daily Log's nutrition notes) matches that exact day; omitted
+// (weight/general) just returns the latest ever in that category.
+export function useCoachNote(category, date = null) {
+  const { user } = useAuth();
+  const [note, setNote] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) { setNote(null); setLoading(false); return; }
+    setLoading(true);
+    setDismissed(false);
+    getLatestCoachComment(user.id, category, date)
+      .then(result => { if (!cancelled) setNote(result); })
+      .catch(err => { console.error('Failed to load coach note:', err); if (!cancelled) setNote(null); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user, category, date]);
+
+  return { note: dismissed ? null : note, loading, dismiss: () => setDismissed(true) };
 }

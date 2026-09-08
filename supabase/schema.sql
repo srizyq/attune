@@ -582,3 +582,24 @@ $$;
 
 revoke all on function public.set_client_targets(uuid, int, int, int, int) from public;
 grant execute on function public.set_client_targets(uuid, int, int, int, int) to authenticated;
+
+-- ── trainer_comments categories (schema update — run against an existing
+-- DB) ────────────────────────────────────────────────────────────────────
+-- Lets a comment route to a specific spot in the client's own app (a
+-- 'weight' comment on their Progress page, 'nutrition' on their Daily
+-- Log, 'checkin' near their check-in, 'general' on Dashboard) instead of
+-- only ever showing up inside Coach Mode.
+alter table public.trainer_comments add column if not exists category text not null default 'general'
+  check (category in ('general', 'weight', 'nutrition', 'checkin'));
+
+-- A client needs to read their own trainer's name (for "Coach Alex" on
+-- these comment cards) — the existing profiles policies only cover a
+-- user's own profile and a trainer's read of an active client's profile,
+-- not this direction, so add the missing one.
+create policy "profiles: select own trainer" on public.profiles
+  for select using (
+    exists (
+      select 1 from public.trainer_clients tc
+      where tc.trainer_id = profiles.id and tc.client_id = auth.uid() and tc.status = 'active'
+    )
+  );

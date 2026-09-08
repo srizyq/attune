@@ -12,6 +12,8 @@ import { useTheme } from "../hooks/useTheme";
 import { todayLocalDate, dateNDaysAgo, dateRange, streakFor, computeStreak } from "../lib/patterns";
 import { computeTrendWeight, toKg, fromKg } from "../lib/adaptiveTDEE";
 import AppNav from "../components/AppNav";
+import CoachNote from "../components/CoachNote";
+import { useCoachNote } from "../hooks/useCoach";
 import LogCalendar from "../components/LogCalendar";
 import StreakItem from "../components/StreakItem";
 
@@ -98,6 +100,7 @@ export default function Progress() {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile } = useProfile();
+  const { note: weightCoachNote, dismiss: dismissWeightCoachNote } = useCoachNote('weight');
   const { theme } = useTheme();
   const [range, setRange] = useState(30);
   const [weightRange, setWeightRange] = useState("30d");
@@ -344,6 +347,7 @@ export default function Progress() {
                 {WEIGHT_RANGES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
               </select>
             </div>
+            {weightCoachNote && <CoachNote note={weightCoachNote} onDismiss={dismissWeightCoachNote} style={{ marginBottom: 16 }} />}
             {weightLoading ? null : weightLogs.length > 1 ? (
               <div style={{ height: 220 }}><Line data={weightChartData} options={chartOptions} /></div>
             ) : (
