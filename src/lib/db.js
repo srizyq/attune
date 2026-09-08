@@ -412,12 +412,23 @@ export async function searchAfcdFoods(query, limit = 15) {
 export async function getMyClients(trainerId) {
   const { data, error } = await supabase
     .from('trainer_clients')
-    .select('id, status, created_at, client:profiles!trainer_clients_client_id_fkey(id, name, goal, calorie_target, protein_g, carbs_g, fat_g, unit)')
+    .select('id, status, created_at, client:profiles!trainer_clients_client_id_fkey(id, name, goal, calorie_target, protein_g, carbs_g, fat_g, unit, micro_targets)')
     .eq('trainer_id', trainerId)
     .eq('status', 'active')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
+}
+
+export async function setClientTargets(clientId, { calorie_target, protein_g, carbs_g, fat_g }) {
+  const { error } = await supabase.rpc('set_client_targets', {
+    p_client_id: clientId,
+    p_calorie_target: calorie_target,
+    p_protein_g: protein_g,
+    p_carbs_g: carbs_g,
+    p_fat_g: fat_g,
+  });
+  if (error) throw error;
 }
 
 export async function getMyTrainers(clientId) {

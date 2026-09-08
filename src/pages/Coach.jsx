@@ -1,5 +1,5 @@
 // src/pages/Coach.jsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
@@ -11,14 +11,16 @@ import { useTheme } from '../hooks/useTheme';
 import { useMyClients, useTrainerComments, useClientFoodLogs } from '../hooks/useCoach';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
-import { getCheckinForDate } from '../lib/db';
+import { getCheckinForDate, setClientTargets } from '../lib/db';
 import { todayLocalDate, dateNDaysAgo, dateRange, streakFor, computeStreak } from '../lib/patterns';
 import { computeTrendWeight, toKg, fromKg } from '../lib/adaptiveTDEE';
 import { round1 } from '../lib/format';
+import { MICRO_NUTRIENTS } from '../lib/microNutrients';
 import DaySelector from '../components/DaySelector';
 import LogItemRow from '../components/LogItemRow';
 import LogoMark from '../components/LogoMark';
 import StreakItem from '../components/StreakItem';
+import MicroCard from '../components/MicroCard';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
@@ -236,6 +238,17 @@ export default function Coach() {
 // ─── Client list + invite code ────────────────────────────────────────────────
 function ClientListView({ profile, clients, loading, generating, codeError, copied, onGenerate, onCopy, onSelect, onRevoke }) {
   const hasClients = clients.length > 0;
+  // Rows resolve their own "logged today" status independently (see
+  // ClientPreviewRow) and report it up here just for the summary line —
+  // the list itself never reorders as each one resolves, which would be
+  // distracting while a trainer is actively looking at it.
+  const [statusById, setStatusById] = useState({});
+  const reportStatus = useCallback((id, status) => {
+    setStatusById(prev => ({ ...prev, [id]: status }));
+  }, []);
+  const resolved = Object.values(statusById);
+  const loggedTodayCount = resolved.filter(s => s.loggedToday).length;
+
   return (
     <div className="grid-2" style={{ alignItems: 'start' }}>
       <Card style={{
@@ -286,7 +299,14 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
       </Card>
 
       <Card style={{ marginBottom: 0 }}>
-        <SectionLabel icon="ti-users">Your clients</SectionLabel>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <SectionLabel icon="ti-users">Your clients</SectionLabel>
+          {hasClients && resolved.length > 0 && (
+            <span style={{ color: loggedTodayCount === resolved.length ? 'var(--accent)' : 'var(--gold)', fontSize: 12, fontWeight: 600, marginBottom: 18 }}>
+              {loggedTodayCount}/{resolved.length} logged today
+            </span>
+          )}
+        </div>
         {loading ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
         ) : !hasClients ? (
@@ -298,7 +318,7 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
           </div>
         ) : (
           clients.map((row, i) => (
-            <ClientPreviewRow key={row.id} row={row} index={i} onSelect={onSelect} onRevoke={onRevoke} />
+            <ClientPreviewRow key={row.id} row={row} index={i} onSelect={onSelect} onRevoke={onRevoke} onStatus={reportStatus} />
           ))
         )}
       </Card>
@@ -310,7 +330,7 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
 // independently per row so one slow client never blocks the rest of the list.
 // The avatar ring fills toward today's share of the client's own calorie
 // target, giving an at-a-glance signal without reading any numbers.
-function ClientPreviewRow({ row, index, onSelect, onRevoke }) {
+function ClientPreviewRow({ row, index, onSelect, onRevoke, onStatus }) {
   const today = todayLocalDate();
   const { dailyData, loading } = useHistory(dateNDaysAgo(6), today, row.client?.id);
   const todayData = dailyData.find(d => d.date === today);
@@ -318,6 +338,11 @@ function ClientPreviewRow({ row, index, onSelect, onRevoke }) {
   const avgCal = loggedDays.length ? Math.round(avg(loggedDays.map(d => d.calories))) : null;
   const calorieTarget = row.client?.calorie_target || null;
   const todayPct = calorieTarget && todayData ? todayData.calories / calorieTarget : 0;
+  const loggedToday = !!todayData;
+
+  useEffect(() => {
+    if (!loading) onStatus?.(row.id, { loggedToday });
+  }, [loading, loggedToday, row.id, onStatus]);
 
   return (
     <div
@@ -332,8 +357,8 @@ function ClientPreviewRow({ row, index, onSelect, onRevoke }) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600 }}>{row.client?.name || 'Unnamed client'}</span>
-          <span style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
-            {loading ? '…' : todayData ? `${Math.round(todayData.calories)} kcal today` : 'Nothing today'}
+          <span style={{ color: loading ? 'var(--text-muted)' : loggedToday ? 'var(--accent)' : 'var(--gold)', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+            {loading ? '…' : loggedToday ? `${Math.round(todayData.calories)} kcal today` : "Hasn't logged today"}
           </span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 4 }}>
@@ -366,6 +391,20 @@ function ClientDetailView({ client }) {
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
 
+  // A mutable local copy of the client's goal/target fields — resyncs from
+  // the prop whenever a different client is selected, but otherwise holds
+  // whatever the trainer just saved so the page reflects it immediately
+  // without a full refetch of the client list.
+  const [clientData, setClientData] = useState(client);
+  const [editingTargets, setEditingTargets] = useState(false);
+  useEffect(() => { setClientData(client); setEditingTargets(false); }, [client]);
+
+  const handleSaveTargets = async (fields) => {
+    await setClientTargets(client.id, fields);
+    setClientData(prev => ({ ...prev, ...fields }));
+    setEditingTargets(false);
+  };
+
   const isLight = theme === 'light';
   const chartTextMuted = isLight ? '#6b6b6b' : '#666666';
   const chartGrid = isLight ? '#e7e7e5' : '#2a2a2a';
@@ -389,9 +428,9 @@ function ClientDetailView({ client }) {
     return () => { cancelled = true; };
   }, [client.id, date]);
 
-  const weightUnit = client.unit === 'imperial' ? 'lb' : 'kg';
-  const calorieTarget = client.calorie_target || null;
-  const proteinTarget = client.protein_g || null;
+  const weightUnit = clientData.unit === 'imperial' ? 'lb' : 'kg';
+  const calorieTarget = clientData.calorie_target || null;
+  const proteinTarget = clientData.protein_g || null;
 
   const byDate = useMemo(() => new Map(dailyData.map(d => [d.date, d])), [dailyData]);
   const allDates = useMemo(() => dateRange(dateNDaysAgo(range - 1), today), [range, today]);
@@ -483,17 +522,51 @@ function ClientDetailView({ client }) {
     await addComment(body, date);
   };
 
+  // Full micronutrient breakdown for the selected day — same nutrient
+  // list and card as the client's own Nutrients page, just summed from
+  // the read-only meals already loaded for the food log above instead of
+  // a second fetch.
+  const microTotals = useMemo(() => {
+    const totals = {};
+    for (const n of MICRO_NUTRIENTS) totals[n.key] = 0;
+    for (const items of Object.values(meals)) {
+      for (const item of items) {
+        for (const n of MICRO_NUTRIENTS) totals[n.key] += Number(item[n.key]) || 0;
+      }
+    }
+    return totals;
+  }, [meals]);
+  const microTargets = clientData.micro_targets || {};
+  const hasAnyFood = Object.values(meals).some(items => items.length > 0);
+
   return (
     <div>
       {/* Goal & targets + stat cards */}
       <div className="grid-2" style={{ marginBottom: 16, alignItems: 'start' }}>
         <Card style={{ marginBottom: 0 }}>
-          <SectionLabel icon="ti-target">Goal &amp; targets</SectionLabel>
-          <StatRow label="Goal" value={GOAL_LABELS[client.goal] || '—'} />
-          <StatRow label="Calorie target" value={calorieTarget ? `${calorieTarget.toLocaleString()} kcal` : '—'} />
-          <StatRow label="Protein" value={client.protein_g ? `${client.protein_g}g` : '—'} />
-          <StatRow label="Carbs" value={client.carbs_g ? `${client.carbs_g}g` : '—'} />
-          <StatRow label="Fat" value={client.fat_g ? `${client.fat_g}g` : '—'} />
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <SectionLabel icon="ti-target">Goal &amp; targets</SectionLabel>
+            {!editingTargets && (
+              <button
+                onClick={() => setEditingTargets(true)}
+                className="btn-press"
+                style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", marginBottom: 18, display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <i className="ti ti-pencil" style={{ fontSize: 12 }} /> Edit
+              </button>
+            )}
+          </div>
+          {editingTargets ? (
+            <TargetsForm client={clientData} onSave={handleSaveTargets} onCancel={() => setEditingTargets(false)} />
+          ) : (
+            <>
+              <StatRow label="Goal" value={GOAL_LABELS[clientData.goal] || '—'} />
+              <StatRow label="Calorie target" value={calorieTarget ? `${calorieTarget.toLocaleString()} kcal` : '—'} />
+              <StatRow label="Protein" value={clientData.protein_g ? `${clientData.protein_g}g` : '—'} />
+              <StatRow label="Carbs" value={clientData.carbs_g ? `${clientData.carbs_g}g` : '—'} />
+              <StatRow label="Fat" value={clientData.fat_g ? `${clientData.fat_g}g` : '—'} />
+            </>
+          )}
         </Card>
         <div className="grid-2" style={{ gap: 12 }}>
           <StatCard label="Avg. calories" value={hasData ? avgCalories.toLocaleString() : '—'} hint={hasData ? `over ${loggedDays.length} logged days` : 'No data yet'} color={ACCENT} />
@@ -646,7 +719,7 @@ function ClientDetailView({ client }) {
               <input
                 value={commentBody}
                 onChange={e => setCommentBody(e.target.value)}
-                placeholder={`Leave a note for ${client.name || 'this client'}…`}
+                placeholder={`Leave a note for ${clientData.name || 'this client'}…`}
                 onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }}
                 style={{ flex: 1, minWidth: 0, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
               />
@@ -682,6 +755,102 @@ function ClientDetailView({ client }) {
             )}
           </Card>
         </div>
+      </div>
+
+      {/* micronutrients */}
+      <Card style={{ marginBottom: 0 }}>
+        <SectionLabel icon="ti-apple">Micronutrients — {date}</SectionLabel>
+        {foodLoading ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+        ) : !hasAnyFood ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Nothing logged this day.</p>
+        ) : (
+          <div className="grid-3">
+            {MICRO_NUTRIENTS.map(n => (
+              <MicroCard
+                key={n.key}
+                icon={n.icon}
+                label={n.label}
+                value={n.unit === 'g' || n.unit === 'mg' ? round1(microTotals[n.key]) : Math.round(microTotals[n.key])}
+                unit={n.unit}
+                guideline={n.guideline}
+                target={microTargets[n.key]}
+                color={n.color}
+              />
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ─── Trainer-editable calorie/macro targets ───────────────────────────────────
+const fieldStyle = { width: '100%', padding: '8px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' };
+const labelStyle = { fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' };
+
+function TargetsForm({ client, onSave, onCancel }) {
+  const [calorieTarget, setCalorieTarget] = useState(client.calorie_target ?? '');
+  const [proteinG, setProteinG] = useState(client.protein_g ?? '');
+  const [carbsG, setCarbsG] = useState(client.carbs_g ?? '');
+  const [fatG, setFatG] = useState(client.fat_g ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave({
+        calorie_target: calorieTarget === '' ? null : Number(calorieTarget),
+        protein_g: proteinG === '' ? null : Number(proteinG),
+        carbs_g: carbsG === '' ? null : Number(carbsG),
+        fat_g: fatG === '' ? null : Number(fatG),
+      });
+    } catch (err) {
+      setError(err.message || "Couldn't save — try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={labelStyle}>Calorie target (kcal)</label>
+        <input type="number" min="0" value={calorieTarget} onChange={e => setCalorieTarget(e.target.value)} style={fieldStyle} />
+      </div>
+      <div className="grid-3-fixed" style={{ marginBottom: 14 }}>
+        <div>
+          <label style={labelStyle}>Protein (g)</label>
+          <input type="number" min="0" value={proteinG} onChange={e => setProteinG(e.target.value)} style={fieldStyle} />
+        </div>
+        <div>
+          <label style={labelStyle}>Carbs (g)</label>
+          <input type="number" min="0" value={carbsG} onChange={e => setCarbsG(e.target.value)} style={fieldStyle} />
+        </div>
+        <div>
+          <label style={labelStyle}>Fat (g)</label>
+          <input type="number" min="0" value={fatG} onChange={e => setFatG(e.target.value)} style={fieldStyle} />
+        </div>
+      </div>
+      {error && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 10px' }}>{error}</p>}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-press"
+          style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+        >
+          {saving ? 'Saving…' : 'Save targets'}
+        </button>
+        <button
+          onClick={onCancel}
+          className="btn-press"
+          style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );

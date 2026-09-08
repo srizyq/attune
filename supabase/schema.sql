@@ -540,3 +540,45 @@ alter table public.afcd_foods add column if not exists folate_mcg numeric defaul
 -- ── Pro custom micronutrient targets (schema update — run against an
 -- existing DB) ──────────────────────────────────────────────────────────
 alter table public.profiles add column if not exists micro_targets jsonb not null default '{}'::jsonb;
+
+-- ── set_client_targets ──────────────────────────────────────────────────────
+-- Lets a trainer set a connected client's calorie/macro targets directly
+-- (the "PT" part of Coach Mode) without a broad "trainer can update any
+-- profile column" policy — this SECURITY DEFINER function only ever
+-- touches these four columns, and only for a client with an active link
+-- to the calling trainer. Switches the client to 'custom' calorie mode so
+-- their own Settings page shows exactly what the trainer set instead of
+-- silently recomputing over it.
+create or replace function public.set_client_targets(
+  p_client_id uuid,
+  p_calorie_target int default null,
+  p_protein_g int default null,
+  p_carbs_g int default null,
+  p_fat_g int default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.trainer_clients
+    where trainer_id = auth.uid() and client_id = p_client_id and status = 'active'
+  ) then
+    raise exception 'Not an active trainer for this client';
+  end if;
+
+  update public.profiles
+  set calorie_target = coalesce(p_calorie_target, calorie_target),
+      protein_g = coalesce(p_protein_g, protein_g),
+      carbs_g = coalesce(p_carbs_g, carbs_g),
+      fat_g = coalesce(p_fat_g, fat_g),
+      calorie_mode = 'custom',
+      updated_at = now()
+  where id = p_client_id;
+end;
+$$;
+
+revoke all on function public.set_client_targets(uuid, int, int, int, int) from public;
+grant execute on function public.set_client_targets(uuid, int, int, int, int) to authenticated;
