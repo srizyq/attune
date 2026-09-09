@@ -139,6 +139,43 @@ html, body {
   overscroll-behavior-y: none;
 }
 
+/* `overscroll-behavior-x` above only stops the visual rubber-band bounce
+   — it does nothing about Safari/WKWebView's actual system "swipe from
+   the left edge to go back" gesture, which is a separate interactive-pop
+   gesture recognizer that reads browser history, not scroll position.
+   That's what was letting a left-edge swipe anywhere in the app
+   (including over content with no swipe behavior of its own) silently
+   trigger a back-navigation — a native-browser tell an installed app
+   shouldn't have, and the opposite of most native apps (MyFitnessPal
+   included), which don't respond to it at all.
+   A slim, invisible, fixed strip along the very left edge with
+   `touch-action: pan-y` intercepts just the initial touch there — telling
+   the gesture recognizer only vertical panning is native starting from
+   that x position, which is enough to stop it engaging, without touching
+   `touch-action` on any real content (so it can't narrow what an existing
+   `pan-x` row like Settings' tabs or FoodSearch's category strip already
+   declares — a shared ancestor doing that would, since touch-action
+   restrictions on an ancestor can only narrow a descendant's, never be
+   loosened back by it). Scoped to the same `max-width: 860px` breakpoint
+   the mobile bottom-nav switches on at (appshell.css) — desktop's left
+   sidebar nav lives in this exact strip of the screen and uses a mouse,
+   not a touch gesture, so this must never be active there. The strip
+   stops short of the bottom nav's own height (74px, matching
+   `.app-content-pad`'s padding for it) so it can never sit on top of —
+   and swallow taps on — the bottom-left nav icon. */
+@media (max-width: 860px) {
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 14px;
+    height: calc(100vh - 74px);
+    z-index: 9999;
+    touch-action: pan-y;
+  }
+}
+
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
