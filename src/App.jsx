@@ -15,6 +15,7 @@ import FoodSearch from "./pages/FoodSearch";
 import Progress from "./pages/Progress";
 import AIInsights from "./pages/AIInsights";
 import Settings from "./pages/Settings";
+import SettingsGoals from "./pages/SettingsGoals";
 import Profile from "./pages/Profile";
 import Nutrients from "./pages/Nutrients";
 import Expenditure from "./pages/Expenditure";
@@ -79,6 +80,7 @@ function AnimatedRoutes() {
         <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />
         <Route path="/insights" element={<RequireAuth><AIInsights /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+        <Route path="/settings/goals" element={<RequireAuth><SettingsGoals /></RequireAuth>} />
         <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="/prototypes/dashboard-redesign" element={<DashboardRedesignHarness />} />
