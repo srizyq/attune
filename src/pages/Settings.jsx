@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useReminders } from '../hooks/useReminders';
@@ -195,7 +195,25 @@ const DEFAULT_FORM = { unit: 'metric', age: 30, weight: 70, height: 170, goal: '
 export default function Settings() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { profile, save: saveProfile } = useProfile();
+  const location = useLocation();
+  const { profile, save: saveProfile, refetch: refetchProfile } = useProfile();
+
+  // Returning from Stripe Checkout — the webhook updates the profile
+  // server-side almost immediately, but this tab's own `profile` state
+  // won't know until it refetches. A couple of retries covers the small
+  // gap between the redirect landing and the webhook actually finishing.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('coach_pass') !== 'success') return;
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts += 1;
+      refetchProfile();
+      if (attempts >= 5) clearInterval(interval);
+    }, 1500);
+    navigate(location.pathname, { replace: true });
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
   const { theme, setTheme } = useTheme();
   const reminders = useReminders();
   const [reminderTimeInput, setReminderTimeInput] = useState(reminders.time);
@@ -752,11 +770,11 @@ export default function Settings() {
             <div className="grid-2" style={{ alignItems: 'start' }}>
               <Card style={{ marginBottom: 0 }}>
                 <SectionLabel>Become a coach</SectionLabel>
-                <FieldRow label="Coach Pass" hint="Test toggle — real billing isn't wired up yet">
-                  <Toggle
-                    on={!!profile?.coach_pass}
-                    onChange={(on) => saveProfile(on ? { coach_pass: true } : { coach_pass: false, coach_mode: false })}
-                  />
+                <FieldRow
+                  label="Coach Pass"
+                  hint={profile?.coach_pass ? `$19.99/month · ${profile?.coach_pass_status || 'active'}` : '$19.99/month, unlimited clients'}
+                >
+                  <CoachPassButton profile={profile} />
                 </FieldRow>
                 <FieldRow label="Coach Mode" hint={profile?.coach_pass ? 'See your clients’ logged data and leave comments' : 'Requires Coach Pass'}>
                   <Toggle
@@ -1065,6 +1083,57 @@ function UpgradeForm() {
 }
 
 // ─── Coach logo upload ──────────────────────────────────────────────────────
+// ─── Coach Pass billing (real Stripe Checkout / Billing Portal) ────────────
+async function authedPost(path) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    },
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || 'Something went wrong — try again.');
+  return data;
+}
+
+function CoachPassButton({ profile }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleClick = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { url } = await authedPost(profile?.coach_pass ? '/api/create-portal-session' : '/api/create-checkout-session');
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        style={{
+          padding: '9px 16px',
+          background: profile?.coach_pass ? 'transparent' : 'var(--accent)',
+          border: `1px solid ${profile?.coach_pass ? 'var(--border-default)' : 'var(--accent)'}`,
+          borderRadius: 8, color: profile?.coach_pass ? 'var(--text-secondary)' : '#0f0f0f',
+          fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
+        {loading ? 'Loading…' : profile?.coach_pass ? 'Manage billing' : 'Subscribe'}
+      </button>
+      {error && <span style={{ color: 'var(--danger)', fontSize: 11 }}>{error}</span>}
+    </div>
+  );
+}
+
 function CoachLogoUpload({ profile, saveProfile }) {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
