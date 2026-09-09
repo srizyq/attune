@@ -603,3 +603,93 @@ create policy "profiles: select own trainer" on public.profiles
       where tc.trainer_id = profiles.id and tc.client_id = auth.uid() and tc.status = 'active'
     )
   );
+
+-- ── two-way messaging, client grouping, recipe sharing, branding ───────────
+-- (schema update — run against an existing DB)
+
+-- Who actually wrote a trainer_comments row — only 'general' category
+-- messages are a real back-and-forth thread (shown as chat on the
+-- client's Dashboard); weight/nutrition/checkin stay one-way trainer
+-- annotations anchored to their page, same as before.
+alter table public.trainer_comments add column if not exists sender_role text not null default 'trainer'
+  check (sender_role in ('trainer', 'client'));
+
+create policy "trainer_comments: client can reply in general thread" on public.trainer_comments
+  for insert with check (
+    auth.uid() = client_id
+    and category = 'general'
+    and sender_role = 'client'
+    and exists (
+      select 1 from public.trainer_clients tc
+      where tc.client_id = auth.uid() and tc.trainer_id = trainer_comments.trainer_id and tc.status = 'active'
+    )
+  );
+
+-- A free-text label a trainer sets per client (e.g. "Weight loss",
+-- "Marathon prep") to group the client list — no separate groups table,
+-- just a column on the link row.
+alter table public.trainer_clients add column if not exists group_label text;
+
+-- Trainer's uploaded logo, shown to their clients — see the storage
+-- bucket + policies below for the actual file.
+alter table public.profiles add column if not exists coach_logo_url text;
+
+-- share_recipe_with_client: copies one of the trainer's own saved_meals
+-- into a connected client's saved_meals. SECURITY DEFINER for the same
+-- reason as set_client_targets — saved_meals' own RLS only allows
+-- inserting your own rows, and this is the one deliberate exception.
+create or replace function public.share_recipe_with_client(p_client_id uuid, p_name text, p_items jsonb)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+begin
+  if not exists (
+    select 1 from public.trainer_clients
+    where trainer_id = auth.uid() and client_id = p_client_id and status = 'active'
+  ) then
+    raise exception 'Not an active trainer for this client';
+  end if;
+
+  insert into public.saved_meals (user_id, name, items)
+  values (p_client_id, p_name, p_items)
+  returning id into v_id;
+
+  return v_id;
+end;
+$$;
+
+revoke all on function public.share_recipe_with_client(uuid, text, jsonb) from public;
+grant execute on function public.share_recipe_with_client(uuid, text, jsonb) to authenticated;
+
+-- ── coach-logos storage bucket ──────────────────────────────────────────────
+-- Public read (clients need to display it, and a logo isn't sensitive);
+-- write restricted to the owning trainer, one logo per user at path
+-- `<user_id>/logo.<ext>` so re-uploading just overwrites it.
+insert into storage.buckets (id, name, public)
+values ('coach-logos', 'coach-logos', true)
+on conflict (id) do nothing;
+
+create policy "coach-logos: public read" on storage.objects
+  for select using (bucket_id = 'coach-logos');
+
+create policy "coach-logos: owner can upload" on storage.objects
+  for insert with check (bucket_id = 'coach-logos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "coach-logos: owner can update" on storage.objects
+  for update using (bucket_id = 'coach-logos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "coach-logos: owner can delete" on storage.objects
+  for delete using (bucket_id = 'coach-logos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ── Stripe billing fields ───────────────────────────────────────────────────
+-- coach_pass itself (added earlier) becomes the webhook-controlled
+-- source of truth once billing is live, instead of the manual test
+-- toggle it started as.
+alter table public.profiles add column if not exists stripe_customer_id text unique;
+alter table public.profiles add column if not exists stripe_subscription_id text;
+alter table public.profiles add column if not exists coach_pass_status text
+  check (coach_pass_status in ('active', 'canceled', 'past_due'));

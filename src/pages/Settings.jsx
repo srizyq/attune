@@ -11,6 +11,7 @@ import { MICRO_NUTRIENTS } from '../lib/microNutrients';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { useTheme } from '../hooks/useTheme';
 import { useMyTrainers } from '../hooks/useCoach';
+import { uploadCoachLogo } from '../lib/db';
 import AppNav from '../components/AppNav';
 import Slider from '../components/Slider';
 import MacroPreviewBar from '../components/MacroPreviewBar';
@@ -775,6 +776,13 @@ export default function Settings() {
                     Open Coach Dashboard
                   </button>
                 )}
+                {profile?.coach_pass && (
+                  <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border-default)' }}>
+                    <FieldRow label="Your logo" hint="Shown to your clients wherever they see your name">
+                      <CoachLogoUpload profile={profile} saveProfile={saveProfile} />
+                    </FieldRow>
+                  </div>
+                )}
               </Card>
 
               <Card style={{ marginBottom: 0 }}>
@@ -1052,6 +1060,42 @@ function UpgradeForm() {
       >
         {status === 'loading' ? 'Upgrading…' : 'Create account'}
       </button>
+    </div>
+  );
+}
+
+// ─── Coach logo upload ──────────────────────────────────────────────────────
+function CoachLogoUpload({ profile, saveProfile }) {
+  const { user } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadCoachLogo(user.id, file);
+      await saveProfile({ coach_logo_url: url });
+    } catch (err) {
+      setError(err.message || "Couldn't upload — try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {profile?.coach_logo_url && (
+        <img src={profile.coach_logo_url} alt="Your logo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border-default)' }} />
+      )}
+      <label style={{ padding: '7px 14px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+        {uploading ? 'Uploading…' : profile?.coach_logo_url ? 'Change' : 'Upload'}
+        <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} style={{ display: 'none' }} />
+      </label>
+      {error && <span style={{ color: 'var(--danger)', fontSize: 11 }}>{error}</span>}
     </div>
   );
 }

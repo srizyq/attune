@@ -15,6 +15,7 @@ import { toKg, fromKg } from '../lib/adaptiveTDEE';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import AppNav from '../components/AppNav';
 import CoachNote from '../components/CoachNote';
+import CoachChatModal from '../components/CoachChatModal';
 import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
@@ -804,6 +805,7 @@ export default function Dashboard() {
 
   const name = profile?.name || 'there';
   const { note: coachNote, dismiss: dismissCoachNote } = useCoachNote('general');
+  const [coachChatOpen, setCoachChatOpen] = useState(false);
   const isGuest = !!user?.is_anonymous;
   // An anonymous user with an email on their record already submitted the
   // "Create account" form — Supabase keeps is_anonymous true until the
@@ -878,7 +880,15 @@ export default function Dashboard() {
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
           {isGuest && <GuestBanner daysRemaining={daysRemaining} onSave={() => navigate('/settings')} pendingConfirmation={pendingConfirmation} email={user?.email} />}
-          {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} style={{ marginBottom: 16 }} />}
+          {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} onClick={() => setCoachChatOpen(true)} style={{ marginBottom: 16 }} />}
+          {coachChatOpen && (
+            <CoachChatModal
+              trainerId={coachNote.trainer_id}
+              trainerName={coachNote.trainer?.name}
+              trainerLogoUrl={coachNote.trainer?.coach_logo_url}
+              onClose={() => setCoachChatOpen(false)}
+            />
+          )}
 
           {/* Hero/calendar pager — swipe (or use the dots) to get from the
               calorie/weight/water glance to the logging calendar. Restored

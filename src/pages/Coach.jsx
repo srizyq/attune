@@ -6,12 +6,13 @@ import {
   LineElement, BarElement, Tooltip, Legend, Filler,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
+import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../hooks/useTheme';
 import { useMyClients, useTrainerComments, useClientFoodLogs } from '../hooks/useCoach';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
-import { getCheckinForDate, setClientTargets } from '../lib/db';
+import { getCheckinForDate, setClientTargets, getSavedMeals, shareRecipeWithClient } from '../lib/db';
 import { todayLocalDate, dateNDaysAgo, dateRange, streakFor, computeStreak } from '../lib/patterns';
 import { computeTrendWeight, toKg, fromKg } from '../lib/adaptiveTDEE';
 import { round1 } from '../lib/format';
@@ -154,7 +155,7 @@ function EmptyChartBox({ icon, message }) {
 export default function Coach() {
   const navigate = useNavigate();
   const { profile, save: saveProfile } = useProfile();
-  const { clients, loading: clientsLoading, revoke } = useMyClients();
+  const { clients, loading: clientsLoading, revoke, setGroup } = useMyClients();
   const [selectedClient, setSelectedClient] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -269,6 +270,7 @@ export default function Coach() {
               onCopy={handleCopyCode}
               onSelect={setSelectedClient}
               onRevoke={revoke}
+              onSetGroup={setGroup}
               onStatus={reportStatus}
               loggedTodayCount={loggedTodayCount}
               resolvedCount={resolvedStatuses.length}
@@ -290,8 +292,21 @@ const INVITE_STEPS = [
   { icon: 'ti-link', text: 'They connect in Settings — food, weight and check-ins show up here' },
 ];
 
-function ClientListView({ profile, clients, loading, generating, codeError, copied, onGenerate, onCopy, onSelect, onRevoke, onStatus, loggedTodayCount, resolvedCount, allLoggedToday }) {
+function ClientListView({ profile, clients, loading, generating, codeError, copied, onGenerate, onCopy, onSelect, onRevoke, onStatus, onSetGroup, loggedTodayCount, resolvedCount, allLoggedToday }) {
   const hasClients = clients.length > 0;
+  const groupedClients = useMemo(() => {
+    const map = new Map();
+    for (const row of clients) {
+      const label = row.group_label || 'Ungrouped';
+      if (!map.has(label)) map.set(label, []);
+      map.get(label).push(row);
+    }
+    return [...map.entries()].sort((a, b) => {
+      if (a[0] === 'Ungrouped') return 1;
+      if (b[0] === 'Ungrouped') return -1;
+      return a[0].localeCompare(b[0]);
+    });
+  }, [clients]);
 
   return (
     <div className="grid-2" style={{ alignItems: 'start' }}>
@@ -374,8 +389,17 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
             </p>
           </div>
         ) : (
-          clients.map((row, i) => (
-            <ClientPreviewRow key={row.id} row={row} index={i} onSelect={onSelect} onRevoke={onRevoke} onStatus={onStatus} />
+          groupedClients.map(([label, rows]) => (
+            <div key={label}>
+              {groupedClients.length > 1 && (
+                <div style={{ color: 'var(--text-hint)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '14px 0 4px' }}>
+                  {label} <span style={{ fontWeight: 400 }}>({rows.length})</span>
+                </div>
+              )}
+              {rows.map((row, i) => (
+                <ClientPreviewRow key={row.id} row={row} index={i} onSelect={onSelect} onRevoke={onRevoke} onStatus={onStatus} onSetGroup={onSetGroup} />
+              ))}
+            </div>
           ))
         )}
       </Card>
@@ -387,7 +411,7 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
 // independently per row so one slow client never blocks the rest of the list.
 // The avatar ring fills toward today's share of the client's own calorie
 // target, giving an at-a-glance signal without reading any numbers.
-function ClientPreviewRow({ row, index, onSelect, onRevoke, onStatus }) {
+function ClientPreviewRow({ row, index, onSelect, onRevoke, onStatus, onSetGroup }) {
   const today = todayLocalDate();
   const { dailyData, loading } = useHistory(dateNDaysAgo(6), today, row.client?.id);
   const todayData = dailyData.find(d => d.date === today);
@@ -396,10 +420,17 @@ function ClientPreviewRow({ row, index, onSelect, onRevoke, onStatus }) {
   const calorieTarget = row.client?.calorie_target || null;
   const todayPct = calorieTarget && todayData ? todayData.calories / calorieTarget : 0;
   const loggedToday = !!todayData;
+  const [editingGroup, setEditingGroup] = useState(false);
+  const [groupInput, setGroupInput] = useState(row.group_label || '');
 
   useEffect(() => {
     if (!loading) onStatus?.(row.id, { loggedToday });
   }, [loading, loggedToday, row.id, onStatus]);
+
+  const saveGroup = async () => {
+    setEditingGroup(false);
+    await onSetGroup(row.id, groupInput.trim());
+  };
 
   return (
     <div
@@ -425,6 +456,35 @@ function ClientPreviewRow({ row, index, onSelect, onRevoke, onStatus }) {
           </span>
         </div>
       </button>
+      {editingGroup ? (
+        <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+          <input
+            value={groupInput}
+            onChange={e => setGroupInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') saveGroup(); if (e.key === 'Escape') setEditingGroup(false); }}
+            autoFocus
+            placeholder="Group"
+            style={{ width: 90, padding: '4px 8px', fontSize: 11, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 6, color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }}
+          />
+          <button onClick={saveGroup} className="btn-press" style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 13, padding: 2 }}>
+            <i className="ti ti-check" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={(e) => { e.stopPropagation(); setGroupInput(row.group_label || ''); setEditingGroup(true); }}
+          className="btn-press"
+          title="Set group"
+          style={{
+            background: row.group_label ? 'var(--bg-primary)' : 'none',
+            border: row.group_label ? '1px solid var(--border-default)' : 'none',
+            borderRadius: 20, padding: row.group_label ? '3px 10px' : 4,
+            color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', flexShrink: 0, fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          {row.group_label || <i className="ti ti-tag" />}
+        </button>
+      )}
       <button
         onClick={() => onRevoke(row.id)}
         title="Disconnect"
@@ -439,6 +499,7 @@ function ClientPreviewRow({ row, index, onSelect, onRevoke, onStatus }) {
 
 // ─── Single client's dashboard ────────────────────────────────────────────────
 function ClientDetailView({ client }) {
+  const { user } = useAuth();
   const { theme } = useTheme();
   const today = todayLocalDate();
   const [date, setDate] = useState(today);
@@ -580,6 +641,53 @@ function ClientDetailView({ client }) {
     await addComment(body, date, commentCategory);
   };
 
+  // A plain, printable summary — opened in a new tab so the browser's own
+  // print dialog (Save as PDF works everywhere, no library needed) can
+  // export or print it. Light background regardless of app theme, since
+  // that's what prints legibly and cheaply on paper.
+  const handlePrintReport = () => {
+    const rangeLabel = RANGES.find(r => r.id === range)?.label || `${range} days`;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const clientName = esc(clientData.name || 'Client');
+    const row = (label, value) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e5e5;"><span style="color:#666;">${label}</span><span style="font-weight:600;">${value}</span></div>`;
+    win.document.write(`
+      <!doctype html><html><head><title>${clientName} — Nutrition Report</title>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, 'DM Sans', sans-serif; color: #111; padding: 40px; max-width: 640px; margin: 0 auto; }
+        h1 { font-family: Georgia, serif; font-size: 22px; margin: 0 0 4px; }
+        h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin: 28px 0 10px; }
+        .sub { color: #777; font-size: 13px; margin-bottom: 24px; }
+      </style></head>
+      <body>
+        <h1>${clientName} — Nutrition Report</h1>
+        <div class="sub">${rangeLabel} · generated ${new Date().toLocaleDateString()}</div>
+        <h2>Goal &amp; targets</h2>
+        ${row('Goal', GOAL_LABELS[clientData.goal] || '—')}
+        ${row('Calorie target', calorieTarget ? `${calorieTarget.toLocaleString()} kcal` : '—')}
+        ${row('Protein', clientData.protein_g ? `${clientData.protein_g}g` : '—')}
+        ${row('Carbs', clientData.carbs_g ? `${clientData.carbs_g}g` : '—')}
+        ${row('Fat', clientData.fat_g ? `${clientData.fat_g}g` : '—')}
+        <h2>Summary — ${rangeLabel}</h2>
+        ${row('Average calories', hasData ? avgCalories.toLocaleString() : 'No data')}
+        ${row('Average protein', hasData ? `${avgProtein}g` : 'No data')}
+        ${row('Days on target', calorieTarget ? `${daysOnTarget} of ${loggedDays.length} logged days` : '—')}
+        ${row('Average energy (check-ins)', avgEnergy || '—')}
+        ${row('Latest weight', latestWeight ? `${latestWeight.weight}${latestWeight.unit}` : '—')}
+        <h2>Streaks</h2>
+        ${row('Logging streak', `${loggingStreak} days`)}
+        ${row('Calorie target streak', `${calorieStreak} days`)}
+        ${row('Protein target streak', `${proteinStreak} days`)}
+        ${row('Mood check-in streak', `${moodStreak} days`)}
+      </body></html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
+
   // Full micronutrient breakdown for the selected day — same nutrient
   // list and card as the client's own Nutrients page, just summed from
   // the read-only meals already loaded for the food log above instead of
@@ -635,23 +743,32 @@ function ClientDetailView({ client }) {
       </div>
 
       {/* range toggle */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {RANGES.map(r => (
-          <button
-            key={r.id}
-            onClick={() => setRange(r.id)}
-            className="btn-press"
-            style={{
-              background: range === r.id ? 'var(--accent-bg)' : 'var(--bg-card)',
-              border: `1px solid ${range === r.id ? 'var(--accent-dark)' : 'var(--border-strong)'}`,
-              borderRadius: 8, padding: '7px 18px', fontSize: 13,
-              color: range === r.id ? 'var(--accent)' : 'var(--text-muted)', cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            {r.label}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {RANGES.map(r => (
+            <button
+              key={r.id}
+              onClick={() => setRange(r.id)}
+              className="btn-press"
+              style={{
+                background: range === r.id ? 'var(--accent-bg)' : 'var(--bg-card)',
+                border: `1px solid ${range === r.id ? 'var(--accent-dark)' : 'var(--border-strong)'}`,
+                borderRadius: 8, padding: '7px 18px', fontSize: 13,
+                color: range === r.id ? 'var(--accent)' : 'var(--text-muted)', cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={handlePrintReport}
+          className="btn-press"
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '7px 16px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+        >
+          <i className="ti ti-printer" style={{ fontSize: 14 }} /> Print report
+        </button>
       </div>
 
       {/* charts */}
@@ -771,6 +888,8 @@ function ClientDetailView({ client }) {
             )}
           </Card>
 
+          <RecipeShareCard trainerId={user?.id} client={clientData} />
+
           <Card style={{ marginBottom: 0 }}>
             <SectionLabel icon="ti-message-circle">Comments</SectionLabel>
             <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -816,33 +935,41 @@ function ClientDetailView({ client }) {
               <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No comments yet.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {comments.map(c => (
-                  <div key={c.id} className="stagger-item" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                    <button
-                      onClick={() => removeComment(c.id)}
-                      className="btn-press"
-                      style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 13, flexShrink: 0, alignSelf: 'flex-end', padding: 4 }}
-                      title="Delete"
-                    >
-                      <i className="ti ti-trash" />
-                    </button>
-                    <div style={{ maxWidth: '80%', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: '14px 14px 4px 14px', padding: '10px 14px' }}>
-                      {(() => {
-                        const cat = COMMENT_CATEGORIES.find(x => x.id === c.category) || COMMENT_CATEGORIES[0];
-                        return (
+                {comments.map(c => {
+                  const fromClient = c.sender_role === 'client';
+                  const cat = COMMENT_CATEGORIES.find(x => x.id === c.category) || COMMENT_CATEGORIES[0];
+                  return (
+                    <div key={c.id} className="stagger-item" style={{ display: 'flex', justifyContent: fromClient ? 'flex-start' : 'flex-end', gap: 8 }}>
+                      {!fromClient && (
+                        <button
+                          onClick={() => removeComment(c.id)}
+                          className="btn-press"
+                          style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 13, flexShrink: 0, alignSelf: 'flex-end', padding: 4 }}
+                          title="Delete"
+                        >
+                          <i className="ti ti-trash" />
+                        </button>
+                      )}
+                      <div style={{
+                        maxWidth: '80%', padding: '10px 14px',
+                        background: fromClient ? 'var(--bg-primary)' : 'var(--accent-bg)',
+                        border: `1px solid ${fromClient ? 'var(--border-default)' : 'var(--border-active)'}`,
+                        borderRadius: fromClient ? '14px 14px 14px 4px' : '14px 14px 4px 14px',
+                      }}>
+                        {!fromClient && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
                             <i className={`ti ${cat.icon}`} style={{ fontSize: 11, color: cat.color }} />
                             <span style={{ fontSize: 10, fontWeight: 700, color: cat.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{cat.label}</span>
                           </div>
-                        );
-                      })()}
-                      <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>{c.body}</p>
-                      <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '4px 0 0', textAlign: 'right' }}>
-                        {c.comment_date ? `On ${c.comment_date} · ` : ''}{new Date(c.created_at).toLocaleString()}
-                      </p>
+                        )}
+                        <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>{c.body}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '4px 0 0', textAlign: fromClient ? 'left' : 'right' }}>
+                          {c.comment_date ? `On ${c.comment_date} · ` : ''}{new Date(c.created_at).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Card>
@@ -976,5 +1103,81 @@ function TargetsForm({ client, onSave, onCancel }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// ─── Share a recipe ────────────────────────────────────────────────────────
+// Copies one of the trainer's own saved meals into the client's saved
+// meals — reuses whatever recipes the trainer already has from using the
+// app themselves, rather than building a whole second recipe editor.
+function RecipeShareCard({ trainerId, client }) {
+  const [meals, setMeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const [status, setStatus] = useState(null); // null | 'done' | error string
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!trainerId) return;
+    setLoading(true);
+    getSavedMeals(trainerId)
+      .then(result => { if (!cancelled) setMeals(result); })
+      .catch(err => { console.error('Failed to load saved meals:', err); if (!cancelled) setMeals([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [trainerId]);
+
+  const handleShare = async () => {
+    const meal = meals.find(m => m.id === selectedId);
+    if (!meal) return;
+    setSharing(true);
+    setStatus(null);
+    try {
+      await shareRecipeWithClient(client.id, meal.name, meal.items);
+      setStatus('done');
+      setSelectedId('');
+      setTimeout(() => setStatus(null), 2500);
+    } catch (err) {
+      setStatus(err.message || "Couldn't share — try again.");
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  return (
+    <Card>
+      <SectionLabel icon="ti-tools-kitchen-2">Share a recipe</SectionLabel>
+      {loading ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+      ) : meals.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+          You don't have any saved meals yet — create one from Food Search, then share it with {client.name || 'this client'} here.
+        </p>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <select
+              value={selectedId}
+              onChange={e => setSelectedId(e.target.value)}
+              style={{ flex: 1, minWidth: 0, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="">Choose a saved meal…</option>
+              {meals.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <button
+              onClick={handleShare}
+              disabled={!selectedId || sharing}
+              className="btn-press"
+              style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}
+            >
+              {sharing ? 'Sharing…' : 'Share'}
+            </button>
+          </div>
+          {status === 'done' && <p style={{ color: 'var(--accent)', fontSize: 12, margin: 0 }}>Shared — it's now in their saved meals.</p>}
+          {status && status !== 'done' && <p style={{ color: 'var(--danger)', fontSize: 12, margin: 0 }}>{status}</p>}
+        </>
+      )}
+    </Card>
   );
 }

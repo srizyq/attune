@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './useAuth';
 import {
-  getMyClients, getMyTrainers, redeemCoachInviteCode, revokeClientLink,
+  getMyClients, getMyTrainers, redeemCoachInviteCode, revokeClientLink, setClientGroup,
   getTrainerComments, addTrainerComment, deleteTrainerComment, getLatestCoachComment,
+  getGeneralThread, addClientReply,
   getFoodLogsForDate,
 } from '../lib/db';
 import { mapRow } from './useFoodLogs';
@@ -37,7 +38,12 @@ export function useMyClients() {
     await refetch();
   }, [refetch]);
 
-  return { clients, loading, refetch, redeemCode, revoke };
+  const setGroup = useCallback(async (trainerClientRowId, label) => {
+    await setClientGroup(trainerClientRowId, label);
+    await refetch();
+  }, [refetch]);
+
+  return { clients, loading, refetch, redeemCode, revoke, setGroup };
 }
 
 export function useMyTrainers() {
@@ -164,4 +170,35 @@ export function useCoachNote(category, date = null) {
   }, [user, category, date]);
 
   return { note: dismissed ? null : note, loading, dismiss: () => setDismissed(true) };
+}
+
+// Client-side: the full two-way 'general' thread with one trainer, for
+// the chat modal a Dashboard coach-note tab opens into.
+export function useGeneralThread(trainerId) {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const refetch = useCallback(async () => {
+    if (!user || !trainerId) { setMessages([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      setMessages(await getGeneralThread(user.id, trainerId));
+    } catch (err) {
+      console.error('Failed to load messages:', err);
+      setMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, trainerId]);
+
+  useEffect(() => { refetch(); }, [refetch]);
+
+  const sendReply = useCallback(async (body) => {
+    if (!user || !trainerId) return;
+    await addClientReply(user.id, trainerId, body);
+    await refetch();
+  }, [user, trainerId, refetch]);
+
+  return { messages, loading, sendReply, refetch };
 }

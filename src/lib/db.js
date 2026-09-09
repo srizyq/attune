@@ -412,7 +412,7 @@ export async function searchAfcdFoods(query, limit = 15) {
 export async function getMyClients(trainerId) {
   const { data, error } = await supabase
     .from('trainer_clients')
-    .select('id, status, created_at, client:profiles!trainer_clients_client_id_fkey(id, name, goal, calorie_target, protein_g, carbs_g, fat_g, unit, micro_targets)')
+    .select('id, status, created_at, group_label, client:profiles!trainer_clients_client_id_fkey(id, name, goal, calorie_target, protein_g, carbs_g, fat_g, unit, micro_targets)')
     .eq('trainer_id', trainerId)
     .eq('status', 'active')
     .order('created_at', { ascending: false });
@@ -429,6 +429,31 @@ export async function setClientTargets(clientId, { calorie_target, protein_g, ca
     p_fat_g: fat_g,
   });
   if (error) throw error;
+}
+
+export async function setClientGroup(trainerClientRowId, groupLabel) {
+  const { error } = await supabase
+    .from('trainer_clients')
+    .update({ group_label: groupLabel || null })
+    .eq('id', trainerClientRowId);
+  if (error) throw error;
+}
+
+export async function shareRecipeWithClient(clientId, name, items) {
+  const { data, error } = await supabase.rpc('share_recipe_with_client', {
+    p_client_id: clientId, p_name: name, p_items: items,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function uploadCoachLogo(userId, file) {
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+  const path = `${userId}/logo.${ext}`;
+  const { error: uploadError } = await supabase.storage.from('coach-logos').upload(path, file, { upsert: true });
+  if (uploadError) throw uploadError;
+  const { data } = supabase.storage.from('coach-logos').getPublicUrl(path);
+  return `${data.publicUrl}?t=${Date.now()}`; // cache-bust so a re-upload shows immediately
 }
 
 export async function getMyTrainers(clientId) {
@@ -490,13 +515,37 @@ export async function deleteTrainerComment(id) {
 export async function getLatestCoachComment(clientId, category, date = null) {
   let query = supabase
     .from('trainer_comments')
-    .select('id, body, created_at, comment_date, trainer:profiles!trainer_comments_trainer_id_fkey(name)')
+    .select('id, body, created_at, comment_date, trainer_id, trainer:profiles!trainer_comments_trainer_id_fkey(name, coach_logo_url)')
     .eq('client_id', clientId)
     .eq('category', category)
     .order('created_at', { ascending: false })
     .limit(1);
   if (date) query = query.eq('comment_date', date);
   const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// The client's side of the two-way 'general' thread — full history, both
+// directions, oldest first (a normal chat read order).
+export async function getGeneralThread(clientId, trainerId) {
+  const { data, error } = await supabase
+    .from('trainer_comments')
+    .select('id, body, sender_role, created_at')
+    .eq('client_id', clientId)
+    .eq('trainer_id', trainerId)
+    .eq('category', 'general')
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function addClientReply(clientId, trainerId, body) {
+  const { data, error } = await supabase
+    .from('trainer_comments')
+    .insert({ trainer_id: trainerId, client_id: clientId, body, category: 'general', sender_role: 'client' })
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }
