@@ -7,20 +7,19 @@ import { clientsClaim } from 'workbox-core';
 
 precacheAndRoute(self.__WB_MANIFEST);
 
-// vite-plugin-pwa's `registerType: 'autoUpdate'` only actually auto-updates
-// if the service worker cooperates with two things: (1) it must listen for
-// the SKIP_WAITING message the app's registration script sends when it
-// detects a new version, and call self.skipWaiting() — without this, a new
-// worker installs but sits "waiting" indefinitely, since the spec default
-// only activates a waiting worker once every open tab/window for this
-// origin has been fully closed (unreliable to guarantee on a phone, even
-// after force-quitting the app — this was the actual cause of "I updated
-// but it didn't take effect" reports); (2) clientsClaim() so the newly
-// activated worker takes control of already-open pages immediately instead
-// of waiting for their next full navigation.
-self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
-});
+// `registerType: 'autoUpdate'` (vite.config.js) is only half the story — it
+// makes vite-plugin-pwa's client-side helper reload the page once a new
+// worker activates, but it never sends anything that would make a new
+// worker activate in the first place. A message-gated self.skipWaiting()
+// (the previous approach here) needs something to actually send that
+// message, and nothing did — main.jsx never called the registerSW() helper
+// at all, so every deploy just installed a new worker that sat "waiting"
+// forever behind the old one, meaning nobody already on the site ever saw
+// a new deploy without manually clearing site data. Skipping waiting
+// unconditionally, the moment a new worker installs, is what makes
+// "autoUpdate" actually automatic; clientsClaim() then lets it take over
+// the already-open tab immediately instead of only the next navigation.
+self.skipWaiting();
 clientsClaim();
 
 registerRoute(
