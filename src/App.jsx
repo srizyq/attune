@@ -21,6 +21,7 @@ import Expenditure from "./pages/Expenditure";
 import DailyLog from "./pages/DailyLog";
 import Coach from "./pages/Coach";
 import DashboardRedesignHarness from "./prototypes/dashboard-redesign/Harness";
+import SettingsRedesignHarness from "./prototypes/settings-redesign/Harness";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import { locationChanged, isPageTransition } from './lib/routeTransition';
@@ -81,6 +82,7 @@ function AnimatedRoutes() {
         <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="/prototypes/dashboard-redesign" element={<DashboardRedesignHarness />} />
+        <Route path="/prototypes/settings-redesign" element={<SettingsRedesignHarness />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
