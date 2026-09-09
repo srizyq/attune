@@ -772,7 +772,7 @@ export default function Settings() {
                 <SectionLabel>Become a coach</SectionLabel>
                 <FieldRow
                   label="Coach Pass"
-                  hint={profile?.coach_pass ? `$19.99/month · ${profile?.coach_pass_status || 'active'}` : '$19.99/month, unlimited clients'}
+                  hint={profile?.coach_pass ? `Active subscription · ${profile?.coach_pass_status || 'active'}` : 'Unlimited clients'}
                 >
                   <CoachPassButton profile={profile} />
                 </FieldRow>
