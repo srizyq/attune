@@ -19,6 +19,7 @@ import { scaleFood, UNITS, amountToServings } from '../lib/foodMath';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
 import MenuScanModal from '../components/MenuScanModal';
+import MarqueeText from '../components/MarqueeText';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { getCategoryStyle } from '../lib/foodCategories';
 
@@ -943,7 +944,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
           <div style={{ marginBottom: 14 }}>
             {items.map((it, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < items.length - 1 ? "1px solid var(--border-default)" : "none" }}>
-                <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.name}</div>
+                <div style={{ flex: 1, minWidth: 0 }}><MarqueeText text={it.name} style={{ fontSize: 13, color: "var(--text-secondary)" }} /></div>
                 <div style={{ fontSize: 12, color: "var(--accent)", flexShrink: 0 }}>{Math.round(it.cal)} kcal</div>
                 <button onClick={() => onRemove(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
               </div>
@@ -1015,6 +1016,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   const [meal, setMeal] = useState(defaultMeal);
   const [time, setTime] = useState(defaultTime);
   const [justAdded, setJustAdded] = useState(false);
+  const [nameOverflowing, setNameOverflowing] = useState(false);
 
   useEffect(() => { setMeal(defaultMeal); }, [defaultMeal]);
   useEffect(() => { setTime(defaultTime); }, [defaultTime]);
@@ -1054,9 +1056,11 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
       <div onClick={onToggle} style={{ display: "flex", alignItems: "center", padding: "11px 14px", gap: 12 }}>
         <div style={{ width: 40, height: 40, background: catStyle.color + "22", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, color: catStyle.color }}><i className={`ti ${catStyle.icon}`} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {food.name}
-            {food.source === "custom" && <span style={{ marginLeft: 8, fontSize: 10, color: "#b48fd9", border: "1px solid #b48fd950", borderRadius: 5, padding: "1px 6px", verticalAlign: "middle" }}>Custom</span>}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <MarqueeText text={food.name} style={{ fontSize: 14, color: "var(--text-primary)" }} onOverflowChange={px => setNameOverflowing(px > 0)} />
+            </div>
+            {food.source === "custom" && <span style={{ flexShrink: 0, fontSize: 10, color: "#b48fd9", border: "1px solid #b48fd950", borderRadius: 5, padding: "1px 6px" }}>Custom</span>}
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{food.meta}</div>
         </div>
@@ -1087,6 +1091,11 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
       </div>
       {isExpanded && (
         <div style={{ borderTop: "1px solid var(--border-default)", padding: "14px", background: "var(--bg-subtle)" }}>
+          {nameOverflowing && (
+            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.35, marginBottom: 12 }}>
+              {food.name}
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
             <MacroPill value={scaled.protein} label="Protein" color="var(--accent)" />
             <MacroPill value={scaled.carbs} label="Carbs" color="var(--water-blue)" />

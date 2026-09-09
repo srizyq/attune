@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatHourLabel } from '../lib/mealTime';
 import LogItemRow from './LogItemRow';
+import MarqueeText from './MarqueeText';
 
 function AddHourButton({ hour, label, onNavigateAdd }) {
   return (
@@ -96,9 +97,9 @@ function HourCard({ segment, isOpen, onToggle, expandedItemId, onToggleItem, onD
           }}>
             {label}
           </span>
-          <span style={{ flex: 1, minWidth: 0, color: 'var(--text-muted)', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {preview}
-          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <MarqueeText text={preview} style={{ color: 'var(--text-muted)', fontSize: 12 }} />
+          </div>
           <span style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{total} kcal</span>
         </button>
         <AddHourButton hour={hour} label={label} onNavigateAdd={onNavigateAdd} />

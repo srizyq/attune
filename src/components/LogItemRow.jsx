@@ -1,19 +1,9 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { round1 } from '../lib/format';
 import { scaleFood, UNITS, amountToServings } from '../lib/foodMath';
 import { dateToHHMM, timeStringToDate } from '../lib/mealTime';
 import RecalculatePhotoModal from './RecalculatePhotoModal';
-
-// Pixels/second the ticker scrolls at — kept constant so a barely-clipped
-// name and a very long one both feel like the same "speed of reading,"
-// rather than a fixed duration that'd make long names race by.
-const MARQUEE_PX_PER_SEC = 28;
-const MARQUEE_MIN_MS = 3200;
-const MARQUEE_MAX_MS = 11000;
-
-function marqueeDurationMs(overflowPx) {
-  return Math.min(MARQUEE_MAX_MS, Math.max(MARQUEE_MIN_MS, (overflowPx / MARQUEE_PX_PER_SEC) * 1000));
-}
+import MarqueeText from './MarqueeText';
 
 const MEAL_OPTIONS = [
   { value: 'breakfast', label: 'Breakfast' },
@@ -70,27 +60,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   // without being true — so weight-based units are only offered when we
   // actually know what this item weighs.
   const hasKnownWeight = !!item.servingGrams;
-  const nameContainerRef = useRef(null);
-  const nameTextRef = useRef(null);
-  const [nameOverflow, setNameOverflow] = useState(0);
-
-  // Measures whether the food name actually overflows its row, and if so
-  // by how much — only names that don't fit get the scrolling treatment,
-  // so a short name never animates just because it happens to share this
-  // component. Re-measures on name change (a recalculated/edited item)
-  // and on window resize (rotating a phone can turn a fit into an
-  // overflow).
-  useLayoutEffect(() => {
-    function measure() {
-      const container = nameContainerRef.current;
-      const el = nameTextRef.current;
-      if (!container || !el) return;
-      setNameOverflow(Math.max(0, el.scrollWidth - container.clientWidth));
-    }
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [item.name]);
+  const [nameOverflowing, setNameOverflowing] = useState(false);
 
   const [amount, setAmount] = useState(hasKnownWeight ? String(item.servingGrams) : String(item.cal));
   const [unit, setUnit] = useState(hasKnownWeight ? 'g' : 'serving');
@@ -186,20 +156,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
     <div style={{ borderBottom: '1px solid var(--border-default)' }}>
       <div onClick={onToggle} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 18px', cursor: 'pointer', gap: 10 }}>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div ref={nameContainerRef} style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-            <span
-              ref={nameTextRef}
-              className={nameOverflow > 0 ? 'food-name-marquee' : ''}
-              style={{
-                color: 'var(--text-secondary)', fontSize: 14,
-                ...(nameOverflow > 0
-                  ? { '--marquee-distance': `-${nameOverflow}px`, '--marquee-duration': `${marqueeDurationMs(nameOverflow)}ms` }
-                  : { display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'top' }),
-              }}
-            >
-              {item.name}
-            </span>
-          </div>
+          <MarqueeText text={item.name} style={{ color: 'var(--text-secondary)', fontSize: 14 }} onOverflowChange={px => setNameOverflowing(px > 0)} />
           <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>
             <span style={{ color: C.green, fontWeight: 500 }}>{Math.round(item.cal)} cal</span>
             {' · '}P {round1(item.protein)}g · C {round1(item.carbs)}g · F {round1(item.fat)}g
@@ -217,7 +174,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
             name, however long, is always shown in full, wrapping onto as
             many lines as it needs since there's no row-height constraint
             here. */}
-        {nameOverflow > 0 && (
+        {nameOverflowing && (
           <div style={{ padding: '2px 18px 10px', background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 15, fontWeight: 600, lineHeight: 1.35 }}>
             {item.name}
           </div>
