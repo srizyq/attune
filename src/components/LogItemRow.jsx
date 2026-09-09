@@ -152,13 +152,15 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
 
   return (
     <div style={{ borderBottom: '1px solid var(--border-default)' }}>
-      <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', cursor: 'pointer' }}>
-        <div style={{ minWidth: 0 }}>
+      <div onClick={onToggle} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 18px', cursor: 'pointer', gap: 10 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{item.name}</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>P {round1(item.protein)}g · C {round1(item.carbs)}g · F {round1(item.fat)}g</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>
+            <span style={{ color: C.green, fontWeight: 500 }}>{Math.round(item.cal)} cal</span>
+            {' · '}P {round1(item.protein)}g · C {round1(item.carbs)}g · F {round1(item.fat)}g
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-          <span style={{ color: C.green, fontSize: 14, fontWeight: 500 }}>{Math.round(item.cal)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {!readOnly && <button onClick={(e) => { e.stopPropagation(); onDelete(); }} style={{ background: 'none', border: 'none', color: 'var(--border-default)', cursor: 'pointer', fontSize: 15, padding: '2px 4px' }}>×</button>}
           <span style={{ color: 'var(--border-default)', fontSize: 12, display: 'inline-block', transition: 'transform 220ms cubic-bezier(0.77, 0, 0.175, 1)', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
         </div>
