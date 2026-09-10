@@ -13,8 +13,17 @@ export default function LegalPageLayout({ title, updated, children }) {
   const { theme, toggleTheme } = usePreAuthTheme();
 
   return (
-    <div data-theme={theme} style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border-default)' }}>
+    // height: 100vh + an inner overflow: auto container, not plain
+    // document/body scroll — every other page in the app already uses
+    // this shape (see .app-content-pad's own comment about iOS momentum
+    // scroll on nested containers); this was the one page that instead
+    // relied on the body itself scrolling, which is exactly the case
+    // that reads as "can't scroll at all" on real iOS Safari once
+    // overflow-x: hidden is set globally on html/body (needed elsewhere
+    // to stop the horizontal rubber-band bounce), even though it
+    // scrolled fine in desktop testing.
+    <div data-theme={theme} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, display: 'flex' }} aria-label="Back">
           <i className="ti ti-arrow-left" />
         </button>
@@ -22,11 +31,13 @@ export default function LegalPageLayout({ title, updated, children }) {
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
 
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 80px' }}>
-        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, margin: '0 0 6px' }}>{title}</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 32px' }}>Last updated {updated}</p>
-        <div style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-          {children}
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 80px' }}>
+          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, margin: '0 0 6px' }}>{title}</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 32px' }}>Last updated {updated}</p>
+          <div style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+            {children}
+          </div>
         </div>
       </div>
     </div>

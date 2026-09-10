@@ -6,6 +6,7 @@ import AppNav from '../components/AppNav';
 import NotificationsModal from '../components/settings/NotificationsModal';
 import CoachModal from '../components/settings/CoachModal';
 import AccountModal from '../components/settings/AccountModal';
+import PrivacyModal from '../components/settings/PrivacyModal';
 
 // Which "page" each section opens as — short sections (a couple of field
 // rows) are quick to check and dismiss, so they open as a popup right
@@ -18,6 +19,7 @@ const SECTIONS = [
   { id: 'notifs',  icon: 'ti-bell',         label: 'Notifications',   kind: 'modal' },
   { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'modal' },
   { id: 'account', icon: 'ti-user-circle',  label: 'Account',         kind: 'modal' },
+  { id: 'privacy', icon: 'ti-shield-lock',  label: 'Privacy',         kind: 'modal' },
 ];
 
 // One entry per individual setting (not per section) so a search like
@@ -39,6 +41,9 @@ const SEARCH_INDEX = [
   { section: 'account', label: 'Pro features', keywords: 'pro premium upgrade' },
   { section: 'account', label: 'Theme', keywords: 'theme dark light appearance' },
   { section: 'account', label: 'Log out', keywords: 'log out logout sign out exit guest' },
+  { section: 'privacy', label: 'Export my data', keywords: 'export data download privacy' },
+  { section: 'privacy', label: 'Privacy Policy', keywords: 'privacy policy legal data' },
+  { section: 'privacy', label: 'Terms of Service', keywords: 'terms service legal' },
 ];
 
 export default function Settings() {
@@ -102,6 +107,7 @@ export default function Settings() {
     notifs: profile?.reminder_enabled ? `Daily reminder at ${profile.reminder_time || '19:00'}` : 'All reminders off',
     coach: profile?.coach_pass ? (profile?.coach_mode ? 'Coach Mode active' : 'Coach Pass active') : 'Not active',
     account: pendingConfirmation ? 'Pending email confirmation' : isGuest ? `Guest mode · ${daysRemaining} days left` : (user?.email || 'Signed in'),
+    privacy: 'Data export, Privacy Policy, Terms of Service',
   };
 
   return (
@@ -230,16 +236,12 @@ export default function Settings() {
           {/* Required FatSecret Platform API attribution — must not be
               reworded per their attribution policy. Settings is the one
               screen every user always has access to, so it lives here now
-              that the marketing Landing page (its previous home) is gone. */}
+              that the marketing Landing page (its previous home) is gone.
+              Terms/Privacy links moved into the Privacy section above. */}
           <div style={{ textAlign: 'center', paddingTop: 24, paddingBottom: 8 }}>
             <a href="https://platform.fatsecret.com" target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--text-hint)' }}>
               Powered by fatsecret Platform API
             </a>
-            <div style={{ marginTop: 8 }}>
-              <a href="/terms" target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--text-hint)' }}>Terms of Service</a>
-              <span style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 8px' }}>·</span>
-              <a href="/privacy" target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--text-hint)' }}>Privacy Policy</a>
-            </div>
           </div>
         </div>
       </div>
@@ -247,6 +249,7 @@ export default function Settings() {
       {openModal === 'notifs' && <NotificationsModal onClose={closeModal} closing={modalClosing} />}
       {openModal === 'coach' && <CoachModal onClose={closeModal} closing={modalClosing} />}
       {openModal === 'account' && <AccountModal onClose={closeModal} closing={modalClosing} />}
+      {openModal === 'privacy' && <PrivacyModal onClose={closeModal} closing={modalClosing} />}
     </div>
   );
 }
