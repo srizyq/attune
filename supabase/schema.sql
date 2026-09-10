@@ -693,3 +693,14 @@ alter table public.profiles add column if not exists stripe_customer_id text uni
 alter table public.profiles add column if not exists stripe_subscription_id text;
 alter table public.profiles add column if not exists coach_pass_status text
   check (coach_pass_status in ('active', 'canceled', 'past_due'));
+
+-- ── Pro billing fields ──────────────────────────────────────────────────────
+-- is_premium itself (already existed as a manual test toggle) becomes the
+-- webhook-controlled source of truth for Pro too, same as coach_pass above.
+-- A separate stripe_pro_subscription_id rather than reusing
+-- stripe_subscription_id — one Stripe customer can hold both a Coach Pass
+-- and a Pro subscription at once, each with its own subscription id, and
+-- the webhook needs to tell them apart on renewal/cancellation events.
+alter table public.profiles add column if not exists stripe_pro_subscription_id text;
+alter table public.profiles add column if not exists pro_status text
+  check (pro_status in ('active', 'canceled', 'past_due'));

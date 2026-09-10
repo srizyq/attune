@@ -5,7 +5,48 @@ import { useProfile } from '../../hooks/useProfile';
 import { useTheme } from '../../hooks/useTheme';
 import { useClosingTransition } from '../../hooks/useClosingTransition';
 import { supabase } from '../../lib/supabase';
-import { SettingsModal, Card, SectionLabel, FieldRow, Toggle } from './primitives';
+import { authedPost } from '../../lib/billing';
+import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
+
+// Mirrors CoachModal's CoachPassButton exactly — same subscribe/manage
+// pattern, different plan and profile field.
+function ProBillingButton({ profile }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleClick = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { url } = profile?.is_premium
+        ? await authedPost('/api/create-portal-session')
+        : await authedPost('/api/create-checkout-session', { plan: 'pro' });
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        style={{
+          padding: '9px 16px',
+          background: profile?.is_premium ? 'transparent' : 'var(--accent)',
+          border: `1px solid ${profile?.is_premium ? 'var(--border-default)' : 'var(--accent)'}`,
+          borderRadius: 8, color: profile?.is_premium ? 'var(--text-secondary)' : '#0f0f0f',
+          fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
+        {loading ? 'Loading…' : profile?.is_premium ? 'Manage billing' : 'Upgrade to Pro'}
+      </button>
+      {error && <span style={{ color: 'var(--danger)', fontSize: 11 }}>{error}</span>}
+    </div>
+  );
+}
 
 // Shown instead of UpgradeForm once "Create account" has already been
 // submitted — asking for email/password again would be redundant (and
@@ -116,7 +157,7 @@ function UpgradeForm() {
 export default function AccountModal({ onClose, closing }) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { profile, save: saveProfile } = useProfile();
+  const { profile } = useProfile();
   const { theme, setTheme } = useTheme();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { closing: logoutConfirmClosing, close: closeLogoutConfirm } = useClosingTransition(() => setShowLogoutConfirm(false));
@@ -155,8 +196,11 @@ export default function AccountModal({ onClose, closing }) {
               </span>{' '}— this guest session's data will be left behind unless you upgrade it first.
             </p>
           )}
-          <FieldRow label="Pro features" hint="Test toggle — real billing isn't wired up yet">
-            <Toggle on={!!profile?.is_premium} onChange={(on) => saveProfile({ is_premium: on })} />
+          <FieldRow
+            label="Pro"
+            hint={profile?.is_premium ? `Active subscription · ${profile?.pro_status || 'active'}` : 'Unlimited AI scans, custom micronutrient targets, and more'}
+          >
+            <ProBillingButton profile={profile} />
           </FieldRow>
           <button
             onClick={requestLogout}

@@ -8,6 +8,7 @@ import AppNav from '../components/AppNav';
 import Slider from '../components/Slider';
 import MacroPreviewBar from '../components/MacroPreviewBar';
 import { Card, SectionLabel, FieldRow, Select, Segmented } from '../components/settings/primitives';
+import { authedPost } from '../lib/billing';
 
 // Shows the adaptive-target estimate, or an honest explanation of what's
 // still needed — mirrors the pattern engine's "log N more days" gating
@@ -52,6 +53,38 @@ function AdaptiveTargetPanel({ loading, result, goal, onRefresh }) {
       >
         Recalculate
       </button>
+    </div>
+  );
+}
+
+// Starts checkout right from the paywall instead of sending the tap back
+// to Settings just to find the same button again in the Account popup.
+function UpgradeProButton() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleClick = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { url } = await authedPost('/api/create-checkout-session', { plan: 'pro' });
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: loading ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+      >
+        {loading ? 'Loading…' : 'Upgrade to Pro'}
+      </button>
+      {error && <span style={{ color: 'var(--danger)', fontSize: 11 }}>{error}</span>}
     </div>
   );
 }
@@ -382,12 +415,7 @@ export default function SettingsGoals() {
                   <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 340 }}>
                     Set your own target for every nutrient on the Nutrients page instead of the default guideline — Pro only.
                   </p>
-                  <button
-                    onClick={() => navigate('/settings')}
-                    style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
-                  >
-                    Upgrade to Pro
-                  </button>
+                  <UpgradeProButton />
                 </div>
               </div>
             ) : (

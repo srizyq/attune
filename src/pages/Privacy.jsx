@@ -2,7 +2,7 @@ import LegalPageLayout, { Section, P, Ul } from '../components/LegalPageLayout';
 
 export default function Privacy() {
   return (
-    <LegalPageLayout title="Privacy Policy" updated="8 September 2026">
+    <LegalPageLayout title="Privacy Policy" updated="10 September 2026">
       <P>
         Attune ("Attune", "we", "us") is currently operated by an individual, not a
         registered company, from Australia. This policy explains what data the
@@ -42,6 +42,7 @@ export default function Privacy() {
           <><b>Anthropic (Claude)</b> — processes photos you submit for AI food/menu/label recognition. Anthropic receives the image and a description of the task, not your account identity.</>,
           <><b>Vercel</b> — hosts the app and the serverless functions that talk to Anthropic on your behalf.</>,
           <><b>FatSecret Platform API and Open Food Facts</b> — power food search and barcode lookup. Your search terms or scanned barcodes are sent to these services; your account identity is not.</>,
+          <><b>Stripe</b> — processes payment for Pro and Coach Pass subscriptions. Stripe collects your payment details (e.g. card number) directly — we never see or store your full card details ourselves, only that a subscription exists and its status.</>,
         ]} />
         <P>We don't share your data with any other third party, and we don't sell it to anyone.</P>
       </Section>

@@ -1,7 +1,12 @@
 // Stripe calls this after checkout completes and whenever a subscription
-// changes state — it's the only source of truth for coach_pass once
-// billing is live (the client never sets it directly anymore). Needs the
-// RAW request body to verify Stripe's signature, so body parsing is
+// changes state — it's the only source of truth for coach_pass and
+// is_premium once billing is live (the client never sets either
+// directly anymore). One customer can hold both a Coach Pass and a Pro
+// subscription at once, each with its own subscription id, so every
+// branch below reads `plan` from the event's own metadata (set at
+// checkout — see create-checkout-session.js) to know which pair of
+// columns it's updating, rather than assuming there's only one. Needs
+// the RAW request body to verify Stripe's signature, so body parsing is
 // disabled and read manually below.
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
@@ -56,25 +61,30 @@ export default async function handler(req, res) {
       case 'checkout.session.completed': {
         const session = event.data.object;
         const userId = session.client_reference_id || session.metadata?.supabase_user_id;
+        const plan = session.metadata?.plan || 'coach';
         if (userId) {
-          const { error } = await supabase.from('profiles').update({
-            coach_pass: true,
-            coach_pass_status: 'active',
-            stripe_customer_id: session.customer,
-            stripe_subscription_id: session.subscription,
-          }).eq('id', userId);
+          const fields = plan === 'pro'
+            ? { is_premium: true, pro_status: 'active', stripe_customer_id: session.customer, stripe_pro_subscription_id: session.subscription }
+            : { coach_pass: true, coach_pass_status: 'active', stripe_customer_id: session.customer, stripe_subscription_id: session.subscription };
+          const { error } = await supabase.from('profiles').update(fields).eq('id', userId);
           if (error) throw error;
         }
         break;
       }
-      // Covers renewals, past-due (failed card), and reactivation —
-      // coach_pass tracks live with Stripe's own subscription status.
+      // Covers renewals, past-due (failed card), and reactivation — the
+      // relevant pass tracks live with Stripe's own subscription status.
       case 'customer.subscription.updated': {
         const sub = event.data.object;
-        const { error } = await supabase.from('profiles').update({
-          coach_pass_status: sub.status,
-          coach_pass: sub.status === 'active',
-        }).eq('stripe_subscription_id', sub.id);
+        const plan = sub.metadata?.plan || 'coach';
+        const { error } = plan === 'pro'
+          ? await supabase.from('profiles').update({
+              pro_status: sub.status,
+              is_premium: sub.status === 'active',
+            }).eq('stripe_pro_subscription_id', sub.id)
+          : await supabase.from('profiles').update({
+              coach_pass_status: sub.status,
+              coach_pass: sub.status === 'active',
+            }).eq('stripe_subscription_id', sub.id);
         if (error) throw error;
         break;
       }
@@ -84,11 +94,17 @@ export default async function handler(req, res) {
       // even before they next open the app).
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
-        const { error } = await supabase.from('profiles').update({
-          coach_pass: false,
-          coach_mode: false,
-          coach_pass_status: 'canceled',
-        }).eq('stripe_subscription_id', sub.id);
+        const plan = sub.metadata?.plan || 'coach';
+        const { error } = plan === 'pro'
+          ? await supabase.from('profiles').update({
+              is_premium: false,
+              pro_status: 'canceled',
+            }).eq('stripe_pro_subscription_id', sub.id)
+          : await supabase.from('profiles').update({
+              coach_pass: false,
+              coach_mode: false,
+              coach_pass_status: 'canceled',
+            }).eq('stripe_subscription_id', sub.id);
         if (error) throw error;
         break;
       }

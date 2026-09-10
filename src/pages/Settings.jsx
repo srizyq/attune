@@ -69,15 +69,18 @@ export default function Settings() {
     else setOpenModal(id);
   }
 
-  // Returning from Stripe Checkout — the webhook updates the profile
-  // server-side almost immediately, but this tab's own `profile` state
-  // won't know until it refetches. A couple of retries covers the small
-  // gap between the redirect landing and the webhook actually finishing.
-  // Also pops the Coach Mode popup open so the new subscription is
-  // actually visible instead of landing back on a plain section list.
+  // Returning from Stripe Checkout (either plan) — the webhook updates
+  // the profile server-side almost immediately, but this tab's own
+  // `profile` state won't know until it refetches. A couple of retries
+  // covers the small gap between the redirect landing and the webhook
+  // actually finishing. Also pops the relevant popup open so the new
+  // subscription is actually visible instead of landing back on a plain
+  // section list.
   useEffect(() => {
-    if (new URLSearchParams(location.search).get('coach_pass') !== 'success') return;
-    setOpenModal('coach');
+    const params = new URLSearchParams(location.search);
+    const returnedPlan = params.get('coach_pass') === 'success' ? 'coach' : params.get('pro') === 'success' ? 'account' : null;
+    if (!returnedPlan) return;
+    setOpenModal(returnedPlan);
     let attempts = 0;
     const interval = setInterval(() => {
       attempts += 1;

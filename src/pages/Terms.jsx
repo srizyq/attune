@@ -2,7 +2,7 @@ import LegalPageLayout, { Section, P, Ul } from '../components/LegalPageLayout';
 
 export default function Terms() {
   return (
-    <LegalPageLayout title="Terms of Service" updated="8 September 2026">
+    <LegalPageLayout title="Terms of Service" updated="10 September 2026">
       <P>
         These terms govern your use of Attune, currently operated by an individual
         (not a registered company) from Australia. By creating an account or using
@@ -39,13 +39,19 @@ export default function Terms() {
         ]} />
       </Section>
 
-      <Section title="4. Free and Pro features">
+      <Section title="4. Paid subscriptions (Pro and Coach Pass)">
         <P>
-          Attune offers a free tier and a Pro tier with additional features (such as
-          unlimited AI scans and custom micronutrient targets). Feature availability
-          may change over time. If and when paid subscriptions are introduced, separate
-          billing terms — including price, billing cycle, and cancellation/refund
-          policy — will apply and will be presented before you're charged.
+          Attune offers a free tier, a <b>Pro</b> tier (unlimited AI scans, custom
+          micronutrient targets, and other features), and <b>Coach Pass</b> for
+          trainers using Coach Mode. Both are billed monthly through Stripe and
+          auto-renew until cancelled. The exact price is shown by Stripe before you
+          confirm payment.
+        </P>
+        <P>
+          You can cancel anytime from Settings — cancellation stops the next renewal,
+          but the current billing period you've already paid for runs out as normal.{' '}
+          <b>We don't offer refunds</b>, including for partial billing periods or
+          unused time. Feature availability for each tier may change over time.
         </P>
       </Section>
 

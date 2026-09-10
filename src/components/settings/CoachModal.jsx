@@ -3,23 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile } from '../../hooks/useProfile';
 import { useMyTrainers } from '../../hooks/useCoach';
-import { supabase } from '../../lib/supabase';
 import { uploadCoachLogo } from '../../lib/db';
+import { authedPost } from '../../lib/billing';
 import { SettingsModal, Card, SectionLabel, FieldRow, Toggle } from './primitives';
-
-async function authedPost(path) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-    },
-  });
-  const data = await res.json();
-  if (!res.ok || data.error) throw new Error(data.error || 'Something went wrong — try again.');
-  return data;
-}
 
 function CoachPassButton({ profile }) {
   const [loading, setLoading] = useState(false);
@@ -29,7 +15,9 @@ function CoachPassButton({ profile }) {
     setLoading(true);
     setError(null);
     try {
-      const { url } = await authedPost(profile?.coach_pass ? '/api/create-portal-session' : '/api/create-checkout-session');
+      const { url } = profile?.coach_pass
+        ? await authedPost('/api/create-portal-session')
+        : await authedPost('/api/create-checkout-session', { plan: 'coach' });
       window.location.href = url;
     } catch (err) {
       setError(err.message);
