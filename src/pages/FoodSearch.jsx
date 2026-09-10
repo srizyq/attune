@@ -1450,7 +1450,7 @@ export default function FoodSearch() {
   // Favourites/Frequently logged/Recently logged as tabs instead of a
   // stacked scroll — all three are now one tap away instead of requiring
   // a scroll past everything else to reach the bottom two.
-  const [browseTab, setBrowseTab] = useState('favourites');
+  const [browseTab, setBrowseTab] = useState('frequent');
 
   const recentFoods = useMemo(() => recentRows.map(row => {
     const lastAmount = row.logged_amount != null ? Number(row.logged_amount) : null;
@@ -1750,9 +1750,9 @@ export default function FoodSearch() {
             <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
                 {[
-                  { id: "favourites", label: "Favourites" },
                   { id: "frequent", label: "Frequently logged" },
                   { id: "recent", label: "Recently logged" },
+                  { id: "favourites", label: "Favourites" },
                 ].map(tab => {
                   const isActive = browseTab === tab.id;
                   return (
