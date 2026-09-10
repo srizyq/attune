@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatHourLabel } from '../lib/mealTime';
+import { round1 } from '../lib/format';
 import LogItemRow from './LogItemRow';
 import MarqueeText from './MarqueeText';
 
@@ -81,26 +82,34 @@ export default function HourlyTimeline({ segments, onDelete, onSave, onNavigateA
 function HourCard({ segment, isOpen, onToggle, expandedItemId, onToggleItem, onDelete, onSave, onNavigateAdd }) {
   const { hour, label, items } = segment;
   const total = Math.round(items.reduce((s, i) => s + i.cal, 0));
+  const protein = round1(items.reduce((s, i) => s + (i.protein || 0), 0));
+  const carbs = round1(items.reduce((s, i) => s + (i.carbs || 0), 0));
+  const fat = round1(items.reduce((s, i) => s + (i.fat || 0), 0));
   const preview = items.length === 1 ? items[0].name : `${items.length} items`;
 
   return (
     <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 10, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px 9px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '9px 10px 9px 12px' }}>
         <button
           onClick={onToggle}
-          style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left' }}
+          style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'left' }}
         >
-          <span style={{
-            fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)',
-            background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 99,
-            padding: '4px 10px', flexShrink: 0,
-          }}>
-            {label}
-          </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <MarqueeText text={preview} style={{ color: 'var(--text-muted)', fontSize: 12 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)',
+              background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 99,
+              padding: '4px 10px', flexShrink: 0,
+            }}>
+              {label}
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <MarqueeText text={preview} style={{ color: 'var(--text-muted)', fontSize: 12 }} />
+            </div>
+            <span style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{total} kcal</span>
           </div>
-          <span style={{ color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{total} kcal</span>
+          <div style={{ paddingLeft: 2, color: 'var(--text-hint)', fontSize: 11 }}>
+            P {protein}g · C {carbs}g · F {fat}g
+          </div>
         </button>
         <AddHourButton hour={hour} label={label} onNavigateAdd={onNavigateAdd} />
       </div>
