@@ -704,3 +704,13 @@ alter table public.profiles add column if not exists coach_pass_status text
 alter table public.profiles add column if not exists stripe_pro_subscription_id text;
 alter table public.profiles add column if not exists pro_status text
   check (pro_status in ('active', 'canceled', 'past_due'));
+
+-- ── Daily log view preference (Pro) ─────────────────────────────────────────
+-- Pro users could previously only ever see the hourly timeline (free users
+-- are locked to the meal-grouped view) — this lets a Pro user pick either,
+-- read from both Dashboard's daily log and the full /log page so a choice
+-- made on one matches the other instead of being page-local UI state. Null
+-- (not yet chosen) defaults to 'hourly' in the app, preserving the only
+-- behavior that existed before this column did.
+alter table public.profiles add column if not exists daily_log_view text
+  check (daily_log_view in ('hourly', 'meals'));

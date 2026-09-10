@@ -10,6 +10,7 @@ import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import HourlyTimeline from '../components/HourlyTimeline';
 import DaySelector from '../components/DaySelector';
+import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import { round1 } from '../lib/format';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
@@ -17,8 +18,18 @@ const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', 
 export default function DailyLog() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile } = useProfile();
+  const { profile, save: saveProfile } = useProfile();
   const isPremium = !!profile?.is_premium;
+  // Defaults to hourly (unset) — the only view that ever existed for Pro
+  // before this was a choice at all, so an existing Pro user's daily log
+  // doesn't change out from under them just because this shipped.
+  const dailyLogView = profile?.daily_log_view || 'hourly';
+  const showHourly = isPremium && dailyLogView === 'hourly';
+  const [viewSaveError, setViewSaveError] = useState(null);
+  async function handleViewChange(v) {
+    setViewSaveError(null);
+    try { await saveProfile({ daily_log_view: v }); } catch { setViewSaveError("Couldn't save — try again."); }
+  }
   const today = todayLocalDate();
   // No current caller passes a date here (Progress's calendar now opens
   // the past-day Dashboard instead), but AppNav's "Daily log" bottom-nav
@@ -67,17 +78,20 @@ export default function DailyLog() {
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{dateStr}</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{Math.round(totalCal).toLocaleString()} kcal logged</div>
               </div>
-              {!isPremium && (
+              {isPremium ? (
+                <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />
+              ) : (
                 <div title="Hourly timeline — a Pro feature" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 20, padding: '5px 12px', fontSize: 11, color: 'var(--text-muted)' }}>
                   <i className="ti ti-lock" style={{ fontSize: 12 }} /> Hourly timeline (Pro)
                 </div>
               )}
             </div>
+            {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', marginTop: 8 }}>{viewSaveError}</p>}
           </div>
 
           {nutritionCoachNote && <CoachNote note={nutritionCoachNote} onDismiss={dismissNutritionCoachNote} style={{ marginBottom: 20 }} />}
 
-          {loading ? null : isPremium ? (
+          {loading ? null : showHourly ? (
             <HourlyTimeline
               segments={dayTimeline}
               onDelete={deleteFood}

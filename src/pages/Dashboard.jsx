@@ -20,6 +20,7 @@ import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
 import HourlyTimeline from '../components/HourlyTimeline';
+import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import { round1 } from '../lib/format';
 import { hourToHHMM } from '../lib/mealTime';
 
@@ -719,6 +720,16 @@ export default function Dashboard() {
   const isViewingToday = viewedDate === today;
   const { profile, save: saveProfile } = useProfile();
   const isPremium = !!profile?.is_premium;
+  // Same default/derivation as DailyLog.jsx — reading the same profile
+  // field is what keeps a choice made on either page in sync with the
+  // other, rather than each page tracking it separately.
+  const dailyLogView = profile?.daily_log_view || 'hourly';
+  const showHourlyLog = isPremium && dailyLogView === 'hourly';
+  const [viewSaveError, setViewSaveError] = useState(null);
+  async function handleViewChange(v) {
+    setViewSaveError(null);
+    try { await saveProfile({ daily_log_view: v }); } catch { setViewSaveError("Couldn't save — try again."); }
+  }
   const { meals, dayTimeline, deleteFood, updateFood } = useFoodLogs(viewedDate);
   const { checkin, save: saveCheckin } = useCheckins(viewedDate);
   // 90 days (not 30) so the pattern engine's more specific candidates
@@ -942,12 +953,16 @@ export default function Dashboard() {
               </span>
               <span style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 600 }}>{Math.round(consumed)} kcal logged</span>
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <span onClick={() => navigate('/food', { state: { date: viewedDate, openSavedMeals: true } })} style={{ color: 'var(--text-hint)', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', gap: 10 }}>
+              <span onClick={() => navigate('/food', { state: { date: viewedDate, openSavedMeals: true } })} style={{ color: 'var(--text-hint)', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                 <i className="ti ti-bookmark" style={{ fontSize: 12 }} /> Saved meals
               </span>
+              {isPremium && (
+                <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />
+              )}
             </div>
-            {isPremium ? (
+            {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 10 }}>{viewSaveError}</p>}
+            {showHourlyLog ? (
               <HourlyTimeline
                 segments={dayTimeline}
                 onDelete={deleteFood}
