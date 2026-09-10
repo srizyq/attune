@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from '../../components/OnboardingLayout';
-import { supabase } from '../../lib/supabase';
+import { supabase, emailRedirectTo } from '../../lib/supabase';
 import { getProfile, upsertProfile, upsertWeightLog } from '../../lib/db';
 import { todayLocalDate } from '../../lib/patterns';
 
@@ -85,7 +85,6 @@ export default function Step4() {
   const [prepError, setPrepError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [upgraded, setUpgraded] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const userIdRef = useRef(null);
   // Guards against this whole block running twice — React's StrictMode
@@ -157,7 +156,7 @@ export default function Step4() {
     if (name) {
       try { await upsertProfile(userIdRef.current, { name }); } catch { /* non-fatal — email/password still matter more */ }
     }
-    const { error: updateError } = await supabase.auth.updateUser({ email, password });
+    const { error: updateError } = await supabase.auth.updateUser({ email, password }, { emailRedirectTo });
     setLoading(false);
     if (updateError) {
       setError(updateError.message.includes('already registered')
@@ -165,7 +164,12 @@ export default function Step4() {
         : updateError.message);
       return;
     }
-    setUpgraded(true);
+    // Confirming ownership of the email is a separate step from here on
+    // (see onboarding/Step5) rather than a small inline message on this
+    // same screen — this was the confusing part: dropping straight into
+    // the dashboard still "in guest mode" as far as the rest of the app
+    // could tell, with no clear signal that one more step was needed.
+    navigate('/onboarding/step5', { state: { email } });
   }
 
   const inputStyle = (filled) => ({
@@ -186,34 +190,6 @@ export default function Step4() {
     return (
       <OnboardingLayout step={4}>
         <p style={{ color: 'var(--text-muted)' }}>Setting things up…</p>
-      </OnboardingLayout>
-    );
-  }
-
-  if (upgraded) {
-    return (
-      <OnboardingLayout step={4}>
-        <div style={{ width: '100%', maxWidth: '480px', textAlign: 'center' }}>
-          <div style={{
-            width: '64px', height: '64px', borderRadius: '16px', background: 'var(--accent-bg)',
-            border: '1px solid var(--accent-border)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: '28px', margin: '0 auto 24px',
-          }}>✉️</div>
-          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-            Almost there
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '24px' }}>
-            Check your email to confirm <span style={{ color: 'var(--text-secondary)' }}>{email}</span> — everything you've already logged stays right where it is.
-          </p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            style={{
-              padding: '14px 28px', background: 'var(--accent)',
-              border: '1px solid var(--accent)', borderRadius: '10px', color: '#0f0f0f',
-              fontSize: '15px', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-            }}
-          >Continue to dashboard →</button>
-        </div>
       </OnboardingLayout>
     );
   }

@@ -2,7 +2,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { supabase, emailRedirectTo } from '../lib/supabase';
 import { useProfile } from '../hooks/useProfile';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { useCheckins } from '../hooks/useCheckins';
@@ -579,7 +579,7 @@ function GuestBanner({ daysRemaining, onSave, pendingConfirmation, email }) {
 
   async function resend() {
     setResendState('sending');
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
     setResendState(error ? (error.message || 'Could not resend — try again.') : 'sent');
   }
 

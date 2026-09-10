@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import PreAuthThemeToggle from './PreAuthThemeToggle';
 
-export default function OnboardingLayout({ children, step, totalSteps = 4 }) {
+export default function OnboardingLayout({ children, step, totalSteps = 4, showSkip = true }) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = usePreAuthTheme();
   const progress = (step / totalSteps) * 100;
@@ -46,23 +46,29 @@ export default function OnboardingLayout({ children, step, totalSteps = 4 }) {
               Skipping mid-flow means no account exists yet, so /dashboard
               would just bounce you right back here via RequireAuth; the
               final step silently creates a guest session (with whatever
-              partial answers you did give) before landing you in the app. */}
-          <button
-            onClick={() => navigate('/onboarding/step4')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-muted)',
-              fontSize: '13px',
-              cursor: 'pointer',
-              padding: '4px 0',
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={e => e.target.style.color = 'var(--accent)'}
-            onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}
-          >
-            skip for now →
-          </button>
+              partial answers you did give) before landing you in the app.
+              Hidden on screens (like Step5's email-verify gate) that
+              already have their own, more specific way out — a generic
+              "skip" going back to step 4 wouldn't make sense once an
+              account already exists. */}
+          {showSkip && (
+            <button
+              onClick={() => navigate('/onboarding/step4')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '13px',
+                cursor: 'pointer',
+                padding: '4px 0',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={e => e.target.style.color = 'var(--accent)'}
+              onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}
+            >
+              skip for now →
+            </button>
+          )}
         </div>
       </div>
 

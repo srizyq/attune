@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -15,6 +15,13 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // A real, already-confirmed account landing on a "log in / create an
+  // account" screen doesn't make sense — most likely a stale bookmark or
+  // a Settings link followed after already being signed in elsewhere.
+  useEffect(() => {
+    if (user && !isGuest) navigate('/dashboard', { replace: true });
+  }, [user, isGuest, navigate]);
 
   const inputStyle = (filled) => ({
     background: 'var(--bg-subtle)',

@@ -9,6 +9,7 @@ import Step1 from './pages/onboarding/Step1'
 import Step2 from './pages/onboarding/Step2'
 import Step3 from './pages/onboarding/Step3'
 import Step4 from './pages/onboarding/Step4'
+import Step5 from './pages/onboarding/Step5'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import FoodSearch from "./pages/FoodSearch";
@@ -72,6 +73,7 @@ function AnimatedRoutes() {
         <Route path="/onboarding/step2" element={<Step2 />} />
         <Route path="/onboarding/step3" element={<Step3 />} />
         <Route path="/onboarding/step4" element={<Step4 />} />
+        <Route path="/onboarding/step5" element={<Step5 />} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/food" element={<RequireAuth><FoodSearch /></RequireAuth>} />
         <Route path="/progress" element={<RequireAuth><Progress /></RequireAuth>} />

@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useProfile } from '../../hooks/useProfile';
 import { useTheme } from '../../hooks/useTheme';
 import { useClosingTransition } from '../../hooks/useClosingTransition';
-import { supabase } from '../../lib/supabase';
+import { supabase, emailRedirectTo } from '../../lib/supabase';
 import { authedPost } from '../../lib/billing';
 import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
 
@@ -58,7 +58,7 @@ function ResendConfirmation({ email }) {
 
   async function resend() {
     setState('sending');
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
     setState(error ? (error.message || 'Could not resend — try again.') : 'sent');
   }
 
@@ -98,7 +98,7 @@ function UpgradeForm() {
   async function handleUpgrade() {
     if (!email || password.length < 8) return;
     setStatus('loading');
-    const { error } = await supabase.auth.updateUser({ email, password });
+    const { error } = await supabase.auth.updateUser({ email, password }, { emailRedirectTo });
     if (error) { setStatus(error.message); return; }
     setStatus('done');
   }
