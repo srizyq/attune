@@ -183,8 +183,7 @@ export default function Coach() {
 
   if (!profile || !profile.coach_pass) return null;
 
-  const exitCoachMode = async () => {
-    await saveProfile({ coach_mode: false });
+  const exitCoachMode = () => {
     navigate('/dashboard');
   };
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getProfile, upsertProfile } from '../lib/db';
 
-// These accounts always read as fully unlocked — Pro and Coach Mode both
+// These accounts always read as fully unlocked — Pro and Coach Pass both
 // — regardless of what's actually stored. A permanent comp override
 // rather than a one-off database edit, so it isn't undone by a future
 // profile save and keeps working unchanged now that real Stripe billing
@@ -11,7 +11,7 @@ const COMP_EMAILS = new Set(['csrreddy9@gmail.com', 'sriramreddy1m@gmail.com']);
 
 function withComp(data, email) {
   return data && email && COMP_EMAILS.has(email)
-    ? { ...data, is_premium: true, coach_pass: true, coach_mode: true }
+    ? { ...data, is_premium: true, coach_pass: true }
     : data;
 }
 

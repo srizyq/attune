@@ -108,7 +108,7 @@ export default function Settings() {
   const summaries = {
     goals: profile?.calorie_target ? `${profile.calorie_target.toLocaleString()} kcal · ${goalLabels[profile.goal] || 'Maintain'}` : 'Not set up yet',
     notifs: profile?.reminder_enabled ? `Daily reminder at ${profile.reminder_time || '19:00'}` : 'All reminders off',
-    coach: profile?.coach_pass ? (profile?.coach_mode ? 'Coach Mode active' : 'Coach Pass active') : 'Not active',
+    coach: profile?.coach_pass ? 'Coach Pass active' : 'Not active',
     account: pendingConfirmation ? 'Pending email confirmation' : isGuest ? `Guest mode · ${daysRemaining} days left` : (user?.email || 'Signed in'),
     privacy: 'Data export, Privacy Policy, Terms of Service',
   };

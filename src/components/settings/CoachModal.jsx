@@ -5,7 +5,7 @@ import { useProfile } from '../../hooks/useProfile';
 import { useMyTrainers } from '../../hooks/useCoach';
 import { uploadCoachLogo } from '../../lib/db';
 import { authedPost } from '../../lib/billing';
-import { SettingsModal, Card, SectionLabel, FieldRow, Toggle } from './primitives';
+import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
 
 function CoachPassButton({ profile }) {
   const [loading, setLoading] = useState(false);
@@ -110,24 +110,23 @@ export default function CoachModal({ onClose, closing }) {
         >
           <CoachPassButton profile={profile} />
         </FieldRow>
-        <FieldRow label="Coach Mode" hint={profile?.coach_pass ? 'See your clients’ logged data and leave comments' : 'Requires Coach Pass'}>
-          <Toggle
-            on={!!profile?.coach_mode}
-            onChange={async (on) => {
-              if (!profile?.coach_pass) return;
-              await saveProfile({ coach_mode: on });
-              navigate(on ? '/coach' : '/dashboard');
-            }}
-          />
-        </FieldRow>
-        {profile?.coach_mode && (
-          <button
-            onClick={() => navigate('/coach')}
-            style={{ marginTop: 16, padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
-          >
-            Open Coach Dashboard
-          </button>
-        )}
+        <button
+          onClick={() => profile?.coach_pass && navigate('/coach')}
+          disabled={!profile?.coach_pass}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+            padding: '12px 0', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)',
+            cursor: profile?.coach_pass ? 'pointer' : 'not-allowed', textAlign: 'left', fontFamily: 'inherit',
+          }}
+        >
+          <div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Coach Dashboard</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>
+              {profile?.coach_pass ? 'See your clients’ logged data and leave comments' : 'Requires Coach Pass'}
+            </div>
+          </div>
+          <i className="ti ti-chevron-right" style={{ color: profile?.coach_pass ? 'var(--text-hint)' : 'var(--border-default)', fontSize: 16, flexShrink: 0 }} />
+        </button>
         {profile?.coach_pass && (
           <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border-default)' }}>
             <FieldRow label="Your logo" hint="Shown to your clients wherever they see your name">
