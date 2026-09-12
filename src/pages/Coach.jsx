@@ -3,9 +3,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, BarElement, Tooltip, Legend, Filler,
+  LineElement, Tooltip, Legend, Filler,
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../hooks/useTheme';
@@ -23,8 +23,10 @@ import LogoMark from '../components/LogoMark';
 import StreakItem from '../components/StreakItem';
 import MicroCard from '../components/MicroCard';
 import MacroPreviewBar from '../components/MacroPreviewBar';
+import DayHeatmapStrip from '../components/DayHeatmapStrip';
+import MacroSplitBar from '../components/MacroSplitBar';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
 const INVITE_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I ambiguity
 const ACCENT = '#8fbc8f';
@@ -558,6 +560,8 @@ function ClientDetailView({ client }) {
 
   const avgCalories = Math.round(avg(loggedDays.map(d => d.calories)));
   const avgProtein = Math.round(avg(loggedDays.map(d => d.protein_g)));
+  const avgCarbs = Math.round(avg(loggedDays.map(d => d.carbs_g)));
+  const avgFat = Math.round(avg(loggedDays.map(d => d.fat_g)));
   const daysOnTarget = calorieTarget ? loggedDays.filter(d => Math.abs(d.calories - calorieTarget) <= calorieTarget * 0.1).length : 0;
   const energyDays = filledDays.filter(d => d.energy != null);
   const avgEnergy = energyDays.length ? avg(energyDays.map(d => d.energy)).toFixed(1) : null;
@@ -567,31 +571,18 @@ function ClientDetailView({ client }) {
   const moodStreak = streakFor(badgeData, d => d.mood != null);
   const proteinStreak = proteinTarget ? streakFor(badgeData, d => d.protein_g >= proteinTarget * 0.9) : 0;
 
-  const labels = filledDays.map(d => new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }));
-
-  const calorieChartData = {
-    labels,
-    datasets: [
-      {
-        label: 'Calories', data: filledDays.map(d => d.calories || null),
-        borderColor: ACCENT, backgroundColor: ACCENT + '22', fill: true, tension: 0.3, spanGaps: true,
-        pointRadius: range > 30 ? 0 : 3,
-      },
-      ...(calorieTarget ? [{
-        label: 'Goal', data: filledDays.map(() => calorieTarget),
-        borderColor: chartTextMuted, borderDash: [4, 4], pointRadius: 0, fill: false,
-      }] : []),
-    ],
-  };
-
-  const macroChartData = {
-    labels,
-    datasets: [
-      { label: 'Protein', data: filledDays.map(d => d.protein_g || 0), backgroundColor: ACCENT },
-      { label: 'Carbs', data: filledDays.map(d => d.carbs_g || 0), backgroundColor: WATER_BLUE },
-      { label: 'Fat', data: filledDays.map(d => d.fat_g || 0), backgroundColor: AI_PURPLE },
-    ],
-  };
+  // Same heatmap-strip treatment as the client's own Expenditure page —
+  // see DayHeatmapStrip/MacroSplitBar there for the reasoning (replaced
+  // Chart.js line/bar for calories and macros so a trainer's view matches
+  // what the client sees).
+  const calorieHeatmapDays = filledDays.map(d => {
+    const pct = !d.calories ? null : calorieTarget ? Math.min(100, Math.round((d.calories / calorieTarget) * 100)) : 100;
+    return {
+      date: d.date,
+      pct,
+      tooltip: `${new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}: ${d.calories ? `${Math.round(d.calories)} kcal` : 'nothing logged'}`,
+    };
+  });
 
   const trendPoints = useMemo(() => computeTrendWeight(weightLogs), [weightLogs]);
   const trendByDate = useMemo(() => new Map(trendPoints.map(p => [p.date, p.trend])), [trendPoints]);
@@ -625,14 +616,6 @@ function ClientDetailView({ client }) {
       y: { ticks: { color: chartTextMuted, font: { size: 10 } }, grid: { color: chartGrid } },
     },
   };
-  const stackedOptions = {
-    ...chartOptions,
-    scales: {
-      x: { ...chartOptions.scales.x, stacked: true },
-      y: { ...chartOptions.scales.y, stacked: true },
-    },
-  };
-
   const handleAddComment = async () => {
     const body = commentBody.trim();
     if (!body) return;
@@ -775,7 +758,7 @@ function ClientDetailView({ client }) {
         <Card style={{ marginBottom: 0 }}>
           <SectionLabel icon="ti-chart-line">Calories vs goal</SectionLabel>
           {historyLoading ? null : hasData ? (
-            <div style={{ height: 200 }}><Line data={calorieChartData} options={chartOptions} /></div>
+            <DayHeatmapStrip days={calorieHeatmapDays} color={ACCENT} />
           ) : (
             <EmptyChartBox icon="ti-chart-line" message="No logged days in this range" />
           )}
@@ -783,7 +766,7 @@ function ClientDetailView({ client }) {
         <Card style={{ marginBottom: 0 }}>
           <SectionLabel icon="ti-chart-bar">Macro breakdown</SectionLabel>
           {historyLoading ? null : hasData ? (
-            <div style={{ height: 200 }}><Bar data={macroChartData} options={stackedOptions} /></div>
+            <MacroSplitBar protein={avgProtein} carbs={avgCarbs} fat={avgFat} />
           ) : (
             <EmptyChartBox icon="ti-chart-bar" message="No logged days in this range" />
           )}
