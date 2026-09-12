@@ -986,8 +986,10 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
           <div style={{ marginBottom: 14 }}>
             {items.map((it, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < items.length - 1 ? "1px solid var(--border-default)" : "none" }}>
-                <div style={{ flex: 1, minWidth: 0 }}><MarqueeText text={it.name} style={{ fontSize: 13, color: "var(--text-secondary)" }} /></div>
-                <div style={{ fontSize: 12, color: "var(--accent)", flexShrink: 0 }}>{Math.round(it.cal)} kcal</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <MarqueeText text={it.name} style={{ fontSize: 13, color: "var(--text-secondary)" }} />
+                  <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 2 }}>{Math.round(it.cal)} kcal</div>
+                </div>
                 <button onClick={() => onRemove(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
               </div>
             ))}
@@ -1104,11 +1106,9 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
             </div>
             {food.source === "custom" && <span style={{ flexShrink: 0, fontSize: 10, color: "#b48fd9", border: "1px solid #b48fd950", borderRadius: 5, padding: "1px 6px" }}>Custom</span>}
           </div>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{food.meta}</div>
-        </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: "var(--accent)" }}>{food.cal}</span>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}> kcal</span>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+            <span style={{ color: "var(--accent)", fontWeight: 600 }}>{food.cal} kcal</span> · {food.meta}
+          </div>
         </div>
         <button
           onClick={handleQuickAdd}

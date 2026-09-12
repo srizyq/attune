@@ -275,25 +275,6 @@ button:not(:disabled):active {
   animation: button-press 160ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
-/* Food log item names (LogItemRow) — a name that doesn't fit its row gets
-   a slow ticker scroll instead of being cut off, holding briefly at each
-   end so both the start and the full end are actually readable rather
-   than blurring past. --marquee-distance/--marquee-duration are set
-   per-row from the measured text overflow (0 distance = no scroll, since
-   the row's own conditional rendering skips this class entirely then). */
-@keyframes marquee-scroll {
-  0%, 8%   { transform: translateX(0); }
-  92%, 100% { transform: translateX(var(--marquee-distance, 0px)); }
-}
-.food-name-marquee {
-  display: inline-block;
-  white-space: nowrap;
-  animation: marquee-scroll var(--marquee-duration, 6s) ease-in-out infinite alternate;
-}
-@media (prefers-reduced-motion: reduce) {
-  .food-name-marquee { animation: none; }
-}
-
 /* Route transitions — see App.jsx's AnimatedRoutes. Tab switches (bottom
    nav) get a soft cross-dissolve + rise, like iOS switching tabs; drilling
    into a page (settings, a chart detail) slides in from the right like a
