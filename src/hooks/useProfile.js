@@ -17,7 +17,7 @@ const COMP_GRANTS = {
 };
 
 function withComp(data, email) {
-  const grants = data && email && COMP_GRANTS[email];
+  const grants = data && email && COMP_GRANTS[email.toLowerCase()];
   return grants ? { ...data, ...grants } : data;
 }
 
