@@ -714,3 +714,12 @@ alter table public.profiles add column if not exists pro_status text
 -- behavior that existed before this column did.
 alter table public.profiles add column if not exists daily_log_view text
   check (daily_log_view in ('hourly', 'meals'));
+
+-- ── Trainer-comment push notifications ──────────────────────────────────────
+-- Settings > Notifications' "Trainer updates" toggle used to be a hardcoded
+-- "coming soon" no-op even though the underlying push infrastructure
+-- (push_subscriptions, VAPID, web-push — see api/send-reminders.js) already
+-- existed for reminders. This flag is the client's opt-in; the trainer's
+-- side of addComment (useCoach.js) calls api/notify-trainer-comment.js right
+-- after a successful insert, which checks this before sending.
+alter table public.profiles add column if not exists notify_trainer_comments boolean default false;

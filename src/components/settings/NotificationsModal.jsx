@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { useReminders } from '../../hooks/useReminders';
+import { useReminders, useTrainerCommentNotifications } from '../../hooks/useReminders';
 import { pushSupported } from '../../lib/pushNotifications';
 import { SettingsModal, Card, SectionLabel, FieldRow, Toggle } from './primitives';
 
 export default function NotificationsModal({ onClose, closing }) {
   const reminders = useReminders();
+  const trainerNotifs = useTrainerCommentNotifications();
   const [reminderTimeInput, setReminderTimeInput] = useState(reminders.time);
   const [reminderError, setReminderError] = useState(null);
+  const [trainerNotifError, setTrainerNotifError] = useState(null);
 
   return (
     <SettingsModal title="Notifications" onClose={onClose} closing={closing}>
@@ -56,10 +58,24 @@ export default function NotificationsModal({ onClose, closing }) {
 
       <Card style={{ marginBottom: 0 }}>
         <SectionLabel>Updates</SectionLabel>
+        <FieldRow label="Trainer updates" hint="When your trainer leaves you a note">
+          <Toggle
+            on={trainerNotifs.enabled}
+            onChange={async (on) => {
+              setTrainerNotifError(null);
+              try {
+                if (on) await trainerNotifs.enable();
+                else await trainerNotifs.disable();
+              } catch (err) {
+                setTrainerNotifError(err.message || "Couldn't update this — try again.");
+              }
+            }}
+          />
+        </FieldRow>
+        {trainerNotifError && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 16px' }}>{trainerNotifError}</p>}
         {[
-          { key: 'recap',   label: 'Weekly recap',    hint: 'Your shareable Sunday summary — coming soon' },
-          { key: 'ai',      label: 'Pattern insights', hint: 'Nudges based on your logged patterns — coming soon' },
-          { key: 'trainer', label: 'Trainer updates', hint: 'When your trainer comments on your data — coming soon' },
+          { key: 'recap', label: 'Weekly recap',     hint: 'Your shareable Sunday summary — coming soon' },
+          { key: 'ai',    label: 'Pattern insights', hint: 'Nudges based on your logged patterns — coming soon' },
         ].map(n => (
           <FieldRow key={n.key} label={n.label} hint={n.hint}>
             <Toggle on={false} onChange={() => {}} />

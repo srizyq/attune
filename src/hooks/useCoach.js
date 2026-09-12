@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './useAuth';
+import { supabase } from '../lib/supabase';
 import {
   getMyClients, getMyTrainers, redeemCoachInviteCode, revokeClientLink, setClientGroup,
   getTrainerComments, addTrainerComment, deleteTrainerComment, getLatestCoachComment,
@@ -137,6 +138,20 @@ export function useTrainerComments(clientId) {
     if (!user || !clientId) return;
     await addTrainerComment(user.id, clientId, body, commentDate, category);
     await refetch();
+    // Best-effort — a failed push send shouldn't surface as a failure to
+    // save the comment itself, which already succeeded above.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await fetch('/api/notify-trainer-comment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ clientId }),
+        });
+      }
+    } catch (err) {
+      console.error('Failed to notify client of new comment:', err);
+    }
   }, [user, clientId, refetch]);
 
   const removeComment = useCallback(async (id) => {
@@ -151,25 +166,48 @@ export function useTrainerComments(clientId) {
 // category, for surfacing on their own Dashboard/Progress/Daily Log —
 // `date` (Daily Log's nutrition notes) matches that exact day; omitted
 // (weight/general) just returns the latest ever in that category.
+// Which note (by its own row id) was last dismissed for this user+category
+// — persisted so a dismissal survives reloads and remounts, and so a new
+// comment from the coach (a different id) shows up again regardless of an
+// old dismissal. Component state alone reset to "not dismissed" on every
+// remount (navigating away from Dashboard and back, or a refresh), which
+// made the X button on CoachNote look like it didn't do anything.
+function dismissedNoteKey(userId, category) {
+  return `attune_dismissed_coach_note_${userId}_${category}`;
+}
+function getDismissedNoteId(userId, category) {
+  try { return localStorage.getItem(dismissedNoteKey(userId, category)); } catch { return null; }
+}
+function setDismissedNoteId(userId, category, noteId) {
+  try { localStorage.setItem(dismissedNoteKey(userId, category), noteId); } catch { /* best-effort */ }
+}
+
 export function useCoachNote(category, date = null) {
   const { user } = useAuth();
   const [note, setNote] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     if (!user) { setNote(null); setLoading(false); return; }
     setLoading(true);
-    setDismissed(false);
     getLatestCoachComment(user.id, category, date)
-      .then(result => { if (!cancelled) setNote(result); })
+      .then(result => {
+        if (cancelled) return;
+        const dismissedId = getDismissedNoteId(user.id, category);
+        setNote(result && String(result.id) === dismissedId ? null : result);
+      })
       .catch(err => { console.error('Failed to load coach note:', err); if (!cancelled) setNote(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [user, category, date]);
 
-  return { note: dismissed ? null : note, loading, dismiss: () => setDismissed(true) };
+  function dismiss() {
+    if (user && note) setDismissedNoteId(user.id, category, String(note.id));
+    setNote(null);
+  }
+
+  return { note, loading, dismiss };
 }
 
 // Client-side: the full two-way 'general' thread with one trainer, for
