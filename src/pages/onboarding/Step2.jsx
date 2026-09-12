@@ -88,7 +88,7 @@ export default function Step2() {
     padding: '14px 16px',
     color: 'var(--text-primary)',
     fontSize: '16px',
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
     width: '100%',
     boxSizing: 'border-box',
     outline: 'none',
@@ -114,7 +114,7 @@ export default function Step2() {
     color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
     fontSize: '14px',
     fontWeight: 600,
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
     transition: 'all 0.2s ease',
     outline: 'none',
   });
@@ -158,7 +158,7 @@ export default function Step2() {
                 fontSize: '12px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
               {u === 'metric' ? 'kg / cm' : 'lbs / in'}
@@ -330,7 +330,7 @@ export default function Step2() {
               color: 'var(--text-muted)',
               fontSize: '15px',
               cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             ←
@@ -349,7 +349,7 @@ export default function Step2() {
               fontWeight: 600,
               cursor: isComplete ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s ease',
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             Continue →

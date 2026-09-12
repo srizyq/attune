@@ -255,16 +255,16 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
               <div style={{ background: limitReached ? '#1a1508' : '#1a0f0f', border: `1px solid ${limitReached ? '#4a3a1a' : '#c0707040'}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: limitReached ? '#e8c468' : '#c07070', marginBottom: 10 }}>{error}</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {limitReached ? (
-                  <button onClick={() => navigate('/settings')} style={{ flex: 1, background: '#0f1a0f', border: '1px solid #3a5a3a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#8fbc8f', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                  <button onClick={() => navigate('/settings')} style={{ flex: 1, background: '#0f1a0f', border: '1px solid #3a5a3a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#8fbc8f', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     Upgrade to Pro
                   </button>
                 ) : (
-                  <button onClick={reset} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                  <button onClick={reset} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     Try another photo
                   </button>
                 )}
                 {onSearchManually && (
-                  <button onClick={onSearchManually} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                  <button onClick={onSearchManually} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     Search manually
                   </button>
                 )}
@@ -307,7 +307,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                       background: readingLabel ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 7,
                       padding: '7px 14px', fontSize: 12, fontWeight: 600,
                       color: readingLabel ? '#8a8a8a' : '#0f0f0f', cursor: readingLabel ? 'not-allowed' : 'pointer',
-                      fontFamily: "'DM Sans', sans-serif",
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
                   >
                     {readingLabel ? 'Reading label…' : 'Read exact label'}
@@ -341,7 +341,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                       borderRadius: 7, padding: '9px 14px', fontSize: 13, fontWeight: 600,
                       color: !comment.trim() || correcting ? '#666' : '#8fbc8f',
                       cursor: !comment.trim() || correcting ? 'not-allowed' : 'pointer',
-                      fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: 'nowrap',
                     }}
                   >
                     {correcting ? 'Fixing…' : 'Recalculate'}
@@ -360,17 +360,17 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                     {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 )}
-                <button onClick={reset} style={{ background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: '#8a8a8a', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Retake</button>
+                <button onClick={reset} style={{ background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: '#8a8a8a', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Retake</button>
               </div>
               <button
                 onClick={handleAdd}
                 disabled={adding}
-                style={{ width: '100%', background: adding ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? '#666' : '#0f0f0f', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                style={{ width: '100%', background: adding ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? '#666' : '#0f0f0f', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 {adding ? 'Adding…' : logByTime ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
               </button>
               {onCreateCustom && (
-                <button onClick={() => onCreateCustom(result)} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#8a8a8a', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                <button onClick={() => onCreateCustom(result)} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#8a8a8a', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   {hasCorrected
                     // Once you've corrected it, saving it as a custom food
                     // means this exact dish never needs an AI guess again —

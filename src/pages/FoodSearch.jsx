@@ -668,15 +668,15 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         <div style={{ marginBottom: 12 }}>
           <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <button onClick={onSearchManually} style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <button onClick={onSearchManually} style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
               <i className="ti ti-search" style={{ fontSize: 14 }} /> Search manually
             </button>
-            <button onClick={onCreateCustom} style={{ flex: 1, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <button onClick={onCreateCustom} style={{ flex: 1, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
               <i className="ti ti-plus" style={{ fontSize: 14 }} /> Create custom food
             </button>
           </div>
           {scannedBarcode && (
-            <button onClick={() => setAddingProduct(true)} style={{ width: "100%", background: "transparent", border: "1px dashed var(--border-default)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <button onClick={() => setAddingProduct(true)} style={{ width: "100%", background: "transparent", border: "1px dashed var(--border-default)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
               <i className="ti ti-barcode" style={{ fontSize: 14 }} /> Add this product for everyone
             </button>
           )}
@@ -731,7 +731,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => { setAddingProduct(false); setLabelError(null); setLabelPreview(null); setNewProduct(BLANK_NEW_PRODUCT); }}
-              style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+              style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Cancel
             </button>
             <button onClick={saveNewProduct} disabled={!newProduct.name.trim() || savingProduct}
@@ -739,7 +739,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
                 flex: 2, background: !newProduct.name.trim() || savingProduct ? "var(--border-default)" : "var(--accent)",
                 border: "none", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 600,
                 color: !newProduct.name.trim() || savingProduct ? "var(--text-muted)" : "#0f0f0f",
-                cursor: !newProduct.name.trim() || savingProduct ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif",
+                cursor: !newProduct.name.trim() || savingProduct ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}>
               {savingProduct ? "Saving…" : "Save & continue"}
             </button>
@@ -776,7 +776,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             onAdd={() => { onAddFood(scaled, logByTime ? null : meal, logByTime ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null); onClose(); }}
             disabled={!servings}
           />
-          <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Scan again</button>
+          <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Scan again</button>
         </div>
       )}
       </div>
@@ -890,7 +890,7 @@ function CreateFoodModal({ onClose, onCreate, initialName, initialFood }) {
           <div><label style={labelStyle}>Sugar (g)</label><input style={fieldStyle} type="number" min="0" value={sugar} onChange={e => setSugar(e.target.value)} /></div>
         </div>
         {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)" }}>{error}</div>}
-        <button onClick={submit} disabled={!valid || saving} style={{ background: !valid || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !valid || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !valid || saving ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+        <button onClick={submit} disabled={!valid || saving} style={{ background: !valid || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !valid || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !valid || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {saving ? "Saving…" : "Save custom food"}
         </button>
       </div>
@@ -977,7 +977,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
           <div style={{ background: "#1a1508", border: "1px solid #4a3a1a", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--gold)", marginBottom: 14 }}>
             You've saved {FREE_SAVED_MEALS_LIMIT} free saved meals — upgrade to Pro for unlimited, or delete an old one to make room.
           </div>
-          <button onClick={onUpgrade} style={{ width: "100%", background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+          <button onClick={onUpgrade} style={{ width: "100%", background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Upgrade to Pro
           </button>
         </div>
@@ -1016,7 +1016,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
             )
           )}
           {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 12 }}>{error}</div>}
-          <button onClick={submit} disabled={!name.trim() || saving} style={{ width: "100%", background: !name.trim() || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !name.trim() || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !name.trim() || saving ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+          <button onClick={submit} disabled={!name.trim() || saving} style={{ width: "100%", background: !name.trim() || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !name.trim() || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !name.trim() || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             {saving ? "Saving…" : !logNow ? "Save meal" : logByTime ? `Save meal & log at ${formatTime12h(time)}` : `Save meal & log to ${meal}`}
           </button>
         </>
@@ -1671,7 +1671,7 @@ export default function FoodSearch() {
   }
 
   return (
-    <div style={{ height: "100vh", overflow: "hidden", background: "var(--bg-primary)", color: "var(--text-primary)", fontFamily: "'DM Sans', sans-serif", display: "flex" }}>
+    <div style={{ height: "100vh", overflow: "hidden", background: "var(--bg-primary)", color: "var(--text-primary)", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex" }}>
 
       <AppNav active="food" />
 

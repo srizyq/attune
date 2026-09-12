@@ -92,7 +92,7 @@ export default function Step5() {
             style={{
               padding: '11px 20px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
               borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600,
-              cursor: resendState === 'sending' ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif", marginBottom: 20,
+              cursor: resendState === 'sending' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 20,
             }}
           >
             {resendState === 'sending' ? 'Sending…' : 'Resend confirmation email'}
@@ -105,7 +105,7 @@ export default function Step5() {
         <div>
           <button
             onClick={() => navigate('/dashboard')}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textDecoration: 'underline' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", textDecoration: 'underline' }}
           >
             Skip for now — I'll verify later
           </button>

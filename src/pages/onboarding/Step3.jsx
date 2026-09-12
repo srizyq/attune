@@ -199,7 +199,7 @@ export default function Step3() {
             </p>
             <button
               onClick={() => setEditingMacros(e => !e)}
-              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}
+              style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}
             >
               <i className={`ti ${editingMacros ? 'ti-check' : 'ti-pencil'}`} style={{ fontSize: 13 }} />
               {editingMacros ? 'Done' : 'Edit'}
@@ -259,7 +259,7 @@ export default function Step3() {
               color: 'var(--text-muted)',
               fontSize: '15px',
               cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             ←
@@ -277,7 +277,7 @@ export default function Step3() {
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             Let's go →

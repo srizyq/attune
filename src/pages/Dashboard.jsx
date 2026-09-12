@@ -142,7 +142,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
             placeholder={`Weight (${unit})`}
             style={{
               flex: 1, padding: '11px 14px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)',
-              borderRadius: 10, color: 'var(--text-primary)', fontSize: 15, fontFamily: "'DM Sans', sans-serif", outline: 'none',
+              borderRadius: 10, color: 'var(--text-primary)', fontSize: 15, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none',
             }}
           />
           <button
@@ -151,7 +151,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
             style={{
               padding: '11px 18px', background: !value || saving ? 'var(--border-default)' : 'var(--accent)',
               border: 'none', borderRadius: 10, color: !value || saving ? 'var(--text-muted)' : '#0f0f0f',
-              fontSize: 14, fontWeight: 600, cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+              fontSize: 14, fontWeight: 600, cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             {saving ? '…' : 'Save'}
@@ -160,7 +160,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
 
         <button
           onClick={onViewTrend}
-          style={{ width: '100%', background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '4px 0', fontFamily: "'DM Sans', sans-serif" }}
+          style={{ width: '100%', background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '4px 0', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           View trend →
         </button>
@@ -870,7 +870,7 @@ export default function Dashboard() {
   const dateStr = new Date(viewedDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <AppNav active="dashboard" initials={initials} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
@@ -881,7 +881,7 @@ export default function Dashboard() {
             </span>
             <span style={{ color: 'var(--text-hint)', fontSize: '13px', marginLeft: '12px' }}>{dateStr}</span>
             {!isViewingToday && (
-              <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginLeft: '12px', padding: 0, fontFamily: "'DM Sans', sans-serif" }}>
+              <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginLeft: '12px', padding: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 ← Back to today
               </button>
             )}

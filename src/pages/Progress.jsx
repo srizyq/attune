@@ -250,7 +250,7 @@ export default function Progress() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "var(--bg-primary)", fontFamily: "'DM Sans', sans-serif", color: "var(--text-primary)", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "var(--bg-primary)", fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)", overflow: "hidden" }}>
 
       <AppNav active="progress" initials={initials} />
 
@@ -285,7 +285,7 @@ export default function Progress() {
                 style={{
                   background: "var(--accent)", border: "none", borderRadius: 8,
                   padding: "10px 22px", fontSize: 14, fontWeight: 600,
-                  color: "#0f0f0f", cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                  color: "#0f0f0f", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
                   whiteSpace: "nowrap", flexShrink: 0,
                 }}
               >
@@ -302,7 +302,7 @@ export default function Progress() {
                 border: `1px solid ${range === r.id ? "var(--accent-dark)" : "var(--border-strong)"}`,
                 borderRadius: 8, padding: "7px 18px", fontSize: 13,
                 color: range === r.id ? "var(--accent)" : "var(--text-muted)", cursor: "pointer",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}>{r.label}</button>
             ))}
           </div>
@@ -340,7 +340,7 @@ export default function Progress() {
                 style={{
                   background: "var(--bg-primary)", border: "1px solid var(--border-default)",
                   borderRadius: 7, padding: "7px 10px", fontSize: 12, color: "var(--text-primary)",
-                  fontFamily: "'DM Sans', sans-serif", outline: "none", cursor: "pointer",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", cursor: "pointer",
                 }}
               >
                 {WEIGHT_RANGES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
@@ -441,7 +441,7 @@ function LogWeightButton({ unit, onLog }) {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} style={{ background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "var(--accent)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+      <button onClick={() => setOpen(true)} style={{ background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         + Log weight
       </button>
     );
@@ -455,10 +455,10 @@ function LogWeightButton({ unit, onLog }) {
         placeholder={`Weight (${unit})`}
         style={{ width: 110, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "6px 10px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
       />
-      <button onClick={submit} disabled={!value || saving} style={{ background: !value || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: !value || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !value || saving ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+      <button onClick={submit} disabled={!value || saving} style={{ background: !value || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: 600, color: !value || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !value || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         {saving ? "Saving…" : "Save"}
       </button>
-      <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "var(--text-hint)", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+      <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "var(--text-hint)", fontSize: 12, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Cancel</button>
     </div>
   );
 }

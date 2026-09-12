@@ -179,7 +179,7 @@ export default function Step4() {
     padding: '14px 16px',
     color: 'var(--text-primary)',
     fontSize: '16px',
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
     width: '100%',
     boxSizing: 'border-box',
     outline: 'none',
@@ -287,7 +287,7 @@ export default function Step4() {
             fontSize: '15px',
             fontWeight: 600,
             cursor: email && password.length >= 8 && agreed && !loading ? 'pointer' : 'not-allowed',
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
             transition: 'all 0.2s ease',
             marginBottom: '14px',
           }}
@@ -299,7 +299,7 @@ export default function Step4() {
           onClick={() => navigate('/dashboard')}
           style={{
             background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '13px',
-            cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", marginBottom: '20px',
+            cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: '20px',
           }}
         >
           Maybe later

@@ -157,7 +157,7 @@ export default function Step1() {
               color: 'var(--text-muted)',
               fontSize: '15px',
               cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             ←
@@ -176,7 +176,7 @@ export default function Step1() {
               fontWeight: 600,
               cursor: selected ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s ease',
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             Continue →

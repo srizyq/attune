@@ -49,7 +49,7 @@ export function Select({ value, onChange, options }) {
         borderRadius: '8px',
         color: 'var(--text-primary)',
         fontSize: '14px',
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
         outline: 'none',
         cursor: 'pointer',
         minWidth: '160px',
@@ -82,7 +82,7 @@ export function Segmented({ value, onChange, options }) {
             }}
           >
             <i className={`ti ${o.icon}`} style={{ fontSize: '20px', marginBottom: '4px', display: 'block', color: sel ? 'var(--accent)' : 'var(--text-muted)' }} />
-            <div style={{ color: sel ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '14px', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>{o.label}</div>
+            <div style={{ color: sel ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '14px', fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{o.label}</div>
             {o.desc && <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>{o.desc}</div>}
           </button>
         );

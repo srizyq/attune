@@ -14,7 +14,7 @@ export default function OnboardingLayout({ children, step, totalSteps = 4, showS
       background: 'var(--bg-primary)',
       display: 'flex',
       flexDirection: 'column',
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>
       {/* Top bar */}
       <div style={{

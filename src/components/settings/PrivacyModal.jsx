@@ -57,7 +57,7 @@ function ExportDataButton() {
         style={{
           padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
           borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600,
-          cursor: state === 'loading' ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+          cursor: state === 'loading' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
         {state === 'loading' ? 'Preparing…' : state === 'done' ? 'Downloaded ✓' : 'Export my data'}

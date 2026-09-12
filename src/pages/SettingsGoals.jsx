@@ -49,7 +49,7 @@ function AdaptiveTargetPanel({ loading, result, goal, onRefresh }) {
       </p>
       <button
         onClick={onRefresh}
-        style={{ background: 'none', border: '1px solid var(--border-default)', borderRadius: '7px', padding: '5px 12px', color: 'var(--accent)', fontSize: '11px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+        style={{ background: 'none', border: '1px solid var(--border-default)', borderRadius: '7px', padding: '5px 12px', color: 'var(--accent)', fontSize: '11px', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
       >
         Recalculate
       </button>
@@ -80,7 +80,7 @@ function UpgradeProButton() {
       <button
         onClick={handleClick}
         disabled={loading}
-        style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: loading ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+        style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
       >
         {loading ? 'Loading…' : 'Upgrade to Pro'}
       </button>
@@ -255,7 +255,7 @@ export default function SettingsGoals() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'DM Sans', sans-serif", color: 'var(--text-primary)' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
       <AppNav initials={initials} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
@@ -320,7 +320,7 @@ export default function SettingsGoals() {
                       borderRadius: '8px',
                       color: sel ? 'var(--accent)' : 'var(--text-muted)',
                       fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                      fontFamily: "'DM Sans', sans-serif",
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
                   >
                     {m.label}
@@ -466,7 +466,7 @@ export default function SettingsGoals() {
             style={{
               padding: '9px 18px', background: saving ? 'var(--border-default)' : 'var(--accent)',
               border: 'none', borderRadius: 8, color: saving ? 'var(--text-muted)' : '#0f0f0f',
-              fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+              fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             {saving ? 'Saving…' : 'Save changes'}

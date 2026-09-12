@@ -19,7 +19,7 @@ export default function Welcome() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
       position: 'relative',
     }}>
       <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
@@ -50,7 +50,7 @@ export default function Welcome() {
           fontSize: '16px',
           fontWeight: 600,
           cursor: 'pointer',
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
         Let's begin

@@ -54,7 +54,7 @@ function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) 
           borderRadius: '8px',
           color: 'var(--text-primary)',
           fontSize: '14px',
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
           outline: 'none',
         }}
         onFocus={e => (e.target.style.borderColor = 'var(--accent-dark)')}
@@ -105,7 +105,7 @@ export default function Profile() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <AppNav active="profile" initials={initials} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
@@ -130,7 +130,7 @@ export default function Profile() {
               borderRadius: '10px',
               color: saved ? 'var(--accent)' : '#0f0f0f',
               fontSize: '14px', fontWeight: 600, cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+              fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
             }}
           >
             {saved ? '✓ Saved' : 'Save changes'}
@@ -194,7 +194,7 @@ export default function Profile() {
                           borderRadius: '8px',
                           color: sel ? 'var(--accent)' : 'var(--text-muted)',
                           fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                          fontFamily: "'DM Sans', sans-serif",
+                          fontFamily: "'Plus Jakarta Sans', sans-serif",
                         }}
                       >
                         {u.label}

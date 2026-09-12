@@ -148,12 +148,12 @@ export default function AIInsights() {
 
   // ── render ──────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", height: "100vh", background: "var(--bg-primary)", fontFamily: "'DM Sans', sans-serif", color: "var(--text-primary)", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "var(--bg-primary)", fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)", overflow: "hidden" }}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
         * { box-sizing: border-box; }
         textarea:focus { outline: none; border-color: var(--border-active) !important; }
-        textarea { font-family: "DM Sans", sans-serif; }
+        textarea { font-family: "Plus Jakarta Sans", sans-serif; }
       `}</style>
 
       <AppNav active="insights" initials={initials} />
@@ -244,7 +244,7 @@ export default function AIInsights() {
                           background: selectedEnergy >= n ? "#8fbc8f22" : "transparent",
                           color: selectedEnergy >= n ? "var(--accent)" : "var(--border-strong)",
                           fontSize: 11, fontWeight: 600, cursor: "pointer",
-                          transition: "all 0.1s", fontFamily: "'DM Sans', sans-serif",
+                          transition: "all 0.1s", fontFamily: "'Plus Jakarta Sans', sans-serif",
                         }}
                       >{n}</button>
                     ))}
@@ -274,7 +274,7 @@ export default function AIInsights() {
                     fontSize: 13, fontWeight: 600,
                     color: selectedMood && selectedEnergy ? "#0f0f0f" : "var(--border-strong)",
                     cursor: selectedMood && selectedEnergy && !loadingMood ? "pointer" : "not-allowed",
-                    transition: "background 0.2s, color 0.2s", fontFamily: "'DM Sans', sans-serif",
+                    transition: "background 0.2s, color 0.2s", fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
                   Check in →
@@ -315,7 +315,7 @@ export default function AIInsights() {
                   style={{
                     background: "transparent", border: "1px solid var(--border-default)",
                     borderRadius: 8, padding: "6px 14px", fontSize: 12,
-                    color: "var(--text-muted)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                    color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
                     transition: "border-color 0.15s",
                   }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = "var(--border-active)"}

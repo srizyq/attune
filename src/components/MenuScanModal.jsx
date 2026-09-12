@@ -187,16 +187,16 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
               <div style={{ background: limitReached ? '#1a1508' : '#1a0f0f', border: `1px solid ${limitReached ? '#4a3a1a' : '#c0707040'}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: limitReached ? '#e8c468' : '#c07070', marginBottom: 10 }}>{error}</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {limitReached ? (
-                  <button onClick={() => navigate('/settings')} style={{ flex: 1, background: '#0f1a0f', border: '1px solid #3a5a3a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#8fbc8f', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                  <button onClick={() => navigate('/settings')} style={{ flex: 1, background: '#0f1a0f', border: '1px solid #3a5a3a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#8fbc8f', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     Upgrade to Pro
                   </button>
                 ) : (
-                  <button onClick={reset} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                  <button onClick={reset} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     Try another photo
                   </button>
                 )}
                 {onSearchManually && (
-                  <button onClick={onSearchManually} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                  <button onClick={onSearchManually} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     Search manually
                   </button>
                 )}
@@ -229,7 +229,7 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
                   </button>
                 ))}
               </div>
-              <button onClick={reset} style={{ width: '100%', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 12, color: '#8a8a8a', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Try another photo</button>
+              <button onClick={reset} style={{ width: '100%', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 12, color: '#8a8a8a', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Try another photo</button>
             </div>
           )}
 
@@ -248,13 +248,13 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
                 This is an AI estimate based on the menu photo, not verified nutrition data — review before adding.
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setPickedIndex(null)} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '11px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                <button onClick={() => setPickedIndex(null)} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '11px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Back to options
                 </button>
                 <button
                   onClick={handleLog}
                   disabled={adding}
-                  style={{ flex: 2, background: adding ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? '#666' : '#0f0f0f', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                  style={{ flex: 2, background: adding ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? '#666' : '#0f0f0f', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                   {adding ? 'Adding…' : 'Confirm & log'}
                 </button>

@@ -32,7 +32,7 @@ export default function LegalPageLayout({ title, updated, children }) {
     // overflow-x: hidden is set globally on html/body (needed elsewhere
     // to stop the horizontal rubber-band bounce), even though it
     // scrolled fine in desktop testing.
-    <div data-theme={theme} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+    <div data-theme={theme} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
         <button onClick={goBack} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, display: 'flex' }} aria-label="Back">
           <i className="ti ti-arrow-left" />

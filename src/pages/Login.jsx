@@ -42,7 +42,7 @@ export default function Login() {
     padding: '14px 16px',
     color: 'var(--text-primary)',
     fontSize: '16px',
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
     width: '100%',
     boxSizing: 'border-box',
     outline: 'none',
@@ -89,7 +89,7 @@ export default function Login() {
   return (
     <div data-theme={theme} style={{
       minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex',
-      flexDirection: 'column', fontFamily: "'DM Sans', sans-serif",
+      flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>
       <div style={{ padding: '20px 32px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link to="/" style={{
@@ -161,7 +161,7 @@ export default function Login() {
                   style={{
                     background: 'none', border: '1px solid #3a2e1e', borderRadius: 6, padding: '6px 12px',
                     color: '#c09a70', fontSize: 12, fontWeight: 600, cursor: resendState === 'sending' ? 'default' : 'pointer',
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
                   {resendState === 'sending' ? 'Sending…' : 'Resend confirmation email'}
@@ -184,7 +184,7 @@ export default function Login() {
               color: email && password ? '#0f0f0f' : 'var(--text-hint)',
               fontSize: '15px', fontWeight: 600,
               cursor: email && password && !loading ? 'pointer' : 'not-allowed',
-              fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+              fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
             }}
           >
             {loading ? 'Logging in…' : 'Log in →'}

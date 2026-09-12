@@ -132,7 +132,7 @@ export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
           {error && (
             <div style={{ marginBottom: 12 }}>
               <div style={{ background: limitReached ? '#1a1508' : '#1a0f0f', border: `1px solid ${limitReached ? '#4a3a1a' : '#c0707040'}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: limitReached ? '#e8c468' : '#c07070', marginBottom: 10 }}>{error}</div>
-              <button onClick={retake} style={{ width: '100%', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+              <button onClick={retake} style={{ width: '100%', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Try another photo
               </button>
             </div>
@@ -154,13 +154,13 @@ export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={retake} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '11px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                <button onClick={retake} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '11px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Retake
                 </button>
                 <button
                   onClick={handleApply}
                   disabled={applying}
-                  style={{ flex: 2, background: applying ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: applying ? '#666' : '#0f0f0f', cursor: applying ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                  style={{ flex: 2, background: applying ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: applying ? '#666' : '#0f0f0f', cursor: applying ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                   {applying ? 'Saving…' : 'Use this estimate'}
                 </button>

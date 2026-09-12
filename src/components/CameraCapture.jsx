@@ -158,7 +158,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
           <div style={{ fontSize: 12, color: '#777' }}>{error}</div>
           <button
             onClick={() => fileInputRef.current?.click()}
-            style={{ marginTop: 4, background: 'var(--accent-bg, #0f1a0f)', border: '1px solid var(--border-active, #3a5a3a)', borderRadius: 8, padding: '8px 16px', fontSize: 13, color: 'var(--accent, #8fbc8f)', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+            style={{ marginTop: 4, background: 'var(--accent-bg, #0f1a0f)', border: '1px solid var(--border-active, #3a5a3a)', borderRadius: 8, padding: '8px 16px', fontSize: 13, color: 'var(--accent, #8fbc8f)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             Choose a photo
           </button>

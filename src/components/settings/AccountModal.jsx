@@ -38,7 +38,7 @@ function ProBillingButton({ profile }) {
           background: profile?.is_premium ? 'transparent' : 'var(--accent)',
           border: `1px solid ${profile?.is_premium ? 'var(--border-default)' : 'var(--accent)'}`,
           borderRadius: 8, color: profile?.is_premium ? 'var(--text-secondary)' : '#0f0f0f',
-          fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+          fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
         {loading ? 'Loading…' : profile?.is_premium ? 'Manage billing' : 'Upgrade to Pro'}
@@ -76,7 +76,7 @@ function ResendConfirmation({ email }) {
           style={{
             padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
             borderRadius: '8px', color: 'var(--accent)', fontSize: '13px', fontWeight: 600,
-            cursor: state === 'sending' ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+            cursor: state === 'sending' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
           }}
         >
           {state === 'sending' ? 'Sending…' : 'Resend confirmation email'}
@@ -117,12 +117,12 @@ function UpgradeForm() {
       <input
         type="email" placeholder="Email address" value={email}
         onChange={e => setEmail(e.target.value)}
-        style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", outline: 'none' }}
+        style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none' }}
       />
       <input
         type="password" placeholder="Password (min. 8 characters)" value={password}
         onChange={e => setPassword(e.target.value)}
-        style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", outline: 'none' }}
+        style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none' }}
       />
       {status && status !== 'loading' && <span style={{ color: 'var(--danger)', fontSize: '12px' }}>{status}</span>}
       <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer', marginTop: '4px' }}>
@@ -145,7 +145,7 @@ function UpgradeForm() {
         style={{
           padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)',
           borderRadius: '8px', color: '#0f0f0f', fontSize: '13px', fontWeight: 600,
-          cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", marginTop: '4px',
+          cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: '4px',
         }}
       >
         {status === 'loading' ? 'Upgrading…' : 'Create account'}
@@ -208,7 +208,7 @@ export default function AccountModal({ onClose, closing }) {
               marginTop: '16px',
               padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)',
               borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
-              cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+              cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
             {isGuest ? 'Exit guest session' : 'Log out'}
@@ -227,7 +227,7 @@ export default function AccountModal({ onClose, closing }) {
                     display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 18, border: 'none',
                     background: theme === opt.id ? 'var(--accent)' : 'transparent',
                     color: theme === opt.id ? '#0f0f0f' : 'var(--text-muted)',
-                    fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
                   <i className={`ti ${opt.icon}`} style={{ fontSize: 14 }} />
@@ -251,13 +251,13 @@ export default function AccountModal({ onClose, closing }) {
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={closeLogoutConfirm}
-                style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                style={{ flex: 1, padding: '11px', background: '#3a1414', border: '1px solid #6a2a2a', borderRadius: 8, color: '#e89f9f', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                style={{ flex: 1, padding: '11px', background: '#3a1414', border: '1px solid #6a2a2a', borderRadius: 8, color: '#e89f9f', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Exit anyway
               </button>

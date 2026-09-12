@@ -35,7 +35,7 @@ function CoachPassButton({ profile }) {
           background: profile?.coach_pass ? 'transparent' : 'var(--accent)',
           border: `1px solid ${profile?.coach_pass ? 'var(--border-default)' : 'var(--accent)'}`,
           borderRadius: 8, color: profile?.coach_pass ? 'var(--text-secondary)' : '#0f0f0f',
-          fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'DM Sans', sans-serif",
+          fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
         {loading ? 'Loading…' : profile?.coach_pass ? 'Manage billing' : 'Subscribe'}
@@ -71,7 +71,7 @@ function CoachLogoUpload({ profile, saveProfile }) {
       {profile?.coach_logo_url && (
         <img src={profile.coach_logo_url} alt="Your logo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border-default)' }} />
       )}
-      <label style={{ padding: '7px 14px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+      <label style={{ padding: '7px 14px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         {uploading ? 'Uploading…' : profile?.coach_logo_url ? 'Change' : 'Upload'}
         <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} style={{ display: 'none' }} />
       </label>
@@ -147,7 +147,7 @@ export default function CoachModal({ onClose, closing }) {
             <FieldRow key={row.id} label={row.trainer?.name || 'Trainer'} hint={`Connected ${new Date(row.created_at).toLocaleDateString()}`}>
               <button
                 onClick={() => disconnect(row.id)}
-                style={{ padding: '7px 12px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 7, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                style={{ padding: '7px 12px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 7, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Disconnect
               </button>
@@ -164,7 +164,7 @@ export default function CoachModal({ onClose, closing }) {
           <button
             onClick={handleRedeemCode}
             disabled={!inviteCodeInput.trim() || inviteStatus === 'loading'}
-            style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}
+            style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
           >
             {inviteStatus === 'loading' ? 'Connecting…' : 'Connect'}
           </button>

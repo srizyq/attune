@@ -221,7 +221,7 @@ export default function Coach() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         <div className="page-pad-top" style={{
           display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px 16px',
@@ -250,7 +250,7 @@ export default function Coach() {
           <button
             onClick={selectedClient ? () => setSelectedClient(null) : exitCoachMode}
             className="btn-press"
-            style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+            style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {selectedClient ? '← All clients' : 'Exit Coach Mode'}
           </button>
@@ -357,7 +357,7 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
           onClick={onGenerate}
           disabled={generating}
           className="btn-press"
-          style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+          style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           {generating ? 'Generating…' : profile.coach_invite_code ? 'Regenerate code' : 'Generate code'}
         </button>
@@ -478,7 +478,7 @@ function ClientPreviewRow({ row, index, onSelect, onRevoke, onStatus, onSetGroup
             background: row.group_label ? 'var(--bg-primary)' : 'none',
             border: row.group_label ? '1px solid var(--border-default)' : 'none',
             borderRadius: 20, padding: row.group_label ? '3px 10px' : 4,
-            color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', flexShrink: 0, fontFamily: "'DM Sans', sans-serif",
+            color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', flexShrink: 0, fontFamily: "'Plus Jakarta Sans', sans-serif",
           }}
         >
           {row.group_label || <i className="ti ti-tag" />}
@@ -655,7 +655,7 @@ function ClientDetailView({ client }) {
       <!doctype html><html><head><title>${clientName} — Nutrition Report</title>
       <meta charset="utf-8">
       <style>
-        body { font-family: -apple-system, 'DM Sans', sans-serif; color: #111; padding: 40px; max-width: 640px; margin: 0 auto; }
+        body { font-family: -apple-system, 'Plus Jakarta Sans', sans-serif; color: #111; padding: 40px; max-width: 640px; margin: 0 auto; }
         h1 { font-family: Georgia, serif; font-size: 22px; margin: 0 0 4px; }
         h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin: 28px 0 10px; }
         .sub { color: #777; font-size: 13px; margin-bottom: 24px; }
@@ -715,7 +715,7 @@ function ClientDetailView({ client }) {
               <button
                 onClick={() => setEditingTargets(true)}
                 className="btn-press"
-                style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", marginBottom: 18, display: 'flex', alignItems: 'center', gap: 4 }}
+                style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 18, display: 'flex', alignItems: 'center', gap: 4 }}
               >
                 <i className="ti ti-pencil" style={{ fontSize: 12 }} /> Edit
               </button>
@@ -754,7 +754,7 @@ function ClientDetailView({ client }) {
                 border: `1px solid ${range === r.id ? 'var(--accent-dark)' : 'var(--border-strong)'}`,
                 borderRadius: 8, padding: '7px 18px', fontSize: 13,
                 color: range === r.id ? 'var(--accent)' : 'var(--text-muted)', cursor: 'pointer',
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
               {r.label}
@@ -764,7 +764,7 @@ function ClientDetailView({ client }) {
         <button
           onClick={handlePrintReport}
           className="btn-press"
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '7px 16px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '7px 16px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           <i className="ti ti-printer" style={{ fontSize: 14 }} /> Print report
         </button>
@@ -904,7 +904,7 @@ function ClientDetailView({ client }) {
                       background: selected ? cat.color + '22' : 'var(--bg-primary)',
                       border: `1px solid ${selected ? cat.color : 'var(--border-default)'}`,
                       color: selected ? cat.color : 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      fontFamily: "'DM Sans', sans-serif",
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
                   >
                     <i className={`ti ${cat.icon}`} style={{ fontSize: 12 }} />
@@ -925,7 +925,7 @@ function ClientDetailView({ client }) {
                 onClick={handleAddComment}
                 disabled={!commentBody.trim()}
                 className="btn-press"
-                style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}
+                style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
               >
                 Post
               </button>
@@ -1090,14 +1090,14 @@ function TargetsForm({ client, onSave, onCancel }) {
           onClick={handleSave}
           disabled={saving}
           className="btn-press"
-          style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+          style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           {saving ? 'Saving…' : 'Save targets'}
         </button>
         <button
           onClick={onCancel}
           className="btn-press"
-          style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+          style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           Cancel
         </button>
@@ -1169,7 +1169,7 @@ function RecipeShareCard({ trainerId, client }) {
               onClick={handleShare}
               disabled={!selectedId || sharing}
               className="btn-press"
-              style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}
+              style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
             >
               {sharing ? 'Sharing…' : 'Share'}
             </button>
