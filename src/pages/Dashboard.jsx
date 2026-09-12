@@ -9,13 +9,16 @@ import { useCheckins } from '../hooks/useCheckins';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
+import { useWorkoutLogs } from '../hooks/useWorkoutLogs';
 import { todayLocalDate, dateNDaysAgo, dateRange, generateInsights, computeStreak } from '../lib/patterns';
 import { goalMacroSplits, buildTargets } from '../lib/calorieTargets';
 import { toKg, fromKg } from '../lib/adaptiveTDEE';
+import { weightInKg, getWorkoutType } from '../lib/workoutMath';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import AppNav from '../components/AppNav';
 import CoachNote from '../components/CoachNote';
 import CoachChatModal from '../components/CoachChatModal';
+import LogWorkoutModal from '../components/LogWorkoutModal';
 import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
@@ -454,17 +457,20 @@ function MacroCell({ label, value, target, color }) {
 // log the default 1 serving" behaviour as the Food Search quick-add
 // button (Phase 4), not decorative. Nothing renders if there are none
 // yet, rather than showing empty/fake placeholders. ─────────────────────
-// ─── Activity placeholder ───────────────────────────────────────────────────
-// No real data source yet — Apple Health / Google Fit / Health Connect are
-// native-only APIs, unreachable from a PWA. This reserves the visual slot
-// and communicates the roadmap so wiring in a real Capacitor health plugin
-// later is a data change, not a layout change.
-function ActivityRow() {
+// ─── Activity ────────────────────────────────────────────────────────────────
+// Steps has no real data source yet — Apple Health / Google Fit / Health
+// Connect are native-only APIs, unreachable from a PWA — so it stays a
+// placeholder. Burned is real: manually-logged workouts (see
+// LogWorkoutModal/useWorkoutLogs), MET-estimated from type/intensity/
+// duration and editable, feeding back into the day's calorie budget.
+function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWorkout }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>ACTIVITY</span>
-        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>COMING SOON</span>
+        <button onClick={onLogWorkout} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+          <i className="ti ti-plus" style={{ fontSize: 13 }} /> Log workout
+        </button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 16, overflow: 'hidden' }}>
         <div style={{ borderRight: '1px solid var(--border-default)', padding: '14px 10px' }}>
@@ -477,10 +483,27 @@ function ActivityRow() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
             <i className="ti ti-flame" style={{ fontSize: 13 }} /> BURNED
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--text-hint)' }}>—</div>
+          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: totalCaloriesBurned ? 'var(--accent)' : 'var(--text-hint)' }}>
+            {totalCaloriesBurned ? Math.round(totalCaloriesBurned).toLocaleString() : '—'}
+          </div>
         </div>
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 8 }}>Will sync from Apple Health / Google Fit once the native app ships.</div>
+      {workouts.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          {workouts.map(w => {
+            const type = getWorkoutType(w.type);
+            return (
+              <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, marginBottom: 6 }}>
+                <i className={`ti ${type.icon}`} style={{ fontSize: 15, color: 'var(--accent)', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-secondary)' }}>{type.label} · {w.durationMinutes} min</div>
+                <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, flexShrink: 0 }}>{Math.round(w.caloriesBurned)} kcal</div>
+                <button onClick={() => onDeleteWorkout(w.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, padding: 0, flexShrink: 0 }}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 8 }}>Steps will sync from Apple Health / Google Fit once the native app ships.</div>
     </div>
   );
 }
@@ -742,6 +765,9 @@ export default function Dashboard() {
   const { logs: weightLogs, latest: latestWeight, logWeight } = useWeightLogs(dateNDaysAgo(89), today);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const { closing: weightModalClosing, close: closeWeightModal } = useClosingTransition(() => setShowWeightModal(false));
+  const { workouts, totalCaloriesBurned, create: createWorkout, remove: removeWorkout } = useWorkoutLogs(viewedDate);
+  const [showWorkoutModal, setShowWorkoutModal] = useState(false);
+  const { closing: workoutModalClosing, close: closeWorkoutModal } = useClosingTransition(() => setShowWorkoutModal(false));
 
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(viewedDate + 'T00:00:00'); d.setDate(1); return d; });
   // Clicking a streak dot or a calendar day re-navigates to this same
@@ -770,6 +796,12 @@ export default function Dashboard() {
     fat: { g: profile?.fat_g || 67 },
   };
   const calorieTarget = targets.calories;
+  // Logged workouts add back to today's budget ("eat back exercise
+  // calories") — burn 300kcal, the day's target goes up by 300. Only
+  // affects this display total, not `targets.calories`/`calorieTarget`
+  // itself, which stays the plain baseline everywhere else (macro grams,
+  // adaptive-target calc) that isn't meant to move with exercise.
+  const effectiveCalorieTarget = calorieTarget + totalCaloriesBurned;
 
   const { compute: computeAdaptive } = useAdaptiveTarget();
 
@@ -909,7 +941,7 @@ export default function Dashboard() {
               pages={[
                 <DashboardHero
                   consumed={consumed}
-                  target={calorieTarget}
+                  target={effectiveCalorieTarget}
                   chartDays={chartDays}
                   chartRange={chartRange}
                   setChartRange={setChartRange}
@@ -941,7 +973,12 @@ export default function Dashboard() {
             <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} />
           </div>
 
-          <ActivityRow />
+          <ActivityRow
+            workouts={workouts}
+            totalCaloriesBurned={totalCaloriesBurned}
+            onLogWorkout={() => setShowWorkoutModal(true)}
+            onDeleteWorkout={removeWorkout}
+          />
 
           <ShortcutRow navigate={navigate} date={viewedDate} />
 
@@ -1030,6 +1067,14 @@ export default function Dashboard() {
           onClose={closeWeightModal}
           onSave={(w) => logWeight(viewedDate, w, weightUnit)}
           onViewTrend={() => { closeWeightModal(); navigate('/progress', { state: { scrollTo: 'weight' } }); }}
+        />
+      )}
+      {showWorkoutModal && (
+        <LogWorkoutModal
+          weightKg={weightInKg(profile)}
+          closing={workoutModalClosing}
+          onClose={closeWorkoutModal}
+          onSave={createWorkout}
         />
       )}
     </div>

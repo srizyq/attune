@@ -149,6 +149,41 @@ export async function getRecentFoodLogs(userId, limit = 40) {
   return data;
 }
 
+// ─── workout_logs ──────────────────────────────────────────────────────────
+
+export async function getWorkoutLogsForDate(userId, date) {
+  const { data, error } = await supabase
+    .from('workout_logs')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('logged_date', date)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function addWorkoutLog(userId, entry) {
+  const { data, error } = await supabase
+    .from('workout_logs')
+    .insert({
+      user_id: userId,
+      logged_date: entry.loggedDate,
+      type: entry.type,
+      intensity: entry.intensity,
+      duration_minutes: entry.durationMinutes,
+      calories_burned: entry.caloriesBurned || 0,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteWorkoutLog(id) {
+  const { error } = await supabase.from('workout_logs').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ─── checkins ──────────────────────────────────────────────────────────────
 
 export async function getCheckinForDate(userId, date) {

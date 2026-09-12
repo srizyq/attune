@@ -723,3 +723,33 @@ alter table public.profiles add column if not exists daily_log_view text
 -- side of addComment (useCoach.js) calls api/notify-trainer-comment.js right
 -- after a successful insert, which checks this before sending.
 alter table public.profiles add column if not exists notify_trainer_comments boolean default false;
+
+-- ── Workout logs ─────────────────────────────────────────────────────────────
+-- Manual workout logging (Dashboard's Activity card) — type/duration/
+-- intensity/calories, same shape whether calories came from the MET-based
+-- estimate (lib/workoutMath.js) or was overridden by hand. calories_burned
+-- feeds back into the day's calorie budget (Dashboard adds it to the
+-- target, same "eat back exercise calories" behavior most trackers use).
+create table if not exists public.workout_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  logged_date date not null,
+  type text not null,
+  intensity text not null check (intensity in ('light', 'moderate', 'intense')),
+  duration_minutes numeric not null,
+  calories_burned numeric not null default 0,
+  created_at timestamptz default now()
+);
+
+create index if not exists workout_logs_user_date_idx on public.workout_logs (user_id, logged_date);
+
+alter table public.workout_logs enable row level security;
+
+create policy "workout_logs: select own" on public.workout_logs
+  for select using (auth.uid() = user_id);
+create policy "workout_logs: insert own" on public.workout_logs
+  for insert with check (auth.uid() = user_id);
+create policy "workout_logs: update own" on public.workout_logs
+  for update using (auth.uid() = user_id);
+create policy "workout_logs: delete own" on public.workout_logs
+  for delete using (auth.uid() = user_id);
