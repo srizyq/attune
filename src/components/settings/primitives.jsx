@@ -60,9 +60,18 @@ export function Select({ value, onChange, options }) {
   );
 }
 
+// Grid, not flex-wrap — flex-wrap with a fixed minWidth per option looks
+// fine until the row is narrow enough that the last option can't fit
+// (a phone screen, with 3 options here), at which point it wraps alone
+// onto its own row and stretches to fill it — two options end up half-
+// width, the third full-width, with no visual reason for the mismatch.
+// A grid with exactly `options.length` equal columns can't do that: all
+// options are always the same width, whether that's roomy (desktop) or
+// tight (phone), matching how Dashboard's own 3-across row (.grid-3-fixed
+// in appshell.css) already solves this same problem.
 export function Segmented({ value, onChange, options }) {
   return (
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`, gap: '8px' }}>
       {options.map(o => {
         const sel = value === o.value;
         return (
@@ -70,9 +79,7 @@ export function Segmented({ value, onChange, options }) {
             key={o.value}
             onClick={() => onChange(o.value)}
             style={{
-              flex: '1 1 auto',
-              minWidth: '120px',
-              padding: '14px 16px',
+              padding: '14px 12px',
               background: sel ? 'var(--accent-bg)' : 'var(--bg-primary)',
               border: `1px solid ${sel ? 'var(--border-active)' : 'var(--border-default)'}`,
               borderRadius: '12px',
