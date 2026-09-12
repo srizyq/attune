@@ -64,27 +64,26 @@ export default function DailyLog() {
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         <div className="page-pad-top" style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 14, paddingBottom: 14, borderBottom: '1px solid var(--border-default)', position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
-          <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'flex' }}>
+          <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'flex', flexShrink: 0 }}>
             <i className="ti ti-arrow-left" />
           </button>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>Daily log</span>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, flexShrink: 0 }}>Daily log</span>
+          <div style={{ flex: 1 }} />
+          {isPremium ? (
+            <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />
+          ) : (
+            <div title="Hourly timeline — a Pro feature" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 20, padding: '5px 12px', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
+              <i className="ti ti-lock" style={{ fontSize: 12 }} /> <span className="hide-on-narrow">Hourly timeline (Pro)</span>
+            </div>
+          )}
         </div>
 
         <div className="page-pad" style={{ maxWidth: 700 }}>
           <div style={{ marginBottom: 20 }}>
             <DaySelector selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setExpandedId(null); }} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{dateStr}</div>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{Math.round(totalCal).toLocaleString()} kcal logged</div>
-              </div>
-              {isPremium ? (
-                <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />
-              ) : (
-                <div title="Hourly timeline — a Pro feature" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 20, padding: '5px 12px', fontSize: 11, color: 'var(--text-muted)' }}>
-                  <i className="ti ti-lock" style={{ fontSize: 12 }} /> Hourly timeline (Pro)
-                </div>
-              )}
+            <div style={{ textAlign: 'center', marginTop: 14 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{dateStr}</div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{Math.round(totalCal).toLocaleString()} kcal logged</div>
             </div>
             {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', marginTop: 8 }}>{viewSaveError}</p>}
           </div>

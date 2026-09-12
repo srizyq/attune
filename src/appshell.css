@@ -243,6 +243,35 @@
   }
 }
 
+@media (max-width: 380px) {
+  .hide-on-narrow {
+    display: none;
+  }
+}
+
+/* Meal builder's floating "Building meal" bar (FoodSearch.jsx) — fixed to
+   the bottom of the viewport. On phones the app-bottom-nav is ALSO fixed
+   to the bottom (0-58px + safe area, z-index 100), so a flat `bottom: 16px`
+   put this bar mostly underneath the nav: its text and buttons were
+   clipped by/behind the tab bar with no way to reach Cancel. Clearing the
+   nav's height on mobile, capping the width so it can't run past the
+   screen edges, and outranking the nav's z-index keeps the whole bar
+   (including Cancel) reachable. */
+.meal-builder-bar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 101;
+  max-width: calc(100vw - 32px);
+}
+
+@media (max-width: 860px) {
+  .meal-builder-bar {
+    bottom: calc(58px + env(safe-area-inset-bottom) + 12px);
+  }
+}
+
 /* Text + button empty-state row (e.g. Progress's "nothing to show yet") —
    side-by-side on desktop, stacked on phones so the text isn't squeezed
    into a sliver next to a fixed-width button. */

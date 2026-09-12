@@ -46,7 +46,7 @@ function MacroGrid({ pick }) {
   );
 }
 
-export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchManually }) {
+export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchManually }) {
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -117,7 +117,7 @@ export default function MenuScanModal({ onClose, onAddFood, isPremium, onSearchM
       };
       const meal = mealFromDate(now);
       const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
-      await onAddFood(food, isPremium ? null : mealLabel, isPremium ? now : null);
+      await onAddFood(food, logByTime ? null : mealLabel, logByTime ? now : null);
       onClose();
     } catch (err) {
       console.error(err);

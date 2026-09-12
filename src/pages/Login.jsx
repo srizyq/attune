@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, emailRedirectTo } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import PreAuthThemeToggle from '../components/PreAuthThemeToggle';
@@ -15,6 +15,18 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  // Signing up leaves the account "unconfirmed" (still an anonymous
+  // Supabase user under the hood — see onboarding/Step4 and Step5) until
+  // the emailed link is clicked. Someone who skipped that, then comes
+  // back on a different device/browser (or after their original guest
+  // session got cleared), has no way back to that resend button — it
+  // only exists on Step5 and in Settings > Account, both of which need
+  // the original session to reach. Without this, signInWithPassword
+  // fails here with "Email not confirmed" and there's no way forward,
+  // which is exactly what reads as "my password isn't working": the
+  // password is correct, the account just was never finished setting up.
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState(null);
+  const [resendState, setResendState] = useState(null); // null | 'sending' | 'sent' | error string
 
   // A real, already-confirmed account landing on a "log in / create an
   // account" screen doesn't make sense — most likely a stale bookmark or
@@ -42,12 +54,18 @@ export default function Login() {
     if (!email || !password) return;
     setLoading(true);
     setError(null);
+    setUnconfirmedEmail(null);
+    setResendState(null);
     const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
       setLoading(false);
-      setError(signInError.message === 'Invalid login credentials'
-        ? 'Incorrect email or password.'
-        : signInError.message);
+      if (signInError.message === 'Email not confirmed') {
+        setUnconfirmedEmail(email);
+      } else {
+        setError(signInError.message === 'Invalid login credentials'
+          ? 'Incorrect email or password.'
+          : signInError.message);
+      }
       return;
     }
     // Only overwrite the account's saved theme if this person actually
@@ -59,6 +77,13 @@ export default function Login() {
     }
     setLoading(false);
     navigate('/dashboard');
+  }
+
+  async function handleResend() {
+    if (!unconfirmedEmail) return;
+    setResendState('sending');
+    const { error: resendError } = await supabase.auth.resend({ type: 'signup', email: unconfirmedEmail, options: { emailRedirectTo } });
+    setResendState(resendError ? (resendError.message || 'Could not resend — try again.') : 'sent');
   }
 
   return (
@@ -118,6 +143,34 @@ export default function Login() {
               background: '#1a0f0f', border: '1px solid #c0707040', borderRadius: '8px',
               padding: '10px 14px', fontSize: '13px', color: 'var(--danger)', marginBottom: '16px',
             }}>{error}</div>
+          )}
+
+          {unconfirmedEmail && (
+            <div style={{
+              background: '#1a1410', border: '1px solid #3a2e1e', borderRadius: '8px',
+              padding: '10px 14px', fontSize: '13px', color: '#c09a70', marginBottom: '16px', lineHeight: 1.5,
+            }}>
+              <p style={{ margin: '0 0 8px' }}>Your password is right, but this account was never confirmed — check {unconfirmedEmail} for the confirmation email we sent when you signed up.</p>
+              {resendState === 'sent' ? (
+                <p style={{ margin: 0, color: 'var(--accent)' }}>Confirmation email sent — check your inbox.</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendState === 'sending'}
+                  style={{
+                    background: 'none', border: '1px solid #3a2e1e', borderRadius: 6, padding: '6px 12px',
+                    color: '#c09a70', fontSize: 12, fontWeight: 600, cursor: resendState === 'sending' ? 'default' : 'pointer',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
+                  {resendState === 'sending' ? 'Sending…' : 'Resend confirmation email'}
+                </button>
+              )}
+              {resendState && resendState !== 'sending' && resendState !== 'sent' && (
+                <p style={{ margin: '8px 0 0', color: 'var(--danger)' }}>{resendState}</p>
+              )}
+            </div>
           )}
 
           <button

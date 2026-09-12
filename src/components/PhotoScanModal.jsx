@@ -31,7 +31,7 @@ function resizeImage(file, maxDim = 1024, quality = 0.82) {
   });
 }
 
-export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaultTime, selectedDate, isPremium, onCreateCustom, onSearchManually }) {
+export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaultTime, selectedDate, logByTime, onCreateCustom, onSearchManually }) {
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -189,7 +189,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
         // real measured weight, so downstream editing correctly falls
         // back to relative-only scaling instead of pretending precision.
       };
-      await onAddFood(food, isPremium ? null : meal, isPremium ? timeStringToDate(time, new Date(selectedDate + 'T00:00:00')) : null);
+      await onAddFood(food, logByTime ? null : meal, logByTime ? timeStringToDate(time, new Date(selectedDate + 'T00:00:00')) : null);
       onClose();
     } catch (err) {
       console.error(err);
@@ -353,7 +353,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
               </div>
 
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                {isPremium ? (
+                {logByTime ? (
                   <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ flex: 1, background: '#181818', border: '1px solid #2a2a2a', borderRadius: 7, padding: '7px 10px', color: '#ccc', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
                 ) : (
                   <select value={meal} onChange={e => setMeal(e.target.value)} style={{ flex: 1, background: '#181818', border: '1px solid #2a2a2a', borderRadius: 7, padding: '7px 10px', color: '#ccc', fontSize: 13, outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
@@ -367,7 +367,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                 disabled={adding}
                 style={{ width: '100%', background: adding ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? '#666' : '#0f0f0f', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans', sans-serif" }}
               >
-                {adding ? 'Adding…' : isPremium ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
+                {adding ? 'Adding…' : logByTime ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
               </button>
               {onCreateCustom && (
                 <button onClick={() => onCreateCustom(result)} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: '#8a8a8a', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
