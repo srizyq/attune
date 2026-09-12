@@ -117,10 +117,8 @@ async function searchOpenFoodFacts(q) {
 // FatSecret Platform API — a purpose-built consumer food search database
 // (the same one MacroFactor licenses), routed through our own serverless
 // proxy at /api/fatsecret-search since FatSecret's OAuth Client Secret
-// can't safely be exposed in browser code. Unlike USDA's research-database
-// search — built for scientists, not food-logging apps, and needing a pile
-// of client-side re-ranking heuristics to be usable — FatSecret's own
-// relevance ranking is tuned on real consumer search behaviour, so no
+// can't safely be exposed in browser code. FatSecret's own relevance
+// ranking is tuned on real consumer search behaviour, so no client-side
 // re-ranking is needed here.
 function fatSecretServings(food) {
   const raw = food.servings?.serving;

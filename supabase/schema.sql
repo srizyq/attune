@@ -154,7 +154,7 @@ create policy "weight_logs: delete own" on public.weight_logs
   for delete using (auth.uid() = user_id);
 
 -- ── custom_foods ────────────────────────────────────────────────────────────
--- User-created foods that aren't in the USDA/Open Food Facts/curated
+-- User-created foods that aren't in the FatSecret/Open Food Facts/AFCD
 -- databases (MyFitnessPal-style "Create a Food"). Once created, these show
 -- up in that user's own search results and quick-add going forward.
 create table if not exists public.custom_foods (

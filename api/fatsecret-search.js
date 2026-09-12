@@ -1,11 +1,11 @@
 // Serverless proxy for FatSecret Platform API food search.
 //
 // FatSecret uses OAuth 2.0 client-credentials with a Client Secret that
-// signs/authenticates every request — unlike USDA's plain query-string key,
-// this secret must never reach the browser (anyone reading it out of the
-// bundle could exhaust or abuse the account's quota). This function holds
-// the secret via getFatSecretToken and proxies the actual search so the
-// browser only ever talks to our own origin.
+// signs/authenticates every request, so this secret must never reach the
+// browser (anyone reading it out of the bundle could exhaust or abuse the
+// account's quota). This function holds the secret via getFatSecretToken
+// and proxies the actual search so the browser only ever talks to our own
+// origin.
 
 import { getFatSecretToken } from "./_fatsecretAuth.js";
 
