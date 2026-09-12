@@ -268,10 +268,9 @@ export default function Progress() {
         <div className="page-pad app-content-pad" style={{ flex: 1, overflowY: "auto" }}>
 
           {!hasData && !loading && (
-            <div style={{
+            <div className="empty-state-row" style={{
               background: "var(--accent-bg)", border: "1px solid var(--border-active)",
               borderRadius: 12, padding: "28px 32px", marginBottom: 24,
-              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24,
             }}>
               <div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>

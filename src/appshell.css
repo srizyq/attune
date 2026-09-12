@@ -243,6 +243,23 @@
   }
 }
 
+/* Text + button empty-state row (e.g. Progress's "nothing to show yet") —
+   side-by-side on desktop, stacked on phones so the text isn't squeezed
+   into a sliver next to a fixed-width button. */
+.empty-state-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+@media (max-width: 600px) {
+  .empty-state-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 /* Press feedback for any clickable element — instant confirmation that
    the tap registered, per the "buttons must feel responsive" rule. Scale
    only (never `all`) so it stays GPU-cheap. */
