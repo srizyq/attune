@@ -104,6 +104,13 @@ export default function Step2() {
     display: 'block',
   };
 
+  // display:flex + centering here isn't decorative — a plain `<button>`
+  // in a CSS grid row doesn't reliably stretch to match a taller sibling
+  // across browsers (Safari in particular), so a row with one longer-
+  // wrapping label ("Prefer not to say" vs "Male"/"Female") could end up
+  // visibly uneven heights depending on the browser. Explicit flex
+  // centering makes the result the same everywhere instead of leaning on
+  // grid's implicit stretch behavior for a form element.
   const segButtonStyle = (isSelected) => ({
     background: isSelected ? 'var(--accent-bg)' : 'var(--bg-subtle)',
     border: `1px solid ${isSelected ? 'var(--border-active)' : 'var(--border-default)'}`,
@@ -117,6 +124,11 @@ export default function Step2() {
     fontFamily: "'Plus Jakarta Sans', sans-serif",
     transition: 'all 0.2s ease',
     outline: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    boxSizing: 'border-box',
   });
 
   return (
@@ -260,6 +272,11 @@ export default function Step2() {
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         outline: 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        height: '100%',
+                        boxSizing: 'border-box',
                       }}
                     >
                       <div style={{ color: isSelected ? 'var(--accent)' : 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', marginBottom: '3px', fontFamily: "'Syne', sans-serif" }}>
@@ -298,6 +315,11 @@ export default function Step2() {
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     outline: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    height: '100%',
+                    boxSizing: 'border-box',
                   }}
                 >
                   <div style={{
