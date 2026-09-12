@@ -998,6 +998,7 @@ function ClientDetailView({ client }) {
                       unit={n.unit}
                       guideline={n.guideline}
                       target={microTargets[key]}
+                      defaultTarget={n.defaultTarget}
                       color={n.color}
                     />
                   );

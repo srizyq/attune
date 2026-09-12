@@ -4,8 +4,16 @@
 // hiding the card entirely — free users see exactly what's on offer
 // (label, icon, guideline) without the actual number, then tap through
 // to Settings to upgrade rather than wondering why a nutrient vanished.
-export default function MicroCard({ icon, label, value, unit, guideline, target, color, locked, onUpgrade }) {
-  const pct = target ? Math.min((value / target) * 100, 100) : null;
+//
+// `target` (a Pro-only custom target) always wins when set; otherwise
+// `defaultTarget` (a standard RDI figure — see lib/microNutrients.js)
+// draws the same progress bar against a sensible guideline instead of
+// falling back to plain guideline text. Only nutrients with neither (the
+// two whose guideline isn't a number at all — "as low as possible",
+// "favour over saturated fat") show text instead of a bar.
+export default function MicroCard({ icon, label, value, unit, guideline, target, defaultTarget, color, locked, onUpgrade }) {
+  const effectiveTarget = target || defaultTarget;
+  const pct = effectiveTarget ? Math.min((value / effectiveTarget) * 100, 100) : null;
   return (
     <div
       onClick={locked ? onUpgrade : undefined}
@@ -21,12 +29,17 @@ export default function MicroCard({ icon, label, value, unit, guideline, target,
         {value}
         {target ? <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 400 }}> / {target}{unit}</span> : <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 400 }}>{unit}</span>}
       </div>
-      {/* A custom target replaces the static guideline with real progress —
-          no target set keeps the default guideline text unchanged. */}
-      {target ? (
-        <div style={{ height: 5, background: 'var(--border-default)', borderRadius: 99, marginTop: 8, filter: locked ? 'blur(4px)' : 'none' }}>
-          <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.5s ease' }} />
-        </div>
+      {pct !== null ? (
+        <>
+          <div style={{ height: 5, background: 'var(--border-default)', borderRadius: 99, marginTop: 8, filter: locked ? 'blur(4px)' : 'none' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.5s ease' }} />
+          </div>
+          {/* A custom target already reads as a target in the value line
+              above ("12g / 25g") — the default-guideline case has no such
+              context, so it still needs the guideline text alongside the
+              bar to explain what's being measured against. */}
+          {!target && <div style={{ fontSize: 10, color: 'var(--text-hint)', marginTop: 4, filter: locked ? 'blur(4px)' : 'none' }}>{guideline}</div>}
+        </>
       ) : (
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, filter: locked ? 'blur(4px)' : 'none' }}>{guideline}</div>
       )}
