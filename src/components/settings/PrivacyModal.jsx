@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getProfile, getFoodLogsForRange, getWeightLogsForRange, getCheckinsForRange } from '../../lib/db';
 import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
@@ -80,16 +81,16 @@ export default function PrivacyModal({ onClose, closing }) {
 
       <Card style={{ marginBottom: 0 }}>
         <SectionLabel>Legal</SectionLabel>
-        <a href="/privacy" target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+        <Link to="/privacy" style={{ textDecoration: 'none' }}>
           <FieldRow label="Privacy Policy" hint="What we collect, why, and who it's shared with">
-            <i className="ti ti-external-link" style={{ color: 'var(--text-hint)', fontSize: 15 }} />
+            <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16 }} />
           </FieldRow>
-        </a>
-        <a href="/terms" target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+        </Link>
+        <Link to="/terms" style={{ textDecoration: 'none' }}>
           <FieldRow label="Terms of Service" hint="The terms you agreed to when you signed up">
-            <i className="ti ti-external-link" style={{ color: 'var(--text-hint)', fontSize: 15 }} />
+            <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16 }} />
           </FieldRow>
-        </a>
+        </Link>
       </Card>
     </SettingsModal>
   );

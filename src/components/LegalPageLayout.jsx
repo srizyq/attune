@@ -11,6 +11,16 @@ import PreAuthThemeToggle from './PreAuthThemeToggle';
 export default function LegalPageLayout({ title, updated, children }) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = usePreAuthTheme();
+  // Opened as its own tab (every link here uses target="_blank" so an
+  // in-progress signup form elsewhere isn't lost by navigating away from
+  // it) means this tab often has no history to go back to — navigate(-1)
+  // then does nothing at all, stranding whoever taps Back with a page
+  // that looks broken. Falling back to the marketing landing page when
+  // there's nowhere to go back to at least always does something.
+  function goBack() {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
+  }
 
   return (
     // height: 100vh + an inner overflow: auto container, not plain
@@ -24,7 +34,7 @@ export default function LegalPageLayout({ title, updated, children }) {
     // scrolled fine in desktop testing.
     <div data-theme={theme} style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, display: 'flex' }} aria-label="Back">
+        <button onClick={goBack} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, display: 'flex' }} aria-label="Back">
           <i className="ti ti-arrow-left" />
         </button>
         <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--accent)', letterSpacing: '-0.5px' }}>attune</span>

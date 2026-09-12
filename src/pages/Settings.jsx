@@ -15,10 +15,10 @@ import PrivacyModal from '../components/settings/PrivacyModal';
 // room a full page gives it, matching how Nutrients/Profile/Expenditure
 // already work as their own screens instead of a modal.
 const SECTIONS = [
+  { id: 'account', icon: 'ti-user-circle',  label: 'Account',         kind: 'modal' },
   { id: 'goals',   icon: 'ti-target',       label: 'Goals & Targets', kind: 'page' },
   { id: 'notifs',  icon: 'ti-bell',         label: 'Notifications',   kind: 'modal' },
   { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'modal' },
-  { id: 'account', icon: 'ti-user-circle',  label: 'Account',         kind: 'modal' },
   { id: 'privacy', icon: 'ti-shield-lock',  label: 'Privacy',         kind: 'modal' },
 ];
 

@@ -76,9 +76,9 @@ export default function Welcome() {
           before Step1 asks anything. */}
       <p style={{ marginTop: '28px', maxWidth: '320px', textAlign: 'center', color: 'var(--text-hint)', fontSize: '12px', lineHeight: 1.6 }}>
         By continuing, you agree to our{' '}
-        <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)' }}>Terms of Service</a>
+        <Link to="/terms" style={{ color: 'var(--text-muted)' }}>Terms of Service</Link>
         {' '}and{' '}
-        <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)' }}>Privacy Policy</a>.
+        <Link to="/privacy" style={{ color: 'var(--text-muted)' }}>Privacy Policy</Link>.
       </p>
     </div>
   );
