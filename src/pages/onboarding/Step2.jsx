@@ -93,6 +93,15 @@ export default function Step2() {
     boxSizing: 'border-box',
     outline: 'none',
     transition: 'border-color 0.2s',
+    // iOS Safari draws its own native chrome inside <input type="date">
+    // (and up/down steppers inside type="number") on top of/underneath
+    // whatever border-radius and background this style sets, which is
+    // exactly what produced the extra curve poking out from behind the
+    // date field's bottom-left corner — the native widget's own rounding
+    // doesn't match ours. Resetting appearance hands full control of the
+    // box back to this style, on every browser that supports it.
+    WebkitAppearance: 'none',
+    appearance: 'none',
   });
 
   const labelStyle = {
