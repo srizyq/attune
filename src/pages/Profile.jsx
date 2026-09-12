@@ -1,44 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
+import { useTheme } from '../hooks/useTheme';
+import { useClosingTransition } from '../hooks/useClosingTransition';
+import { supabase, emailRedirectTo } from '../lib/supabase';
+import { authedPost } from '../lib/billing';
 import AppNav from '../components/AppNav';
+import { Card, SectionLabel, FieldRow } from '../components/settings/primitives';
 
 // ─── Reusable bits ──────────────────────────────────────────────────────────────
-function Card({ children, style }) {
-  return (
-    <div style={{
-      background: 'var(--bg-subtle)',
-      border: '1px solid var(--border-default)',
-      borderRadius: '16px',
-      padding: '24px',
-      marginBottom: '16px',
-      ...style,
-    }}>
-      {children}
-    </div>
-  );
-}
-
-function SectionLabel({ children }) {
-  return (
-    <p style={{ color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>
-      {children}
-    </p>
-  );
-}
-
-function FieldRow({ label, hint, children }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '12px 0', borderBottom: '1px solid var(--border-default)' }}>
-      <div>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500 }}>{label}</div>
-        {hint && <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>{hint}</div>}
-      </div>
-      <div style={{ flexShrink: 0 }}>{children}</div>
-    </div>
-  );
-}
-
 function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -65,11 +36,162 @@ function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) 
   );
 }
 
+// Mirrors CoachModal's CoachPassButton exactly — same subscribe/manage
+// pattern, different plan and profile field.
+function ProBillingButton({ profile }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleClick = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { url } = profile?.is_premium
+        ? await authedPost('/api/create-portal-session')
+        : await authedPost('/api/create-checkout-session', { plan: 'pro' });
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        style={{
+          padding: '9px 16px',
+          background: profile?.is_premium ? 'transparent' : 'var(--accent)',
+          border: `1px solid ${profile?.is_premium ? 'var(--border-default)' : 'var(--accent)'}`,
+          borderRadius: 8, color: profile?.is_premium ? 'var(--text-secondary)' : '#0f0f0f',
+          fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        {loading ? 'Loading…' : profile?.is_premium ? 'Manage billing' : 'Upgrade to Pro'}
+      </button>
+      {error && <span style={{ color: 'var(--danger)', fontSize: 11 }}>{error}</span>}
+    </div>
+  );
+}
+
+// Shown instead of UpgradeForm once "Create account" has already been
+// submitted — asking for email/password again would be redundant (and
+// confusing, since re-submitting the same email errors as "already
+// registered"). All that's left to do is confirm the email that's
+// already on file, or resend it if it didn't arrive.
+function ResendConfirmation({ email }) {
+  const [state, setState] = useState(null);
+
+  async function resend() {
+    setState('sending');
+    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
+    setState(error ? (error.message || 'Could not resend — try again.') : 'sent');
+  }
+
+  return (
+    <div>
+      <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.5 }}>
+        Check <span style={{ color: 'var(--text-secondary)' }}>{email}</span> for a confirmation link — everything you've already logged stays right where it is.
+      </p>
+      {state === 'sent' ? (
+        <span style={{ color: 'var(--accent)', fontSize: '13px' }}>Confirmation email sent.</span>
+      ) : (
+        <button
+          onClick={resend}
+          disabled={state === 'sending'}
+          style={{
+            padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
+            borderRadius: '8px', color: 'var(--accent)', fontSize: '13px', fontWeight: 600,
+            cursor: state === 'sending' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+          }}
+        >
+          {state === 'sending' ? 'Sending…' : 'Resend confirmation email'}
+        </button>
+      )}
+      {state && state !== 'sending' && state !== 'sent' && (
+        <div style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '8px' }}>{state}</div>
+      )}
+    </div>
+  );
+}
+
+function UpgradeForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const [status, setStatus] = useState(null);
+
+  async function handleUpgrade() {
+    if (!email || password.length < 8) return;
+    setStatus('loading');
+    const { error } = await supabase.auth.updateUser({ email, password }, { emailRedirectTo });
+    if (error) { setStatus(error.message); return; }
+    setStatus('done');
+  }
+
+  if (status === 'done') {
+    return (
+      <p style={{ color: 'var(--accent)', fontSize: '13px', margin: 0 }}>
+        Almost there — check your email to confirm the address, then you're a full account with all your guest data intact.
+      </p>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 6px' }}>Upgrade to a real account — keeps everything you've logged so far.</p>
+      <input
+        type="email" placeholder="Email address" value={email}
+        onChange={e => setEmail(e.target.value)}
+        style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none' }}
+      />
+      <input
+        type="password" placeholder="Password (min. 8 characters)" value={password}
+        onChange={e => setPassword(e.target.value)}
+        style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none' }}
+      />
+      {status && status !== 'loading' && <span style={{ color: 'var(--danger)', fontSize: '12px' }}>{status}</span>}
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer', marginTop: '4px' }}>
+        <input
+          type="checkbox"
+          checked={agreed}
+          onChange={e => setAgreed(e.target.checked)}
+          style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--accent)' }}
+        />
+        <span>
+          I agree to the{' '}
+          <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Terms of Service</a>
+          {' '}and{' '}
+          <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a>
+        </span>
+      </label>
+      <button
+        onClick={handleUpgrade}
+        disabled={!email || password.length < 8 || status === 'loading' || !agreed}
+        style={{
+          padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)',
+          borderRadius: '8px', color: '#0f0f0f', fontSize: '13px', fontWeight: 600,
+          cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: '4px',
+        }}
+      >
+        {status === 'loading' ? 'Upgrading…' : 'Create account'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function Profile() {
-  const { user } = useAuth();
-  const { profile, save: saveProfile } = useProfile();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, signOut } = useAuth();
+  const { profile, save: saveProfile, refetch: refetchProfile } = useProfile();
+  const { theme, setTheme } = useTheme();
   const [saved, setSaved] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const { closing: logoutConfirmClosing, close: closeLogoutConfirm } = useClosingTransition(() => setShowLogoutConfirm(false));
 
   const [form, setForm] = useState({ name: '', unit: 'metric', age: 30, weight: 70, height: 170 });
 
@@ -84,9 +206,30 @@ export default function Profile() {
     });
   }, [profile]);
 
+  // Landed here from Stripe Checkout (Settings hands off `pro=success`
+  // since Pro's billing status now lives on this page) — the webhook
+  // updates the profile server-side almost immediately, but this page's
+  // own `profile` state won't know until it refetches. A couple of
+  // retries covers the small gap between the redirect landing and the
+  // webhook actually finishing.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('pro') !== 'success') return;
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts += 1;
+      refetchProfile();
+      if (attempts >= 5) clearInterval(interval);
+    }, 1500);
+    navigate(location.pathname, { replace: true });
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
   const isGuest = !!user?.is_anonymous;
+  const pendingConfirmation = isGuest && !!user?.email;
   const daysRemaining = user?.created_at
     ? Math.max(0, 7 - Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000))
     : 7;
@@ -104,6 +247,16 @@ export default function Profile() {
     setTimeout(() => setSaved(false), 2200);
   };
 
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const requestLogout = () => {
+    if (isGuest) setShowLogoutConfirm(true);
+    else handleLogout();
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <AppNav active="profile" initials={initials} />
@@ -115,11 +268,21 @@ export default function Profile() {
           paddingTop: 20, paddingBottom: 20, borderBottom: '1px solid var(--border-default)',
           position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10,
         }}>
-          <div>
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Profile
-            </h2>
-            <p style={{ color: 'var(--text-hint)', fontSize: '13px', margin: '2px 0 0' }}>Your personal details and body stats</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={() => navigate('/settings')}
+              aria-label="Back to Settings"
+              title="Back to Settings"
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'flex', flexShrink: 0 }}
+            >
+              <i className="ti ti-arrow-left" />
+            </button>
+            <div>
+              <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                Profile
+              </h2>
+              <p style={{ color: 'var(--text-hint)', fontSize: '13px', margin: '2px 0 0' }}>Your personal details and body stats</p>
+            </div>
           </div>
           <button
             onClick={handleSave}
@@ -165,8 +328,65 @@ export default function Profile() {
                   {isGuest ? `Guest · ${daysRemaining} days left` : 'Member'}
                 </span>
                 {!isGuest && user?.email && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.email}</span>}
+                {pendingConfirmation && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.email}</span>}
               </div>
             </div>
+          </Card>
+
+          {/* Account — merged in from the old separate Account popup, so
+              session/subscription/theme all live under Profile now instead
+              of being split across two places. */}
+          <Card>
+            <SectionLabel>Account</SectionLabel>
+            {pendingConfirmation ? <ResendConfirmation email={user.email} /> : isGuest && <UpgradeForm />}
+            {isGuest && !pendingConfirmation && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '16px 0 0' }}>
+                Already have an account?{' '}
+                <span onClick={() => navigate('/login')} style={{ color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}>
+                  Log in instead
+                </span>{' '}— this guest session's data will be left behind unless you upgrade it first.
+              </p>
+            )}
+            <FieldRow
+              label="Pro"
+              hint={profile?.is_premium ? `Active subscription · ${profile?.pro_status || 'active'}` : 'Unlimited AI scans, custom micronutrient targets, and more'}
+            >
+              <ProBillingButton profile={profile} />
+            </FieldRow>
+            <button
+              onClick={requestLogout}
+              style={{
+                marginTop: '16px',
+                padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)',
+                borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
+                cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              {isGuest ? 'Exit guest session' : 'Log out'}
+            </button>
+          </Card>
+
+          <Card>
+            <SectionLabel>Appearance</SectionLabel>
+            <FieldRow label="Theme" hint={theme === 'light' ? 'Light — matches most of the day' : 'Dark — easier on the eyes at night'}>
+              <div style={{ display: 'flex', gap: 6, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2 }}>
+                {[{ id: 'dark', label: 'Dark', icon: 'ti-moon' }, { id: 'light', label: 'Light', icon: 'ti-sun' }].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setTheme(opt.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 18, border: 'none',
+                      background: theme === opt.id ? 'var(--accent)' : 'transparent',
+                      color: theme === opt.id ? '#0f0f0f' : 'var(--text-muted)',
+                      fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    }}
+                  >
+                    <i className={`ti ${opt.icon}`} style={{ fontSize: 14 }} />
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </FieldRow>
           </Card>
 
           {/* Details + stats, side by side like the rest of the app */}
@@ -224,6 +444,33 @@ export default function Profile() {
 
         </div>
       </div>
+
+      {showLogoutConfirm && (
+        <div onClick={closeLogoutConfirm} className={`modal-backdrop${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 210, padding: 24 }}>
+          <div onClick={e => e.stopPropagation()} className={`modal-panel${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
+              Exit guest session?
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px' }}>
+              You're in guest mode. Guest accounts have no password, so once you exit there's no way to log back into this data — it's gone for good. Create a real account above first if you want to keep it.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={closeLogoutConfirm}
+                style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                style={{ flex: 1, padding: '11px', background: '#3a1414', border: '1px solid #6a2a2a', borderRadius: 8, color: '#e89f9f', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                Exit anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

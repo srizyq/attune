@@ -5,7 +5,6 @@ import { useProfile } from '../hooks/useProfile';
 import AppNav from '../components/AppNav';
 import NotificationsModal from '../components/settings/NotificationsModal';
 import CoachModal from '../components/settings/CoachModal';
-import AccountModal from '../components/settings/AccountModal';
 import PrivacyModal from '../components/settings/PrivacyModal';
 
 // Which "page" each section opens as — short sections (a couple of field
@@ -14,13 +13,21 @@ import PrivacyModal from '../components/settings/PrivacyModal';
 // mode, two sliders, a micronutrient grid) and reads better with the
 // room a full page gives it, matching how Nutrients/Profile/Expenditure
 // already work as their own screens instead of a modal.
+//
+// Account (session/subscription/theme) isn't a row here — it lives under
+// the Profile card above instead, so session management sits next to the
+// identity it belongs to rather than being a sibling of Goals/Notifications.
 const SECTIONS = [
-  { id: 'account', icon: 'ti-user-circle',  label: 'Account',         kind: 'modal' },
   { id: 'goals',   icon: 'ti-target',       label: 'Goals & Targets', kind: 'page' },
   { id: 'notifs',  icon: 'ti-bell',         label: 'Notifications',   kind: 'modal' },
   { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'modal' },
   { id: 'privacy', icon: 'ti-shield-lock',  label: 'Privacy',         kind: 'modal' },
 ];
+
+// Only used to resolve icon/label for search results that point at the
+// Profile page (a plain navigate, not a SECTIONS row/modal) — kept out of
+// SECTIONS itself so it doesn't render as a duplicate row in the list.
+const PROFILE_META = { id: 'profile', icon: 'ti-user-circle', label: 'Profile' };
 
 // One entry per individual setting (not per section) so a search like
 // "protein" or "reminder" jumps straight to the right section instead of
@@ -37,10 +44,10 @@ const SEARCH_INDEX = [
   { section: 'coach', label: 'Coach Pass', keywords: 'coach pass subscribe billing trainer' },
   { section: 'coach', label: 'Coach Mode', keywords: 'coach mode client dashboard' },
   { section: 'coach', label: 'My trainer', keywords: 'trainer invite code connect' },
-  { section: 'account', label: 'Account status', keywords: 'account email guest sign in' },
-  { section: 'account', label: 'Pro features', keywords: 'pro premium upgrade' },
-  { section: 'account', label: 'Theme', keywords: 'theme dark light appearance' },
-  { section: 'account', label: 'Log out', keywords: 'log out logout sign out exit guest' },
+  { section: 'profile', label: 'Account status', keywords: 'account email guest sign in' },
+  { section: 'profile', label: 'Pro features', keywords: 'pro premium upgrade' },
+  { section: 'profile', label: 'Theme', keywords: 'theme dark light appearance' },
+  { section: 'profile', label: 'Log out', keywords: 'log out logout sign out exit guest' },
   { section: 'privacy', label: 'Export my data', keywords: 'export data download privacy' },
   { section: 'privacy', label: 'Privacy Policy', keywords: 'privacy policy legal data' },
   { section: 'privacy', label: 'Terms of Service', keywords: 'terms service legal' },
@@ -63,24 +70,27 @@ export default function Settings() {
   }
 
   function openSection(id) {
+    if (id === 'profile') { navigate('/profile'); return; }
     const section = SECTIONS.find(s => s.id === id);
     if (!section) return;
     if (section.kind === 'page') navigate('/settings/goals');
     else setOpenModal(id);
   }
 
-  // Returning from Stripe Checkout (either plan) — the webhook updates
-  // the profile server-side almost immediately, but this tab's own
-  // `profile` state won't know until it refetches. A couple of retries
-  // covers the small gap between the redirect landing and the webhook
-  // actually finishing. Also pops the relevant popup open so the new
-  // subscription is actually visible instead of landing back on a plain
-  // section list.
+  // Returning from Stripe Checkout — the webhook updates the profile
+  // server-side almost immediately, but this tab's own `profile` state
+  // won't know until it refetches. Coach Pass's status/billing live right
+  // here, so that return polls in place and pops the Coach Mode popup
+  // open. Pro's status/billing now live on the Profile page instead of a
+  // Settings popup, so that return just hands off the same `pro=success`
+  // marker to Profile, which runs its own identical poll there (a fresh
+  // useProfile() call has no shared cache with this one, so the retry
+  // has to happen wherever the data is actually read).
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const returnedPlan = params.get('coach_pass') === 'success' ? 'coach' : params.get('pro') === 'success' ? 'account' : null;
-    if (!returnedPlan) return;
-    setOpenModal(returnedPlan);
+    if (params.get('pro') === 'success') { navigate('/profile?pro=success', { replace: true }); return; }
+    if (params.get('coach_pass') !== 'success') return;
+    setOpenModal('coach');
     let attempts = 0;
     const interval = setInterval(() => {
       attempts += 1;
@@ -109,7 +119,7 @@ export default function Settings() {
     goals: profile?.calorie_target ? `${profile.calorie_target.toLocaleString()} kcal · ${goalLabels[profile.goal] || 'Maintain'}` : 'Not set up yet',
     notifs: profile?.reminder_enabled ? `Daily reminder at ${profile.reminder_time || '19:00'}` : 'All reminders off',
     coach: profile?.coach_pass ? 'Coach Pass active' : 'Not active',
-    account: pendingConfirmation ? 'Pending email confirmation' : isGuest ? `Guest mode · ${daysRemaining} days left` : (user?.email || 'Signed in'),
+    profile: pendingConfirmation ? 'Pending email confirmation' : isGuest ? `Guest mode · ${daysRemaining} days left` : (user?.email || 'Signed in'),
     privacy: 'Data export, Privacy Policy, Terms of Service',
   };
 
@@ -134,30 +144,47 @@ export default function Settings() {
 
         <div className="page-pad">
           {/* Profile preview — stays at the top, tap through to the full
-              Profile page. Unchanged position from before the redesign. */}
+              Profile page (which now also owns Account: session, Pro
+              billing, theme). Sized and badged like the Profile page's own
+              identity card so this preview reads as the same identity, not
+              a smaller stand-in for it. */}
           <button
             onClick={() => navigate('/profile')}
             style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
-              padding: '14px 16px', background: 'var(--bg-subtle)', border: '1px solid var(--border-default)',
-              borderRadius: '14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+              width: '100%', display: 'flex', alignItems: 'center', gap: '20px',
+              padding: '24px', background: 'var(--bg-subtle)', border: '1px solid var(--border-default)',
+              borderRadius: '16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               transition: 'border-color 0.15s', marginBottom: 20,
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-strong)'}
             onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-default)'}
           >
             <div style={{
-              width: 48, height: 48, borderRadius: '50%',
+              width: 64, height: 64, borderRadius: '50%',
               background: 'var(--accent-bg)', border: '1px solid var(--accent-dark)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 17, fontWeight: 700, color: 'var(--accent)', flexShrink: 0,
+              fontSize: 22, fontWeight: 700, color: 'var(--accent)', flexShrink: 0,
               fontFamily: "'Syne', sans-serif",
             }}>
               {initials}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600 }}>{profile?.name || 'Your name'}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>{summaries.account}</div>
+              <div style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+                {profile?.name || 'Your name'}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: '12px', padding: '3px 10px', borderRadius: '99px',
+                  background: isGuest ? '#1a1410' : 'var(--accent-bg)',
+                  border: `1px solid ${isGuest ? '#3a2e1e' : 'var(--border-active)'}`,
+                  color: isGuest ? 'var(--warning)' : 'var(--accent)',
+                }}>
+                  {isGuest ? `Guest · ${daysRemaining} days left` : 'Member'}
+                </span>
+                {(!isGuest || pendingConfirmation) && user?.email && (
+                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.email}</span>
+                )}
+              </div>
             </div>
             <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16, flexShrink: 0 }} />
           </button>
@@ -184,7 +211,8 @@ export default function Settings() {
             ) : (
               <div style={{ marginBottom: 8 }}>
                 {results.map(r => {
-                  const section = SECTIONS.find(s => s.id === r.section);
+                  const section = SECTIONS.find(s => s.id === r.section) || (r.section === 'profile' ? PROFILE_META : null);
+                  if (!section) return null;
                   return (
                     <button
                       key={r.label}
@@ -251,7 +279,6 @@ export default function Settings() {
 
       {openModal === 'notifs' && <NotificationsModal onClose={closeModal} closing={modalClosing} />}
       {openModal === 'coach' && <CoachModal onClose={closeModal} closing={modalClosing} />}
-      {openModal === 'account' && <AccountModal onClose={closeModal} closing={modalClosing} />}
       {openModal === 'privacy' && <PrivacyModal onClose={closeModal} closing={modalClosing} />}
     </div>
   );
