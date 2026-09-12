@@ -260,6 +260,28 @@ function looksLikeEmptyNutrition(f) {
   return f.cal < 5 && f.protein < 0.5 && f.carbs < 0.5 && f.fat < 0.5;
 }
 
+// The opposite failure mode, specific to crowdsourced Open Food Facts
+// entries for drinks: confirmed by direct testing on a real product
+// (barcode 9310232962474, "Dare" mocha protein drink) whose OFF entry
+// had its whole-bottle nutrition (291kcal, 30g protein per the 500ml
+// serving_size) entered into the *per-100g* fields instead — a plausible
+// submitter mistake, not something we can detect from the shape of the
+// data alone. Scaling those "per 100g" numbers back up by the serving
+// size (500/100 = ×5, otherwise the exact right thing to do) amplified
+// the error 5x, to a physically-impossible 1460kcal/150g-protein bottle.
+// No liquid anyone actually drinks packs 30g of protein into 100mL —
+// even the most concentrated ready-to-drink shakes stay under ~10g/100mL
+// — so a serving described in mL/L with implausible density per 100
+// units is a strong, low-false-positive signal that the source data
+// itself is wrong, not that scaling was done incorrectly. Solid foods
+// are deliberately exempt: a protein bar legitimately can carry 30g+
+// protein per 100g, so the same check on grams would reject real data.
+function looksImplausiblyDenseLiquid(f, servingDescription) {
+  if (!/\b(ml|millilit|\bl\b|litre|liter)\b/i.test(servingDescription || "")) return false;
+  const per100 = 100 / (f.servingGrams || 100);
+  return f.cal * per100 > 220 || f.protein * per100 > 15;
+}
+
 // FatSecret's barcode data is far more complete than Open Food Facts' (many
 // OFF entries have missing/zeroed nutriment fields — confirmed by direct
 // testing), so it's tried first. OFF stays as a fallback for products
@@ -475,7 +497,13 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         lookupOpenFoodFactsBarcode(barcode).catch(() => null),
         lookupSharedBarcodeProduct(barcode).catch(() => null),
       ]);
-      const candidates = [fs, off, shared].filter(Boolean);
+      // Unlike looksLikeEmptyNutrition below, an implausibly-dense liquid
+      // is never legitimate data (nothing real trips it), so it's a hard
+      // reject here rather than a deprioritized fallback — showing a
+      // physically-impossible number is worse than reporting not-found.
+      const candidates = [fs, off, shared]
+        .filter(Boolean)
+        .filter(f => !looksImplausiblyDenseLiquid(f, f.serving));
       const found = candidates.find(f => !looksLikeEmptyNutrition(f)) || candidates[0] || null;
       if (!found) {
         setResult(null);
