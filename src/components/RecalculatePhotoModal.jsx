@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
+import DragSheet from './DragSheet';
 
 // Downscale + re-encode before upload — same reasoning as PhotoScanModal's
 // resizeImage.
@@ -120,55 +121,47 @@ export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
   }
 
   return (
-    <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: '#141414', border: '1px solid #2a2a2a', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '85vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #1e1e1e', position: 'sticky', top: 0, background: '#141414', zIndex: 10 }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#e8e8e8' }}>Recalculate from photo</span>
-          <button onClick={close} style={{ background: 'none', border: 'none', color: '#8a8a8a', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
-        </div>
-        <div style={{ padding: 20 }}>
-          <img src={preview} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
+    <DragSheet title="Recalculate from photo" onClose={close} closing={closing}>
+      <img src={preview} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
 
-          {error && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ background: limitReached ? '#1a1508' : '#1a0f0f', border: `1px solid ${limitReached ? '#4a3a1a' : '#c0707040'}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: limitReached ? '#e8c468' : '#c07070', marginBottom: 10 }}>{error}</div>
-              <button onClick={retake} style={{ width: '100%', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '9px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Try another photo
-              </button>
-            </div>
-          )}
-
-          {result && (
-            <div>
-              <div style={{ fontSize: 11, color: '#e8c468', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <i className="ti ti-sparkles" /> New estimate — {result.confidence || 'medium'} confidence
-              </div>
-              <div style={{ background: '#181818', border: '1px solid #3a5a3a', borderRadius: 10, padding: 14, marginBottom: 14 }}>
-                <div style={{ fontSize: 14, color: '#e8e8e8', fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
-                {result.portion && <div style={{ fontSize: 12, color: '#8a8a8a', marginBottom: 10 }}>{result.portion}</div>}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{result.cal}</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>kcal</div></div>
-                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#8fbc8f' }}>{result.protein}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Protein</div></div>
-                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#6aabcf' }}>{result.carbs}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Carbs</div></div>
-                  <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: '#9f97e8' }}>{result.fat}g</div><div style={{ fontSize: 10, color: '#8a8a8a' }}>Fat</div></div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={retake} style={{ flex: 1, background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8, padding: '11px', fontSize: 13, color: '#ccc', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                  Retake
-                </button>
-                <button
-                  onClick={handleApply}
-                  disabled={applying}
-                  style={{ flex: 2, background: applying ? '#2a2a2a' : '#8fbc8f', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: applying ? '#666' : '#0f0f0f', cursor: applying ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                >
-                  {applying ? 'Saving…' : 'Use this estimate'}
-                </button>
-              </div>
-            </div>
-          )}
+      {error && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ background: limitReached ? '#1a1508' : '#1a0f0f', border: `1px solid ${limitReached ? '#4a3a1a' : '#c0707040'}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: limitReached ? 'var(--gold)' : 'var(--danger)', marginBottom: 10 }}>{error}</div>
+          <button onClick={retake} style={{ width: '100%', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Try another photo
+          </button>
         </div>
-      </div>
-    </div>
+      )}
+
+      {result && (
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="ti ti-sparkles" /> New estimate — {result.confidence || 'medium'} confidence
+          </div>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
+            <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
+            {result.portion && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{result.portion}</div>}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{result.cal}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>kcal</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{result.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--water-blue)' }}>{result.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ai-purple)' }}>{result.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={retake} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '11px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Retake
+            </button>
+            <button
+              onClick={handleApply}
+              disabled={applying}
+              style={{ flex: 2, background: applying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: applying ? 'var(--text-muted)' : '#0f0f0f', cursor: applying ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              {applying ? 'Saving…' : 'Use this estimate'}
+            </button>
+          </div>
+        </div>
+      )}
+    </DragSheet>
   );
 }
