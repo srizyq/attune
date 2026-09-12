@@ -1389,6 +1389,80 @@ export default function FoodSearch() {
 
   const inputRef = useRef(null);
 
+  // Voice search — records with MediaRecorder, sends the audio to
+  // api/transcribe-voice.js (OpenAI Whisper) and drops the result straight
+  // into the search box. recorderRef holds the in-progress MediaRecorder
+  // across the start/stop call pair; recording/transcribing are the two
+  // separate UI states (actively listening vs. waiting on the network).
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [voiceError, setVoiceError] = useState(null);
+  const recorderRef = useRef(null);
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function transcribeAndSearch(blob) {
+    setTranscribing(true);
+    try {
+      const base64 = await blobToBase64(blob);
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/transcribe-voice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ audio: base64, mimeType: blob.type }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Couldn't transcribe that.");
+      if (data.text?.trim()) {
+        setQuery(data.text.trim());
+        setExpandedId(null);
+      } else {
+        setVoiceError("Didn't catch that — try again.");
+      }
+    } catch (err) {
+      console.error("Voice search error:", err);
+      setVoiceError(err.message || "Couldn't understand that — try again or type instead.");
+    } finally {
+      setTranscribing(false);
+    }
+  }
+
+  async function startVoiceSearch() {
+    setVoiceError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+        transcribeAndSearch(blob);
+      };
+      recorder.start();
+      recorderRef.current = recorder;
+      setRecording(true);
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      setVoiceError("Couldn't access your microphone — check your browser's permission settings.");
+    }
+  }
+
+  function stopVoiceSearch() {
+    recorderRef.current?.stop();
+    setRecording(false);
+  }
+
   // Foods the user has created themselves — shown alongside everything
   // else, matched by name when searching.
   const customAsFoods = useMemo(() => customFoods.rows.map(row => ({
@@ -1733,9 +1807,21 @@ export default function FoodSearch() {
               placeholder="Search any food, dish, or product…"
               style={{ flex: 1, background: "none", border: "none", outline: "none", color: "var(--text-primary)", fontSize: 15, fontFamily: "inherit" }}
             />
-            {liveLoading && <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid var(--text-hint)", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />}
-            {query && !liveLoading && <button onClick={() => { setQuery(""); setGenericResults([]); setPackagedLive([]); setLiveError(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>✕</button>}
+            {transcribing && <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid var(--text-hint)", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />}
+            {!transcribing && recording && (
+              <button onClick={stopVoiceSearch} title="Stop recording" style={{ background: "none", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0, display: "flex", animation: "pulse 1.2s ease-in-out infinite" }}>
+                <i className="ti ti-player-stop-filled" />
+              </button>
+            )}
+            {!transcribing && !recording && !query && (
+              <button onClick={startVoiceSearch} title="Search by voice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0, display: "flex" }}>
+                <i className="ti ti-microphone" />
+              </button>
+            )}
+            {liveLoading && !transcribing && <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid var(--text-hint)", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />}
+            {query && !liveLoading && !transcribing && <button onClick={() => { setQuery(""); setGenericResults([]); setPackagedLive([]); setLiveError(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>✕</button>}
           </div>
+          {voiceError && <div style={{ color: "var(--danger)", fontSize: 12, marginTop: -4, marginBottom: 10 }}>{voiceError}</div>}
 
           {/* Scan shortcuts — their own row below the search bar so they
               never crowd/overflow it on narrow phones (they used to live
