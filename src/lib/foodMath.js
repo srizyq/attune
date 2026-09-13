@@ -19,6 +19,30 @@ export function amountToServings(amount, unitId, servingGrams) {
   return grams / (servingGrams || 100);
 }
 
+// Every field scaleFood scales — shared here so summing (below) touches
+// exactly the same set instead of two lists silently drifting apart.
+const NUTRIENT_FIELDS = [
+  'cal', 'protein', 'carbs', 'fat', 'fibre', 'sodium', 'sugar',
+  'saturatedFat', 'transFat', 'cholesterol', 'potassium', 'addedSugar',
+  'vitaminD', 'calcium', 'iron', 'vitaminA', 'vitaminC',
+  'polyunsaturatedFat', 'monounsaturatedFat', 'magnesium', 'zinc',
+  'vitaminB12', 'folate',
+];
+
+// Sums every nutrient field across a recipe's ingredients into one combined
+// food-shaped object — the natural first step before scaleFood(totals,
+// servingsToLog / recipe.servings) turns "the whole batch" into "however
+// many servings someone's actually logging."
+export function sumFoodItems(items) {
+  const totals = Object.fromEntries(NUTRIENT_FIELDS.map(f => [f, 0]));
+  for (const item of items) {
+    for (const field of NUTRIENT_FIELDS) {
+      totals[field] += Number(item[field]) || 0;
+    }
+  }
+  return totals;
+}
+
 // Scales every macro/micronutrient field on a food object by a servings
 // multiplier — shared between the search/add flow (scaling a food before
 // logging it) and the daily-log edit flow (scaling an already-logged item

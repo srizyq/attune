@@ -15,11 +15,12 @@ import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
-import { scaleFood, UNITS, amountToServings } from '../lib/foodMath';
+import { scaleFood, sumFoodItems, UNITS, amountToServings } from '../lib/foodMath';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
 import MenuScanModal from '../components/MenuScanModal';
 import MarqueeText from '../components/MarqueeText';
+import Toast from '../components/Toast';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { getCategoryStyle } from '../lib/foodCategories';
 
@@ -987,84 +988,58 @@ function CreateFoodModal({ onClose, onCreate, initialName, initialFood }) {
   );
 }
 
-// ─── Saved meals (MyFitnessPal-style "Meals"/recipes) ──────────────────────
-
-function SavedMealsModal({ meals, loading, onClose, onLog, onDelete, onStartBuilder }) {
-  return (
-    <ModalShell title="Saved meals" onClose={onClose}>
-      <button onClick={onStartBuilder} style={{ width: "100%", background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 600, color: "var(--accent)", cursor: "pointer", fontFamily: "inherit", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-        <i className="ti ti-plus" /> Build a new meal
-      </button>
-      {loading ? null : meals.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "24px", color: "var(--text-hint)", fontSize: 13, background: "var(--bg-card)", border: "1px dashed var(--border-default)", borderRadius: 10 }}>
-          No saved meals yet. Build one from foods you log often.
-        </div>
-      ) : (
-        meals.map(meal => {
-          const items = meal.items || [];
-          const totalCal = items.reduce((s, it) => s + (Number(it.cal) || 0), 0);
-          return (
-            <div key={meal.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>{meal.name}</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{items.length} item{items.length !== 1 ? "s" : ""} · {Math.round(totalCal)} kcal</div>
-              </div>
-              <button onClick={() => onLog(meal)} style={{ background: "var(--accent)", border: "none", borderRadius: 7, padding: "7px 12px", fontSize: 12, fontWeight: 600, color: "#0f0f0f", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Log all</button>
-              <button onClick={() => onDelete(meal.id)} style={{ background: "none", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 9px", color: "var(--danger)", cursor: "pointer" }}><i className="ti ti-trash" /></button>
-            </div>
-          );
-        })
-      )}
-    </ModalShell>
-  );
-}
+// ─── Recipes ────────────────────────────────────────────────────────────────
+// Browsing/logging/editing a recipe lives on its own page (src/pages/
+// Recipes.jsx) now — this file only owns the *building* flow (search,
+// add ingredients, review, save), reached from there via
+// openMealBuilder/editMealBuilder location state below.
 
 // ─── Meal builder review — save what's been added to the builder cart as a
 //    named saved meal, and optionally log it right away ──────────────────
 
 const FREE_SAVED_MEALS_LIMIT = 10;
 
-function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, defaultTime, selectedDate, isPremium, logByTime, savedMealsCount, onUpgrade }) {
-  const [name, setName] = useState("");
-  const [logNow, setLogNow] = useState(true);
+function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, defaultTime, selectedDate, isPremium, logByTime, savedMealsCount, onUpgrade, isEditing, initialName, initialServings }) {
+  const [name, setName] = useState(initialName || "");
+  const [servings, setServings] = useState(String(initialServings || 1));
+  const [logNow, setLogNow] = useState(!isEditing);
   const [meal, setMeal] = useState(defaultMeal);
   const [time, setTime] = useState(defaultTime);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const atLimit = !isPremium && savedMealsCount >= FREE_SAVED_MEALS_LIMIT;
+  // Editing an existing recipe isn't "creating" a new one against the
+  // free-tier count — only a brand-new save should ever hit this gate.
+  const atLimit = !isEditing && !isPremium && savedMealsCount >= FREE_SAVED_MEALS_LIMIT;
 
-  const totals = items.reduce((t, it) => ({
-    cal: t.cal + (Number(it.cal) || 0),
-    protein: t.protein + (Number(it.protein) || 0),
-    carbs: t.carbs + (Number(it.carbs) || 0),
-    fat: t.fat + (Number(it.fat) || 0),
-  }), { cal: 0, protein: 0, carbs: 0, fat: 0 });
+  const totals = sumFoodItems(items);
+  const servingsNum = Number(servings) || 1;
+  const perServingCal = Math.round(totals.cal / servingsNum);
 
   async function submit() {
     if (!name.trim() || items.length === 0 || saving) return;
     setSaving(true);
     setError(null);
     try {
-      await onSave(name.trim(), items, logNow && !logByTime ? meal : null, logNow && logByTime ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null);
+      await onSave(name.trim(), items, servingsNum, logNow && !logByTime ? meal : null, logNow && logByTime ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null);
       onClose();
     } catch (err) {
       console.error(err);
-      setError("Couldn't save this meal. Try again.");
+      setError(`Couldn't save this recipe. Try again.`);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <ModalShell title={`Meal builder (${items.length})`} onClose={onClose}>
+    <ModalShell title={isEditing ? `Edit recipe (${items.length})` : `New recipe (${items.length})`} onClose={onClose}>
       {items.length === 0 ? (
         <div style={{ textAlign: "center", padding: "20px", color: "var(--text-hint)", fontSize: 13 }}>
-          No items yet — close this, then tap "+ Add to meal" on any food.
+          No ingredients yet — close this, then tap "+ Add to meal" on any food.
         </div>
       ) : atLimit ? (
         <div>
           <div style={{ background: "#1a1508", border: "1px solid #4a3a1a", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--gold)", marginBottom: 14 }}>
-            You've saved {FREE_SAVED_MEALS_LIMIT} free saved meals — upgrade to Pro for unlimited, or delete an old one to make room.
+            You've saved {FREE_SAVED_MEALS_LIMIT} free recipes — upgrade to Pro for unlimited, or delete an old one to make room.
           </div>
           <button onClick={onUpgrade} style={{ width: "100%", background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Upgrade to Pro
@@ -1077,23 +1052,36 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < items.length - 1 ? "1px solid var(--border-default)" : "none" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <MarqueeText text={it.name} style={{ fontSize: 13, color: "var(--text-secondary)" }} />
-                  <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 2 }}>{Math.round(it.cal)} kcal</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {it.loggedAmount != null && it.loggedUnit ? `${formatAmountUnit(it.loggedAmount, it.loggedUnit)} · ` : ""}
+                    <span style={{ color: "var(--accent)" }}>{Math.round(it.cal)} kcal</span>
+                  </div>
                 </div>
                 <button onClick={() => onRemove(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
               </div>
             ))}
           </div>
           <div style={{ display: "flex", gap: 16, marginBottom: 16, paddingBottom: 14, borderBottom: "1px solid var(--border-default)", fontSize: 12, color: "var(--text-muted)" }}>
-            <span><span style={{ color: "var(--accent)", fontWeight: 600 }}>{Math.round(totals.cal)}</span> kcal</span>
+            <span><span style={{ color: "var(--accent)", fontWeight: 600 }}>{Math.round(totals.cal)}</span> kcal total</span>
             <span>P <span style={{ color: "var(--text-secondary)" }}>{Math.round(totals.protein)}g</span></span>
             <span>C <span style={{ color: "var(--text-secondary)" }}>{Math.round(totals.carbs)}g</span></span>
             <span>F <span style={{ color: "var(--text-secondary)" }}>{Math.round(totals.fat)}g</span></span>
           </div>
-          <label style={labelStyle}>Meal name *</label>
+          <label style={labelStyle}>Recipe name *</label>
           <input style={{ ...fieldStyle, marginBottom: 12 }} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. My usual breakfast" />
+          <label style={labelStyle}>Makes how many servings?</label>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <input
+              type="number" min="1" step="1" style={{ ...fieldStyle, width: 90 }}
+              value={servings} onChange={e => setServings(e.target.value)}
+            />
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              ≈ {perServingCal} kcal per serving
+            </span>
+          </div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-secondary)", marginBottom: logNow ? 12 : 16, cursor: "pointer" }}>
             <input type="checkbox" checked={logNow} onChange={e => setLogNow(e.target.checked)} />
-            Also log to today
+            Also log 1 serving to today
           </label>
           {logNow && (
             logByTime ? (
@@ -1106,7 +1094,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
           )}
           {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 12 }}>{error}</div>}
           <button onClick={submit} disabled={!name.trim() || saving} style={{ width: "100%", background: !name.trim() || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !name.trim() || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !name.trim() || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            {saving ? "Saving…" : !logNow ? "Save meal" : logByTime ? `Save meal & log at ${formatTime12h(time)}` : `Save meal & log to ${meal}`}
+            {saving ? "Saving…" : !logNow ? (isEditing ? "Save changes" : "Save recipe") : logByTime ? `Save & log at ${formatTime12h(time)}` : `Save & log to ${meal}`}
           </button>
         </>
       )}
@@ -1313,29 +1301,6 @@ function AddControls({ amount, setAmount, unit, setUnit, meal, setMeal, time, se
   );
 }
 
-function Toast({ message, error, onDone }) {
-  const [leaving, setLeaving] = useState(false);
-  useEffect(() => {
-    const leaveTimer = setTimeout(() => setLeaving(true), 2200 - 160);
-    const doneTimer = setTimeout(onDone, 2200);
-    return () => { clearTimeout(leaveTimer); clearTimeout(doneTimer); };
-  }, [onDone]);
-  return (
-    <div
-      className={leaving ? "toast-out" : "toast-in"}
-      style={{
-        position: "fixed", bottom: 28, left: "50%", borderRadius: 10, padding: "10px 20px", fontSize: 14, zIndex: 100,
-        whiteSpace: "nowrap", pointerEvents: "none",
-        background: error ? "#1a0f0f" : "var(--accent-bg)",
-        border: `1px solid ${error ? "#c0707040" : "var(--accent-dark)"}`,
-        color: error ? "var(--danger)" : "var(--accent)",
-      }}
-    >
-      {error ? "✕" : "✓"} {message}
-    </div>
-  );
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function FoodSearch() {
@@ -1424,8 +1389,17 @@ export default function FoodSearch() {
   // instead of a blank form, so a food you've already corrected once
   // never needs an AI guess again.
   const [createFoodPrefill, setCreateFoodPrefill] = useState(null);
-  // Dashboard's "Saved meals" shortcut links here with { openSavedMeals: true }.
-  const [savedMealsOpen, setSavedMealsOpen] = useState(!!location.state?.openSavedMeals);
+  const [builderMode, setBuilderMode] = useState(!!location.state?.openMealBuilder);
+  const [builderItems, setBuilderItems] = useState([]);
+  const [builderReviewOpen, setBuilderReviewOpen] = useState(false);
+  // Set when the builder was entered to edit an existing recipe (via
+  // /recipes' Edit button) rather than create a new one — routes the
+  // eventual save through savedMeals.update instead of .create.
+  const [editingRecipeId, setEditingRecipeId] = useState(null);
+  // Whether the builder was entered from the Recipes page at all (new or
+  // edit) — determines whether finishing (save or cancel) returns there
+  // instead of just closing back to plain Food search.
+  const [builderFromRecipes, setBuilderFromRecipes] = useState(!!location.state?.openMealBuilder);
   // The quick-action sheet ("+" in the bottom nav) is present on every
   // page, including this one — tapping it while already on /food
   // re-navigates to the SAME route with new state, which React Router
@@ -1440,12 +1414,27 @@ export default function FoodSearch() {
     if (location.state?.openScan) setScanOpen(true);
     if (location.state?.openPhotoScan) setPhotoScanOpen(true);
     if (location.state?.openMenuScan) setMenuScanOpen(true);
-    if (location.state?.openSavedMeals) setSavedMealsOpen(true);
     if (location.state?.openCreateFood) setCreateFoodOpen(true);
+    if (location.state?.openMealBuilder) { setBuilderMode(true); setBuilderItems([]); setBuilderFromRecipes(true); }
   }, [location.state]);
-  const [builderMode, setBuilderMode] = useState(false);
-  const [builderItems, setBuilderItems] = useState([]);
-  const [builderReviewOpen, setBuilderReviewOpen] = useState(false);
+  // editMealBuilder carries a recipe id, not a plain flag — waits for
+  // savedMeals.rows to actually contain it (an async fetch, unlike the
+  // flags above) before pre-filling the builder, and the ref stops this
+  // from re-firing and stomping in-progress edits once rows next update
+  // (e.g. right after this same edit is saved).
+  const editAppliedRef = useRef(false);
+  useEffect(() => {
+    const editId = location.state?.editMealBuilder;
+    if (!editId || editAppliedRef.current) return;
+    const recipe = savedMeals.rows.find(r => r.id === editId);
+    if (!recipe) return;
+    editAppliedRef.current = true;
+    setBuilderMode(true);
+    setBuilderItems(recipe.items || []);
+    setEditingRecipeId(recipe.id);
+    setBuilderFromRecipes(true);
+    setBuilderReviewOpen(true);
+  }, [location.state, savedMeals.rows]);
 
   // Live external search state — FatSecret (generic foods, comprehensive
   // across every category) and Open Food Facts (packaged/branded products,
@@ -1810,16 +1799,6 @@ export default function FoodSearch() {
     };
   }), [favourites.rows, lastLogged.map]);
 
-  // timeStringToDate anchors to "now" by default — pass this as the base
-  // so a Pro user's exact-time logging still lands on the selected
-  // (possibly backdated) day instead of silently recording today's date
-  // with the right time-of-day, which is a real Postgres timestamp,
-  // not just display text — a UI mismatch here would corrupt data,
-  // not just look wrong.
-  function selectedDateBase() {
-    return new Date(selectedDate + "T00:00:00");
-  }
-
   async function logFood(food, meal, loggedAt) {
     try {
       await addFoodLog(food, meal, loggedAt);
@@ -1834,7 +1813,7 @@ export default function FoodSearch() {
 
   function addToBuilder(food) {
     setBuilderItems(prev => [...prev, food]);
-    showToast(`${food.name} added to meal builder`);
+    showToast(`${food.name} added to recipe`);
     setExpandedId(null);
   }
 
@@ -1854,55 +1833,52 @@ export default function FoodSearch() {
   }
 
   function cancelBuilder() {
+    const returnToRecipes = builderFromRecipes;
     setBuilderMode(false);
     setBuilderItems([]);
     setBuilderReviewOpen(false);
+    setEditingRecipeId(null);
+    setBuilderFromRecipes(false);
+    editAppliedRef.current = false;
+    if (returnToRecipes) navigate('/recipes');
   }
 
-  async function handleSaveBuilderMeal(name, items, mealToLog, timeToLog) {
+  async function handleSaveBuilderMeal(name, items, servings, mealToLog, timeToLog) {
     try {
+      // Keeps each ingredient's real quantity (servingGrams/loggedAmount/
+      // loggedUnit), not just its macros — dropping these used to mean a
+      // saved meal could only ever say "Chicken Breast, 330 kcal", never
+      // "200g chicken breast". addToBuilder already puts these on each
+      // item; this is just "stop discarding them at save time."
       const snapshot = items.map(it => ({
-        name: it.name, cal: it.cal, protein: it.protein, carbs: it.carbs,
-        fat: it.fat, fibre: it.fibre || 0, sodium: it.sodium || 0, sugar: it.sugar || 0,
-        saturatedFat: it.saturatedFat || 0, transFat: it.transFat || 0,
-        cholesterol: it.cholesterol || 0, potassium: it.potassium || 0,
-        addedSugar: it.addedSugar || 0, vitaminD: it.vitaminD || 0,
-        calcium: it.calcium || 0, iron: it.iron || 0,
+        name: it.name,
+        servingGrams: it.servingGrams ?? null,
+        loggedAmount: it.loggedAmount ?? null,
+        loggedUnit: it.loggedUnit ?? null,
+        ...sumFoodItems([it]),
       }));
-      await savedMeals.create(name, snapshot);
+      const saved = editingRecipeId
+        ? await savedMeals.update(editingRecipeId, { name, items: snapshot, servings })
+        : await savedMeals.create(name, snapshot, servings);
       const logging = mealToLog || timeToLog;
       if (logging) {
-        for (const it of items) {
-          await addFoodLog(it, mealToLog, timeToLog);
-        }
+        // One combined row for "1 serving of this recipe", scaled down
+        // from the batch total — not one row per ingredient (the old
+        // "Log all" behaviour), which cluttered the daily log with what's
+        // conceptually a single dish.
+        const totals = sumFoodItems(snapshot);
+        const perServing = scaleFood(totals, 1 / (Number(servings) || 1));
+        await addFoodLog({ ...perServing, name, servingLabel: '1 serving', source: 'recipe' }, mealToLog, timeToLog);
         refetchRecent(); lastLogged.refetch();
       }
-      showToast(`Saved "${name}"${mealToLog ? ` and logged to ${mealToLog}` : timeToLog ? ` and logged at ${formatTimeFromDate(timeToLog)}` : ""}`);
+      showToast(`${editingRecipeId ? 'Updated' : 'Saved'} "${name}"${mealToLog ? ` and logged to ${mealToLog}` : timeToLog ? ` and logged at ${formatTimeFromDate(timeToLog)}` : ""}`);
       cancelBuilder();
+      return saved;
     } catch (err) {
-      console.error("Failed to save meal:", err);
+      console.error("Failed to save recipe:", err);
       showToast(`Couldn't save "${name}" — try again`, true);
+      throw err;
     }
-  }
-
-  async function handleLogSavedMeal(savedMeal) {
-    const items = savedMeal.items || [];
-    // "Right now" but anchored to the selected day — matters when
-    // backdating, since a Pro user's saved-meal quick-log should still
-    // land on that day rather than silently jumping to today.
-    const loggedAt = logByTime ? timeStringToDate(currentTimeHHMM(), selectedDateBase()) : null;
-    try {
-      for (const it of items) {
-        await addFoodLog(it, logByTime ? null : activeMeal, loggedAt);
-      }
-      refetchRecent(); lastLogged.refetch();
-      showToast(`${savedMeal.name} logged${logByTime ? ` at ${formatTimeFromDate(loggedAt)}` : ` to ${activeMeal}`}`);
-    } catch (err) {
-      console.error("Failed to log saved meal:", err);
-      showToast(`Couldn't log ${savedMeal.name} — try again`, true);
-      return;
-    }
-    setSavedMealsOpen(false);
   }
 
   return (
@@ -1951,7 +1927,7 @@ export default function FoodSearch() {
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <div onClick={() => setCreateFoodOpen(true)} title="Create a custom food" style={{ width: 32, height: 32, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 15, color: "var(--text-muted)" }}><i className="ti ti-plus" /></div>
-            <div onClick={() => setSavedMealsOpen(true)} title="Saved meals" style={{ width: 32, height: 32, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 15, color: "var(--text-muted)" }}><i className="ti ti-bookmark" /></div>
+            <div onClick={() => navigate('/recipes')} title="Recipes" style={{ width: 32, height: 32, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 15, color: "var(--text-muted)" }}><i className="ti ti-bookmark" /></div>
           </div>
         </div>
 
@@ -2056,7 +2032,7 @@ export default function FoodSearch() {
                 defaultTime={activeTime}
                 logByTime={logByTime}
                 onAdd={handleAdd}
-                addLabel={builderMode ? "+ Add to meal" : undefined}
+                addLabel={builderMode ? "+ Add to recipe" : undefined}
                 isFavourite={favourites.isFavourite(aiEstimateResult.name)}
                 onToggleFavourite={() => favourites.toggle(aiEstimateResult)}
               />
@@ -2113,7 +2089,7 @@ export default function FoodSearch() {
                       defaultTime={activeTime}
                       logByTime={logByTime}
                       onAdd={handleAdd}
-                      addLabel={builderMode ? "+ Add to meal" : undefined}
+                      addLabel={builderMode ? "+ Add to recipe" : undefined}
                       isFavourite={true}
                       onToggleFavourite={() => favourites.toggle(food)}
                     />
@@ -2137,7 +2113,7 @@ export default function FoodSearch() {
                       defaultTime={activeTime}
                       logByTime={logByTime}
                       onAdd={handleAdd}
-                      addLabel={builderMode ? "+ Add to meal" : undefined}
+                      addLabel={builderMode ? "+ Add to recipe" : undefined}
                       isFavourite={favourites.isFavourite(food.name)}
                       onToggleFavourite={() => favourites.toggle(food)}
                     />
@@ -2161,7 +2137,7 @@ export default function FoodSearch() {
                       defaultTime={activeTime}
                       logByTime={logByTime}
                       onAdd={handleAdd}
-                      addLabel={builderMode ? "+ Add to meal" : undefined}
+                      addLabel={builderMode ? "+ Add to recipe" : undefined}
                       isFavourite={favourites.isFavourite(food.name)}
                       onToggleFavourite={() => favourites.toggle(food)}
                     />
@@ -2204,7 +2180,7 @@ export default function FoodSearch() {
                       defaultTime={activeTime}
                       logByTime={logByTime}
                     onAdd={handleAdd}
-                    addLabel={builderMode ? "+ Add to meal" : undefined}
+                    addLabel={builderMode ? "+ Add to recipe" : undefined}
                     onDelete={food.source === "custom" ? () => handleDeleteCustom(food) : undefined}
                     isFavourite={favourites.isFavourite(food.name)}
                     onToggleFavourite={() => favourites.toggle(food)}
@@ -2245,7 +2221,7 @@ export default function FoodSearch() {
                       defaultTime={activeTime}
                       logByTime={logByTime}
                         onAdd={handleAdd}
-                        addLabel={builderMode ? "+ Add to meal" : undefined}
+                        addLabel={builderMode ? "+ Add to recipe" : undefined}
                         isFavourite={favourites.isFavourite(food.name)}
                         onToggleFavourite={() => favourites.toggle(food)}
                       />
@@ -2270,7 +2246,7 @@ export default function FoodSearch() {
       {/* Meal builder floating bar */}
       {builderMode && (
         <div className="meal-builder-bar" style={{ background: "var(--bg-subtle)", border: "1px solid var(--accent-dark)", borderRadius: 12, padding: "10px 12px 10px 18px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-          <span style={{ fontSize: 13, color: "var(--accent)", whiteSpace: "nowrap" }}>Building meal · {builderItems.length} item{builderItems.length !== 1 ? "s" : ""}</span>
+          <span style={{ fontSize: 13, color: "var(--accent)", whiteSpace: "nowrap" }}>Building recipe · {builderItems.length} item{builderItems.length !== 1 ? "s" : ""}</span>
           <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
             <button onClick={() => setBuilderReviewOpen(true)} style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "#0f0f0f", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Review & save</button>
             <button onClick={cancelBuilder} style={{ background: "none", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Cancel</button>
@@ -2327,31 +2303,23 @@ export default function FoodSearch() {
         />
       )}
 
-      {/* Saved meals */}
-      {savedMealsOpen && (
-        <SavedMealsModal
-          meals={savedMeals.rows}
-          loading={savedMeals.loading}
-          onClose={() => setSavedMealsOpen(false)}
-          onLog={handleLogSavedMeal}
-          onDelete={(id) => savedMeals.remove(id)}
-          onStartBuilder={() => { setSavedMealsOpen(false); setBuilderMode(true); setBuilderItems([]); }}
-        />
-      )}
-
-      {/* Meal builder review */}
+      {/* Meal builder review — used both for a brand-new recipe and (via
+          editingRecipeId) editing an existing one from /recipes */}
       {builderReviewOpen && (
         <BuilderReviewModal
           items={builderItems}
           defaultMeal={activeMeal} selectedDate={selectedDate}
-                      defaultTime={activeTime}
-                      isPremium={isPremium}
-                      logByTime={logByTime}
+          defaultTime={activeTime}
+          isPremium={isPremium}
+          logByTime={logByTime}
           savedMealsCount={savedMeals.rows.length}
           onUpgrade={() => navigate('/settings')}
           onClose={() => setBuilderReviewOpen(false)}
           onRemove={(i) => setBuilderItems(prev => prev.filter((_, idx) => idx !== i))}
           onSave={handleSaveBuilderMeal}
+          isEditing={!!editingRecipeId}
+          initialName={editingRecipeId ? savedMeals.rows.find(r => r.id === editingRecipeId)?.name : ""}
+          initialServings={editingRecipeId ? savedMeals.rows.find(r => r.id === editingRecipeId)?.servings : 1}
         />
       )}
     </div>

@@ -275,10 +275,21 @@ export async function getSavedMeals(userId) {
   return data;
 }
 
-export async function addSavedMeal(userId, name, items) {
+export async function addSavedMeal(userId, name, items, servings = 1) {
   const { data, error } = await supabase
     .from('saved_meals')
-    .insert({ user_id: userId, name, items })
+    .insert({ user_id: userId, name, items, servings })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateSavedMeal(id, { name, items, servings }) {
+  const { data, error } = await supabase
+    .from('saved_meals')
+    .update({ name, items, servings })
+    .eq('id', id)
     .select()
     .single();
   if (error) throw error;

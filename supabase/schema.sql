@@ -190,15 +190,20 @@ create policy "custom_foods: insert own" on public.custom_foods
 create policy "custom_foods: delete own" on public.custom_foods
   for delete using (auth.uid() = user_id);
 
--- ── saved_meals ─────────────────────────────────────────────────────────────
--- A named bundle of foods (MyFitnessPal-style "Meals"/recipes) that logs as
--- one action. `items` is a snapshot of each food's macros at save time, so a
--- saved meal still logs correctly even if the source food later changes.
+-- ── saved_meals (Recipes) ───────────────────────────────────────────────────
+-- A named bundle of ingredients that logs as one action. `items` is a
+-- snapshot of each ingredient's macros (and, since the Recipes upgrade,
+-- its serving_grams/logged_amount/logged_unit too) at save time, so a
+-- recipe still logs correctly even if the source food later changes.
+-- `servings` is how many servings the whole bundle makes — logging asks
+-- for how many of those servings, scaling the stored totals down to size
+-- rather than re-inserting every ingredient at its full recorded amount.
 create table if not exists public.saved_meals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
   items jsonb not null default '[]',
+  servings numeric not null default 1,
   created_at timestamptz default now()
 );
 
@@ -208,8 +213,14 @@ create policy "saved_meals: select own" on public.saved_meals
   for select using (auth.uid() = user_id);
 create policy "saved_meals: insert own" on public.saved_meals
   for insert with check (auth.uid() = user_id);
+create policy "saved_meals: update own" on public.saved_meals
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "saved_meals: delete own" on public.saved_meals
   for delete using (auth.uid() = user_id);
+
+-- Schema update — run against an existing DB that already has saved_meals
+-- from before the Recipes upgrade (the CREATE TABLE above is a no-op there).
+alter table public.saved_meals add column if not exists servings numeric not null default 1;
 
 -- ── favourite_foods ─────────────────────────────────────────────────────────
 -- Foods the user has manually starred for quick access, snapshotted at the

@@ -1006,8 +1006,8 @@ export default function Dashboard() {
               <span style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 600 }}>{Math.round(consumed)} kcal logged</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', gap: 10 }}>
-              <span onClick={() => navigate('/food', { state: { date: viewedDate, openSavedMeals: true } })} style={{ color: 'var(--text-hint)', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                <i className="ti ti-bookmark" style={{ fontSize: 12 }} /> Saved meals
+              <span onClick={() => navigate('/recipes')} style={{ color: 'var(--text-hint)', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                <i className="ti ti-bookmark" style={{ fontSize: 12 }} /> Recipes
               </span>
               {isPremium && (
                 <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />

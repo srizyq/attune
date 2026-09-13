@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
-import { getSavedMeals, addSavedMeal, deleteSavedMeal } from '../lib/db';
+import { getSavedMeals, addSavedMeal, updateSavedMeal, deleteSavedMeal } from '../lib/db';
 
-// Named bundles of foods the user has saved to log in one tap (MyFitnessPal-
-// style "Meals"/recipes) — e.g. "My usual breakfast" = oats + banana + honey.
+// Recipes — named bundles of ingredients that log as one action, e.g.
+// "My usual breakfast" = oats + banana + honey, makes 1 serving.
 export function useSavedMeals() {
   const { user } = useAuth();
   const [rows, setRows] = useState([]);
@@ -25,17 +25,23 @@ export function useSavedMeals() {
 
   useEffect(() => { refetch(); }, [refetch]);
 
-  const create = useCallback(async (name, items) => {
+  const create = useCallback(async (name, items, servings = 1) => {
     if (!user) return;
-    const created = await addSavedMeal(user.id, name, items);
+    const created = await addSavedMeal(user.id, name, items, servings);
     setRows(prev => [created, ...prev]);
     return created;
   }, [user]);
+
+  const update = useCallback(async (id, { name, items, servings }) => {
+    const updated = await updateSavedMeal(id, { name, items, servings });
+    setRows(prev => prev.map(r => (r.id === id ? updated : r)));
+    return updated;
+  }, []);
 
   const remove = useCallback(async (id) => {
     await deleteSavedMeal(id);
     setRows(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  return { rows, loading, refetch, create, remove };
+  return { rows, loading, refetch, create, update, remove };
 }

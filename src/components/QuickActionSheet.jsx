@@ -3,16 +3,13 @@ import { useRef } from 'react';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 
 // The mobile bottom nav's center "+" — everything that used to need its
-// own nav slot (barcode scan, photo scan, menu scan, saved meals, custom
+// own nav slot (barcode scan, photo scan, menu scan, recipes, custom
 // food) lives here instead.
 //
-// All six deep-link straight into their modal (via location-state flags
-// on FoodSearch) rather than landing on the plain search page first —
-// saved meals and custom food used to land on the general page (an
-// accepted tradeoff at the time, not a shortcut taken without asking),
-// but the same openSavedMeals/openCreateFood flags FoodSearch already
-// reads for other entry points (Dashboard's own "Saved meals" shortcut)
-// work just as well here. Log weight goes to Expenditure (Progress's old
+// Scans deep-link straight into their modal on Food search (via
+// location-state flags read there); Recipes now has its own real page
+// (src/pages/Recipes.jsx) instead of landing on the general search page
+// or a cramped popup. Log weight goes to Expenditure (Progress's old
 // weight chart lives there now) — that's the only place a new weight
 // entry can be logged from since the dashboard's inline weight form was
 // replaced by a glance-tile there.
@@ -24,7 +21,7 @@ const TOP_ACTIONS = [
 ];
 const BOTTOM_ACTIONS = [
   { id: 'weight', label: 'Log weight', icon: 'ti-scale', to: '/expenditure' },
-  { id: 'saved-meals', label: 'Saved meals', icon: 'ti-bookmark', to: '/food', state: { openSavedMeals: true } },
+  { id: 'recipes', label: 'Recipes', icon: 'ti-bookmark', to: '/recipes' },
   { id: 'custom-food', label: 'Custom food', icon: 'ti-plus', to: '/food', state: { openCreateFood: true } },
 ];
 

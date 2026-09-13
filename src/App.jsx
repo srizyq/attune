@@ -13,6 +13,7 @@ import Step5 from './pages/onboarding/Step5'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import FoodSearch from "./pages/FoodSearch";
+import Recipes from "./pages/Recipes";
 import AIInsights from "./pages/AIInsights";
 import Settings from "./pages/Settings";
 import SettingsGoals from "./pages/SettingsGoals";
@@ -75,6 +76,7 @@ function AnimatedRoutes() {
         <Route path="/onboarding/step5" element={<Step5 />} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/food" element={<RequireAuth><FoodSearch /></RequireAuth>} />
+        <Route path="/recipes" element={<RequireAuth><Recipes /></RequireAuth>} />
         <Route path="/progress" element={<Navigate to="/expenditure" replace />} />
         <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
         <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />
