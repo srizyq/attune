@@ -59,11 +59,13 @@ function TargetStat({ label, value }) {
   );
 }
 
-// Client-side "Coach" tab content for anyone without an active Coach Pass —
-// consolidates what used to be scattered across Settings (connect/disconnect
-// a trainer) and per-page CoachNote cards (Dashboard/Progress/Daily Log) into
-// one place, plus an upsell to become a coach themselves.
-export default function ClientCoachHub() {
+// Client-side "Coach" tab content — consolidates what used to be scattered
+// across Settings (connect/disconnect a trainer) and per-page CoachNote
+// cards (Dashboard/Progress/Daily Log) into one place, plus an upsell to
+// become a coach themselves. Also reused as the "My coach" tab for people
+// who already have a Coach Pass but are *also* someone else's client —
+// `showUpsell` is false there since they've already subscribed.
+export default function ClientCoachHub({ showUpsell = true }) {
   const { profile } = useProfile();
   const { trainers, loading: trainersLoading, redeemCode, disconnect } = useMyTrainers();
   const [inviteCodeInput, setInviteCodeInput] = useState('');
@@ -101,7 +103,7 @@ export default function ClientCoachHub() {
 
   return (
     <div style={{ maxWidth: 900 }}>
-      <CoachPassUpsell />
+      {showUpsell && <CoachPassUpsell />}
 
       <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>

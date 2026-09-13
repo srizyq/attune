@@ -162,6 +162,11 @@ export default function Coach() {
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [codeError, setCodeError] = useState(null);
+  // A trainer can *also* be someone else's client (a coach with their own
+  // nutritionist, say) — this tab is how they reach that relationship's
+  // notes/chat/targets without it being hidden behind their own trainer
+  // dashboard, which is what the Coach tab otherwise shows exclusively.
+  const [trainerTab, setTrainerTab] = useState('clients'); // 'clients' | 'my-coach'
 
   // Rows resolve their own "logged today" status independently (see
   // ClientPreviewRow) and report it up here for both the header greeting
@@ -227,10 +232,10 @@ export default function Coach() {
             <LogoMark size={24} />
             <div>
               <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                {isTrainer ? 'Coach Mode' : 'Coach'}
+                {isTrainer && trainerTab === 'clients' ? 'Coach Mode' : 'Coach'}
               </h2>
               <p style={{ color: 'var(--text-hint)', fontSize: 13, margin: '2px 0 0' }}>
-                {!isTrainer ? "Your trainer, notes, and coaching tools" : selectedClient ? (selectedClient.name || 'Client') : (
+                {!isTrainer || trainerTab === 'my-coach' ? "Your trainer, notes, and coaching tools" : selectedClient ? (selectedClient.name || 'Client') : (
                   clients.length === 0
                     ? `${timeOfDayGreeting()} — invite your first client below`
                     : resolvedStatuses.length === 0
@@ -242,7 +247,7 @@ export default function Coach() {
               </p>
             </div>
           </div>
-          {isTrainer && selectedClient && (
+          {isTrainer && trainerTab === 'clients' && selectedClient ? (
             <button
               onClick={() => setSelectedClient(null)}
               className="btn-press"
@@ -250,12 +255,32 @@ export default function Coach() {
             >
               ← All clients
             </button>
-          )}
+          ) : isTrainer ? (
+            <div style={{ display: 'flex', gap: 2, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 9, padding: 3 }}>
+              {[{ id: 'clients', label: 'My clients' }, { id: 'my-coach', label: 'My coach' }].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTrainerTab(t.id)}
+                  className="btn-press"
+                  style={{
+                    padding: '7px 14px', borderRadius: 7, border: 'none',
+                    background: trainerTab === t.id ? 'var(--accent-bg)' : 'transparent',
+                    color: trainerTab === t.id ? 'var(--accent)' : 'var(--text-muted)',
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="page-pad">
           {!isTrainer ? (
             <ClientCoachHub />
+          ) : trainerTab === 'my-coach' ? (
+            <ClientCoachHub showUpsell={false} />
           ) : !selectedClient ? (
             <ClientListView
               profile={profile}
