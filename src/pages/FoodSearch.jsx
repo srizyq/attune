@@ -204,8 +204,16 @@ async function searchFatSecret(q) {
 // supabase/afcd_import.sql), covering real Australian foods FatSecret and
 // Open Food Facts often get wrong or don't have at all. All values are
 // per 100g, same convention as Open Food Facts.
+//
+// Capped well below searchAfcdFoods' own default — AFCD has no
+// relevance ranking of its own (its query is a plain word-boundary
+// filter with no ORDER BY), so a common ingredient search can pull in a
+// dozen+ near-identical entries (raw/roasted/lean variants of the same
+// cut) that just crowd out cleaner matches from other sources. 5 is
+// enough for AFCD to contribute its real strength — genuine Australian
+// foods the other two miss — without dominating the list.
 async function searchAfcd(q) {
-  const rows = await searchAfcdFoods(q);
+  const rows = await searchAfcdFoods(q, 5);
   return rows.map(row => ({
     id: "afcd_" + row.id,
     name: row.name,
@@ -1669,9 +1677,13 @@ export default function FoodSearch() {
     // results, then AFCD (Australian government data), then FatSecret's
     // broader generic coverage — but relevance to what was actually typed
     // wins over which source a result came from. See foodMatchRank.
+    // Within the same relevance tier, the shortest name wins the tie
+    // instead of whichever source happened to load first — surfaces a
+    // clean "Chicken Thigh" over AFCD's verbose "Chicken, thigh, lean
+    // flesh, raw" when both are equally valid matches for the words typed.
     const combined = [...customFiltered, ...afcdResults, ...genericResults]
       .map((f, i) => ({ f, i, rank: foodMatchRank(f.name, queryLower, queryWords) }))
-      .sort((a, b) => a.rank - b.rank || a.i - b.i)
+      .sort((a, b) => a.rank - b.rank || a.f.name.length - b.f.name.length || a.i - b.i)
       .map(x => x.f);
     const seen = new Set();
     return combined.filter(f => {
@@ -1681,6 +1693,23 @@ export default function FoodSearch() {
       return true;
     });
   }, [customFiltered, afcdResults, genericResults, query]);
+
+  // Whether the single best database match is only a loose/partial one
+  // (foodMatchRank's bottom tier — some but not all of the typed words
+  // present) rather than a real match. A dish name (a curry, most Asian
+  // dishes) has essentially no chance of a clean database hit — no
+  // dataset has real composite-dish coverage — so this is what tells the
+  // "Estimate with AI" prompt below to make itself the obvious next step
+  // instead of sitting equally alongside a list of matches that don't
+  // actually answer the question.
+  const bestMatchIsWeak = useMemo(() => {
+    if (!foodsResults.length) return true;
+    const trimmed = query.trim();
+    if (!trimmed) return false;
+    const queryLower = trimmed.toLowerCase();
+    const queryWords = queryLower.split(/\s+/).filter(Boolean);
+    return foodMatchRank(foodsResults[0].name, queryLower, queryWords) === 3;
+  }, [foodsResults, query]);
 
   // Packaged/branded results (Open Food Facts, AU-scoped) shown in their
   // own demoted section below — this is what stops a search like "chicken
@@ -1969,18 +1998,38 @@ export default function FoodSearch() {
               there's a search query, not just on zero results, since a
               real search can come back with plenty of results that are
               all just wrong matches (e.g. searching "HSP" and getting
-              beer/sauce hits) rather than literally empty. Kept as a
-              subtle text link, not a button, since it's a fallback for
-              when the real databases miss something — not a primary way
-              to log food. */}
+              beer/sauce hits) rather than literally empty. Two visual
+              weights: a subtle text link when a real database match
+              exists (AI is a fallback, not the primary path), versus a
+              bordered, accent-tinted card when the best match is only
+              loose/partial — a dish name (a curry, most Asian dishes)
+              has essentially no real database coverage, so the honest
+              answer is "estimate this," not "here's a wrong match ranked
+              like it's a right one." */}
           {!browsing && aiEstimateQuery !== query.trim() && (
-            <button
-              onClick={handleAiEstimate}
-              disabled={aiEstimating}
-              style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "0 0 14px", color: "var(--text-muted)", fontSize: 12.5, cursor: aiEstimating ? "default" : "pointer", fontFamily: "inherit" }}
-            >
-              Can't find "{query.trim()}"? <span style={{ color: "var(--accent)", fontWeight: 600 }}>{aiEstimating ? "Estimating…" : "Estimate with AI →"}</span>
-            </button>
+            bestMatchIsWeak ? (
+              <button
+                onClick={handleAiEstimate}
+                disabled={aiEstimating}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
+                  background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8,
+                  padding: "11px 14px", marginBottom: 14, color: "var(--accent)", fontSize: 13, fontWeight: 600,
+                  cursor: aiEstimating ? "default" : "pointer", fontFamily: "inherit",
+                }}
+              >
+                <i className="ti ti-sparkles" style={{ fontSize: 14, flexShrink: 0 }} />
+                {aiEstimating ? "Estimating…" : `No close match for "${query.trim()}" — estimate with AI →`}
+              </button>
+            ) : (
+              <button
+                onClick={handleAiEstimate}
+                disabled={aiEstimating}
+                style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "0 0 14px", color: "var(--text-muted)", fontSize: 12.5, cursor: aiEstimating ? "default" : "pointer", fontFamily: "inherit" }}
+              >
+                Can't find "{query.trim()}"? <span style={{ color: "var(--accent)", fontWeight: 600 }}>{aiEstimating ? "Estimating…" : "Estimate with AI →"}</span>
+              </button>
+            )
           )}
 
           {!browsing && aiEstimateQuery === query.trim() && aiEstimateError && (
