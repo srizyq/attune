@@ -1305,7 +1305,7 @@ function AddControls({ amount, setAmount, unit, setUnit, meal, setMeal, time, se
   );
 }
 
-function Toast({ message, onDone }) {
+function Toast({ message, error, onDone }) {
   const [leaving, setLeaving] = useState(false);
   useEffect(() => {
     const leaveTimer = setTimeout(() => setLeaving(true), 2200 - 160);
@@ -1313,8 +1313,17 @@ function Toast({ message, onDone }) {
     return () => { clearTimeout(leaveTimer); clearTimeout(doneTimer); };
   }, [onDone]);
   return (
-    <div className={leaving ? "toast-out" : "toast-in"} style={{ position: "fixed", bottom: 28, left: "50%", background: "var(--accent-bg)", border: "1px solid var(--accent-dark)", borderRadius: 10, padding: "10px 20px", color: "var(--accent)", fontSize: 14, zIndex: 100, whiteSpace: "nowrap", pointerEvents: "none" }}>
-      ✓ {message}
+    <div
+      className={leaving ? "toast-out" : "toast-in"}
+      style={{
+        position: "fixed", bottom: 28, left: "50%", borderRadius: 10, padding: "10px 20px", fontSize: 14, zIndex: 100,
+        whiteSpace: "nowrap", pointerEvents: "none",
+        background: error ? "#1a0f0f" : "var(--accent-bg)",
+        border: `1px solid ${error ? "#c0707040" : "var(--accent-dark)"}`,
+        color: error ? "var(--danger)" : "var(--accent)",
+      }}
+    >
+      {error ? "✕" : "✓"} {message}
     </div>
   );
 }
@@ -1384,6 +1393,15 @@ export default function FoodSearch() {
   const [expandedId, setExpandedId] = useState(null);
   const [mealDropdownOpen, setMealDropdownOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [toastError, setToastError] = useState(false);
+  // Every setToast call in this file goes through this so success and
+  // failure share one code path — a DB write failing (a missing column,
+  // a network blip) used to just do nothing visible; this is what makes
+  // that show up as a real error toast instead of silence.
+  function showToast(message, isError = false) {
+    setToast(message);
+    setToastError(isError);
+  }
   // Dashboard's "Scan barcode" shortcut links here with { openScan: true }
   // to jump straight into the scanner instead of landing on plain search.
   // The quick-action sheet's "Scan photo" does the same with openPhotoScan.
@@ -1772,15 +1790,20 @@ export default function FoodSearch() {
   }
 
   async function logFood(food, meal, loggedAt) {
-    await addFoodLog(food, meal, loggedAt);
-    refetchRecent(); lastLogged.refetch();
-    setToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ""}`);
-    setExpandedId(null);
+    try {
+      await addFoodLog(food, meal, loggedAt);
+      refetchRecent(); lastLogged.refetch();
+      showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ""}`);
+      setExpandedId(null);
+    } catch (err) {
+      console.error("Failed to log food:", err);
+      showToast(`Couldn't add ${food.name} — try again`, true);
+    }
   }
 
   function addToBuilder(food) {
     setBuilderItems(prev => [...prev, food]);
-    setToast(`${food.name} added to meal builder`);
+    showToast(`${food.name} added to meal builder`);
     setExpandedId(null);
   }
 
@@ -1791,7 +1814,7 @@ export default function FoodSearch() {
 
   async function handleDeleteCustom(food) {
     await customFoods.remove(food.customId);
-    setToast(`${food.name} removed`);
+    showToast(`${food.name} removed`);
     setExpandedId(null);
   }
 
@@ -1806,24 +1829,29 @@ export default function FoodSearch() {
   }
 
   async function handleSaveBuilderMeal(name, items, mealToLog, timeToLog) {
-    const snapshot = items.map(it => ({
-      name: it.name, cal: it.cal, protein: it.protein, carbs: it.carbs,
-      fat: it.fat, fibre: it.fibre || 0, sodium: it.sodium || 0, sugar: it.sugar || 0,
-      saturatedFat: it.saturatedFat || 0, transFat: it.transFat || 0,
-      cholesterol: it.cholesterol || 0, potassium: it.potassium || 0,
-      addedSugar: it.addedSugar || 0, vitaminD: it.vitaminD || 0,
-      calcium: it.calcium || 0, iron: it.iron || 0,
-    }));
-    await savedMeals.create(name, snapshot);
-    const logging = mealToLog || timeToLog;
-    if (logging) {
-      for (const it of items) {
-        await addFoodLog(it, mealToLog, timeToLog);
+    try {
+      const snapshot = items.map(it => ({
+        name: it.name, cal: it.cal, protein: it.protein, carbs: it.carbs,
+        fat: it.fat, fibre: it.fibre || 0, sodium: it.sodium || 0, sugar: it.sugar || 0,
+        saturatedFat: it.saturatedFat || 0, transFat: it.transFat || 0,
+        cholesterol: it.cholesterol || 0, potassium: it.potassium || 0,
+        addedSugar: it.addedSugar || 0, vitaminD: it.vitaminD || 0,
+        calcium: it.calcium || 0, iron: it.iron || 0,
+      }));
+      await savedMeals.create(name, snapshot);
+      const logging = mealToLog || timeToLog;
+      if (logging) {
+        for (const it of items) {
+          await addFoodLog(it, mealToLog, timeToLog);
+        }
+        refetchRecent(); lastLogged.refetch();
       }
-      refetchRecent(); lastLogged.refetch();
+      showToast(`Saved "${name}"${mealToLog ? ` and logged to ${mealToLog}` : timeToLog ? ` and logged at ${formatTimeFromDate(timeToLog)}` : ""}`);
+      cancelBuilder();
+    } catch (err) {
+      console.error("Failed to save meal:", err);
+      showToast(`Couldn't save "${name}" — try again`, true);
     }
-    setToast(`Saved "${name}"${mealToLog ? ` and logged to ${mealToLog}` : timeToLog ? ` and logged at ${formatTimeFromDate(timeToLog)}` : ""}`);
-    cancelBuilder();
   }
 
   async function handleLogSavedMeal(savedMeal) {
@@ -1832,11 +1860,17 @@ export default function FoodSearch() {
     // backdating, since a Pro user's saved-meal quick-log should still
     // land on that day rather than silently jumping to today.
     const loggedAt = logByTime ? timeStringToDate(currentTimeHHMM(), selectedDateBase()) : null;
-    for (const it of items) {
-      await addFoodLog(it, logByTime ? null : activeMeal, loggedAt);
+    try {
+      for (const it of items) {
+        await addFoodLog(it, logByTime ? null : activeMeal, loggedAt);
+      }
+      refetchRecent(); lastLogged.refetch();
+      showToast(`${savedMeal.name} logged${logByTime ? ` at ${formatTimeFromDate(loggedAt)}` : ` to ${activeMeal}`}`);
+    } catch (err) {
+      console.error("Failed to log saved meal:", err);
+      showToast(`Couldn't log ${savedMeal.name} — try again`, true);
+      return;
     }
-    refetchRecent(); lastLogged.refetch();
-    setToast(`${savedMeal.name} logged${logByTime ? ` at ${formatTimeFromDate(loggedAt)}` : ` to ${activeMeal}`}`);
     setSavedMealsOpen(false);
   }
 
@@ -2180,7 +2214,7 @@ export default function FoodSearch() {
       </div>
 
       {/* Toast */}
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+      {toast && <Toast message={toast} error={toastError} onDone={() => setToast(null)} />}
 
       {/* Meal builder floating bar */}
       {builderMode && (
@@ -2200,7 +2234,7 @@ export default function FoodSearch() {
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
           logByTime={logByTime}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); setToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onCreateCustom={() => { setScanOpen(false); setCreateFoodPrefill(null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
@@ -2213,7 +2247,7 @@ export default function FoodSearch() {
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
           logByTime={logByTime}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); setToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onCreateCustom={(prefill) => { setPhotoScanOpen(false); setCreateFoodPrefill(prefill || null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setPhotoScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
@@ -2224,7 +2258,7 @@ export default function FoodSearch() {
         <MenuScanModal
           onClose={() => setMenuScanOpen(false)}
           logByTime={logByTime}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); setToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onSearchManually={() => { setMenuScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
       )}
@@ -2237,7 +2271,7 @@ export default function FoodSearch() {
           initialFood={createFoodPrefill}
           onCreate={async (food) => {
             await customFoods.create(food);
-            setToast(`"${food.name}" saved as a custom food`);
+            showToast(`"${food.name}" saved as a custom food`);
           }}
         />
       )}
