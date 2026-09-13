@@ -303,7 +303,7 @@ function DashboardHero({ consumed, target, chartDays, chartRange, setChartRange,
               width={barWidth}
               height={Math.max(0, b.height)}
               rx={Math.min(3, barWidth / 2)}
-              fill={b.over ? 'var(--danger)' : 'var(--accent)'}
+              fill={b.over ? 'var(--danger-strong)' : 'var(--accent-strong)'}
               opacity={b.over ? 0.85 : 1}
             />
           ))}

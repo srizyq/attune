@@ -26,6 +26,8 @@
   --accent-dark: #4a7a4a;
   --accent-bg: #0f1a0f;
   --accent-border: #1e3a1e;
+  --accent-strong: var(--accent);
+  --danger-strong: var(--danger);
   --water-blue: #6aabcf;
   --ai-purple: #9f97e8;
   --warning: #b48250;
@@ -79,6 +81,8 @@
   --accent-dark: #4a7a4a;
   --accent-bg: #0f1a0f;
   --accent-border: #1e3a1e;
+  --accent-strong: var(--accent);
+  --danger-strong: var(--danger);
   --water-blue: #6aabcf;
   --ai-purple: #9f97e8;
   --warning: #b48250;
@@ -100,15 +104,31 @@
 }
 [data-theme='light'] {
   --bg-primary: #ffffff;
-  --bg-card: #f7f7f5;
-  --bg-subtle: #f7f7f5;
-  --border-default: #e7e7e5;
+  /* bg-card and bg-subtle used to be the identical #f7f7f5 — any UI
+     nesting a "subtle" surface inside a "card" (29 files use bg-subtle)
+     went flat, unlike dark mode's real 3-step ramp (primary < subtle <
+     card). Restores that same small-step ordering here, inverted since
+     light mode's "raised" surfaces read as slightly deeper, not lighter.
+     Both get a faint sage cast (toward the accent hue) instead of true
+     gray, same reasoning as border-default below. */
+  --bg-card: #f2f4ee;
+  --bg-subtle: #f9faf7;
+  --border-default: #e3e6dc;
   --border-active: #8fbc8f;
   --border-strong: #0a0a0a;
   --accent: #8fbc8f;
   --accent-dark: #4a7a4a;
   --accent-bg: #eef5ee;
   --accent-border: #d3e8d3;
+  /* accent/danger are deliberately identical hex in both themes (see the
+     comment on the dark block above) since the sage/coral hues are the
+     product's real palette, not just a dark-mode choice — but that same
+     pastel-on-black-friendly softness reads as washed out on white for
+     an actual data mark (a filled chart bar, not a button or icon). These
+     restate the base color unchanged in dark and step to a deeper, more
+     saturated shade of the same hue only in light, for exactly that use. */
+  --accent-strong: var(--accent-dark);
+  --danger-strong: #a84747;
   --water-blue: #6aabcf;
   --ai-purple: #9f97e8;
   --warning: #b48250;
@@ -120,7 +140,7 @@
   /* #999999 measured at 2.85:1 against white — fails AA's 4.5:1 floor.
      text-muted already passes (5.3:1) so only hint needs lightening here. */
   --text-hint: #777777;
-  --pill-track: #f0f0ee;
+  --pill-track: #eef1e8;
   --pill-bg: #0a0a0a;
   --pill-text: #ffffff;
   /* The one deliberate departure from "restate the same value" — this is
@@ -275,6 +295,11 @@ h1, h2, h3, h4, h5 {
      internally scrollable (overflowY: auto) and would otherwise have no
      momentum on iOS. */
   -webkit-overflow-scrolling: touch;
+  /* The card-elevation fix (--card-shadow) only ever reached page-level
+     Card containers — every modal/popup still floated on a bare border.
+     One rule on the shared class reaches all of them at once; 'none' in
+     dark keeps this a no-op there. */
+  box-shadow: var(--card-shadow);
 }
 .modal-panel.is-closing {
   animation: modal-panel-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
