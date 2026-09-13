@@ -89,7 +89,24 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
   const [error, setError] = useState(null);
   const [limitReached, setLimitReached] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [comment, setComment] = useState('');
+  const [correcting, setCorrecting] = useState(false);
+  // Separate from the main `error` so a failed correction doesn't blow
+  // away the perfectly good pick already on screen — it shows inline
+  // near the comment box instead.
+  const [correctionError, setCorrectionError] = useState(null);
   const { closing, close } = useClosingTransition(onClose);
+
+  // Clears any correction UI left over from a previous pick — picking a
+  // different item (or going back to pick again) shouldn't carry a stale
+  // comment or error meant for the last one. Named distinctly from
+  // `setPicked` (not `pick`) since `recommendations.map((pick, i) => ...)`
+  // below already uses `pick` as its loop variable name.
+  function choosePick(next) {
+    setPicked(next);
+    setComment('');
+    setCorrectionError(null);
+  }
 
   async function handleFile(file) {
     if (!file) return;
@@ -135,6 +152,8 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
     setPicked(null);
     setError(null);
     setLimitReached(false);
+    setComment('');
+    setCorrectionError(null);
   }
 
   const groupedItems = useMemo(() => {
@@ -172,6 +191,41 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
       setError("Couldn't add this — try again.");
     } finally {
       setAdding(false);
+    }
+  }
+
+  // Re-sends the same photo (already held in `preview` as a data URL) plus
+  // the user's comment and the current pick, so Claude corrects from
+  // context instead of guessing blind again. Free and unlimited — see
+  // api/recognize-menu.js's isCorrection branch, which skips the scan cap
+  // entirely for these calls.
+  async function handleCorrect() {
+    if (!comment.trim() || !picked || !preview) return;
+    setCorrecting(true);
+    setCorrectionError(null);
+    try {
+      const base64 = preview.split(',')[1];
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/recognize-menu', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ image: base64, mediaType: 'image/jpeg', correction: comment.trim(), previousItem: picked.data }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setCorrectionError(data.error || "Couldn't apply that correction. Try again.");
+        return;
+      }
+      setPicked(prev => ({ ...prev, data: { ...prev.data, ...data } }));
+      setComment('');
+    } catch (err) {
+      console.error(err);
+      setCorrectionError("Couldn't apply that correction. Check your connection and try again.");
+    } finally {
+      setCorrecting(false);
     }
   }
 
@@ -260,7 +314,7 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
                 {recommendations.map((pick, i) => (
                   <button
                     key={i}
-                    onClick={() => setPicked({ kind: 'recommendation', data: pick })}
+                    onClick={() => choosePick({ kind: 'recommendation', data: pick })}
                     style={{ textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: 14, cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -290,7 +344,7 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
                       {items.map((item, i) => (
                         <button
                           key={i}
-                          onClick={() => setPicked({ kind: 'item', data: item })}
+                          onClick={() => choosePick({ kind: 'item', data: item })}
                           style={{ textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
                         >
                           <div style={{ minWidth: 0 }}>
@@ -332,8 +386,46 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
             This is an AI estimate based on the menu photo, not verified nutrition data — review before adding.
           </p>
+
+          {/* Always visible, not gated behind a "this is wrong" toggle —
+              correcting is free (doesn't cost a scan) and can be done as
+              many times as needed. Covers both "the AI got this pick
+              wrong" and "I want to note what I actually got" (extra
+              sauce, a swapped side, a different size than listed) — same
+              comment box either way, since both just re-estimate this
+              one pick's macros from the same menu photo plus the note. */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, display: 'block' }}>Get something different, or want to note a change? Tell it here</label>
+            <textarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              placeholder="e.g. I got the large size, or no cheese, or extra sauce on the side"
+              disabled={correcting}
+              rows={3}
+              style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 8 }}
+            />
+            <button
+              onClick={handleCorrect}
+              disabled={!comment.trim() || correcting}
+              style={{
+                width: '100%',
+                background: !comment.trim() || correcting ? 'var(--border-default)' : 'var(--accent-bg)',
+                border: `1px solid ${!comment.trim() || correcting ? 'var(--border-default)' : 'var(--border-active)'}`,
+                borderRadius: 7, padding: '9px 14px', fontSize: 13, fontWeight: 600,
+                color: !comment.trim() || correcting ? 'var(--text-muted)' : 'var(--accent)',
+                cursor: !comment.trim() || correcting ? 'not-allowed' : 'pointer',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              {correcting ? 'Fixing…' : 'Recalculate'}
+            </button>
+            {correctionError && (
+              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--danger)' }}>{correctionError}</div>
+            )}
+          </div>
+
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => setPicked(null)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '11px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <button onClick={() => choosePick(null)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '11px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {picked.kind === 'recommendation' ? 'Back to options' : 'Back to menu'}
             </button>
             <button

@@ -23,6 +23,14 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
   const fileInputRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
+  // Torch (the phone's flash held on continuously) — a real MediaStreamTrack
+  // constraint, not a photo flash mode, so it stays lit while framing the
+  // shot instead of only firing at capture. Support is inconsistent (solid
+  // on Android Chrome, unavailable in Safari/iOS as of writing), so the
+  // button only ever appears once the active track actually reports the
+  // capability — no dead button on devices/browsers that can't do it.
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +47,13 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
           await videoRef.current.play();
         }
         setReady(true);
+        try {
+          const track = stream.getVideoTracks()[0];
+          if (track?.getCapabilities?.().torch) setTorchSupported(true);
+        } catch {
+          // getCapabilities itself is missing/throws on some browsers —
+          // torch button just stays hidden, same as unsupported.
+        }
       } catch (err) {
         console.error('Camera unavailable:', err);
         if (!cancelled) setError("Couldn't access your camera — you can still choose a photo instead.");
@@ -46,9 +61,24 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
     })();
     return () => {
       cancelled = true;
+      // Stopping the track (not just turning torch off first) is what
+      // actually kills the physical light — the OS releases the flash
+      // hardware along with the camera itself.
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
   }, []);
+
+  async function toggleTorch() {
+    const track = streamRef.current?.getVideoTracks()?.[0];
+    if (!track) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next }] });
+      setTorchOn(next);
+    } catch (err) {
+      console.error('Torch toggle failed:', err);
+    }
+  }
 
   function capture() {
     const video = videoRef.current;
@@ -100,6 +130,24 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
               }}
             >
               ✕
+            </button>
+          )}
+
+          {ready && torchSupported && (
+            <button
+              onClick={toggleTorch}
+              aria-label={torchOn ? 'Turn off torch' : 'Turn on torch'}
+              title={torchOn ? 'Turn off torch' : 'Turn on torch'}
+              style={{
+                position: 'absolute', top: fullScreen ? 'calc(16px + env(safe-area-inset-top))' : 10, right: fullScreen ? 16 : 10,
+                width: fullScreen ? 38 : 32, height: fullScreen ? 38 : 32, borderRadius: '50%',
+                background: torchOn ? '#e8c468' : 'rgba(20,20,20,0.6)',
+                border: `1px solid ${torchOn ? '#e8c468' : 'rgba(255,255,255,0.25)'}`,
+                color: torchOn ? '#0f0f0f' : '#fff', fontSize: fullScreen ? 17 : 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}
+            >
+              <i className="ti ti-bolt" />
             </button>
           )}
 

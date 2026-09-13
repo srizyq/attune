@@ -400,6 +400,13 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const processingRef = useRef(false);
   const [scanning, setScanning] = useState(false);
   const [looking, setLooking] = useState(false);
+  // Torch (see CameraCapture's own copy of this) — same MediaStreamTrack
+  // constraint, applied directly to the stream ZXing attached to
+  // videoRef rather than through its own experimental switchTorch, since
+  // that path's capability-detection shape wasn't reliable enough to
+  // gate a visible button on.
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [meal, setMeal] = useState(defaultMeal);
@@ -423,6 +430,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
   async function startScanner() {
     setError(null); setResult(null); setLooking(true);
+    setTorchOn(false); setTorchSupported(false);
     processingRef.current = false;
     try {
       const [{ BrowserMultiFormatReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
@@ -465,10 +473,32 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         }
       );
       controlsRef.current = controls;
+      // ZXing attaches its own stream to videoRef under the hood — reading
+      // it back off the element (rather than anything returned from
+      // decodeFromConstraints) is the reliable way to get the actual
+      // MediaStreamTrack for a torch capability check.
+      try {
+        const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
+        if (track?.getCapabilities?.().torch) setTorchSupported(true);
+      } catch {
+        // Capability check itself unsupported — torch button stays hidden.
+      }
     } catch (err) {
       console.error(err);
       setError("Couldn't access camera. Make sure you've allowed camera permission.");
       setLooking(false);
+    }
+  }
+
+  async function toggleTorch() {
+    const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
+    if (!track) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next }] });
+      setTorchOn(next);
+    } catch (err) {
+      console.error('Torch toggle failed:', err);
     }
   }
 
@@ -660,6 +690,24 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         >
           ✕
         </button>
+
+        {looking && torchSupported && (
+          <button
+            onClick={toggleTorch}
+            aria-label={torchOn ? "Turn off torch" : "Turn on torch"}
+            title={torchOn ? "Turn off torch" : "Turn on torch"}
+            style={{
+              position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: 16,
+              width: 38, height: 38, borderRadius: "50%",
+              background: torchOn ? "#e8c468" : "rgba(20,20,20,0.6)",
+              border: `1px solid ${torchOn ? "#e8c468" : "rgba(255,255,255,0.25)"}`,
+              color: torchOn ? "#0f0f0f" : "#fff", fontSize: 17,
+              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+            }}
+          >
+            <i className="ti ti-bolt" />
+          </button>
+        )}
 
         {looking && (
           <>

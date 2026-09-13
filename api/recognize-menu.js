@@ -57,6 +57,27 @@ If the photo doesn't clearly show a menu, reply with exactly: {"error": "No menu
 Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal.`;
 }
 
+// Correction mode — the user picked an item (from either tab) and is
+// telling us what they actually got, so the prompt carries that pick plus
+// their comment as context instead of asking Claude to start blind. Same
+// photo, no new capture — mirrors recognize-food.js's correction flow.
+function correctionPrompt(previousItem, comment) {
+  return `You already analyzed a photo of a restaurant/fast-food menu and identified this pick:
+
+${JSON.stringify(previousItem)}
+
+The person has now told you what they actually got or wants changed: "${comment}"
+
+Re-estimate the nutrition for what they actually ordered, using the same menu photo for reference and taking their correction as ground truth (e.g. a different size, an added/removed ingredient, a modification, or a different item entirely).
+
+Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
+{"name": string, "cal": number, "protein": number, "carbs": number, "fat": number}
+
+If the correction makes it clear this isn't something on this menu at all, reply with exactly: {"error": "Couldn't match that to the menu."}
+
+Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal.`;
+}
+
 function samePeriod(periodStart, today) {
   return !!periodStart && periodStart.slice(0, 7) === today.slice(0, 7);
 }
@@ -98,11 +119,19 @@ export default async function handler(req, res) {
     return;
   }
 
+  const { image, mediaType, correction, previousItem } = req.body || {};
+
+  // A correction re-analyzes an item from a menu already paid a
+  // cap-count for, so it doesn't cost another one — the cap check/
+  // increment below is skipped entirely for correction calls, same as
+  // recognize-food.js's isCorrection branch.
+  const isCorrection = typeof correction === 'string' && correction.trim().length > 0;
+
   const today = new Date().toISOString().slice(0, 10);
   const inSamePeriod = samePeriod(profile.menu_scans_period_start, today);
   const usedSoFar = inSamePeriod ? profile.menu_scans_used : 0;
 
-  if (!profile.is_premium && usedSoFar >= FREE_MONTHLY_SCAN_LIMIT) {
+  if (!isCorrection && !profile.is_premium && usedSoFar >= FREE_MONTHLY_SCAN_LIMIT) {
     res.status(403).json({
       error: `You've used all ${FREE_MONTHLY_SCAN_LIMIT} free menu scans this month — upgrade to Pro for unlimited scans.`,
       limitReached: true,
@@ -110,7 +139,6 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { image, mediaType } = req.body || {};
   if (!image) {
     res.status(400).json({ error: 'Missing image' });
     return;
@@ -120,30 +148,36 @@ export default async function handler(req, res) {
     return;
   }
 
-  // "Remaining today" — sum what's already logged today and subtract from
-  // target. Clamped at 0 rather than going negative; a person who's already
-  // over target still gets sane recommendations instead of a nonsense
-  // negative-budget prompt.
-  const { data: todayLogs } = await supabase
-    .from('food_logs')
-    .select('calories, protein_g, carbs_g, fat_g')
-    .eq('user_id', userId)
-    .eq('logged_date', today);
-  const consumed = (todayLogs || []).reduce(
-    (acc, row) => ({
-      calories: acc.calories + (Number(row.calories) || 0),
-      protein: acc.protein + (Number(row.protein_g) || 0),
-      carbs: acc.carbs + (Number(row.carbs_g) || 0),
-      fat: acc.fat + (Number(row.fat_g) || 0),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  );
-  const remaining = {
-    calories: Math.max(0, Math.round((profile.calorie_target || 2000) - consumed.calories)),
-    protein: Math.max(0, Math.round((profile.protein_g || 0) - consumed.protein)),
-    carbs: Math.max(0, Math.round((profile.carbs_g || 0) - consumed.carbs)),
-    fat: Math.max(0, Math.round((profile.fat_g || 0) - consumed.fat)),
-  };
+  // "Remaining today" only matters for a fresh scan's recommendations — a
+  // correction re-estimates one already-picked item and doesn't touch it,
+  // so skip the extra query entirely on that path.
+  let remaining = null;
+  if (!isCorrection) {
+    // Sum what's already logged today and subtract from target. Clamped
+    // at 0 rather than going negative; a person who's already over target
+    // still gets sane recommendations instead of a nonsense negative-
+    // budget prompt.
+    const { data: todayLogs } = await supabase
+      .from('food_logs')
+      .select('calories, protein_g, carbs_g, fat_g')
+      .eq('user_id', userId)
+      .eq('logged_date', today);
+    const consumed = (todayLogs || []).reduce(
+      (acc, row) => ({
+        calories: acc.calories + (Number(row.calories) || 0),
+        protein: acc.protein + (Number(row.protein_g) || 0),
+        carbs: acc.carbs + (Number(row.carbs_g) || 0),
+        fat: acc.fat + (Number(row.fat_g) || 0),
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+    remaining = {
+      calories: Math.max(0, Math.round((profile.calorie_target || 2000) - consumed.calories)),
+      protein: Math.max(0, Math.round((profile.protein_g || 0) - consumed.protein)),
+      carbs: Math.max(0, Math.round((profile.carbs_g || 0) - consumed.carbs)),
+      fat: Math.max(0, Math.round((profile.fat_g || 0) - consumed.fat)),
+    };
+  }
 
   try {
     const response = await client.messages.create({
@@ -152,7 +186,10 @@ export default async function handler(req, res) {
       // means the reply scales with how many items the menu has — a busy
       // multi-panel menu can run to 30-40 items. 4096 covers that with
       // headroom now that thinking (below) no longer eats into this budget.
-      max_tokens: 4096,
+      // A correction only re-estimates one item, so it needs far less —
+      // still generous, not tightened to the old 512-ish size, since
+      // there's no cost benefit to shaving it further.
+      max_tokens: isCorrection ? 1024 : 4096,
       // This model's adaptive thinking is on by default and its budget
       // comes out of max_tokens — on a menu photo dense enough to need real
       // effort to read, thinking alone can consume the entire budget and
@@ -169,13 +206,16 @@ export default async function handler(req, res) {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
-            { type: 'text', text: buildPrompt(profile.goal, remaining) },
+            { type: 'text', text: isCorrection ? correctionPrompt(previousItem, correction) : buildPrompt(profile.goal, remaining) },
           ],
         },
       ],
     });
 
-    if (!profile.is_premium) {
+    // Counts against the cap the moment we've actually spent the money on
+    // an Anthropic call, not counted if this is a free correction
+    // re-analysis of an item from a menu that already counted.
+    if (!isCorrection && !profile.is_premium) {
       await supabase.from('profiles')
         .update({ menu_scans_used: usedSoFar + 1, menu_scans_period_start: today })
         .eq('id', userId);
