@@ -180,7 +180,11 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
         fat: picked.data.fat,
         source: 'menu',
         // No servingGrams — same reasoning as photo scan: this is an AI
-        // estimate off a menu photo, not a measured weight.
+        // estimate off a menu photo, not a measured weight. servingLabel
+        // is just "1 serving" (both a recommendation and a menu item are
+        // already single-serving as ordered/printed) so Recent/Frequent
+        // show that instead of a generic "Logged before".
+        servingLabel: '1 serving',
       };
       const meal = mealFromDate(now);
       const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);

@@ -202,6 +202,10 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
         // Deliberately no servingGrams — an AI portion estimate isn't a
         // real measured weight, so downstream editing correctly falls
         // back to relative-only scaling instead of pretending precision.
+        // servingLabel is just the AI's own portion text (e.g. "1 medium
+        // bowl (~350g)") for display — Recent/Frequent show it instead of
+        // a generic "Logged before" once it's on the row.
+        servingLabel: result.portion || null,
       };
       await onAddFood(food, logByTime ? null : meal, logByTime ? timeStringToDate(time, new Date(selectedDate + 'T00:00:00')) : null);
       onClose();

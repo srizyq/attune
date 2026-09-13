@@ -107,6 +107,7 @@ export function useFoodLogs(date) {
       source: food.source,
       loggedAmount: food.loggedAmount ?? null,
       loggedUnit: food.loggedUnit ?? null,
+      servingLabel: food.servingLabel ?? null,
     });
     setLogs(prev => [...prev, created]);
     return created;

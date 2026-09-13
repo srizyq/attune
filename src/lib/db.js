@@ -83,6 +83,7 @@ export async function addFoodLog(userId, entry) {
       source: entry.source || 'local',
       logged_amount: entry.loggedAmount ?? null,
       logged_unit: entry.loggedUnit ?? null,
+      serving_label: entry.servingLabel ?? null,
     })
     .select()
     .single();

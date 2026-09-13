@@ -91,6 +91,13 @@ create table if not exists public.food_logs (
   source text,
   logged_amount numeric,
   logged_unit text check (logged_unit in ('serving', 'g', 'kg', 'lb', 'oz')),
+  -- Free-text portion description (e.g. "1 medium bowl (~350g)", "1 bottle
+  -- (500ml)") for entries that don't have a clean logged_amount+logged_unit
+  -- to reconstruct a display label from — an AI photo/menu scan estimate,
+  -- or a barcode product's own printed serving. Recent/Frequent show this
+  -- as the row's subtitle (MyFitnessPal-style "213 cal, 3 egg omelette")
+  -- instead of a generic "Logged before" whenever it's set.
+  serving_label text,
   created_at timestamptz default now()
 );
 

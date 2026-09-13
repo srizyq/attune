@@ -658,7 +658,14 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const servingGrams = result?.servingGrams || 100;
   const servings = result ? amountToServings(Number(amount) || 0, unit, servingGrams) : 0;
   const gramsEquivalent = Math.round(servings * servingGrams);
-  const scaled = result ? { ...scaleFood(result, servings || 0), servingGrams: gramsEquivalent } : null;
+  // loggedAmount/loggedUnit were missing here — every other logging path
+  // sets them (see the structured search flow's own `scaled` below), but
+  // this one didn't, so a barcode-scanned product's Recent/Frequent row
+  // fell back to a generic "Logged before" even though the actual amount
+  // and unit were sitting right here. servingLabel additionally carries
+  // the product's own printed serving (e.g. "1 bottle (500ml)") for
+  // display, since that reads better than "1 serving" when we have it.
+  const scaled = result ? { ...scaleFood(result, servings || 0), servingGrams: gramsEquivalent, loggedAmount: Number(amount) || null, loggedUnit: unit, servingLabel: result.serving || null } : null;
 
   // The scanning camera is its own full-screen step — same treatment as
   // PhotoScanModal/MenuScanModal — not squeezed into the modal card.
@@ -1106,6 +1113,24 @@ function formatAmountUnit(amount, unitId) {
   if (!unitDef) return `${amount}`;
   if (unitId === "serving") return `${amount} serving${amount === 1 ? "" : "s"}`;
   return `${amount}${unitDef.label}`;
+}
+
+// MyFitnessPal-style row subtitle ("213 cal, 3 egg omelette", "258 cal,
+// 200g") instead of a generic "Logged before"/"Logged often" — tries, in
+// order, the exact amount+unit that'll actually be quick-added (the most
+// useful since it's what re-adding produces), then the food's own
+// free-text portion (an AI scan's estimate, or a barcode product's
+// printed serving), then a plain weight if that's all we have. Only
+// falls all the way back to the generic label when a row genuinely
+// carries none of these — a source that predates serving_label existing,
+// or a rare AI-scan response with no portion text.
+function recentRowMeta(row, fallback) {
+  const lastAmount = row.logged_amount != null ? Number(row.logged_amount) : null;
+  const lastUnit = row.logged_unit || null;
+  if (lastAmount != null && lastUnit) return formatAmountUnit(lastAmount, lastUnit);
+  if (row.serving_label) return row.serving_label;
+  if (row.serving_grams) return `${Math.round(Number(row.serving_grams))}g`;
+  return fallback;
 }
 
 function MacroPill({ value, unit = "g", label, color }) {
@@ -1663,10 +1688,7 @@ export default function FoodSearch() {
     return {
       id: "recent_" + row.id,
       name: row.food_name,
-      // Shows the amount that'll actually be quick-added (MyFitnessPal-style
-      // "258 cal, 200g" row) instead of a generic "Logged before" whenever
-      // there's a remembered amount to show.
-      meta: lastAmount != null && lastUnit ? formatAmountUnit(lastAmount, lastUnit) : "Logged before",
+      meta: recentRowMeta(row, "Logged before"),
       cuisine: "all",
       cal: Number(row.calories) || 0,
       protein: Number(row.protein_g) || 0,
@@ -1693,7 +1715,7 @@ export default function FoodSearch() {
     return {
       id: "freq_" + row.id,
       name: row.food_name,
-      meta: lastAmount != null && lastUnit ? formatAmountUnit(lastAmount, lastUnit) : "Logged often",
+      meta: recentRowMeta(row, "Logged often"),
       cal: Number(row.calories) || 0,
       protein: Number(row.protein_g) || 0,
       carbs: Number(row.carbs_g) || 0,
