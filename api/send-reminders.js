@@ -24,6 +24,16 @@ function localDateAndTime(timezone) {
 }
 
 export default async function handler(req, res) {
+  // This is an action endpoint (it sends real pushes and mutates
+  // notification-sent state), not content — a shared cache serving a
+  // stale response here would let a plain request replay a previous
+  // run's result without the secret at all. Confirmed this actually
+  // happens on Vercel's edge by default: the very first request after
+  // deploy got a `200` with real data despite carrying no auth header,
+  // purely from CDN caching, before a cache-busted retry correctly hit
+  // the function and got 401. no-store rules that out entirely.
+  res.setHeader('Cache-Control', 'no-store');
+
   // This endpoint sends a real push to every eligible user and burns a
   // service-role Supabase connection — with no check here, its URL is
   // otherwise fully public (anyone who finds it could spam every user's
