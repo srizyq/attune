@@ -104,6 +104,14 @@ export default async function handler(req, res) {
     const response = await client.messages.create({
       model: 'claude-sonnet-5',
       max_tokens: 512,
+      // Adaptive thinking is on by default and its budget comes out of
+      // max_tokens — on a harder-to-read photo, thinking alone can consume
+      // the whole budget and leave zero tokens for the actual answer
+      // (content = [thinking], no text block). Confirmed against the real
+      // API on recognize-menu.js's identical pattern. This is a
+      // single-shot structured-JSON extraction with no need for exposed
+      // reasoning, so disabling thinking removes the failure mode entirely.
+      thinking: { type: 'disabled' },
       messages: [
         {
           role: 'user',

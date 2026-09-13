@@ -28,12 +28,22 @@ function buildPrompt(goal, remaining) {
 - ${remaining.fat}g fat
 remaining today.
 
-Read the menu and recommend the 3 best options for them. You're not limited to picking 3 whole standalone items — you can combine items across menu sections (e.g. a main plus a side from elsewhere on the menu) and suggest simple modifications (e.g. dressing on the side, swap fries for a side salad, no bun), as long as it's something they could realistically order at this restaurant. If you suggest a modification, recalculate the macros for the modified version — don't report the stock item's macros for a modified order.
+Do two things with this menu:
+
+1. Transcribe every individual item on the menu (every dish/side/pizza/salad etc. — skip only non-food entries like a dietary-legend key or a "build your own" instructions blurb with nothing orderable), estimating its nutrition as ordered/described, exactly as listed — no modifications here, that's what part 2 is for. Group items under the section heading they appear under on the menu.
+
+2. Separately, recommend the 3 best options for this person's goal and remaining macros. You're not limited to picking 3 whole standalone items — you can combine items across menu sections (e.g. a main plus a side from elsewhere on the menu) and suggest simple modifications (e.g. dressing on the side, swap fries for a side salad, no bun), as long as it's something they could realistically order at this restaurant. If you suggest a modification, recalculate the macros for the modified version — don't report the stock item's macros for a modified order.
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"recommendations": [{"name": string, "items": string, "modifications": string or null, "cal": number, "protein": number, "carbs": number, "fat": number, "confidence": "low" | "medium" | "high"}, ...]}
+{"items": [{"section": string, "name": string, "description": string, "cal": number, "protein": number, "carbs": number, "fat": number}, ...], "recommendations": [{"name": string, "items": string, "modifications": string or null, "cal": number, "protein": number, "carbs": number, "fat": number, "confidence": "low" | "medium" | "high"}, ...]}
 
-Field notes:
+Field notes for "items" (part 1, every menu item as-is):
+- section: the menu heading this item sits under, for example Pizzas or Small Plates — use the menu's own section names
+- name: the item's name exactly as printed
+- description: the item's own description/ingredients as printed, or an empty string if it has none
+- cal, protein, carbs, fat: your best estimate for one standard serving as printed (for an item with size options like a small/large pizza, estimate the smallest listed size and note that size at the start of description, e.g. "Regular size — ...")
+
+Field notes for "recommendations" (part 2, your 3 picks for this person):
 - name: a short label for this pick, for example Grilled chicken bowl, dressing on the side
 - items: what it's built from off the menu, for example Grilled chicken bowl plus a side of steamed veggies instead of rice
 - modifications: what changed from the stock menu item, as plain text. Use the JSON value null if it was ordered exactly as listed with nothing changed — do not use the word none as a string.
@@ -138,7 +148,22 @@ export default async function handler(req, res) {
   try {
     const response = await client.messages.create({
       model: 'claude-sonnet-5',
-      max_tokens: 2048,
+      // Transcribing every item on the menu (not just the 3 recommendations)
+      // means the reply scales with how many items the menu has — a busy
+      // multi-panel menu can run to 30-40 items. 4096 covers that with
+      // headroom now that thinking (below) no longer eats into this budget.
+      max_tokens: 4096,
+      // This model's adaptive thinking is on by default and its budget
+      // comes out of max_tokens — on a menu photo dense enough to need real
+      // effort to read, thinking alone can consume the entire budget and
+      // leave zero tokens for the actual answer (content = [thinking], no
+      // text block at all, surfaced as "Couldn't read a response for this
+      // menu"). Confirmed by replaying the exact photo that triggered it
+      // against the real API. This is a single-shot structured-JSON
+      // extraction task with no need for exposed reasoning, so disabling
+      // thinking removes the failure mode entirely instead of just making
+      // it less likely with a bigger budget.
+      thinking: { type: 'disabled' },
       messages: [
         {
           role: 'user',
