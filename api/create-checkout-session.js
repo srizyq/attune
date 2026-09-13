@@ -41,6 +41,17 @@ export default async function handler(req, res) {
     res.status(401).json({ error: 'Sign in required.' });
     return;
   }
+  // A guest (anonymous Supabase user) has no email and no password, so a
+  // subscription started here would be tied to a session that can vanish
+  // (guest sessions expire, and there's no way to log back into one) —
+  // the paying customer would have no way to ever manage or even prove
+  // that subscription again. Block it here too, not just in the client
+  // buttons, since this endpoint is reachable directly with any valid
+  // bearer token.
+  if (userData.user.is_anonymous) {
+    res.status(403).json({ error: 'Create a full account first — guest sessions can expire, and a subscription needs to stay attached to an account you can always sign back into.' });
+    return;
+  }
   const userId = userData.user.id;
 
   const { data: profile } = await supabase

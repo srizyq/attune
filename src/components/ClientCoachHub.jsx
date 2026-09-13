@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useMyTrainers, useCoachNote } from '../hooks/useCoach';
 import { authedPost } from '../lib/billing';
@@ -7,7 +9,7 @@ import CoachChatModal from './CoachChatModal';
 
 const COACH_PASS_PRICE = 'A$19.99/month';
 
-function CoachPassUpsell() {
+function CoachPassUpsell({ isGuest, onGoToProfile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -38,14 +40,29 @@ function CoachPassUpsell() {
         </div>
         {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6 }}>{error}</div>}
       </div>
-      <button
-        onClick={handleSubscribe}
-        disabled={loading}
-        className="btn-press"
-        style={{ padding: '10px 20px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
-      >
-        {loading ? 'Loading…' : 'Start Coach Pass'}
-      </button>
+      {/* A guest has no email/password, so a subscription would be tied
+          to a session that can vanish for good (see
+          create-checkout-session.js) — send them to create a full
+          account first instead of letting the click reach checkout and
+          bounce off the server-side block. */}
+      {isGuest ? (
+        <button
+          onClick={onGoToProfile}
+          className="btn-press"
+          style={{ padding: '10px 20px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
+        >
+          Create account to subscribe
+        </button>
+      ) : (
+        <button
+          onClick={handleSubscribe}
+          disabled={loading}
+          className="btn-press"
+          style={{ padding: '10px 20px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
+        >
+          {loading ? 'Loading…' : 'Start Coach Pass'}
+        </button>
+      )}
     </div>
   );
 }
@@ -66,7 +83,10 @@ function TargetStat({ label, value }) {
 // who already have a Coach Pass but are *also* someone else's client —
 // `showUpsell` is false there since they've already subscribed.
 export default function ClientCoachHub({ showUpsell = true }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { profile } = useProfile();
+  const isGuest = !!user?.is_anonymous;
   const { trainers, loading: trainersLoading, redeemCode, disconnect } = useMyTrainers();
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [inviteStatus, setInviteStatus] = useState(null);
@@ -103,7 +123,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
 
   return (
     <div style={{ maxWidth: 900 }}>
-      {showUpsell && <CoachPassUpsell />}
+      {showUpsell && <CoachPassUpsell isGuest={isGuest} onGoToProfile={() => navigate('/profile')} />}
 
       <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>

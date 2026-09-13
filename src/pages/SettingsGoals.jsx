@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
 import { goalMacroSplits, calcCalories, buildTargets, splitFromGrams } from '../lib/calorieTargets';
@@ -58,8 +59,8 @@ function AdaptiveTargetPanel({ loading, result, goal, onRefresh }) {
 }
 
 // Starts checkout right from the paywall instead of sending the tap back
-// to Settings just to find the same button again in the Account popup.
-function UpgradeProButton() {
+// to Settings just to find the same button again on the Profile page.
+function UpgradeProButton({ isGuest, onGoToProfile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -74,6 +75,21 @@ function UpgradeProButton() {
       setLoading(false);
     }
   };
+
+  // A guest has no email/password, so a subscription would be tied to a
+  // session that can vanish for good (see create-checkout-session.js) —
+  // send them to create a full account first instead of letting the
+  // click reach checkout and bounce off the server-side block.
+  if (isGuest) {
+    return (
+      <button
+        onClick={onGoToProfile}
+        style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+      >
+        Create account to unlock Pro
+      </button>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -93,8 +109,10 @@ const DEFAULT_FORM = { unit: 'metric', age: 30, weight: 70, height: 170, goal: '
 
 export default function SettingsGoals() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { profile, save: saveProfile } = useProfile();
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
+  const isGuest = !!user?.is_anonymous;
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -415,7 +433,7 @@ export default function SettingsGoals() {
                   <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 340 }}>
                     Set your own target for every nutrient on the Nutrients page instead of the default guideline — Pro only.
                   </p>
-                  <UpgradeProButton />
+                  <UpgradeProButton isGuest={isGuest} onGoToProfile={() => navigate('/profile')} />
                 </div>
               </div>
             ) : (

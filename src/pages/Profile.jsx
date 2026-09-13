@@ -38,7 +38,7 @@ function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) 
 
 // Mirrors CoachModal's CoachPassButton exactly — same subscribe/manage
 // pattern, different plan and profile field.
-function ProBillingButton({ profile }) {
+function ProBillingButton({ profile, isGuest }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -55,6 +55,15 @@ function ProBillingButton({ profile }) {
       setLoading(false);
     }
   };
+
+  // A guest has no email/password, so a subscription would be tied to a
+  // session that can vanish for good (see create-checkout-session.js) —
+  // the account-upgrade form is right above this card, so point there
+  // instead of letting the click reach checkout and bounce off the
+  // server-side block.
+  if (isGuest && !profile?.is_premium) {
+    return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Create a full account above first</span>;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
@@ -351,7 +360,7 @@ export default function Profile() {
               label="Pro"
               hint={profile?.is_premium ? `Active subscription · ${profile?.pro_status || 'active'}` : 'Unlimited AI scans, custom micronutrient targets, and more'}
             >
-              <ProBillingButton profile={profile} />
+              <ProBillingButton profile={profile} isGuest={isGuest} />
             </FieldRow>
             <button
               onClick={requestLogout}

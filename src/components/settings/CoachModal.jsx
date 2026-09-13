@@ -7,7 +7,7 @@ import { uploadCoachLogo } from '../../lib/db';
 import { authedPost } from '../../lib/billing';
 import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
 
-function CoachPassButton({ profile }) {
+function CoachPassButton({ profile, isGuest, onGoToProfile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -24,6 +24,25 @@ function CoachPassButton({ profile }) {
       setLoading(false);
     }
   };
+
+  // A guest has no email/password, so a subscription would be tied to a
+  // session that can vanish for good (see create-checkout-session.js) —
+  // send them to create a full account first instead of letting the
+  // click reach checkout and bounce off the server-side block.
+  if (isGuest && !profile?.coach_pass) {
+    return (
+      <button
+        onClick={onGoToProfile}
+        style={{
+          padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)',
+          borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600,
+          cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        Create account to subscribe
+      </button>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
@@ -82,7 +101,14 @@ function CoachLogoUpload({ profile, saveProfile }) {
 
 export default function CoachModal({ onClose, closing }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { profile, save: saveProfile } = useProfile();
+  const isGuest = !!user?.is_anonymous;
+
+  const goToProfile = () => {
+    onClose();
+    navigate('/profile');
+  };
   const { trainers, loading: trainersLoading, redeemCode, disconnect } = useMyTrainers();
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [inviteStatus, setInviteStatus] = useState(null);
@@ -108,7 +134,7 @@ export default function CoachModal({ onClose, closing }) {
           label="Coach Pass"
           hint={profile?.coach_pass ? `Active subscription · ${profile?.coach_pass_status || 'active'}` : 'Unlimited clients'}
         >
-          <CoachPassButton profile={profile} />
+          <CoachPassButton profile={profile} isGuest={isGuest} onGoToProfile={goToProfile} />
         </FieldRow>
         <button
           onClick={() => navigate('/coach')}
