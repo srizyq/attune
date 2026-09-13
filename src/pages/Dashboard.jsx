@@ -239,20 +239,27 @@ function DashboardHero({ consumed, target, chartDays, chartRange, setChartRange,
     return () => ro.disconnect();
   }, []);
 
-  const max = Math.max(target, ...chartDays.map(d => d.calories), 1);
-  const min = Math.min(...chartDays.map(d => d.calories), target);
-  const span = max - min || 1;
-  const topPad = 10;
-  const baseline = CHART_HEIGHT - 10;
-  const norm = (v) => baseline - ((v - min) / span) * (baseline - topPad);
+  // Headroom above the taller of target/actual so neither the target line
+  // nor a big over-target bar sits flush against the top edge.
+  const max = Math.max(target, ...chartDays.map(d => d.calories), 1) * 1.08;
+  const topPad = 4;
+  const baseline = CHART_HEIGHT - 6;
+  const plotHeight = baseline - topPad;
+  const targetY = baseline - (target / max) * plotHeight;
   const w = chartWidth;
-  const points = chartDays.map((d, i) => [
-    (i / Math.max(1, chartDays.length - 1)) * w,
-    norm(d.calories),
-  ]);
-  const linePts = points.map(p => p.join(',')).join(' ');
-  const areaPts = `0,${baseline} ${linePts} ${w},${baseline}`;
-  const showDots = chartDays.length <= 10;
+  // Gap shrinks as the range grows so 90 daily bars (3M) still fit without
+  // overlapping — bars get thin rather than the chart scrolling or sampling.
+  const gap = chartDays.length > 40 ? 1 : chartDays.length > 14 ? 2 : 5;
+  const barWidth = Math.max(1, (w - gap * (chartDays.length - 1)) / chartDays.length);
+  const bars = chartDays.map((d, i) => {
+    const barHeight = (d.calories / max) * plotHeight;
+    return {
+      x: i * (barWidth + gap),
+      y: baseline - barHeight,
+      height: barHeight,
+      over: d.calories > target,
+    };
+  });
 
   // A handful of evenly-spaced labels regardless of range, so 90 days
   // doesn't cram 90 labels under the axis.
@@ -287,10 +294,18 @@ function DashboardHero({ consumed, target, chartDays, chartRange, setChartRange,
         </div>
 
         <svg ref={chartRef} viewBox={`0 0 ${w} ${CHART_HEIGHT}`} style={{ width: '100%', height: CHART_HEIGHT, marginTop: 10, display: 'block' }}>
-          <polygon points={areaPts} fill="var(--accent)" opacity="0.08" />
-          <polyline points={linePts} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          {showDots && points.map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={i === points.length - 1 ? 4 : 2.5} fill={i === points.length - 1 ? 'var(--accent)' : 'var(--bg-card)'} stroke="var(--accent)" strokeWidth="1.5" />
+          <line x1={0} y1={targetY} x2={w} y2={targetY} stroke="var(--text-hint)" strokeWidth="1" strokeDasharray="3,4" />
+          {bars.map((b, i) => (
+            <rect
+              key={i}
+              x={b.x}
+              y={b.y}
+              width={barWidth}
+              height={Math.max(0, b.height)}
+              rx={Math.min(3, barWidth / 2)}
+              fill={b.over ? 'var(--danger)' : 'var(--accent)'}
+              opacity={b.over ? 0.85 : 1}
+            />
           ))}
         </svg>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }} onClick={e => e.stopPropagation()}>
