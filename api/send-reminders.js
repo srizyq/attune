@@ -24,6 +24,19 @@ function localDateAndTime(timezone) {
 }
 
 export default async function handler(req, res) {
+  // This endpoint sends a real push to every eligible user and burns a
+  // service-role Supabase connection — with no check here, its URL is
+  // otherwise fully public (anyone who finds it could spam every user's
+  // notifications on repeat, or run up billing). Vercel automatically
+  // sends this exact header on cron-triggered requests when CRON_SECRET
+  // is set in the project's environment variables — set that in Vercel,
+  // and only Vercel's own scheduler (or someone who has that secret) can
+  // trigger a send.
+  if (process.env.CRON_SECRET && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const vapidPublic = process.env.VITE_VAPID_PUBLIC_KEY;

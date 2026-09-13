@@ -276,6 +276,18 @@ create policy "push_subscriptions: insert own" on public.push_subscriptions
   for insert with check (auth.uid() = user_id);
 create policy "push_subscriptions: delete own" on public.push_subscriptions
   for delete using (auth.uid() = user_id);
+-- savePushSubscription (lib/db.js) upserts on conflict('endpoint') — a
+-- device's push endpoint stays the same across re-subscribes, so any
+-- second enable (or enabling a second notification type on the same
+-- device, which reuses the one subscription) lands on that existing row
+-- and Postgres runs it as an UPDATE via the ON CONFLICT DO UPDATE
+-- clause. Postgres requires UPDATE permission for that regardless of
+-- whether a conflict actually occurs, so without this policy every
+-- upsert past the very first one on a device fails with "new row
+-- violates row-level security policy (USING expression)" — confirmed
+-- by reproducing it directly against the live table.
+create policy "push_subscriptions: update own" on public.push_subscriptions
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ── coach mode (schema update — run against an existing DB) ────────────────
 -- profiles gained coach_pass/coach_mode/coach_invite_code above; on a DB
