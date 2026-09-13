@@ -10,9 +10,10 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 // modal (via location-state flags on FoodSearch) — saved meals and custom
 // food land on the general Food search page instead of deep-linking, per
 // explicit scope: general-page landing is an accepted tradeoff for those
-// two, not a shortcut taken without asking. Log weight goes to Progress —
-// that's the only place a new weight entry can be logged from since the
-// dashboard's inline weight form was replaced by a glance-tile there.
+// two, not a shortcut taken without asking. Log weight goes to Expenditure
+// (Progress's old weight chart lives there now) — that's the only place a
+// new weight entry can be logged from since the dashboard's inline weight
+// form was replaced by a glance-tile there.
 const TOP_ACTIONS = [
   { id: 'log-food', label: 'Log food', icon: 'ti-search', to: '/food' },
   { id: 'barcode', label: 'Scan barcode', icon: 'ti-barcode', to: '/food', state: { openScan: true } },
@@ -20,7 +21,7 @@ const TOP_ACTIONS = [
   { id: 'menu', label: 'Scan menu', icon: 'ti-tools-kitchen-2', to: '/food', state: { openMenuScan: true } },
 ];
 const BOTTOM_ACTIONS = [
-  { id: 'weight', label: 'Log weight', icon: 'ti-scale', to: '/progress' },
+  { id: 'weight', label: 'Log weight', icon: 'ti-scale', to: '/expenditure' },
   { id: 'saved-meals', label: 'Saved meals', icon: 'ti-bookmark', to: '/food' },
   { id: 'custom-food', label: 'Custom food', icon: 'ti-plus', to: '/food' },
 ];

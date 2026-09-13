@@ -494,7 +494,7 @@ export async function uploadCoachLogo(userId, file) {
 export async function getMyTrainers(clientId) {
   const { data, error } = await supabase
     .from('trainer_clients')
-    .select('id, status, created_at, trainer:profiles!trainer_clients_trainer_id_fkey(id, name)')
+    .select('id, status, created_at, trainer:profiles!trainer_clients_trainer_id_fkey(id, name, coach_logo_url)')
     .eq('client_id', clientId)
     .eq('status', 'active')
     .order('created_at', { ascending: false });

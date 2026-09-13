@@ -1066,7 +1066,7 @@ export default function Dashboard() {
           closing={weightModalClosing}
           onClose={closeWeightModal}
           onSave={(w) => logWeight(viewedDate, w, weightUnit)}
-          onViewTrend={() => { closeWeightModal(); navigate('/progress', { state: { scrollTo: 'weight' } }); }}
+          onViewTrend={() => { closeWeightModal(); navigate('/expenditure', { state: { scrollTo: 'weight' } }); }}
         />
       )}
       {showWorkoutModal && (

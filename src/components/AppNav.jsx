@@ -12,7 +12,7 @@ import QuickActionSheet from './QuickActionSheet';
 const DESKTOP_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard', path: '/dashboard' },
   { id: 'food', label: 'Food search', icon: 'ti-search', path: '/food' },
-  { id: 'progress', label: 'Progress', icon: 'ti-chart-line', path: '/progress' },
+  { id: 'coach', label: 'Coach', icon: 'ti-users', path: '/coach' },
   { id: 'insights', label: 'AI insights', icon: 'ti-sparkles', path: '/insights' },
 ];
 
@@ -21,7 +21,7 @@ const MOBILE_ITEMS = [
   { id: 'log', label: 'Daily log', icon: 'ti-clipboard-list', path: '/log' },
 ];
 const MOBILE_ITEMS_RIGHT = [
-  { id: 'progress', label: 'Progress', icon: 'ti-chart-line', path: '/progress' },
+  { id: 'coach', label: 'Coach', icon: 'ti-users', path: '/coach' },
 ];
 
 // Desktop: left sidebar. Mobile/tablet (<=860px): bottom nav — CSS media

@@ -13,7 +13,6 @@ import Step5 from './pages/onboarding/Step5'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import FoodSearch from "./pages/FoodSearch";
-import Progress from "./pages/Progress";
 import AIInsights from "./pages/AIInsights";
 import Settings from "./pages/Settings";
 import SettingsGoals from "./pages/SettingsGoals";
@@ -34,7 +33,7 @@ import { locationChanged, isPageTransition } from './lib/routeTransition';
 // header) and gets a native-style push slide instead. Onboarding/login/the
 // prototype harness are excluded — first-run and dev-only surfaces don't
 // need this.
-const TAB_PATHS = new Set(['/dashboard', '/food', '/progress', '/insights', '/log']);
+const TAB_PATHS = new Set(['/dashboard', '/food', '/coach', '/insights', '/log']);
 function routeAnimClass(pathname) {
   return TAB_PATHS.has(pathname) ? 'route-anim-tab' : 'route-anim-push';
 }
@@ -76,7 +75,7 @@ function AnimatedRoutes() {
         <Route path="/onboarding/step5" element={<Step5 />} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/food" element={<RequireAuth><FoodSearch /></RequireAuth>} />
-        <Route path="/progress" element={<RequireAuth><Progress /></RequireAuth>} />
+        <Route path="/progress" element={<Navigate to="/expenditure" replace />} />
         <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
         <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />
         <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />

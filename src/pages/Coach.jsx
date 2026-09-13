@@ -1,6 +1,5 @@
 // src/pages/Coach.jsx
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
   LineElement, Tooltip, Legend, Filler,
@@ -10,6 +9,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../hooks/useTheme';
 import { useMyClients, useTrainerComments, useClientFoodLogs } from '../hooks/useCoach';
+import AppNav from '../components/AppNav';
+import ClientCoachHub from '../components/ClientCoachHub';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { getCheckinForDate, setClientTargets, getSavedMeals, shareRecipeWithClient } from '../lib/db';
@@ -155,7 +156,6 @@ function EmptyChartBox({ icon, message }) {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function Coach() {
-  const navigate = useNavigate();
   const { profile, save: saveProfile } = useProfile();
   const { clients, loading: clientsLoading, revoke, setGroup } = useMyClients();
   const [selectedClient, setSelectedClient] = useState(null);
@@ -176,18 +176,8 @@ export default function Coach() {
   const loggedTodayCount = resolvedStatuses.filter(s => s.loggedToday).length;
   const allLoggedToday = clients.length > 0 && resolvedStatuses.length === clients.length && loggedTodayCount === clients.length;
 
-  // Coach Mode requires the pass — a direct /coach visit without it (or
-  // after the pass lapses) bounces back to Settings rather than showing an
-  // empty dashboard.
-  useEffect(() => {
-    if (profile && !profile.coach_pass) navigate('/settings');
-  }, [profile, navigate]);
-
-  if (!profile || !profile.coach_pass) return null;
-
-  const exitCoachMode = () => {
-    navigate('/dashboard');
-  };
+  const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
+  const isTrainer = !!profile?.coach_pass;
 
   const handleGenerateCode = async () => {
     setGenerating(true);
@@ -222,8 +212,11 @@ export default function Coach() {
     }
   };
 
+  if (!profile) return null;
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <AppNav active="coach" initials={initials} />
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         <div className="page-pad-top" style={{
           display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px 16px',
@@ -234,10 +227,10 @@ export default function Coach() {
             <LogoMark size={24} />
             <div>
               <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                Coach Mode
+                {isTrainer ? 'Coach Mode' : 'Coach'}
               </h2>
               <p style={{ color: 'var(--text-hint)', fontSize: 13, margin: '2px 0 0' }}>
-                {selectedClient ? (selectedClient.name || 'Client') : (
+                {!isTrainer ? "Your trainer, notes, and coaching tools" : selectedClient ? (selectedClient.name || 'Client') : (
                   clients.length === 0
                     ? `${timeOfDayGreeting()} — invite your first client below`
                     : resolvedStatuses.length === 0
@@ -249,17 +242,21 @@ export default function Coach() {
               </p>
             </div>
           </div>
-          <button
-            onClick={selectedClient ? () => setSelectedClient(null) : exitCoachMode}
-            className="btn-press"
-            style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            {selectedClient ? '← All clients' : 'Exit Coach Mode'}
-          </button>
+          {isTrainer && selectedClient && (
+            <button
+              onClick={() => setSelectedClient(null)}
+              className="btn-press"
+              style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              ← All clients
+            </button>
+          )}
         </div>
 
         <div className="page-pad">
-          {!selectedClient ? (
+          {!isTrainer ? (
+            <ClientCoachHub />
+          ) : !selectedClient ? (
             <ClientListView
               profile={profile}
               clients={clients}
