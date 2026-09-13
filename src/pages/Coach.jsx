@@ -556,6 +556,9 @@ function ClientDetailView({ client }) {
   const { logs: weightLogs, latest: latestWeight, loading: weightLoading } = useWeightLogs(dateNDaysAgo(range - 1), today, client.id);
   const { meals, loading: foodLoading } = useClientFoodLogs(client.id, date);
   const { comments, addComment, removeComment } = useTrainerComments(client.id);
+  // The category picker doubles as a filter tab — only the selected
+  // category's thread shows below, matching what its label already implies.
+  const commentsInTab = useMemo(() => comments.filter(c => c.category === commentCategory), [comments, commentCategory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -935,11 +938,13 @@ function ClientDetailView({ client }) {
                 Post
               </button>
             </div>
-            {comments.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No comments yet.</p>
+            {commentsInTab.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                No {COMMENT_CATEGORIES.find(c => c.id === commentCategory)?.label.toLowerCase()} comments yet.
+              </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {comments.map(c => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 320, overflowY: 'auto', paddingRight: 4 }}>
+                {commentsInTab.map(c => {
                   const fromClient = c.sender_role === 'client';
                   const cat = COMMENT_CATEGORIES.find(x => x.id === c.category) || COMMENT_CATEGORIES[0];
                   return (
