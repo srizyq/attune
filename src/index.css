@@ -231,6 +231,14 @@ h1, h2, h3, h4, h5 {
 
 .modal-backdrop {
   animation: modal-backdrop-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  /* iOS Safari doesn't shrink the layout viewport (100vh/inset:0) when the
+     on-screen keyboard opens — only the *visual* viewport shrinks. Without
+     this, a vertically-centered modal keeps centering against the full,
+     keyboard-covered height, so the keyboard visually eats the bottom half
+     of the card. --vvh is kept in sync with visualViewport.height by the
+     effect in App.jsx; the 100vh fallback covers browsers without that API
+     or the brief instant before the effect first runs. */
+  height: var(--vvh, 100vh);
 }
 .modal-backdrop.is-closing {
   animation: modal-backdrop-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
@@ -255,6 +263,9 @@ h1, h2, h3, h4, h5 {
 @keyframes sheet-out { from { transform: translateY(0); } to { transform: translateY(100%); } }
 .sheet-panel {
   animation: sheet-in 260ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  /* Same keyboard-overlap fix as .modal-backdrop above — pins this
+     full-screen sheet's actual height to the visible (non-keyboard) area. */
+  height: var(--vvh, 100vh);
   -webkit-overflow-scrolling: touch;
 }
 .sheet-panel.is-closing {

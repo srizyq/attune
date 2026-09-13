@@ -92,7 +92,28 @@ function AnimatedRoutes() {
   );
 }
 
+// Keeps the --vvh custom property (consumed by .modal-backdrop/.sheet-panel
+// in index.css) in sync with the visual viewport, which shrinks when the
+// on-screen keyboard opens — unlike 100vh/window.innerHeight, which don't.
+// Without this, a centered modal open behind the keyboard has its bottom
+// half hidden under it instead of the whole card staying visible above it.
+function useVisualViewportHeight() {
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const setVvh = () => document.documentElement.style.setProperty('--vvh', `${vv.height}px`);
+    setVvh();
+    vv.addEventListener('resize', setVvh);
+    vv.addEventListener('scroll', setVvh);
+    return () => {
+      vv.removeEventListener('resize', setVvh);
+      vv.removeEventListener('scroll', setVvh);
+    };
+  }, []);
+}
+
 export default function App() {
+  useVisualViewportHeight();
   return (
     <AuthProvider>
       <BrowserRouter>
