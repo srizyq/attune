@@ -107,7 +107,7 @@ export default function DailyLog() {
                 const mealFat = round1(items.reduce((s, i) => s + i.fat, 0));
                 const isOpen = open[mealKey];
                 return (
-                  <div key={mealKey} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, overflow: 'hidden' }}>
+                  <div key={mealKey} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, overflow: 'hidden' }}>
                     <button onClick={() => setOpen(o => ({ ...o, [mealKey]: !o[mealKey] }))} style={{ width: '100%', background: 'none', border: 'none', padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ textAlign: 'left' }}>
                         <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>{MEAL_LABELS[mealKey]}</div>
@@ -115,7 +115,7 @@ export default function DailyLog() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{mealTotal} kcal</span>
-                        <span style={{ color: 'var(--border-strong)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                        <span style={{ color: 'var(--text-hint)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                       </div>
                     </button>
                     {isOpen && (

@@ -126,7 +126,7 @@ export default function Nutrients() {
         <div className="page-pad" style={{ maxWidth: 700 }}>
           {loading ? null : (
             <>
-              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{isToday ? "Today's calories" : 'Calories'}</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
                   {Math.round(totals.cal).toLocaleString()}

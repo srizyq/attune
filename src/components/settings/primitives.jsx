@@ -6,10 +6,11 @@ export function Card({ children, style }) {
   return (
     <div style={{
       background: 'var(--bg-subtle)',
-      border: '1px solid var(--border-default)',
+      border: '1px solid var(--card-border)',
       borderRadius: '16px',
       padding: '24px',
       marginBottom: '16px',
+      boxShadow: 'var(--card-shadow)',
       ...style,
     }}>
       {children}

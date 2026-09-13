@@ -58,16 +58,16 @@ function avg(arr) {
 function StatCard({ label, value, hint }) {
   return (
     <div style={{
-      background: 'var(--bg-card)', border: '1px solid var(--border-default)',
+      background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)',
       borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 8,
     }}>
       <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: value === '—' ? 'var(--border-strong)' : 'var(--text-primary)', lineHeight: 1 }}>
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: value === '—' ? 'var(--text-hint)' : 'var(--text-primary)', lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--border-strong)' }}>{hint}</div>
+      <div style={{ fontSize: 11, color: 'var(--text-hint)' }}>{hint}</div>
     </div>
   );
 }
@@ -78,7 +78,7 @@ function EmptyChartBox({ icon, message }) {
       height: 180, border: '1px dashed var(--border-strong)', borderRadius: 8,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
     }}>
-      <i className={`ti ${icon}`} style={{ fontSize: 28, color: 'var(--border-strong)' }} />
+      <i className={`ti ${icon}`} style={{ fontSize: 28, color: 'var(--text-hint)' }} />
       <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', maxWidth: 200 }}>{message}</div>
     </div>
   );
@@ -439,7 +439,7 @@ export default function Expenditure() {
               </div>
             )
           ) : (
-            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
               <div style={{ display: 'flex', gap: 32, marginBottom: 4 }}>
                 <div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Average</div>
@@ -467,13 +467,13 @@ export default function Expenditure() {
           {/* calories vs goal + macro breakdown */}
           {!loading && hasAnyLogs && (
             <div className="grid-2" style={{ marginBottom: 20 }}>
-              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20 }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Calories vs goal</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Darker = closer to your calorie target that day</div>
                 <DayHeatmapStrip days={calorieHeatmapDays} color={ACCENT} />
               </div>
 
-              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20 }}>
+              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Macro breakdown</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Average split over this range</div>
                 <MacroSplitBar protein={avgMacroProtein} carbs={avgMacroCarbs} fat={avgMacroFat} />
@@ -520,7 +520,7 @@ export default function Expenditure() {
           </div>
 
           {/* weight chart */}
-          <div ref={weightSectionRef} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+          <div ref={weightSectionRef} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 10 }}>Weight</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
               <LogWeightButton unit={weightUnit} onLog={(w, u) => logWeight(today, w, u)} />
@@ -546,7 +546,7 @@ export default function Expenditure() {
 
           {/* streaks + week-at-a-glance */}
           <div className="grid-2">
-            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20 }}>
+            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Streak badges</div>
               {[
                 { icon: 'ti-flame',      iconBg: 'var(--accent-bg)', iconColor: 'var(--accent)',     name: 'Logging streak',   count: loggingStreak },
@@ -560,7 +560,7 @@ export default function Expenditure() {
               ))}
             </div>
 
-            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 20 }}>
+            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>This week at a glance</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Calories logged each day</div>
               <WeekBars days={dateRange(dateNDaysAgo(6), today).map(date => filledByDate.get(date) || { date, calories: 0 })} calorieTarget={calorieTarget} />

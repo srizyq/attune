@@ -17,7 +17,7 @@ export default function MicroCard({ icon, label, value, unit, guideline, target,
   return (
     <div
       onClick={locked ? onUpgrade : undefined}
-      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 18, position: 'relative', cursor: locked ? 'pointer' : 'default' }}
+      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 18, position: 'relative', cursor: locked ? 'pointer' : 'default' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <div style={{ width: 32, height: 32, background: color + '22', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>

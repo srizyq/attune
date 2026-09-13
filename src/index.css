@@ -42,6 +42,19 @@
   --pill-track: #1c1c1a;
   --pill-bg: #f5f5f2;
   --pill-text: #0a0a0a;
+  /* Dashboard's cards use --border-strong for real definition against the
+     background; every other page's Card-style container used the much
+     fainter --border-default instead, which is why light mode looked
+     "plain" outside Dashboard while dark mode (where the two values are
+     both dark and closer together) mostly hid the gap. --card-border is
+     the single token both should share going forward. Dark mode's value
+     restates --border-default exactly, so dark mode is unchanged; only
+     light mode's cards pick up the stronger outline. --card-shadow is a
+     genuinely new addition, not a restatement — dark mode never had a
+     shadow system, and a black-tinted shadow reads as mud on a dark
+     background anyway, so it stays 'none' there. */
+  --card-border: var(--border-default);
+  --card-shadow: none;
 }
 
 /* App-wide theme system — scoped to a wrapper element carrying
@@ -82,6 +95,8 @@
   --pill-track: #1c1c1a;
   --pill-bg: #f5f5f2;
   --pill-text: #0a0a0a;
+  --card-border: var(--border-default);
+  --card-shadow: none;
 }
 [data-theme='light'] {
   --bg-primary: #ffffff;
@@ -108,6 +123,16 @@
   --pill-track: #f0f0ee;
   --pill-bg: #0a0a0a;
   --pill-text: #ffffff;
+  /* The one deliberate departure from "restate the same value" — this is
+     the actual fix: every page's cards now outline as clearly as
+     Dashboard's already did, instead of only Dashboard bothering to use
+     --border-strong while everything else used the near-invisible
+     --border-default on white. The shadow is genuinely new, not a
+     restatement of anything — a soft two-layer shadow alongside the
+     border, the kind of quiet depth flat borders alone can't give white
+     backgrounds without looking either harsh or completely flat. */
+  --card-border: var(--border-strong);
+  --card-shadow: 0 1px 2px rgba(10, 10, 10, 0.04), 0 6px 16px rgba(10, 10, 10, 0.05);
 }
 
 html {

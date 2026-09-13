@@ -152,12 +152,10 @@ export default function Settings() {
             onClick={() => navigate('/profile')}
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: '20px',
-              padding: '24px', background: 'var(--bg-subtle)', border: '1px solid var(--border-default)',
+              padding: '24px', background: 'var(--bg-subtle)', border: '1px solid var(--card-border)',
               borderRadius: '16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-              transition: 'border-color 0.15s', marginBottom: 20,
+              boxShadow: 'var(--card-shadow)', marginBottom: 20,
             }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-strong)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-default)'}
           >
             <div style={{
               width: 64, height: 64, borderRadius: '50%',
@@ -244,8 +242,8 @@ export default function Settings() {
                   onClick={() => openSection(s.id)}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px',
-                    background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 14,
-                    cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', marginBottom: 10,
+                    background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', borderRadius: 14,
+                    boxShadow: 'var(--card-shadow)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', marginBottom: 10,
                   }}
                 >
                   <div style={{

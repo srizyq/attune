@@ -180,7 +180,7 @@ export default function AIInsights() {
         <div className="page-pad app-content-pad" style={{ flex: 1, overflowY: "auto" }}>
 
           {/* ── pattern insight cards ── */}
-          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>
                 Your patterns
@@ -202,7 +202,7 @@ export default function AIInsights() {
           </div>
 
           {/* ── mood check-in ── */}
-          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 16 }}>
               How are you feeling today?
             </div>
@@ -242,7 +242,7 @@ export default function AIInsights() {
                           flex: 1, height: 32, borderRadius: 6,
                           border: `1px solid ${selectedEnergy >= n ? "var(--border-active)" : "var(--border-default)"}`,
                           background: selectedEnergy >= n ? "#8fbc8f22" : "transparent",
-                          color: selectedEnergy >= n ? "var(--accent)" : "var(--border-strong)",
+                          color: selectedEnergy >= n ? "var(--accent)" : "var(--text-hint)",
                           fontSize: 11, fontWeight: 600, cursor: "pointer",
                           transition: "all 0.1s", fontFamily: "'Plus Jakarta Sans', sans-serif",
                         }}
@@ -272,7 +272,7 @@ export default function AIInsights() {
                     background: selectedMood && selectedEnergy ? "var(--accent)" : "var(--bg-card)",
                     border: "none", borderRadius: 8, padding: "10px 22px",
                     fontSize: 13, fontWeight: 600,
-                    color: selectedMood && selectedEnergy ? "#0f0f0f" : "var(--border-strong)",
+                    color: selectedMood && selectedEnergy ? "#0f0f0f" : "var(--text-hint)",
                     cursor: selectedMood && selectedEnergy && !loadingMood ? "pointer" : "not-allowed",
                     transition: "background 0.2s, color 0.2s", fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
@@ -326,7 +326,7 @@ export default function AIInsights() {
           </div>
 
           {/* ── weekly mood history grid ── */}
-          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 2 }}>
               Last 7 days
             </div>
@@ -345,7 +345,7 @@ export default function AIInsights() {
                       background: "var(--bg-card)", border: "1px solid var(--border-default)",
                       display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
                     }}>
-                      {emoji || <span style={{ color: "var(--border-strong)", fontSize: 12 }}>—</span>}
+                      {emoji || <span style={{ color: "var(--text-hint)", fontSize: 12 }}>—</span>}
                     </div>
                     <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{label}</span>
                   </div>

@@ -1195,7 +1195,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   }
 
   return (
-    <div style={{ background: "var(--bg-card)", border: `1px solid ${isExpanded ? "var(--accent-dark)" : "var(--border-default)"}`, borderRadius: 10, marginBottom: 8, overflow: "hidden", transition: "border-color 0.15s", cursor: "pointer" }}>
+    <div style={{ background: "var(--bg-card)", border: `1px solid ${isExpanded ? "var(--accent-dark)" : "var(--card-border)"}`, borderRadius: 10, marginBottom: 8, overflow: "hidden", boxShadow: "var(--card-shadow)", transition: "border-color 0.15s", cursor: "pointer" }}>
       <div onClick={onToggle} style={{ display: "flex", alignItems: "center", padding: "11px 14px", gap: 12 }}>
         <div style={{ width: 40, height: 40, background: catStyle.color + "22", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, color: catStyle.color }}><i className={`ti ${catStyle.icon}`} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>

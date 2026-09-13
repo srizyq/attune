@@ -73,7 +73,8 @@ function Card({ children, style }) {
   return (
     <div style={{
       background: 'var(--bg-subtle)',
-      border: '1px solid var(--border-default)',
+      border: '1px solid var(--card-border)',
+      boxShadow: 'var(--card-shadow)',
       borderRadius: '16px',
       padding: '24px',
       marginBottom: '16px',
@@ -137,10 +138,10 @@ function StatRow({ label, value }) {
 
 function StatCard({ label, value, hint, color = ACCENT }) {
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: value === '—' ? 'var(--border-strong)' : color, lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: 'var(--border-strong)' }}>{hint}</div>
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: value === '—' ? 'var(--text-hint)' : color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 11, color: 'var(--text-hint)' }}>{hint}</div>
     </div>
   );
 }
@@ -148,7 +149,7 @@ function StatCard({ label, value, hint, color = ACCENT }) {
 function EmptyChartBox({ icon, message }) {
   return (
     <div style={{ height: 180, border: '1px dashed var(--border-strong)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-      <i className={`ti ${icon}`} style={{ fontSize: 28, color: 'var(--border-strong)' }} />
+      <i className={`ti ${icon}`} style={{ fontSize: 28, color: 'var(--text-hint)' }} />
       <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', maxWidth: 200 }}>{message}</div>
     </div>
   );
@@ -338,7 +339,7 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
         background: profile.coach_invite_code
           ? 'linear-gradient(160deg, var(--accent-bg) 0%, var(--bg-subtle) 65%)'
           : 'var(--bg-subtle)',
-        border: `1px solid ${profile.coach_invite_code ? 'var(--border-active)' : 'var(--border-default)'}`,
+        border: `1px solid ${profile.coach_invite_code ? 'var(--border-active)' : 'var(--card-border)'}`,
       }}>
         <SectionLabel icon="ti-user-plus">{hasClients ? 'Invite another client' : 'Invite your first client'}</SectionLabel>
         {profile.coach_invite_code ? (
@@ -406,7 +407,7 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
         ) : !hasClients ? (
           <div style={{ textAlign: 'center', padding: '20px 12px' }}>
-            <i className="ti ti-users" style={{ fontSize: 28, color: 'var(--border-strong)' }} />
+            <i className="ti ti-users" style={{ fontSize: 28, color: 'var(--text-hint)' }} />
             <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>
               Once a client redeems your invite code, they'll show up here.
             </p>
@@ -845,7 +846,7 @@ function ClientDetailView({ client }) {
                 const mealFat = round1(items.reduce((s, i) => s + i.fat, 0));
                 const isOpen = open[mealKey];
                 return (
-                  <div key={mealKey} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 12, overflow: 'hidden' }}>
+                  <div key={mealKey} style={{ background: 'var(--bg-primary)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, overflow: 'hidden' }}>
                     <button onClick={() => setOpen(o => ({ ...o, [mealKey]: !o[mealKey] }))} className="btn-press" style={{ width: '100%', background: 'none', border: 'none', padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ textAlign: 'left' }}>
                         <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>{MEAL_LABELS[mealKey]}</div>
@@ -853,7 +854,7 @@ function ClientDetailView({ client }) {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{mealTotal} kcal</span>
-                        <span style={{ color: 'var(--border-strong)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                        <span style={{ color: 'var(--text-hint)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                       </div>
                     </button>
                     {isOpen && (

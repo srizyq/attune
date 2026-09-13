@@ -125,7 +125,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
     <div style={{ maxWidth: 900 }}>
       {showUpsell && <CoachPassUpsell isGuest={isGuest} onGoToProfile={() => navigate('/profile')} />}
 
-      <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+      <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>
         {trainersLoading ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
@@ -179,7 +179,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
       {trainer && (
         <>
           {hasTargets && (
-            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your current targets</div>
               <div className="grid-4">
                 <TargetStat label="Calories" value={targets.calories ? `${targets.calories}` : '—'} />
