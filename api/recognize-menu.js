@@ -181,9 +181,19 @@ export default async function handler(req, res) {
         .eq('id', userId);
     }
 
+    // Logged on every failure path below so a future incident (a new model
+    // version changing behavior again, a genuinely huge menu overflowing
+    // even this budget, etc.) shows up in Vercel's function logs with
+    // enough to diagnose immediately — stop_reason and usage are exactly
+    // what answered "why did this fail?" last time, and without them here
+    // that diagnosis meant writing a one-off reproduction script against
+    // the live API.
+    const diagnostics = { stop_reason: response.stop_reason, usage: response.usage };
+
     const textBlock = response.content.find((b) => b.type === 'text');
     if (!textBlock) {
-      res.status(502).json({ error: "Couldn't read a response for this menu." });
+      console.error('Menu recognition returned no text block:', diagnostics);
+      res.status(502).json({ error: "Couldn't read a response for this menu. Try again." });
       return;
     }
 
@@ -198,8 +208,18 @@ export default async function handler(req, res) {
       if (start > 0 && end > start) cleaned = cleaned.slice(start, end + 1);
       parsed = JSON.parse(cleaned);
     } catch {
-      console.error('Failed to parse menu recognition response:', textBlock.text);
-      res.status(502).json({ error: "Couldn't understand the response for this menu. Try again." });
+      console.error('Failed to parse menu recognition response:', { ...diagnostics, text: textBlock.text });
+      // stop_reason 'max_tokens' here means the JSON was cut off mid-item —
+      // a genuinely huge menu overflowing even this budget (transcribing
+      // every item scales with how many items there are, unlike the fixed-
+      // size food/label prompts). That's a real, different limit from a
+      // one-off hiccup, so it gets its own actionable message instead of a
+      // generic "try again" that would just fail the same way again.
+      res.status(502).json({
+        error: response.stop_reason === 'max_tokens'
+          ? "This menu has more items than we could read in one go — try scanning one section at a time."
+          : "Couldn't understand the response for this menu. Try again.",
+      });
       return;
     }
 

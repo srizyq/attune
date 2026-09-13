@@ -114,9 +114,17 @@ export default async function handler(req, res) {
         .eq('id', userId);
     }
 
+    // Logged on every failure path below — stop_reason and usage are what
+    // it takes to diagnose a failure immediately from Vercel's function
+    // logs instead of needing a one-off reproduction script against the
+    // live API (see recognize-menu.js, which hit exactly this and had to
+    // be debugged that way).
+    const diagnostics = { stop_reason: response.stop_reason, usage: response.usage };
+
     const textBlock = response.content.find((b) => b.type === 'text');
     if (!textBlock) {
-      res.status(502).json({ error: "Couldn't read a response for that description." });
+      console.error('Food estimation returned no text block:', diagnostics);
+      res.status(502).json({ error: "Couldn't read a response for that description. Try again." });
       return;
     }
 
@@ -125,7 +133,7 @@ export default async function handler(req, res) {
       const cleaned = textBlock.text.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
       parsed = JSON.parse(cleaned);
     } catch {
-      console.error('Failed to parse food estimation response:', textBlock.text);
+      console.error('Failed to parse food estimation response:', { ...diagnostics, text: textBlock.text });
       res.status(502).json({ error: "Couldn't understand the response. Try again." });
       return;
     }

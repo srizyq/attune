@@ -129,9 +129,17 @@ export default async function handler(req, res) {
         .eq('id', userId);
     }
 
+    // Logged on every failure path below — stop_reason and usage are what
+    // it takes to diagnose a failure immediately from Vercel's function
+    // logs instead of needing a one-off reproduction script against the
+    // live API (see recognize-menu.js, which hit exactly this and had to
+    // be debugged that way).
+    const diagnostics = { stop_reason: response.stop_reason, usage: response.usage };
+
     const textBlock = response.content.find((b) => b.type === 'text');
     if (!textBlock) {
-      res.status(502).json({ error: "Couldn't read a response for this label." });
+      console.error('Label recognition returned no text block:', diagnostics);
+      res.status(502).json({ error: "Couldn't read a response for this label. Try again." });
       return;
     }
 
@@ -143,7 +151,7 @@ export default async function handler(req, res) {
       if (start > 0 && end > start) cleaned = cleaned.slice(start, end + 1);
       parsed = JSON.parse(cleaned);
     } catch {
-      console.error('Failed to parse label recognition response:', textBlock.text);
+      console.error('Failed to parse label recognition response:', { ...diagnostics, text: textBlock.text });
       res.status(502).json({ error: "Couldn't understand the response for this label. Try again." });
       return;
     }
