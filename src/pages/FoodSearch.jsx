@@ -1417,7 +1417,8 @@ export default function FoodSearch() {
   const [photoScanOpen, setPhotoScanOpen] = useState(!!location.state?.openPhotoScan);
   // The quick-action sheet's "Scan menu" does the same with openMenuScan.
   const [menuScanOpen, setMenuScanOpen] = useState(!!location.state?.openMenuScan);
-  const [createFoodOpen, setCreateFoodOpen] = useState(false);
+  // The quick-action sheet's "Custom food" does the same with openCreateFood.
+  const [createFoodOpen, setCreateFoodOpen] = useState(!!location.state?.openCreateFood);
   // Set when "Save as custom food" is used from a photo/menu scan result —
   // pre-fills the form with the AI estimate (post-correction, if any)
   // instead of a blank form, so a food you've already corrected once
@@ -1440,6 +1441,7 @@ export default function FoodSearch() {
     if (location.state?.openPhotoScan) setPhotoScanOpen(true);
     if (location.state?.openMenuScan) setMenuScanOpen(true);
     if (location.state?.openSavedMeals) setSavedMealsOpen(true);
+    if (location.state?.openCreateFood) setCreateFoodOpen(true);
   }, [location.state]);
   const [builderMode, setBuilderMode] = useState(false);
   const [builderItems, setBuilderItems] = useState([]);

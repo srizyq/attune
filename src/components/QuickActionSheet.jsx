@@ -6,14 +6,16 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 // own nav slot (barcode scan, photo scan, menu scan, saved meals, custom
 // food) lives here instead.
 //
-// Barcode scan, photo scan, and menu scan deep-link straight into their
-// modal (via location-state flags on FoodSearch) — saved meals and custom
-// food land on the general Food search page instead of deep-linking, per
-// explicit scope: general-page landing is an accepted tradeoff for those
-// two, not a shortcut taken without asking. Log weight goes to Expenditure
-// (Progress's old weight chart lives there now) — that's the only place a
-// new weight entry can be logged from since the dashboard's inline weight
-// form was replaced by a glance-tile there.
+// All six deep-link straight into their modal (via location-state flags
+// on FoodSearch) rather than landing on the plain search page first —
+// saved meals and custom food used to land on the general page (an
+// accepted tradeoff at the time, not a shortcut taken without asking),
+// but the same openSavedMeals/openCreateFood flags FoodSearch already
+// reads for other entry points (Dashboard's own "Saved meals" shortcut)
+// work just as well here. Log weight goes to Expenditure (Progress's old
+// weight chart lives there now) — that's the only place a new weight
+// entry can be logged from since the dashboard's inline weight form was
+// replaced by a glance-tile there.
 const TOP_ACTIONS = [
   { id: 'log-food', label: 'Log food', icon: 'ti-search', to: '/food' },
   { id: 'barcode', label: 'Scan barcode', icon: 'ti-barcode', to: '/food', state: { openScan: true } },
@@ -22,8 +24,8 @@ const TOP_ACTIONS = [
 ];
 const BOTTOM_ACTIONS = [
   { id: 'weight', label: 'Log weight', icon: 'ti-scale', to: '/expenditure' },
-  { id: 'saved-meals', label: 'Saved meals', icon: 'ti-bookmark', to: '/food' },
-  { id: 'custom-food', label: 'Custom food', icon: 'ti-plus', to: '/food' },
+  { id: 'saved-meals', label: 'Saved meals', icon: 'ti-bookmark', to: '/food', state: { openSavedMeals: true } },
+  { id: 'custom-food', label: 'Custom food', icon: 'ti-plus', to: '/food', state: { openCreateFood: true } },
 ];
 
 // Icon-over-label tile, laid out in a horizontal row — matches the bottom
