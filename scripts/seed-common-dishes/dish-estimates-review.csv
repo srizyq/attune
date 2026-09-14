@@ -1,0 +1,1194 @@
+name,category,status,flags,serving_label,serving_grams,calories,protein_g,carbs_g,fat_g,fibre_g,sodium_mg,sugar_g,confidence
+Smashed avocado on toast,Australian breakfast & brunch,succeeded,,"1 serve (2 slices toast with avocado, ~250g)",250,430,12,40,25,8,520,4,medium
+Avocado on toast,Australian breakfast & brunch,succeeded,,"1 serve (2 slices sourdough with avocado, ~250g)",250,420,12,40,24,8,480,3.5,medium
+Bacon and eggs,Australian breakfast & brunch,succeeded,,"1 serve (2 eggs, 3 rashers bacon, ~250g)",250,430,30.5,1.5,33,0,980,0.5,medium
+Big breakfast,Australian breakfast & brunch,succeeded,LOW_CONFIDENCE,1 serve (~500g),500,850,38,55,53,5,1800,8,low
+Eggs benedict,Australian breakfast & brunch,succeeded,,"1 serve (2 eggs on English muffins with hollandaise, ~280g)",280,620,24,30,45,2,1100,3,medium
+Poached eggs on toast,Australian breakfast & brunch,succeeded,,2 eggs on 2 slices of toast (~220g),220,400,20,36,19,3.5,620,3.5,high
+Scrambled eggs on toast,Australian breakfast & brunch,succeeded,,2 eggs on 2 slices toast (~220g),220,420,20.5,32,23.5,2.5,620,3.5,medium
+French toast,Australian breakfast & brunch,succeeded,,2 slices (~150g) with butter and syrup,150,380,10.5,48,16,1.8,420,22,medium
+Pancakes with maple syrup,Australian breakfast & brunch,succeeded,,3 pancakes with syrup (~220g),220,520,9.5,84,16,2,620,40,medium
+Bircher muesli,Australian breakfast & brunch,succeeded,,1 serve (~300g),300,380,10.5,52,13.5,6.5,90,28,medium
+Muesli with yoghurt,Australian breakfast & brunch,succeeded,,1 bowl (~60g muesli + 150g yoghurt),210,320,11.5,42,10.5,4.5,90,20,medium
+Porridge with honey,Australian breakfast & brunch,succeeded,,1 bowl (~350g),350,260,7.5,47,4.5,3,150,18,medium
+Granola with yoghurt,Australian breakfast & brunch,succeeded,,1 serve (~220g),220,350,12.5,42,14.5,4.5,90,22,medium
+Banana bread,Australian breakfast & brunch,succeeded,,1 slice (~80g),80,260,4,38,10.5,1.5,220,22,medium
+Banana bread with butter,Australian breakfast & brunch,succeeded,,1 slice with butter (~90g),90,300,4.5,40,14,1.5,250,24,medium
+Eggs on toast,Australian breakfast & brunch,succeeded,,2 eggs on 2 slices of toast (~180g),180,400,19,32,22,3,620,3.5,medium
+Baked beans on toast,Australian breakfast & brunch,succeeded,,"1 serve (2 slices toast + 1 cup beans, ~350g)",350,420,16.5,62,10.5,9.5,1150,15,high
+Toast with vegemite,Australian breakfast & brunch,succeeded,,2 slices toast with Vegemite (~70g),70,200,7.5,30,6,2.5,780,3,high
+Vegemite on toast,Australian breakfast & brunch,succeeded,,2 slices toast with Vegemite (~70g),70,200,7,28,6.5,2.5,780,2.5,high
+Crumpets with butter,Australian breakfast & brunch,succeeded,,2 crumpets with butter (~110g),110,290,6.5,44,9.5,2,480,3,medium
+English muffin with jam,Australian breakfast & brunch,succeeded,,1 muffin with jam (~85g),85,220,5.5,43,2.5,2,380,14,medium
+Weet-Bix with milk,Australian breakfast & brunch,succeeded,,2 biscuits with 125ml milk (~170g),170,190,8.9,26.5,4.5,3.8,130,9.5,high
+Cornflakes with milk,Australian breakfast & brunch,succeeded,,1 bowl (~40g cornflakes + 150ml milk),190,220,8.5,38,4.5,1.2,330,12,high
+Bacon and egg roll,Australian breakfast & brunch,succeeded,,1 roll (~180g),180,480,22,38,27,2,950,5,medium
+Breakfast burrito,Australian breakfast & brunch,succeeded,,1 burrito (~280g),280,570,24,45,32,3.5,980,3,medium
+Smoothie bowl,Australian breakfast & brunch,succeeded,LOW_CONFIDENCE,1 bowl (~450g),450,420,9.5,75,11,9,60,48,low
+Acai bowl,Australian breakfast & brunch,succeeded,LOW_CONFIDENCE,1 bowl (~450g),450,480,8,78,16,9,60,45,low
+Chia pudding,Australian breakfast & brunch,succeeded,,1 serve (~250g),250,260,8,22,16,12,60,15,medium
+Yoghurt with berries,Australian breakfast & brunch,succeeded,,1 serve (~200g),200,170,8.5,20,5.5,2.5,75,17,medium
+Fruit salad,Australian breakfast & brunch,succeeded,,1 serve (~200g),200,90,1.2,20,0.3,2.8,5,18,medium
+Hash browns,Australian breakfast & brunch,succeeded,,2 pieces (~120g),120,280,3,28,18,2.5,400,0.8,medium
+Corn fritters,Australian breakfast & brunch,succeeded,,3 fritters (~210g),210,420,12.5,38,24,3.5,620,6,medium
+Shakshuka,Australian breakfast & brunch,succeeded,,1 serve (~350g),350,320,15,18,21,5,780,10,medium
+Omelette,Australian breakfast & brunch,succeeded,,"1 serve, 3-egg omelette (~150g)",150,260,18.5,1.5,20.5,0.1,380,1,medium
+Cheese omelette,Australian breakfast & brunch,succeeded,,"1 serve (2-3 eggs, ~150g)",150,310,21.5,1.5,24.5,0,480,1,medium
+Ham and cheese omelette,Australian breakfast & brunch,succeeded,,"1 serve (~220g, 3 eggs)",220,420,29,2.5,32,0.1,880,1,medium
+Bacon and egg muffin,Australian breakfast & brunch,succeeded,,1 muffin (~150g),150,380,19,28,21,1.5,820,4,medium
+Sausage and egg muffin,Australian breakfast & brunch,succeeded,,1 muffin (~140g),140,400,17,30,24,1.5,830,4,high
+Breakfast wrap,Australian breakfast & brunch,succeeded,,1 wrap (~250g),250,520,22,40,30,3,900,4,medium
+Egg and bacon sandwich,Australian breakfast & brunch,succeeded,,1 sandwich (~180g),180,460,22,34,26,2,890,5,medium
+Toasted banana bread,Australian breakfast & brunch,succeeded,,"1 slice, toasted with butter (~90g)",90,280,4.5,40,12,1.8,260,22,medium
+Croissant with jam,Australian breakfast & brunch,succeeded,,1 croissant with jam (~70g croissant + 20g jam),90,320,6,38,16,1.5,340,15,medium
+Pain au chocolat,Australian breakfast & brunch,succeeded,,1 pastry (~70g),70,290,5.5,28,17.5,1.5,220,9.5,high
+Danish pastry,Australian breakfast & brunch,succeeded,,1 pastry (~85g),85,340,5.5,38,18.5,1.2,280,15,medium
+Raisin toast,Australian breakfast & brunch,succeeded,,2 slices (~80g bread + butter),90,260,6,40,9,2.5,300,14,medium
+Fruit toast,Australian breakfast & brunch,succeeded,,2 slices (~80g),80,210,5.5,38,3,3.2,220,15,medium
+Breakfast bruschetta,Australian breakfast & brunch,succeeded,,"1 serve (2 slices, ~300g)",300,420,14,42,22,4.5,620,6,medium
+Poached eggs with spinach,Australian breakfast & brunch,succeeded,,"1 serve (2 eggs with spinach, ~220g)",220,220,16.5,4,15,2.5,380,1,medium
+Eggs florentine,Australian breakfast & brunch,succeeded,,"1 serve (2 poached eggs, English muffin, spinach, hollandaise, ~350g)",350,520,20.5,30,35,3.5,780,4,medium
+Waffle with syrup,Australian breakfast & brunch,succeeded,,"1 serve (2 waffles with syrup, ~150g)",150,420,7.5,62,15,1.5,480,32,medium
+Belgian waffle,Australian breakfast & brunch,succeeded,,1 waffle with toppings (~150g),150,420,7.5,55,19,1.5,480,25,medium
+Breakfast quesadilla,Australian breakfast & brunch,succeeded,,1 quesadilla (~220g),220,520,24,38,30,2.5,950,3,medium
+Overnight oats,Australian breakfast & brunch,succeeded,,1 jar (~300g),300,350,12.5,45,13,7,100,15,medium
+Protein pancakes,Australian breakfast & brunch,succeeded,,"1 serve (3 pancakes, ~150g)",150,310,25,28,10,3,420,8,medium
+Smashed avo with feta,Australian breakfast & brunch,succeeded,,"1 serve (2 slices toast with avo & feta, ~300g)",300,480,15,42,29,8,780,4,medium
+Egg white omelette,Australian breakfast & brunch,succeeded,,"1 serve (~3 egg whites, ~150g)",150,110,18,2,3,0,380,1,medium
+Breakfast skillet,Australian breakfast & brunch,succeeded,LOW_CONFIDENCE,1 serve (~450g),450,620,27,42,38,5,1050,5,low
+Sourdough toast with butter,Australian breakfast & brunch,succeeded,,2 slices (~80g bread + butter),90,280,8,40,10,2.5,480,2,medium
+Toasted muesli bar,Australian breakfast & brunch,succeeded,,1 bar (~35g),35,160,3,21,6.5,1.8,60,10.5,high
+Yoghurt parfait,Australian breakfast & brunch,succeeded,,1 serve (~250g),250,320,9.5,42,12.5,2.5,90,32,medium
+Continental breakfast plate,Australian breakfast & brunch,succeeded,LOW_CONFIDENCE,"1 plate (~200g, incl. pastry, ham, cheese, fruit)",200,480,15,50,24,3,700,18,low
+Ham and cheese sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (2 slices bread),150,350,18.5,33,15.5,2.5,980,5,high
+Ham and salad sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (2 slices bread, ~200g)",200,340,17,38,12,4,900,6,medium
+Chicken sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~220g),220,430,27,38,18,3,780,5,medium
+Egg and lettuce sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich, 2 slices bread (~150g)",150,340,13.5,33,17.5,3,560,4.5,medium
+BLT,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~220g),220,520,19,40,32,3.5,980,6,medium
+Club sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 serve (~350g, triple-decker with fries garnish)",350,620,32,48,33,3.5,1350,6,medium
+Tuna sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (2 slices bread, ~180g)",180,380,22,34,17,3,680,5,medium
+Cheese and tomato sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich, 2 slices bread (~150g)",150,340,15,34,16,2.5,620,5,medium
+Salad sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (2 slices bread, ~180g)",180,340,12,38,15,4.5,620,6.5,medium
+Chicken schnitzel roll,"Sandwiches, wraps, rolls, burgers",succeeded,,1 roll (~350g),350,780,35,70,40,4,1300,10,medium
+Chicken schnitzel burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~350g),350,750,38,65,37,4,1250,12,medium
+Chicken caesar wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~280g),280,560,30,45,28,3,980,4,medium
+Chicken avocado wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~300g),300,520,30,42,25,5,850,4,medium
+Falafel wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~350g),350,620,19,68,30,9,980,7,medium
+Beef burrito wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~300g),300,620,30,60,28,5,1100,5,medium
+Turkish bread sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,LOW_CONFIDENCE,1 sandwich (~300g),300,620,28,65,27,4.5,1150,7,low
+Toasted cheese sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (2 slices bread, ~110g)",110,340,15.5,30,18.5,2,650,3.5,high
+Ham and cheese toastie,"Sandwiches, wraps, rolls, burgers",succeeded,,1 toastie (2 slices bread),150,400,20,35,20,2,950,4,high
+Toasted ham and cheese,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (2 slices bread, ~150g)",150,400,20,35,20,2.5,950,5,medium
+Grilled cheese sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~150g),150,420,17,34,25,2,780,4,high
+Reuben sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~350g),350,830,40,46,54,4,2200,8,medium
+Philly cheesesteak,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~280g),280,720,38,55,38,3,1350,6,medium
+Meatball sub,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sub (~280g),280,720,35,68,34,4.5,1450,10,medium
+Chicken parma roll,"Sandwiches, wraps, rolls, burgers",succeeded,,1 roll (~450g),450,980,45,85,50,4.5,1750,10,medium
+Vietnamese pork roll,"Sandwiches, wraps, rolls, burgers",succeeded,,1 roll (~250g),250,550,22,60,25,3.5,1100,8,medium
+Banh mi,"Sandwiches, wraps, rolls, burgers",succeeded,,1 roll (~250g),250,550,24,62,22,3.5,1150,9,medium
+Steak sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~350g),350,750,40,60,38,3.5,1300,10,medium
+Hamburger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~220g),220,550,27,42,30,2.5,900,8,medium
+Cheeseburger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~200g),200,540,27,40,29,2,980,8,high
+Bacon cheeseburger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~280g),280,720,38,40,44,2.5,1300,8,medium
+Double cheeseburger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~280g),280,720,40,42,42,2.5,1200,9,medium
+Veggie burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~250g),250,480,16,55,21,7,850,8,medium
+Chicken burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~250g),250,550,28,45,28,3,900,8,medium
+Fish burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~220g),220,480,20,44,25,2.5,780,7,medium
+Lamb burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~300g),300,650,33,45,36,3,950,8,medium
+Beef burger with the lot,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~350g),350,780,40,60,42,4,1350,14,medium
+Aussie burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~380g),380,780,35,62,44,4,1350,15,medium
+Big Mac style burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~215g),215,550,25,45,30,3,970,9,high
+Pulled pork burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~320g),320,720,34,62,36,3,1150,20,medium
+Portobello mushroom burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~280g),280,480,15,48,25,5.5,780,8,medium
+Falafel burger,"Sandwiches, wraps, rolls, burgers",succeeded,,1 burger (~350g),350,620,20,68,30,9,900,8,medium
+Hot dog,"Sandwiches, wraps, rolls, burgers",succeeded,,1 hot dog (~150g),150,300,12,26,17,1.5,780,5,medium
+Chilli dog,"Sandwiches, wraps, rolls, burgers",succeeded,,1 hot dog (~180g),180,450,17,33,27,2.5,1100,6,medium
+Corn dog,"Sandwiches, wraps, rolls, burgers",succeeded,,1 corn dog (~100g),100,280,8.5,28,16,1.5,620,6,medium
+Wrap with hummus,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~220g),220,420,12.5,48,19,6.5,680,4.5,medium
+Greek wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~350g),350,650,32,55,33,4.5,1150,6,medium
+Chicken caesar sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~250g),250,520,30,42,26,3,980,5,medium
+Egg mayo sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (2 slices bread, ~150g)",150,360,13,33,20,2.5,620,4,medium
+Prawn sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (2 slices bread, ~180g)",180,380,16,38,19,2.5,720,5,medium
+Smoked salmon bagel,"Sandwiches, wraps, rolls, burgers",succeeded,,1 bagel with cream cheese and salmon (~180g),180,400,22,47,14,2.5,950,6,medium
+Bagel with cream cheese,"Sandwiches, wraps, rolls, burgers",succeeded,,1 bagel with 2 tbsp cream cheese (~130g),130,350,12,48,12,2,560,6,medium
+Toasted turkish wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~280g),280,620,28,62,29,4.5,1150,6,medium
+Chicken tikka wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~280g),280,520,32,50,21,4,950,6,medium
+Halloumi wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~300g),300,620,24,55,34,5,1200,7,medium
+Roast beef sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~220g),220,430,27,42,16,3,950,6,medium
+Ham croissant,"Sandwiches, wraps, rolls, burgers",succeeded,,1 croissant (~130g),130,380,15,32,22,1.5,780,5,medium
+Turkey club sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (triple-decker, ~300g)",300,560,32,45,28,3.5,1350,6,medium
+Meatball sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~280g),280,680,32,62,33,4,1350,10,medium
+Chicken pesto sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~250g),250,520,32,42,25,3,850,4,medium
+Salami sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (2 slices bread),150,380,16,35,19,2.5,950,5,medium
+Pastrami sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~280g),280,620,34,55,28,3.5,1850,7,medium
+Vegemite and cheese sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (2 slices bread),100,280,12.5,33,10.5,2.8,950,4,medium
+Peanut butter sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (2 slices bread),90,320,11.5,35,16.5,3,420,6.5,medium
+Jam sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (2 slices bread),80,230,5.5,41,4.5,1.8,320,15,high
+Nutella sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (2 slices bread + Nutella),90,300,6.5,42,12.5,2,320,20,medium
+Schnitzel sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~320g),320,720,32,62,37,4,1150,9,medium
+Pork roll,"Sandwiches, wraps, rolls, burgers",succeeded,,1 roll (~250g),250,550,24,58,25,3.5,1150,8,medium
+Chicken salad sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,"1 sandwich (2 slices bread, ~200g)",200,420,24,38,19,3,720,5,medium
+BBQ chicken wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~280g),280,520,28,52,21,3.5,980,8,medium
+Buffalo chicken wrap,"Sandwiches, wraps, rolls, burgers",succeeded,,1 wrap (~300g),300,650,33,52,33,3,1450,4,medium
+Caprese sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,,1 sandwich (~280g),280,620,26,55,34,4,980,6,medium
+Focaccia sandwich,"Sandwiches, wraps, rolls, burgers",succeeded,LOW_CONFIDENCE,1 sandwich (~300g),300,650,28,55,35,3.5,1150,5,low
+Meat pie,Australian bakery & takeaway classics,succeeded,,1 pie (~175g),175,460,15,38,27,2.5,780,4,high
+Chicken pie,Australian bakery & takeaway classics,succeeded,,1 individual pie (~200g),200,520,18,40,32,2.5,780,3,medium
+Steak pie,Australian bakery & takeaway classics,succeeded,,1 individual pie (~200g),200,550,20,40,35,2.5,750,3,medium
+Party pie,Australian bakery & takeaway classics,succeeded,,1 mini pie (~40g),40,110,3.5,10,6.5,0.7,220,1,high
+Sausage roll,Australian bakery & takeaway classics,succeeded,,1 roll (~130g),130,380,9.5,28,26,1.5,620,3.5,high
+Cheese and bacon roll,Australian bakery & takeaway classics,succeeded,,1 roll (~120g),120,380,15.5,38,19,2,720,4.5,medium
+Vegemite scroll,Australian bakery & takeaway classics,succeeded,,1 scroll (~110g),110,330,9.5,42,13.5,2,680,5,medium
+Cheese and vegemite scroll,Australian bakery & takeaway classics,succeeded,,1 scroll (~120g),120,340,12.5,40,14,2,620,4,medium
+Chicken parma,Australian bakery & takeaway classics,succeeded,,"1 serve (~500g, with chips)",500,1150,55,90,62,7,1600,12,medium
+Chicken parmigiana,Australian bakery & takeaway classics,succeeded,,"1 serve (~450g, with chips)",450,980,52,68,54,5,1450,8,medium
+Chicken schnitzel,Australian bakery & takeaway classics,succeeded,,"1 serve (~250g, plain, no sides)",250,550,40,30,29,2,650,2,medium
+Dim sim,Australian bakery & takeaway classics,succeeded,,1 large dim sim (~120g),120,220,8,22,11,1.5,480,2,medium
+Potato scallop,Australian bakery & takeaway classics,succeeded,,1 scallop (~80g),80,180,2.8,20,10,1.6,190,0.8,medium
+Potato cake,Australian bakery & takeaway classics,succeeded,,1 potato cake (~120g),120,280,4.5,28,17,2.5,380,1.5,medium
+Spring roll,Australian bakery & takeaway classics,succeeded,,1 spring roll (~65g),65,160,4,15,9.5,1.5,280,1.5,medium
+Curry puff,Australian bakery & takeaway classics,succeeded,,1 puff (~80g),80,220,4.5,20,13.5,1.5,300,1.5,medium
+Pastie,Australian bakery & takeaway classics,succeeded,,1 pastie (~180g),180,480,15,40,29,3,680,4,medium
+Cornish pastie,Australian bakery & takeaway classics,succeeded,,1 pastie (~150g),150,390,12,33,23,2.5,620,3,medium
+Chiko roll,Australian bakery & takeaway classics,succeeded,,1 roll (~170g),170,440,10,40,26,3,700,3,high
+Pluto pup,Australian bakery & takeaway classics,succeeded,,1 stick (~120g),120,320,9,28,19,1.5,650,4,medium
+Battered sav,Australian bakery & takeaway classics,succeeded,,1 battered sav (~120g),120,320,10,20,22,1,780,2,medium
+Donut,Australian bakery & takeaway classics,succeeded,,1 glazed donut (~60g),60,240,3.5,28,13,0.8,210,14,medium
+Jam donut,Australian bakery & takeaway classics,succeeded,,1 donut (~80g),80,290,4.5,40,13,1.2,220,18,medium
+Custard tart,Australian bakery & takeaway classics,succeeded,,1 individual tart (~100g),100,280,5.5,30,15,0.8,150,15,medium
+Vanilla slice,Australian bakery & takeaway classics,succeeded,,1 piece (~120g),120,350,5,42,18,0.5,190,28,medium
+Lamington,Australian bakery & takeaway classics,succeeded,,1 piece (~70g),70,260,3,40,10,1.5,140,28,high
+Apple turnover,Australian bakery & takeaway classics,succeeded,,1 turnover (~110g),110,300,3.8,37,16,1.8,200,15,medium
+Finger bun,Australian bakery & takeaway classics,succeeded,,1 bun (~80g),80,260,6,48,4.5,1.6,220,18,medium
+Iced bun,Australian bakery & takeaway classics,succeeded,,1 bun (~90g),90,290,6.5,52,6.5,1.8,220,22,medium
+Cream bun,Australian bakery & takeaway classics,succeeded,,1 bun (~80g),80,280,5.5,34,14,1,220,14,medium
+Hot cross bun,Australian bakery & takeaway classics,succeeded,,1 bun (~80g),80,260,6.5,47,5.5,2.5,240,17,high
+Scone with jam and cream,Australian bakery & takeaway classics,succeeded,,1 scone with jam and cream (~120g),120,380,5.5,48,18,1.3,400,22,medium
+Pumpkin scone,Australian bakery & takeaway classics,succeeded,,1 scone (~70g),70,210,4.2,33,6.8,1.5,300,7.5,medium
+Cheese scone,Australian bakery & takeaway classics,succeeded,,1 scone (~80g),80,280,8,30,14,1.2,480,2,medium
+Neenish tart,Australian bakery & takeaway classics,succeeded,,1 tart (~55g),55,210,2.2,30,9.5,0.6,90,21,medium
+Butterfly cake,Australian bakery & takeaway classics,succeeded,,1 cake (~60g),60,210,3,28,10,0.5,150,18,medium
+Vovo,Australian bakery & takeaway classics,succeeded,LOW_CONFIDENCE,1 piece (~15g),15,60,0.4,10.5,2.2,0.2,15,9.5,low
+Rock cake,Australian bakery & takeaway classics,succeeded,,1 cake (~80g),80,290,5,42,11,1.5,210,20,medium
+Pikelet,Australian bakery & takeaway classics,succeeded,,3 pikelets (~90g),90,220,5.5,36,5.5,1.2,280,10,medium
+Anzac biscuit,Australian bakery & takeaway classics,succeeded,,1 biscuit (~35g),35,160,1.8,20,8,1.2,70,11,high
+Ginger nut biscuit,Australian bakery & takeaway classics,succeeded,,2 biscuits (~20g),20,88,1.1,14.5,3,0.4,60,6,high
+Chocolate eclair,Australian bakery & takeaway classics,succeeded,,1 eclair (~80g),80,260,4.5,24,17,0.8,150,15,medium
+Cream puff,Australian bakery & takeaway classics,succeeded,,1 puff (~70g),70,220,4,18,15,0.5,110,9,medium
+Donut with sprinkles,Australian bakery & takeaway classics,succeeded,,1 donut (~60g),60,240,3.5,30,12,1,210,15,medium
+Cinnamon donut,Australian bakery & takeaway classics,succeeded,,1 donut (~55g),55,220,3.2,28,11,1,190,12,medium
+Bacon and egg pie,Australian bakery & takeaway classics,succeeded,,1 slice (~150g),150,390,15,22,26,1.2,620,1.5,medium
+Meat and vegetable pie,Australian bakery & takeaway classics,succeeded,,1 pie (~175g),175,460,15,40,26,3,720,5,medium
+Cottage pie roll,Australian bakery & takeaway classics,succeeded,,1 roll (~150g),150,380,12,32,22,2.5,520,4,medium
+Chicken and mushroom pie,Australian bakery & takeaway classics,succeeded,,1 pie (~200g),200,520,18,38,33,2.5,780,3,medium
+Beef pie,Australian bakery & takeaway classics,succeeded,,1 pie (~200g),200,520,18,40,32,2.5,780,4,high
+Gravy roll,Australian bakery & takeaway classics,succeeded,,1 roll (~180g),180,420,12,45,21,2,780,5,medium
+Sausage roll with sauce,Australian bakery & takeaway classics,succeeded,,1 sausage roll with tomato sauce (~150g),150,400,10.5,32,26,1.8,680,8.5,medium
+Pie with mash and gravy,Australian bakery & takeaway classics,succeeded,,1 serve (~450g),450,750,25,55,45,4,1400,6,medium
+Sweet potato scallop,Australian bakery & takeaway classics,succeeded,,1 piece (~60g),60,130,1.5,15,7,1.2,90,3,medium
+Fish cake,Australian bakery & takeaway classics,succeeded,,4 slices (~100g),100,220,10,15,13,0.5,480,3,medium
+Crab stick roll,Australian bakery & takeaway classics,succeeded,,"1 roll (~6 pieces, ~150g)",150,230,6.5,42,3.5,1.5,480,6,medium
+Prawn twister,Australian bakery & takeaway classics,succeeded,,"1 serve (~6 pieces, 200g)",200,480,16,40,28,1.5,620,3,medium
+Money bag,Australian bakery & takeaway classics,succeeded,,"1 serve (6 pieces, ~180g)",180,420,14,30,26,1.5,620,4,medium
+Spring roll platter,Australian bakery & takeaway classics,succeeded,,"1 serve (6 spring rolls, ~300g)",300,660,15,60,40,5,900,5,medium
+Yum cha dumpling,Australian bakery & takeaway classics,succeeded,,"1 serve (4 dumplings, ~150g)",150,220,9.5,20,11,1.2,480,1.5,medium
+Custard donut,Australian bakery & takeaway classics,succeeded,,1 donut (~90g),90,320,5.5,38,16.5,1.2,220,18,medium
+Jam tart,Australian bakery & takeaway classics,succeeded,,1 slice (~60g),60,220,2.5,33,9,0.8,110,17,medium
+Fish and chips,Fish & chips / seafood takeaway,succeeded,,"1 serve (~450g, 1 piece battered fish + chips)",450,1100,38,95,65,7,1100,2,medium
+Grilled fish and chips,Fish & chips / seafood takeaway,succeeded,,1 serve (~400g),400,650,38,55,30,5,620,2.5,medium
+Battered fish,Fish & chips / seafood takeaway,succeeded,,1 piece (~180g),180,430,24,28,25,1.5,480,1,medium
+Crumbed fish,Fish & chips / seafood takeaway,succeeded,,"1 serve (~200g, 2 fillets)",200,460,26,30,26,1.5,620,1.5,medium
+Calamari rings,Fish & chips / seafood takeaway,succeeded,,1 serve (~250g),250,620,28,45,36,2,780,1.5,medium
+Salt and pepper squid,Fish & chips / seafood takeaway,succeeded,,1 serve (~300g),300,620,28,42,36,3,950,2,medium
+Prawn cutlets,Fish & chips / seafood takeaway,succeeded,,"1 serve (8 cutlets, ~200g)",200,460,22,38,24,1.5,620,2,medium
+Scallops,Fish & chips / seafood takeaway,succeeded,LOW_CONFIDENCE,"1 serve (~6 scallops, ~150g)",150,210,21,6,11,0.3,480,0.5,low
+Seafood basket,Fish & chips / seafood takeaway,succeeded,LOW_CONFIDENCE,1 serve (~350g),350,780,32,60,46,3,1100,4,low
+Fish cocktail,Fish & chips / seafood takeaway,succeeded,LOW_CONFIDENCE,1 serve (~200g),200,220,16,10,12,1,480,6,low
+Battered prawns,Fish & chips / seafood takeaway,succeeded,,"1 serve (~250g, approx 8-10 prawns)",250,620,26,45,36,2,780,2,medium
+Fish taco,Fish & chips / seafood takeaway,succeeded,,2 tacos (~300g),300,520,24,48,26,4,780,5,medium
+Grilled prawns,Fish & chips / seafood takeaway,succeeded,,1 serve (~200g prawns),200,260,38,2,11,0.2,620,0.5,medium
+Oysters natural,Fish & chips / seafood takeaway,succeeded,,"1 serve, 6 oysters (~150g)",150,90,10.5,4.5,2.5,0,300,0,medium
+Oysters kilpatrick,Fish & chips / seafood takeaway,succeeded,,"1 serve (6 oysters, ~150g)",150,220,12,6,15,0.2,780,3,medium
+Fish and salad,Fish & chips / seafood takeaway,succeeded,LOW_CONFIDENCE,1 serve (~350g),350,420,32,12,26,4,480,6,low
+Crumbed prawns,Fish & chips / seafood takeaway,succeeded,,"1 serve (~8 prawns, 250g)",250,550,24,42,32,2.5,620,2,medium
+Squid rings,Fish & chips / seafood takeaway,succeeded,,1 serve (~250g),250,620,28,45,36,2,780,1.5,medium
+Whiting fillets,Fish & chips / seafood takeaway,succeeded,,"1 serve (~2 fillets, ~200g)",200,220,38,1,7,0,320,0,medium
+Flake and chips,Fish & chips / seafood takeaway,succeeded,,1 serve (~400g),400,950,32,80,58,5,780,1.5,medium
+Seafood platter,Fish & chips / seafood takeaway,succeeded,LOW_CONFIDENCE,1 serve (~500g),500,1100,55,85,60,4,1600,8,low
+Chips with gravy,Fish & chips / seafood takeaway,succeeded,,1 serve (~350g),350,620,8.5,68,34,5.5,980,3,medium
+Chips with chicken salt,Fish & chips / seafood takeaway,succeeded,,1 serve (~300g),300,650,8,78,34,6,950,1,medium
+Margherita pizza,Pizza & Italian mains,succeeded,,1 whole personal pizza (~250g),250,620,25,78,23,4,1250,6,medium
+Hawaiian pizza,Pizza & Italian mains,succeeded,,"2 slices (1/4 of 12-inch pizza, ~200g)",200,480,22,54,19,3,980,8,medium
+Pepperoni pizza,Pizza & Italian mains,succeeded,,"2 slices (1/4 of 30cm pizza, ~180g)",180,470,20,47,22,3,980,5,medium
+Meat lovers pizza,Pizza & Italian mains,succeeded,,2 slices from a large pizza (~1/4 pizza),220,580,27,55,28,3,1250,6,medium
+Supreme pizza,Pizza & Italian mains,succeeded,,2 slices from a large pizza (~230g),230,560,25,58,26,4,1250,7,medium
+BBQ chicken pizza,Pizza & Italian mains,succeeded,,2 slices from a large pizza (~230g),230,570,30,62,22,3.5,1150,14,medium
+Vegetarian pizza,Pizza & Italian mains,succeeded,,"2 slices (from a 30cm pizza, ~200g)",200,460,18,55,18,4.5,850,7,medium
+Capricciosa pizza,Pizza & Italian mains,succeeded,,1 whole pizza (~330g),330,820,36,90,34,5,1850,8,medium
+Marinara pizza,Pizza & Italian mains,succeeded,,1 whole pizza (~300g),300,720,28,96,24,6,1450,8,medium
+Prosciutto pizza,Pizza & Italian mains,succeeded,,"3 slices (~1/3 of a 12-inch pizza, ~250g)",250,620,27,65,28,3.5,1450,5.5,medium
+Four cheese pizza,Pizza & Italian mains,succeeded,,"2 slices (1/4 of a 12-inch pizza, ~200g)",200,520,24,52,24,3,1050,5,medium
+Garlic pizza,Pizza & Italian mains,succeeded,,1 individual pizza (~200g),200,560,18,66,24,3,980,4,medium
+Vegan pizza,Pizza & Italian mains,succeeded,LOW_CONFIDENCE,"2 slices (from a 12-inch pizza, ~200g)",200,440,14,58,17,5.5,780,6.5,low
+Spaghetti bolognese,Pizza & Italian mains,succeeded,,1 serve (~400g),400,560,27,65,20,5,850,10,medium
+Spaghetti carbonara,Pizza & Italian mains,succeeded,,1 serve (~400g),400,620,24,65,29,3,780,4,medium
+Spaghetti marinara,Pizza & Italian mains,succeeded,,1 serve (~400g),400,540,28,68,14,4,780,7,medium
+Spaghetti napolitana,Pizza & Italian mains,succeeded,,1 serve (~400g),400,480,15,75,12,6,780,12,medium
+Fettuccine carbonara,Pizza & Italian mains,succeeded,,1 serve (~400g),400,720,28,68,38,3,850,4,medium
+Fettuccine alfredo,Pizza & Italian mains,succeeded,,1 serve (~400g),400,680,20,65,38,3,780,4,medium
+Penne arrabbiata,Pizza & Italian mains,succeeded,,1 serve (~400g),400,480,14,78,13,6,620,9,medium
+Penne boscaiola,Pizza & Italian mains,succeeded,,1 serve (~450g),450,780,28,75,40,5,950,8,medium
+Lasagne,Pizza & Italian mains,succeeded,,1 serve (~350g),350,550,28,42,29,3.5,850,9,medium
+Vegetable lasagne,Pizza & Italian mains,succeeded,,1 serve (~350g),350,430,16.5,42,21,5.5,620,9,medium
+Cannelloni,Pizza & Italian mains,succeeded,,"1 serve (~350g, 4 tubes with sauce)",350,480,26,38,24,4,820,9,medium
+Ravioli,Pizza & Italian mains,succeeded,,1 serve (~400g),400,560,22,68,21,5,980,9,medium
+Gnocchi,Pizza & Italian mains,succeeded,,1 serve (~350g),350,480,12,68,17,5,780,8,medium
+Risotto,Pizza & Italian mains,succeeded,,1 serve (~350g),350,480,13,58,20,3,780,3.5,medium
+Mushroom risotto,Pizza & Italian mains,succeeded,,1 serve (~350g),350,480,12,62,18,4,780,3.5,medium
+Seafood risotto,Pizza & Italian mains,succeeded,,1 serve (~400g),400,560,28,62,20,3,980,3.5,medium
+Chicken parmigiana with pasta,Pizza & Italian mains,succeeded,,1 serve (~500g),500,950,52,78,46,5,1400,10,medium
+Chicken cacciatore,Pizza & Italian mains,succeeded,,1 serve (~400g),400,420,34,15,23,3.5,780,8,medium
+Osso buco,Pizza & Italian mains,succeeded,,"1 serve (~1 shank with sauce, ~400g)",400,520,42,12,32,2.5,780,5,medium
+Veal marsala,Pizza & Italian mains,succeeded,,"1 serve (~350g, 2-3 cutlets with sauce)",350,480,34,12,30,1,620,4,medium
+Eggplant parmigiana,Pizza & Italian mains,succeeded,,1 serve (~400g),400,520,22,30,34,7,900,10,medium
+Caprese salad,Pizza & Italian mains,succeeded,,1 serve (~200g),200,330,15.5,6.5,27,1.8,480,4.5,medium
+Bruschetta,Pizza & Italian mains,succeeded,,"1 serve (3-4 pieces, ~150g)",150,280,7,32,14,2.5,480,3.5,medium
+Garlic bread,Pizza & Italian mains,succeeded,,4 slices (~120g),120,400,8.5,42,22,2.5,620,3,medium
+Cheesy garlic bread,Pizza & Italian mains,succeeded,,4 slices (~150g),150,470,13,42,28,2.5,780,3,medium
+Minestrone soup,Pizza & Italian mains,succeeded,,1 bowl (~350g),350,150,6,20,5,4.5,780,6,medium
+Arancini,Pizza & Italian mains,succeeded,,4 pieces (~180g),180,400,12,42,20,2.5,620,3,medium
+Tiramisu,Pizza & Italian mains,succeeded,,1 slice (~120g),120,340,5.5,30,22,0.5,90,22,medium
+Panna cotta,Pizza & Italian mains,succeeded,,1 serve (~120g),120,280,4.2,20.5,20.5,0,40,19.5,medium
+Gelato,Pizza & Italian mains,succeeded,,2 scoops (~120g),120,210,4,30,8.5,0.3,45,27,medium
+Calzone,Pizza & Italian mains,succeeded,,1 calzone (~350g),350,950,40,100,45,5,1700,8,medium
+Stromboli,Pizza & Italian mains,succeeded,,1 stromboli (~300g),300,780,34,78,38,4,1450,6,medium
+Baked ziti,Pizza & Italian mains,succeeded,,1 serve (~350g),350,480,24,46,22,3.5,850,8,medium
+Puttanesca,Pizza & Italian mains,succeeded,,1 serve (~400g),400,520,15,70,18,6,1300,8,medium
+Aglio e olio,Pizza & Italian mains,succeeded,,1 serve (~350g),350,520,13,68,21,4,480,3,medium
+Pesto pasta,Pizza & Italian mains,succeeded,,1 serve (~350g),350,560,16,62,28,4,620,4,medium
+Carbonara with bacon,Pizza & Italian mains,succeeded,,1 serve (~400g),400,680,28,65,34,3,950,4,medium
+Bolognese with parmesan,Pizza & Italian mains,succeeded,,1 serve (~450g),450,620,31,68,24,5.5,890,10,medium
+Chicken parmesan pasta bake,Pizza & Italian mains,succeeded,,1 serve (~450g),450,720,42,62,32,4.5,1050,9,medium
+Meatball pasta,Pizza & Italian mains,succeeded,,1 serve (~450g),450,620,30,65,25,5,950,10,medium
+Tortellini,Pizza & Italian mains,succeeded,,1 serve (~350g),350,480,20,55,20,4,850,6,medium
+Ricotta ravioli,Pizza & Italian mains,succeeded,,1 serve (~400g),400,620,24,68,28,4.5,980,8,medium
+Zucchini pasta,Pizza & Italian mains,succeeded,LOW_CONFIDENCE,1 serve (~350g),350,260,8.5,16,17,5,480,8,low
+Vongole,Pizza & Italian mains,succeeded,,1 serve (~400g),400,560,22,70,18,4,780,4,medium
+Seafood linguine,Pizza & Italian mains,succeeded,,1 serve (~450g),450,620,32,68,22,4,780,6,medium
+Pumpkin ravioli,Pizza & Italian mains,succeeded,,1 serve (~350g),350,620,17,62,33,5,780,6,medium
+Spinach and ricotta cannelloni,Pizza & Italian mains,succeeded,,"1 serve (4-5 tubes, ~400g)",400,560,24,52,28,5,890,9,medium
+Osso buco with risotto,Pizza & Italian mains,succeeded,,1 serve (~500g),500,720,42,55,34,3.5,980,5,medium
+Chicken saltimbocca,Pizza & Italian mains,succeeded,,1 serve (~300g),300,480,42,6,31,1,820,1.5,medium
+Veal parmigiana,Pizza & Italian mains,succeeded,,"1 serve (~450g, with chips and salad)",450,850,45,55,48,5,1300,9,medium
+Beef ragu pasta,Pizza & Italian mains,succeeded,,1 serve (~400g),400,580,32,62,21,5,780,9,medium
+Tagliatelle bolognese,Pizza & Italian mains,succeeded,,1 serve (~400g),400,620,30,65,25,5,780,8,medium
+Polenta with mushrooms,Pizza & Italian mains,succeeded,,1 serve (~350g),350,380,9.5,38,20,4.5,620,3.5,medium
+Caprese bruschetta,Pizza & Italian mains,succeeded,,"1 serve (3 pieces, ~150g)",150,320,11,28,19,2.5,480,3.5,medium
+Mozzarella sticks,Pizza & Italian mains,succeeded,,"1 serve (6 sticks, ~150g)",150,440,19,33,26,1.5,900,3,medium
+Antipasto platter,Pizza & Italian mains,succeeded,LOW_CONFIDENCE,1 serve (~250g),250,620,28,12,50,2.5,1600,5,low
+Focaccia bread,Pizza & Italian mains,succeeded,,1 slice/piece (~80g),80,230,6,32,8.5,1.8,420,1,medium
+Sweet and sour pork,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,720,28,70,36,3.5,900,32,medium
+Sweet and sour chicken,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (~400g, incl. sauce)",400,620,28,68,26,3,850,32,medium
+Mongolian beef,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,560,32,30,33,2.5,1350,18,medium
+Beef with black bean sauce,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,380,28,15,22,2.5,1150,6,medium
+Honey chicken,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,780,32,68,42,2.5,620,30,medium
+Lemon chicken,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,780,32,72,40,2.5,780,38,medium
+Salt and pepper chicken,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,780,34,45,50,3.5,1100,4,medium
+Kung pao chicken,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,480,30,24,29,2.5,950,9,medium
+Kung pao prawns,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,420,28,22,23,2.5,980,9,medium
+San choy bow,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve, 3-4 lettuce cups (~250g)",250,320,20.5,12,20.5,2.5,780,6.5,medium
+Dim sims,Chinese (Aus-Chinese + authentic),succeeded,,2 dim sims (~180g),180,370,13,30,22,1.8,780,2.5,medium
+Dumplings,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (~10 dumplings, 300g)",300,480,18,55,20,3,900,3,medium
+Steamed pork buns,Chinese (Aus-Chinese + authentic),succeeded,,3 buns (~240g),240,480,16,78,12,3,620,16,medium
+Char siu pork,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~200g),200,420,32,20,23,0.5,900,17,medium
+Char siu bao,Chinese (Aus-Chinese + authentic),succeeded,,2 buns (~160g),160,380,12,58,11,2,560,14,medium
+Wonton soup,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,210,13,20,8,1.5,1400,2.5,medium
+Hot and sour soup,Chinese (Aus-Chinese + authentic),succeeded,,1 bowl (~350g),350,160,8.5,15,7.5,1.5,980,3,medium
+Chow mein,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,520,22,62,20,4,1400,6,medium
+Beef chow mein,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~450g),450,620,32,68,22,5,1450,8,medium
+Chicken chow mein,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,520,28,60,18,4,1150,8,medium
+Singapore noodles,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,520,20,68,18,4.5,980,7,medium
+Hokkien noodles,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,520,22,62,20,5,1450,8,medium
+Egg fu yung,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (~300g, 2-3 patties with sauce)",300,420,22,18,28,2,980,6,medium
+Fried rice,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,550,15,75,19,3,950,4,medium
+Chicken fried rice,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,520,20.5,68,17.5,2.5,950,3.5,medium
+Special fried rice,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,620,20,82,22,3,1150,4,medium
+Yang chow fried rice,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,550,18,70,20,2.5,950,3.5,medium
+Mapo tofu,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,420,22,12,30,2,1400,3,medium
+Kung pao tofu,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,420,16,28,26,3.5,980,10,medium
+Braised eggplant,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~300g),300,260,4.5,18,19,5,780,9,medium
+Twice cooked pork,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,520,28,18,37,3,1150,8,medium
+Peking duck,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve, ~4-5 pancakes with duck, sauce & garnish (~300g)",300,620,28,48,34,2.5,950,9,medium
+Crispy skin chicken,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~300g),300,680,42,10,52,1,780,3,medium
+General tso's chicken,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (~350g, with sauce, no rice)",350,720,28,62,40,2,1200,30,medium
+Sesame chicken,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,720,32,68,35,2.5,980,30,medium
+Orange chicken,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,670,28,70,32,2,950,38,medium
+Beef and broccoli,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,420,28,20,24,3.5,980,8,medium
+Chicken and cashew nuts,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,520,34,22,32,3.5,980,8,medium
+Prawn crackers,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~30g),30,160,1,16,10,0.3,320,0.5,medium
+Spring rolls,Chinese (Aus-Chinese + authentic),succeeded,,4 pieces (~180g),180,380,8,38,22,3,620,3,medium
+Money bags,Chinese (Aus-Chinese + authentic),succeeded,LOW_CONFIDENCE,"1 serve (6 pieces, ~180g)",180,420,14,32,26,1.5,620,3,low
+Wontons fried,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (8 pieces, ~200g)",200,480,15,42,28,2,720,3,medium
+Steamed dumplings,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (6 dumplings, ~240g)",240,380,16,42,16,2.5,780,3,medium
+Pan-fried dumplings,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (6 dumplings, ~180g)",180,380,14,38,19,2,620,2.5,medium
+Xiao long bao,Chinese (Aus-Chinese + authentic),succeeded,,"1 basket (6 dumplings, ~180g)",180,330,14,30,17,1.5,620,2,medium
+Congee,Chinese (Aus-Chinese + authentic),succeeded,,1 bowl (~400g),400,220,6,40,3,1,480,0.5,medium
+Chicken congee,Chinese (Aus-Chinese + authentic),succeeded,,1 bowl (~450g),450,320,20,42,8,1,850,1,medium
+Century egg congee,Chinese (Aus-Chinese + authentic),succeeded,,1 bowl (~500g),500,320,14,48,8,1,980,1,medium
+Egg drop soup,Chinese (Aus-Chinese + authentic),succeeded,,1 bowl (~250g),250,95,4.8,9.5,4,0.5,780,2,medium
+Sizzling beef,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,520,34,22,31,3.5,1400,9,medium
+Black pepper beef,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,420,30,20,24,2.5,980,8,medium
+Claypot rice,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~450g),450,620,26,85,18,2.5,980,6,medium
+Char kway teow,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,620,22,68,28,3.5,1450,8,medium
+Beef chow fun,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~450g),450,620,32,62,27,3.5,1450,6.5,medium
+Roast duck,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (~200g, quarter duck with skin)",200,520,34,3,41,0,780,2,medium
+Salt and pepper tofu,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~300g),300,480,16,32,32,3,850,3,medium
+Cantonese chow mein,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~450g),450,620,28,60,28,4,1400,6,medium
+Yum cha assortment,Chinese (Aus-Chinese + authentic),succeeded,LOW_CONFIDENCE,"1 serve, assorted dim sum (~4-5 pieces, ~300g)",300,620,22,62,31,3,1250,6,low
+Prawn dumplings,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (4 pieces, ~140g)",140,180,9.5,22,5.5,1.2,480,1,medium
+BBQ pork buns,Chinese (Aus-Chinese + authentic),succeeded,,2 buns (~160g),160,400,12,60,12,2,480,14,medium
+Sesame prawn toast,Chinese (Aus-Chinese + authentic),succeeded,,4 pieces (~140g),140,390,13.5,26,26,1.8,480,2,medium
+Prawn toast,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (4 pieces, ~120g)",120,350,12,24,23,1.5,480,2,medium
+Lemon tofu,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,480,14,48,26,2.5,620,28,medium
+Chilli chicken,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,580,32,40,32,3,1150,14,medium
+Cumin lamb,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,520,32,15,37,3,980,4,medium
+Sichuan noodles,Chinese (Aus-Chinese + authentic),succeeded,LOW_CONFIDENCE,1 serve (~400g),400,560,18,68,24,4,1450,8,low
+Dan dan noodles,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,620,24,65,30,4,1450,6,medium
+Beef noodle soup,Chinese (Aus-Chinese + authentic),succeeded,,1 bowl (~550g),550,480,28,58,14,3.5,1600,5,medium
+Hand pulled noodles,Chinese (Aus-Chinese + authentic),succeeded,,1 bowl (~550g),550,620,28,85,17,4,1800,4,medium
+Scallion pancake,Chinese (Aus-Chinese + authentic),succeeded,,1 pancake (~120g),120,320,6,38,16,1.8,480,1,medium
+Chinese greens with oyster sauce,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~200g),200,110,4,8,6.5,3.5,620,3.5,medium
+Braised beef brisket noodle soup,Chinese (Aus-Chinese + authentic),succeeded,,1 bowl (~550g),550,520,32,65,14,4,1650,6,medium
+Ma po eggplant,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,320,8.5,20,23,5.5,950,7,medium
+Salt and pepper pork ribs,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,780,38,30,55,2,950,4,medium
+Crispy shredded beef,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,720,22,55,46,2.5,950,32,medium
+Honey soy chicken,Chinese (Aus-Chinese + authentic),succeeded,,"1 serve (~350g, with rice)",350,520,34,58,15,2,950,20,medium
+Mongolian lamb,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~400g),400,620,32,42,34,3,1400,22,medium
+Special fried noodles,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~450g),450,620,26,70,25,4,1450,6,medium
+Cantonese fried rice,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~350g),350,560,18,68,22,2.5,980,3.5,medium
+Sichuan hot pot,Chinese (Aus-Chinese + authentic),succeeded,LOW_CONFIDENCE,1 serve (~500g cooked ingredients + broth),500,650,35,25,45,4,1800,5,low
+Chinese BBQ pork,Chinese (Aus-Chinese + authentic),succeeded,,1 serve (~200g),200,420,32,22,22,0.5,980,18,medium
+Pad thai,Thai,succeeded,,1 serve (~400g),400,620,24,78,22,3.5,1350,16,medium
+Pad see ew,Thai,succeeded,,1 serve (~400g),400,620,28,68,25,4,1450,10,medium
+Pad kra pao,Thai,succeeded,,"1 serve (~450g, incl. rice and fried egg)",450,680,28,75,30,3,1350,6,medium
+Green curry,Thai,succeeded,,"1 serve (~400g, with rice)",400,560,24,55,28,3.5,950,8,medium
+Red curry,Thai,succeeded,,1 serve (~400g),400,480,24,18,35,3.5,980,8,medium
+Massaman curry,Thai,succeeded,,1 serve (~400g),400,560,28,26,38,4,950,10,medium
+Yellow curry,Thai,succeeded,,"1 serve (~400g, with rice)",400,520,24,45,28,3.5,850,8,medium
+Panang curry,Thai,succeeded,,1 serve (~350g),350,480,24,15,36,3,850,8,medium
+Tom yum soup,Thai,succeeded,,1 bowl (~350g),350,180,12,9,10,1.5,1450,4,medium
+Tom kha soup,Thai,succeeded,,1 serve (~350g),350,320,15,10,26,1.5,950,5,medium
+Larb,Thai,succeeded,,1 serve (~300g),300,340,28,14,19,3,950,4,medium
+Som tam,Thai,succeeded,,1 serve (~250g),250,160,4.5,24,6,3.5,1200,16,medium
+Thai basil chicken,Thai,succeeded,,1 serve with rice (~400g),400,620,32,68,24,3,1150,6,medium
+Thai fish cakes,Thai,succeeded,,"1 serve (4-5 pieces, ~150g)",150,280,16.5,15,17.5,1.5,620,6,medium
+Satay chicken,Thai,succeeded,,"1 serve (~400g, with rice)",400,620,38,55,28,3.5,780,12,medium
+Chicken satay skewers,Thai,succeeded,,4 skewers with sauce (~200g),200,380,30,12,24,2.5,620,7,medium
+Spring rolls Thai style,Thai,succeeded,,"1 serve (4-5 rolls, ~120g)",120,290,6.5,30,16,2.5,480,6,medium
+Thai fried rice,Thai,succeeded,,1 serve (~350g),350,550,18,75,19,3,950,6,medium
+Pineapple fried rice,Thai,succeeded,,1 serve (~400g),400,620,18,88,21,4,950,14,medium
+Pad woon sen,Thai,succeeded,,1 serve (~350g),350,420,22,48,15,3,980,7,medium
+Drunken noodles,Thai,succeeded,,1 serve (~400g),400,620,25,70,26,4,1450,8,medium
+Thai green papaya salad,Thai,succeeded,,1 serve (~250g),250,160,4.5,22,6.5,3.5,950,14,medium
+Thai beef salad,Thai,succeeded,,1 serve (~350g),350,320,28,16,16,4,950,9,medium
+Thai chicken curry,Thai,succeeded,,"1 serve (~400g, with rice)",400,620,32,48,34,3.5,980,8,medium
+Thai red duck curry,Thai,succeeded,,1 serve (~400g),400,560,22,20,42,4,980,12,medium
+Crispy pork belly Thai style,Thai,succeeded,,1 serve (~350g),350,780,32,20,62,2.5,1400,10,medium
+Thai omelette,Thai,succeeded,,1 serve (~200g),200,340,14,4,30,0.5,620,1.5,medium
+Mango sticky rice,Thai,succeeded,,1 serve (~300g),300,420,6.5,72,13,3,150,35,medium
+Thai iced tea,Thai,succeeded,,1 glass (~350ml),350,220,3,34,8,0,60,32,medium
+Satay beef skewers,Thai,succeeded,,"1 serve (4 skewers with sauce, ~200g)",200,380,28,12,25,2,620,7,medium
+Thai fishcakes,Thai,succeeded,,"1 serve, 4-5 cakes (~150g)",150,285,16.5,14,18,1.5,620,6.5,medium
+Tom yum goong,Thai,succeeded,,1 bowl (~400g),400,220,18,10,12,2,1400,4,medium
+Massaman beef curry,Thai,succeeded,,1 serve (~400g),400,560,28,24,38,4.5,980,10,medium
+Khao soi,Thai,succeeded,,1 bowl (~500g),500,620,28,55,34,4,1450,8,medium
+Larb gai,Thai,succeeded,,1 serve (~300g),300,280,27,12,14,2.5,950,4,medium
+Thai basil beef,Thai,succeeded,,"1 serve (~400g, with rice)",400,620,32,62,26,3.5,1150,8,medium
+Cashew chicken Thai style,Thai,succeeded,,1 serve (~400g),400,520,32,30,30,4,980,12,medium
+Crying tiger beef,Thai,succeeded,,1 serve (~300g),300,480,38,12,31,1.5,980,7,medium
+Thai crab curry,Thai,succeeded,LOW_CONFIDENCE,1 serve (~400g),400,420,22,14,30,2.5,980,6,low
+Thai prawn curry,Thai,succeeded,,"1 serve (~400g, curry + prawns, no rice)",400,420,22,14,31,3,980,8,medium
+Sticky rice with mango,Thai,succeeded,,1 serve (~350g),350,480,6.5,85,14,4,180,40,medium
+Thai spring roll platter,Thai,succeeded,,"1 serve (6 rolls, ~180g) with sauce",200,420,9,42,24,3.5,680,12,medium
+Pad prik king,Thai,succeeded,,1 serve (~300g),300,420,24,15,29,4,950,5,medium
+Gaeng som,Thai,succeeded,,1 serve (~350g),350,210,16,15,8,3,980,6,medium
+Thai roasted duck curry,Thai,succeeded,,1 serve (~400g),400,620,28,20,46,4,980,12,medium
+Thai chicken wings,Thai,succeeded,,"1 serve (~6 wings, 300g)",300,620,38,22,42,1,980,15,medium
+Thai fried fish,Thai,succeeded,LOW_CONFIDENCE,1 serve (~350g),350,620,32,38,38,3,980,20,low
+Thai steamed fish,Thai,succeeded,,1 serve (~350g fish plus sauce),350,320,38,10,13,1,980,6,medium
+Thai vegetable curry,Thai,succeeded,,1 serve (~400g),400,320,6,22,22,5,780,9,medium
+Thai tofu stir fry,Thai,succeeded,,1 serve (~400g),400,420,18,30,25,5,950,10,medium
+Nam tok,Thai,succeeded,,1 serve (~300g),300,320,28,12,18,2.5,900,4,medium
+Thai chicken larb,Thai,succeeded,,1 serve (~300g),300,320,28,12,18,3,900,4,medium
+Fried rice with prawns Thai style,Thai,succeeded,,1 serve (~350g),350,520,20,68,18,3,980,6,medium
+Thai satay skewers with peanut sauce,Thai,succeeded,,"1 serve, 4 skewers with sauce (~200g)",200,420,28,14,28,2.5,680,8,medium
+Thai noodle soup,Thai,succeeded,,1 serve (~500g),500,420,22,48,15,3.5,1450,6,medium
+Boat noodles,Thai,succeeded,,1 bowl (~350g),350,320,18,40,10,2,980,4,medium
+Pho,Vietnamese,succeeded,,1 bowl (~600g),600,450,28,60,10,3,1800,6,medium
+Beef pho,Vietnamese,succeeded,,1 bowl (~600g),600,480,30,60,12,3,1800,6,medium
+Chicken pho,Vietnamese,succeeded,,1 bowl (~600g),600,420,28,55,8,3,1800,6,medium
+Vegetarian pho,Vietnamese,succeeded,,1 bowl (~550g),550,380,12,68,6,4.5,1450,8,medium
+Rice paper rolls,Vietnamese,succeeded,,"1 serve (~3 rolls, 180g) with dipping sauce",180,220,12,33,4.5,2.5,620,7,medium
+Vietnamese spring rolls,Vietnamese,succeeded,,3 rolls (~120g) with dipping sauce,120,280,9.5,28,15,2,480,5,medium
+Fresh spring rolls,Vietnamese,succeeded,,2 rolls (~180g),180,210,12,30,4.5,2.5,480,5,medium
+Fried spring rolls,Vietnamese,succeeded,,4 pieces (~200g),200,420,9,42,24,3,620,3.5,medium
+Bun cha,Vietnamese,succeeded,,1 serve (~500g),500,620,32,75,20,4,1400,15,medium
+Vermicelli noodle bowl,Vietnamese,succeeded,,1 bowl (~450g),450,560,28,68,18,4,980,14,medium
+Bun bo hue,Vietnamese,succeeded,,1 bowl (~600g),600,480,28,55,16,3,1650,6,medium
+Vietnamese caramel pork,Vietnamese,succeeded,,"1 serve (~300g, with rice)",300,480,28,45,20,1.5,950,22,medium
+Com tam,Vietnamese,succeeded,,1 serve (~450g),450,650,32,75,24,3,950,12,medium
+Broken rice with pork chop,Vietnamese,succeeded,,1 serve (~500g),500,780,38,90,30,2.5,950,12,medium
+Vietnamese lemongrass chicken,Vietnamese,succeeded,,"1 serve (~350g, with rice)",350,520,34,55,17,3,850,10,medium
+Vietnamese beef stir fry,Vietnamese,succeeded,,1 serve (~400g),400,420,32,22,22,4,980,9,medium
+Vietnamese pancake,Vietnamese,succeeded,,"1 serve (~1 pancake with filling and herbs, ~300g)",300,520,18,45,31,4,780,5,medium
+Banh xeo,Vietnamese,succeeded,,"1 serve (1 crepe, ~250g)",250,480,18,40,28,4,780,5,medium
+Vietnamese noodle salad,Vietnamese,succeeded,,1 serve (~400g),400,420,22,48,14,4.5,980,14,medium
+Vietnamese spring roll salad,Vietnamese,succeeded,,1 serve (~350g),350,420,16.5,38,22,5.5,780,12,medium
+Vietnamese grilled pork skewers,Vietnamese,succeeded,,"1 serve, 4 skewers (~200g)",200,380,34,12,22,0.5,780,9,medium
+Bo luc lac,Vietnamese,succeeded,,1 serve (~400g),400,520,38,20,31,2.5,980,6,medium
+Vietnamese caramelised fish,Vietnamese,succeeded,,"1 serve (~250g incl. sauce, no rice)",250,320,28,18,14,0.5,950,15,medium
+Ca kho to,Vietnamese,succeeded,,1 serve (~250g including sauce),250,340,26,14,19,0.5,980,11,medium
+Vietnamese chicken curry,Vietnamese,succeeded,,"1 serve (~450g, with rice)",450,620,32,62,28,4,980,8,medium
+Vietnamese sticky rice,Vietnamese,succeeded,,1 serve (~300g),300,480,10,78,14,2,380,3,medium
+Xoi,Vietnamese,succeeded,,1 serve (~250g),250,400,8,68,11,2,300,6,medium
+Vietnamese iced coffee,Vietnamese,succeeded,,1 glass (~250ml),250,220,4.5,26,11,0,40,25,medium
+Vietnamese fried rice,Vietnamese,succeeded,,1 serve (~350g),350,520,18.5,65,20,3.5,950,5,medium
+Vietnamese seafood noodle soup,Vietnamese,succeeded,,1 serve (~550g),550,420,28,55,9,3,1450,5,medium
+Hu tieu,Vietnamese,succeeded,,1 bowl (~500g),500,420,22,55,11,3,1450,5,medium
+Vietnamese beef noodle soup,Vietnamese,succeeded,,1 bowl (~600g),600,480,28,65,10,3,1800,6,medium
+Goi cuon,Vietnamese,succeeded,,2 rolls (~180g) with dipping sauce,180,200,10.5,30,4.5,2.5,620,6,medium
+Cha gio,Vietnamese,succeeded,,4 rolls (~160g),160,340,12,28,20,2,620,3,medium
+Vietnamese grilled chicken,Vietnamese,succeeded,,"1 serve (~300g, 2 pieces with sauce)",300,480,40,18,27,1,890,14,medium
+Vietnamese meatballs,Vietnamese,succeeded,LOW_CONFIDENCE,"1 serve (~5-6 meatballs with sauce, ~300g)",300,420,28,12,29,1.5,950,5,low
+Bun rieu,Vietnamese,succeeded,,1 bowl (~550g),550,480,24,62,15,3.5,1450,8,medium
+Vietnamese pork belly,Vietnamese,succeeded,,1 serve (~300g incl. rice),300,620,24,55,34,1.5,980,12,medium
+Vietnamese omelette,Vietnamese,succeeded,,1 serve (~280g),280,420,22,12,31,2,780,4,medium
+Vietnamese salad rolls,Vietnamese,succeeded,,2 rolls (~150g) with dipping sauce,150,180,9,27,4,2,480,6,medium
+Banh mi with pork,Vietnamese,succeeded,,1 roll (~350g),350,550,24,65,21,3.5,1150,9,medium
+Banh mi with chicken,Vietnamese,succeeded,,1 roll (~350g),350,550,28,62,20,4,1150,10,medium
+Banh mi with tofu,Vietnamese,succeeded,,1 roll (~250g),250,430,14,55,17,4.5,780,9,medium
+Vietnamese noodle bowl with prawns,Vietnamese,succeeded,,1 serve (~450g),450,480,26,68,11,4.5,980,14,medium
+Chicken katsu curry,Japanese,succeeded,,"1 serve (~500g, incl. rice)",500,820,33,98,31,4.5,1250,12,medium
+Pork katsu curry,Japanese,succeeded,,"1 serve (~500g, with rice)",500,850,32,100,34,5,1400,14,medium
+Katsu curry,Japanese,succeeded,,1 serve (~500g),500,780,32,95,30,5,1100,12,medium
+Sushi rolls,Japanese,succeeded,,"1 serve (~8 pieces, 250g)",250,380,10,70,6,3,700,8,medium
+California roll,Japanese,succeeded,,"1 serve (~8 pieces, ~250g)",250,380,9,62,10,3,620,8,medium
+Salmon nigiri,Japanese,succeeded,,2 pieces (~70g),70,100,6.5,15.5,1.6,0.4,220,1.5,high
+Tuna nigiri,Japanese,succeeded,,2 pieces (~60g),60,80,6.5,11.5,0.6,0.3,220,1.5,medium
+Sashimi platter,Japanese,succeeded,,1 serve (~250g),250,320,48,5,11,0.5,480,2,medium
+Chicken teriyaki,Japanese,succeeded,,"1 serve (~350g, with rice)",350,480,32,55,13,2.5,950,15,medium
+Salmon teriyaki,Japanese,succeeded,,"1 serve (~250g salmon with sauce, plus rice)",400,560,38,55,19,2,950,14,medium
+Beef teriyaki,Japanese,succeeded,,"1 serve (~350g, with rice)",350,520,32,55,17,2.5,980,15,medium
+Ramen,Japanese,succeeded,,1 bowl (~600g),600,550,25,65,20,4,2000,5,medium
+Tonkotsu ramen,Japanese,succeeded,,1 bowl (~650g),650,650,30,70,27,3,2400,5,medium
+Miso ramen,Japanese,succeeded,,1 bowl (~650g),650,550,24,65,20,4,2200,6,medium
+Shoyu ramen,Japanese,succeeded,,1 bowl (~600g),600,480,22,60,16,3,2200,5,medium
+Chicken ramen,Japanese,succeeded,,1 bowl (~600g),600,550,32,62,18,3.5,1800,5,medium
+Udon noodle soup,Japanese,succeeded,,1 bowl (~550g),550,380,14,62,8,3.5,1850,4,medium
+Soba noodles,Japanese,succeeded,,1 serve (~350g),350,380,14.5,72,4,4.5,950,4,medium
+Yakisoba,Japanese,succeeded,,1 serve (~350g),350,480,16.5,62,17,4.5,1350,8.5,medium
+Yakitori skewers,Japanese,succeeded,,3 skewers (~150g),150,260,24,10,14,0.5,620,8,medium
+Gyoza,Japanese,succeeded,,"1 serve (6 pieces, ~180g)",180,380,14,38,19,2.5,780,2,medium
+Chicken gyoza,Japanese,succeeded,,"1 serve (6 pieces, ~180g)",180,340,15.5,34,15.5,2,680,2,medium
+Vegetable gyoza,Japanese,succeeded,,"1 serve (6 pieces, ~180g)",180,310,7.5,42,12,3.5,620,3,medium
+Karaage chicken,Japanese,succeeded,,1 serve (~250g),250,590,32,30,38,1.5,950,3,medium
+Tempura,Japanese,succeeded,,"1 serve (~200g, 6-8 pieces)",200,420,12,32,27,2.5,480,2,medium
+Vegetable tempura,Japanese,succeeded,,1 serve (~200g),200,380,6.5,40,22,4,480,3.5,medium
+Prawn tempura,Japanese,succeeded,,"1 serve (6 pieces, ~180g)",180,380,16,32,21,1,480,1.5,medium
+Tempura udon,Japanese,succeeded,,1 bowl (~550g),550,550,20,78,17,4,1800,6,medium
+Miso soup,Japanese,succeeded,,1 bowl (~250g),250,45,3.5,4.5,1.5,1.2,780,1.5,high
+Edamame,Japanese,succeeded,,1 serve (~150g in pods),150,130,12,9,5.5,5,380,2,medium
+Okonomiyaki,Japanese,succeeded,,1 whole pancake (~350g),350,550,22,42,31,4.5,1450,8,medium
+Takoyaki,Japanese,succeeded,,"1 serve (6 pieces, ~180g)",180,330,12,38,14,1.5,780,5,medium
+Onigiri,Japanese,succeeded,,1 piece (~100g),100,170,4.5,33,2.5,0.6,320,0.8,medium
+Chicken teppanyaki,Japanese,succeeded,,1 serve (~400g),400,480,38,28,22,3.5,950,10,medium
+Beef teppanyaki,Japanese,succeeded,,1 serve (~400g),400,480,36,20,27,3.5,950,8,medium
+Donburi,Japanese,succeeded,,1 serve (~450g),450,620,28,82,17,3,980,12,medium
+Chicken katsu don,Japanese,succeeded,,1 serve (~500g),500,850,38,100,30,3,1400,12,medium
+Gyudon,Japanese,succeeded,,1 bowl (~500g),500,680,26,90,22,2,1400,12,high
+Unagi don,Japanese,succeeded,,1 serve (~400g),400,620,28,80,20,1.5,900,18,medium
+Tonkatsu,Japanese,succeeded,,1 serve (~250g cutlet with sauce),250,550,32,30,32,2,750,8,medium
+Chicken karaage bowl,Japanese,succeeded,,1 serve (~450g),450,780,32,85,35,3.5,1150,10,medium
+Salmon poke bowl,Japanese,succeeded,,1 bowl (~500g),500,620,32,70,22,6,950,10,medium
+Tuna poke bowl,Japanese,succeeded,,1 bowl (~450g),450,550,32,65,18,6,900,10,medium
+Bento box,Japanese,succeeded,LOW_CONFIDENCE,1 box (~500g),500,650,30,75,24,4,1200,12,low
+Agedashi tofu,Japanese,succeeded,,"1 serve (~4 pieces, ~200g)",200,260,12,16,16,1.5,780,3,medium
+Chawanmushi,Japanese,succeeded,,1 serve (~150g),150,90,8.5,4.5,3.8,0.3,380,1.2,medium
+Japanese curry rice,Japanese,succeeded,,"1 serve (~450g, rice + curry with pork/chicken)",450,620,22,85,20,4.5,1100,10,medium
+Beef curry Japanese style,Japanese,succeeded,,1 serve (~450g),450,620,25,78,22,5,1100,12,medium
+Chirashi bowl,Japanese,succeeded,,1 bowl (~450g),450,620,32,85,14,3,980,9,medium
+Spicy tuna roll,Japanese,succeeded,,"1 roll, 6-8 pieces (~250g)",250,380,15,55,11,2.5,620,6,medium
+Dragon roll,Japanese,succeeded,,"1 roll (~8 pieces, ~250g)",250,380,12,58,11,3,620,9,medium
+Rainbow roll,Japanese,succeeded,,"1 roll (~8 pieces, ~250g)",250,380,16,58,9,3,620,8,medium
+Salmon avocado roll,Japanese,succeeded,,"1 roll, 6-8 pieces (~250g)",250,380,12,55,11,3.5,620,6,medium
+Katsu sando,Japanese,succeeded,,1 sandwich (~280g),280,650,28,62,33,3,1100,12,medium
+Wagyu beef bowl,Japanese,succeeded,,1 serve (~450g),450,720,32,85,26,3,980,12,medium
+Matcha dessert,Japanese,succeeded,LOW_CONFIDENCE,1 slice/cup (~110g),110,320,5.5,34,18,1.5,120,24,low
+Bibimbap,Korean,succeeded,,1 bowl (~550g),550,620,24,82,20,6,980,8,medium
+Korean fried chicken,Korean,succeeded,,1 serve (~350g),350,850,45,55,48,1.5,1450,25,medium
+Korean BBQ beef,Korean,succeeded,,1 serve (~300g),300,480,32,28,25,2,980,18,medium
+Bulgogi,Korean,succeeded,,1 serve (~250g),250,430,28,18,26,1.5,980,12,medium
+Kimchi jjigae,Korean,succeeded,,1 serve (~500g),500,380,22,16,24,3.5,1450,5,medium
+Kimchi fried rice,Korean,succeeded,,1 serve (~400g),400,620,18,78,24,3.5,980,6,medium
+Japchae,Korean,succeeded,,1 serve (~250g),250,340,8.5,52,11,2.5,680,9,medium
+Korean spicy pork,Korean,succeeded,,1 serve (~350g),350,520,32,28,30,3.5,980,14,medium
+Dak galbi,Korean,succeeded,,1 serve (~450g),450,620,42,45,28,5,1450,15,medium
+Tteokbokki,Korean,succeeded,,1 serve (~350g),350,480,9.5,92,8,3.5,1450,24,medium
+Korean corn dog,Korean,succeeded,,1 corn dog (~150g),150,420,12,45,22,1.5,620,12,medium
+Sundubu jjigae,Korean,succeeded,,"1 serve (~500g including stone pot, served with rice separately)",450,380,24,15,24,3,1450,4,medium
+Korean fried chicken wings,Korean,succeeded,,"1 serve (~350g, 8-10 wings)",350,820,42,55,48,1.5,1450,30,medium
+Galbi,Korean,succeeded,,"1 serve (~300g, ~4-5 pieces)",300,620,42,22,40,0.5,1150,15,medium
+Korean beef short ribs,Korean,succeeded,,1 serve (~300g),300,620,38,22,40,1,980,15,medium
+Kimbap,Korean,succeeded,,1 roll (~250g),250,400,12,60,11,3.5,850,6,medium
+Korean pancake,Korean,succeeded,,"1 serve (~250g, half pancake)",250,420,14,42,22,2.5,780,3,medium
+Kimchi pancake,Korean,succeeded,,"1 serve (~200g, half pancake)",200,380,10.5,42,19,2.5,780,3.5,medium
+Seafood pancake,Korean,succeeded,,1 serve (~300g),300,520,24,45,27,2.5,980,3,medium
+Korean beef bulgogi bowl,Korean,succeeded,,1 bowl (~450g),450,620,34,68,22,4,980,16,medium
+Korean spicy noodles,Korean,succeeded,LOW_CONFIDENCE,1 serve (~450g),450,620,18,88,21,4,1450,10,low
+Jajangmyeon,Korean,succeeded,,1 serve (~600g),600,720,20,110,22,5,1400,15,medium
+Korean cold noodles,Korean,succeeded,,1 serve (~550g),550,480,18,88,6.5,4.5,1450,20,medium
+Naengmyeon,Korean,succeeded,,1 bowl (~600g),600,480,18,88,6,4,1400,14,medium
+Korean fried tofu,Korean,succeeded,,1 serve (~300g),300,480,18,42,27,3,780,14,medium
+Korean stir fried glass noodles,Korean,succeeded,,1 serve (~350g),350,420,9.5,62,15,3.5,780,10,medium
+Doenjang jjigae,Korean,succeeded,,"1 serving (~400g including tofu, vegetables, broth)",400,220,14,15,11,4.5,1450,4,medium
+Korean beef stew,Korean,succeeded,,1 serve (~400g),400,480,32,22,27,3,980,10,medium
+Samgyeopsal,Korean,succeeded,,1 serve (~250g grilled pork belly with sides),250,680,38,8,55,2,780,2.5,medium
+Korean grilled pork belly,Korean,succeeded,,1 serve (~300g),300,780,45,6,63,1.5,700,3,medium
+Korean spicy chicken stew,Korean,succeeded,,1 serve (~450g),450,520,38,28,27,4,1450,10,medium
+Dakbokkeumtang,Korean,succeeded,,1 serve (~500g),500,620,38,40,32,5,1450,10,medium
+Korean seaweed soup,Korean,succeeded,,1 bowl (~350g),350,120,8.5,6,6.5,2,780,1.5,medium
+Bibim guksu,Korean,succeeded,,1 serve (~400g),400,420,11,78,7,4.5,980,18,medium
+Korean BBQ platter,Korean,succeeded,LOW_CONFIDENCE,1 serve (~500g),500,950,55,45,58,5,1800,20,low
+Butter chicken,Indian & South Asian,succeeded,,"1 serve (~400g, sauce and chicken only, no rice)",400,520,32,14,38,2.5,850,8,medium
+Dal curry,Indian & South Asian,succeeded,,1 serve (~300g),300,280,13.5,32,11,8.5,620,4,medium
+Dal makhani,Indian & South Asian,succeeded,,1 serve (~250g),250,340,12,24,22,7,620,4.5,medium
+Chicken tikka masala,Indian & South Asian,succeeded,,"1 serve (~400g, with sauce, no rice)",400,520,34,16,35,2.5,900,9,medium
+Chicken korma,Indian & South Asian,succeeded,,1 serve (~350g),350,520,32,15,37,3,680,7,medium
+Lamb rogan josh,Indian & South Asian,succeeded,,"1 serve (~350g, with sauce, no rice)",350,480,32,12,33,3,780,6,medium
+Beef vindaloo,Indian & South Asian,succeeded,,1 serve (~400g),400,520,38,14,34,3,980,6,medium
+Chicken vindaloo,Indian & South Asian,succeeded,,1 serve (~400g),400,480,34,14,31,3,980,6,medium
+Palak paneer,Indian & South Asian,succeeded,,1 serve (~300g),300,380,14,14,29,5,620,5,medium
+Paneer tikka,Indian & South Asian,succeeded,,"1 serve (~200g, ~6 skewered pieces)",200,380,16,12,29,2.5,520,5,medium
+Paneer butter masala,Indian & South Asian,succeeded,,1 serve (~300g),300,450,12.5,20,35,3.5,680,9,medium
+Saag paneer,Indian & South Asian,succeeded,,1 serve (~300g),300,380,14,14,29,5,620,5,medium
+Chana masala,Indian & South Asian,succeeded,,1 serve (~350g),350,320,12.5,38,13,9.5,680,7,medium
+Chickpea curry,Indian & South Asian,succeeded,,1 serve (~350g),350,340,12,34,17,9,620,7,medium
+Aloo gobi,Indian & South Asian,succeeded,,1 serve (~250g),250,220,5,22,13,5.5,480,5,medium
+Aloo paratha,Indian & South Asian,succeeded,,1 stuffed paratha (~120g),120,300,6.5,42,12,4.5,380,2,medium
+Vegetable samosa,Indian & South Asian,succeeded,,2 samosas (~120g),120,300,5.5,34,16,3.5,420,2.5,medium
+Chicken samosa,Indian & South Asian,succeeded,,2 pieces (~120g),120,290,10.5,26,16.5,2.2,420,1.5,medium
+Biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,620,28,72,24,4,980,6,medium
+Chicken biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,560,28,66,19,4,820,6,medium
+Lamb biryani,Indian & South Asian,succeeded,,1 serve (~450g),450,650,32,68,27,4,950,6,medium
+Vegetable biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,520,11,78,17,7,780,8,medium
+Tandoori chicken,Indian & South Asian,succeeded,,"1 serve (2 pieces, ~300g)",300,420,45,6,24,1,780,3,medium
+Chicken tikka,Indian & South Asian,succeeded,,1 serve (~200g),200,330,38,6,17,1,620,3,medium
+Seekh kebab,Indian & South Asian,succeeded,,2 skewers (~140g),140,320,24,4,23,1,480,1.5,medium
+Lamb kofta,Indian & South Asian,succeeded,,4 skewers (~280g),280,480,32,8,35,1.5,620,2,medium
+Naan bread,Indian & South Asian,succeeded,,1 piece (~90g),90,262,7.6,45,5.9,2,470,3,high
+Garlic naan,Indian & South Asian,succeeded,,1 piece (~90g),90,280,7.5,42,9,2,420,3,medium
+Cheese naan,Indian & South Asian,succeeded,,1 piece (~150g),150,420,13,55,16,2.5,620,4,medium
+Roti,Indian & South Asian,succeeded,,1 piece (~90g),90,280,5.5,35,13.5,2,380,1,medium
+Paratha,Indian & South Asian,succeeded,,1 piece (~90g),90,280,5.5,32,14.5,2,380,1,medium
+Papadum,Indian & South Asian,succeeded,,4 pieces (~40g),40,180,8,24,6,4,620,1,medium
+Raita,Indian & South Asian,succeeded,,1 serve (~100g),100,65,3,6.5,3,0.5,190,5.5,medium
+Butter naan,Indian & South Asian,succeeded,,1 piece (~90g),90,280,6.9,40,10.5,1.8,420,3.5,medium
+Chicken makhani,Indian & South Asian,succeeded,,1 serve (~350g),350,520,32,15,36,2.5,780,8,medium
+Malai kofta,Indian & South Asian,succeeded,,"1 serve (~300g, 4 kofta with gravy)",300,480,11,30,35,4,680,12,medium
+Dal tadka,Indian & South Asian,succeeded,,1 serve (~300g),300,280,12.5,30,13,7.5,620,3.5,medium
+Rajma,Indian & South Asian,succeeded,,"1 serve (~300g, curry only)",300,280,12.5,30,12.5,9,620,5.5,medium
+Mattar paneer,Indian & South Asian,succeeded,,1 serve (~300g),300,420,15,20,31,5,650,8,medium
+Tandoori lamb chops,Indian & South Asian,succeeded,,"1 serve (4 chops, ~280g)",280,480,42,6,32,1,620,3,medium
+Fish curry Indian style,Indian & South Asian,succeeded,,1 serve (~350g),350,380,26,12,25,2.5,780,5,medium
+Goan fish curry,Indian & South Asian,succeeded,,"1 serve (~350g, with fish and gravy)",350,320,24,10,21,2.5,620,4.5,medium
+Prawn curry Indian style,Indian & South Asian,succeeded,,1 serve (~350g),350,420,24,14,29,3,780,6,medium
+Chicken jalfrezi,Indian & South Asian,succeeded,,1 serve (~400g),400,420,32,16,25,4,780,8,medium
+Chicken saag,Indian & South Asian,succeeded,,1 serve (~350g),350,420,33,10,28,4.5,780,3.5,medium
+Lamb curry,Indian & South Asian,succeeded,,1 serve (~350g),350,480,28,16,33,3,780,6,medium
+Beef curry Indian style,Indian & South Asian,succeeded,,1 serve (~350g),350,480,30,14,32,3.5,780,5,medium
+Mango lassi,Indian & South Asian,succeeded,,1 glass (~300ml),300,220,6.5,38,5.5,1,75,34,medium
+Gulab jamun,Indian & South Asian,succeeded,,2 pieces (~90g) with syrup,90,300,4.5,42,13,0.4,90,35,medium
+Jalebi,Indian & South Asian,succeeded,,4 pieces (~80g),80,300,2.8,48,11.5,0.4,40,38,medium
+Samosa chaat,Indian & South Asian,succeeded,,1 serve (~300g),300,420,9.5,52,20,6.5,780,14,medium
+Pani puri,Indian & South Asian,succeeded,,1 serve (6 puris),180,220,5,38,6,4,480,4,medium
+Bhel puri,Indian & South Asian,succeeded,,1 serve (~150g),150,220,5.5,34,7.5,4.5,480,8,medium
+Vada pav,Indian & South Asian,succeeded,,1 bun with potato patty (~120g),120,290,6.5,42,10.5,3.5,480,4,medium
+Masala dosa,Indian & South Asian,succeeded,,1 serve (~250g),250,380,7.5,58,13,4.5,620,4,medium
+Idli,Indian & South Asian,succeeded,,2 idlis (~120g),120,130,4.5,27,0.5,1.5,220,0.5,high
+Sambar,Indian & South Asian,succeeded,,1 serve (~300g),300,180,8,25,6,6.5,620,6,medium
+Uttapam,Indian & South Asian,succeeded,,"1 serve (~180g, 2 uttapam)",180,280,7,45,8,3,480,3,medium
+Chicken 65,Indian & South Asian,succeeded,,1 serve (~250g),250,450,32,18,28,1.5,950,3,medium
+Onion bhaji,Indian & South Asian,succeeded,,4 bhajis (~160g),160,380,8.5,32,24,5.5,480,5,medium
+Vegetable pakora,Indian & South Asian,succeeded,,6 pieces (~150g),150,330,7.5,32,20,5.5,480,3.5,medium
+Chicken pakora,Indian & South Asian,succeeded,,"1 serve (~6 pieces, ~180g)",180,420,26,24,25,3.5,620,2,medium
+Aloo tikki,Indian & South Asian,succeeded,,"1 serve (2 patties, ~140g)",140,260,5,34,12,4,420,6,medium
+Chole bhature,Indian & South Asian,succeeded,,"1 serve (2 bhature + chole, ~450g)",450,850,20,95,42,12,1300,8,medium
+Kadhai chicken,Indian & South Asian,succeeded,,1 serve (~350g),350,420,30,14,27,3.5,780,6,medium
+Butter paneer,Indian & South Asian,succeeded,,1 serve (~350g),350,520,15,22,40,3.5,780,10,medium
+Egg curry,Indian & South Asian,succeeded,,1 serve (~350g),350,380,14.5,14,29,3,680,6,medium
+Keema curry,Indian & South Asian,succeeded,,1 serve (~350g),350,480,28,14,34,3.5,780,5,medium
+Mutton curry,Indian & South Asian,succeeded,,1 serve (~350g),350,480,28,14,34,3,780,5,medium
+Chicken korma with rice,Indian & South Asian,succeeded,,1 serve (~450g),450,680,33,65,32,3.5,780,8,medium
+Prawn biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,560,24,74,17,3.5,980,6,medium
+Egg biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,620,18,78,26,4,780,6,medium
+Hyderabadi biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,620,28,68,26,4,980,6,medium
+Rasam,Indian & South Asian,succeeded,,1 cup (~250ml),250,70,2.5,10,2.5,1.8,480,3,medium
+Curry laksa Indian style,Indian & South Asian,succeeded,LOW_CONFIDENCE,1 bowl (~550g),550,620,26,55,34,4,1450,8,low
+Chicken 65 dry,Indian & South Asian,succeeded,,1 serve (~250g),250,480,32,18,31,1.5,900,3,medium
+Palak chicken,Indian & South Asian,succeeded,,1 serve (~350g),350,420,32,12,27,4.5,680,4,medium
+Tandoori prawns,Indian & South Asian,succeeded,,"1 serve (~200g, 6-8 prawns with marinade)",200,260,32,6,12,1,620,3,medium
+Malabar chicken curry,Indian & South Asian,succeeded,,1 serve (~350g),350,420,28,12,29,3,780,5,medium
+Kerala fish curry,Indian & South Asian,succeeded,,1 serve (~300g),300,320,24,10,21,2,650,4,medium
+Punjabi chole,Indian & South Asian,succeeded,,1 serve (~300g),300,330,12.5,35,15,9,700,6,medium
+Amritsari fish,Indian & South Asian,succeeded,,"1 serve (~6 pieces, ~200g)",200,420,28,18,26,1.5,680,2,medium
+Lahori chicken,Indian & South Asian,succeeded,,1 serve (~350g),350,480,34,14,32,3,780,5,medium
+Sri Lankan chicken curry,Indian & South Asian,succeeded,,1 serve (~350g),350,420,28,12,28,3,620,5,medium
+Sri Lankan dal curry,Indian & South Asian,succeeded,,1 serve (~200g),200,220,9.5,22,11,6,420,3,medium
+Nepalese momos,Indian & South Asian,succeeded,,"1 serve (~10 pieces, ~300g)",300,480,24,58,16,3.5,820,4,medium
+Shawarma plate,Middle Eastern & Mediterranean,succeeded,,1 plate (~450g),450,780,42,70,38,6,1300,8,medium
+Chicken shawarma,Middle Eastern & Mediterranean,succeeded,,1 wrap (~350g),350,650,38,55,30,4,1100,6,medium
+Lamb shawarma,Middle Eastern & Mediterranean,succeeded,,1 wrap (~350g),350,720,36,58,38,4.5,1150,6,medium
+Beef shawarma,Middle Eastern & Mediterranean,succeeded,,1 wrap (~350g),350,720,38,62,34,4.5,1350,7,medium
+Falafel plate,Middle Eastern & Mediterranean,succeeded,,1 plate (~450g),450,620,19,62,33,12,980,8,medium
+Hummus with pita,Middle Eastern & Mediterranean,succeeded,,"1 serve (~180g, dip + bread)",180,420,12.5,45,21,6.5,620,2.5,medium
+Baba ganoush,Middle Eastern & Mediterranean,succeeded,,1 serve (~100g),100,170,3.5,8,14,4.5,300,3,medium
+Tabouli,Middle Eastern & Mediterranean,succeeded,,1 serve (~150g),150,180,3.5,15,12.5,4,250,3,medium
+Fattoush salad,Middle Eastern & Mediterranean,succeeded,,1 serve (~250g),250,220,4.5,20,14,5,420,6,medium
+Moussaka,Middle Eastern & Mediterranean,succeeded,,1 serve (~400g),400,520,24,24,36,5,680,9,medium
+Greek salad,Middle Eastern & Mediterranean,succeeded,,1 serve (~300g),300,280,6.5,10,24,3.5,720,6,medium
+Souvlaki,Middle Eastern & Mediterranean,succeeded,,1 wrap (~350g),350,620,34,55,29,4,980,6,medium
+Chicken souvlaki,Middle Eastern & Mediterranean,succeeded,,1 wrap (~350g),350,620,38,52,28,4,980,6,medium
+Lamb souvlaki,Middle Eastern & Mediterranean,succeeded,,1 wrap (~350g),350,650,34,55,33,4,980,7,medium
+Gyros,Middle Eastern & Mediterranean,succeeded,,1 wrap (~350g),350,650,32,55,33,4,1150,6,medium
+Kebab plate,Middle Eastern & Mediterranean,succeeded,,1 serve (~500g),500,850,40,75,44,5,1400,8,medium
+Doner kebab,Middle Eastern & Mediterranean,succeeded,,1 kebab (~400g),400,780,34,74,40,5,1450,9,medium
+Lamb kofta kebab,Middle Eastern & Mediterranean,succeeded,,1 kebab wrap (~350g),350,650,32,55,33,4.5,980,7,medium
+Chicken kofta,Middle Eastern & Mediterranean,succeeded,,4 koftas (~200g),200,380,28,8,26,1.5,620,2.5,medium
+Baklava,Middle Eastern & Mediterranean,succeeded,,1 piece (~60g),60,250,3.5,28,15,1.2,90,18,medium
+Spanakopita,Middle Eastern & Mediterranean,succeeded,,2 triangles (~150g),150,340,10.5,22,23,2.5,560,2,medium
+Dolmades,Middle Eastern & Mediterranean,succeeded,,6 pieces (~180g),180,260,4.5,30,14,3.5,480,2,medium
+Halloumi salad,Middle Eastern & Mediterranean,succeeded,,1 serve (~300g),300,420,16.5,18,30,4.5,850,8,medium
+Grilled halloumi,Middle Eastern & Mediterranean,succeeded,,1 serve (~120g),120,370,24,3,29,0,1450,1,medium
+Lamb tagine,Middle Eastern & Mediterranean,succeeded,,1 serve (~400g),400,480,32,24,27,5,780,12,medium
+Chicken tagine,Middle Eastern & Mediterranean,succeeded,,1 serve (~400g),400,420,32,24,20,5,780,10,medium
+Couscous salad,Middle Eastern & Mediterranean,succeeded,,1 serve (~200g),200,290,7,34,13,4,380,5,medium
+Falafel wrap Mediterranean,Middle Eastern & Mediterranean,succeeded,,1 wrap (~350g),350,620,19,68,31,8.5,980,7,medium
+Turkish pide,Middle Eastern & Mediterranean,succeeded,,1 whole pide (~300g),300,780,32,95,30,5,1300,6,medium
+Lahmacun,Middle Eastern & Mediterranean,succeeded,,1 piece (~150g),150,340,15,42,12,2.5,620,4,medium
+Turkish pizza,Middle Eastern & Mediterranean,succeeded,,1 whole pide (~300g),300,780,32,92,32,5,1350,6,medium
+Adana kebab,Middle Eastern & Mediterranean,succeeded,,"1 serve (~350g, with flatbread and salad)",350,620,32,45,34,4,980,5,medium
+Turkish delight,Middle Eastern & Mediterranean,succeeded,,4 pieces (~80g),80,270,0.3,67,0.1,0.2,5,55,medium
+Manakeesh,Middle Eastern & Mediterranean,succeeded,,1 whole flatbread (~150g),150,420,10.5,55,17.5,3.5,620,1.5,medium
+Zaatar bread,Middle Eastern & Mediterranean,succeeded,,1 flatbread (~150g),150,420,9,50,20,4,620,1.5,medium
+Labneh,Middle Eastern & Mediterranean,succeeded,,1 serve (~100g) with olive oil drizzle,100,150,6.5,4.5,12.5,0,320,4,medium
+Muhammara,Middle Eastern & Mediterranean,succeeded,,1 serve as dip (~60g),60,165,3,8,14,2.2,220,4,medium
+Mujadara,Middle Eastern & Mediterranean,succeeded,,1 serve (~300g),300,420,13.5,62,13,9,480,6,medium
+Shakshuka Middle Eastern style,Middle Eastern & Mediterranean,succeeded,,"1 serve (~350g, 2 eggs with tomato pepper sauce)",350,320,16.5,16,21,4.5,780,10,medium
+Kibbeh,Middle Eastern & Mediterranean,succeeded,,4 pieces (~160g),160,380,16,28,22,3.5,480,2,medium
+Fattet hummus,Middle Eastern & Mediterranean,succeeded,,1 serve (~350g),350,480,16,44,28,8,780,4,medium
+Grilled lamb chops,Middle Eastern & Mediterranean,succeeded,,3 chops (~300g),300,610,48,1.5,45,0,480,0.5,medium
+Persian chicken kebab,Middle Eastern & Mediterranean,succeeded,,1 skewer serve (~300g),300,480,42,6,31,1,620,3,medium
+Persian rice,Middle Eastern & Mediterranean,succeeded,,1 serve (~250g),250,380,7.5,65,10.5,3,420,12,medium
+Lebanese rice,Middle Eastern & Mediterranean,succeeded,,1 serve (~200g),200,300,8.5,45,9.5,1.8,380,1,medium
+Kofta with rice,Middle Eastern & Mediterranean,succeeded,,1 serve (~400g),400,620,28,60,30,4,780,6,medium
+Sujuk,Middle Eastern & Mediterranean,succeeded,,"1 serve, 3-4 slices (~100g)",100,310,18,3,25,0.5,850,1,medium
+Mixed grill plate,Middle Eastern & Mediterranean,succeeded,LOW_CONFIDENCE,"1 serve (~450g, includes steak, sausage, lamb chop, egg, bacon, chips/salad)",450,980,62,45,62,4.5,1600,6,low
+Lamb shoulder tagine,Middle Eastern & Mediterranean,succeeded,,1 serve (~420g),420,520,34,28,30,6,780,12,medium
+Chicken biryani Lebanese style,Middle Eastern & Mediterranean,succeeded,,1 serve (~450g),450,650,34,75,23,4,850,6,medium
+Baklawa,Middle Eastern & Mediterranean,succeeded,,2 pieces (~80g),80,320,4.5,35,18,1.5,120,24,medium
+Konafa,Middle Eastern & Mediterranean,succeeded,,1 slice (~150g),150,480,8.5,58,25,1.5,180,38,medium
+Umm ali,Middle Eastern & Mediterranean,succeeded,,1 serve (~200g),200,420,8.5,40,26,1.5,220,24,medium
+Turkish coffee dessert,Middle Eastern & Mediterranean,succeeded,LOW_CONFIDENCE,1 serve (~120g),120,280,4.5,26,18,0.5,45,22,low
+Halva,Middle Eastern & Mediterranean,succeeded,,1 piece (~50g),50,250,4.5,25,15.5,1.5,40,20,medium
+Stuffed vine leaves,Middle Eastern & Mediterranean,succeeded,,6 pieces (~180g),180,280,4.5,32,15,3.5,520,2,medium
+Kibbeh nayeh,Middle Eastern & Mediterranean,succeeded,,1 serve (~200g),200,380,24,18,24,2.5,480,1,medium
+Falafel salad plate,Middle Eastern & Mediterranean,succeeded,,1 serve (~450g),450,520,15,45,32,10,780,8,medium
+Greek moussaka bake,Middle Eastern & Mediterranean,succeeded,,1 serve (~400g),400,560,26,28,38,4.5,720,10,medium
+Grilled octopus,Middle Eastern & Mediterranean,succeeded,,1 serve (~250g),250,320,36,8,16,1,620,1.5,medium
+Calamari Greek style,Middle Eastern & Mediterranean,succeeded,,1 serve (~300g),300,720,28,45,46,2.5,780,2,medium
+Feta and olive plate,Middle Eastern & Mediterranean,succeeded,,1 serve (~150g),150,320,9.5,4,29,2,1350,1.5,medium
+Pita and dips platter,Middle Eastern & Mediterranean,succeeded,LOW_CONFIDENCE,1 share platter serve (~250g),250,520,14,52,29,5.5,780,4,low
+Chicken shish kebab,Middle Eastern & Mediterranean,succeeded,,1 serve with pita and salad (~350g),350,550,38,45,22,4,850,6,medium
+Beef kofta plate,Middle Eastern & Mediterranean,succeeded,,"1 plate (~450g, 4 koftas with rice/salad)",450,620,34,55,30,5,900,6,medium
+Lamb shish kebab,Middle Eastern & Mediterranean,succeeded,,1 skewer with pita/salad (~350g),350,620,38,42,33,4,780,6,medium
+Beef burrito,Mexican & Latin American,succeeded,,1 burrito (~350g),350,700,34,70,32,6,1350,4,medium
+Chicken burrito,Mexican & Latin American,succeeded,,1 burrito (~350g),350,620,34,65,24,6,1250,5,medium
+Bean burrito,Mexican & Latin American,succeeded,,1 burrito (~200g),200,380,14,55,11,8,850,3,medium
+Tacos,Mexican & Latin American,succeeded,,3 tacos (~330g),330,620,30,48,34,6,980,5,medium
+Beef tacos,Mexican & Latin American,succeeded,,3 tacos (~360g),360,560,30,45,29,5.5,950,5,medium
+Chicken tacos,Mexican & Latin American,succeeded,,3 tacos (~330g),330,560,32,55,22,5,950,5,medium
+Fish tacos,Mexican & Latin American,succeeded,,2 tacos (~350g),350,520,26,52,24,5,780,6,medium
+Pork tacos,Mexican & Latin American,succeeded,,3 tacos (~330g),330,650,32,60,30,6,950,6,medium
+Nachos,Mexican & Latin American,succeeded,LOW_CONFIDENCE,1 share serve (~450g),450,980,34,78,58,8,1450,6,low
+Loaded nachos,Mexican & Latin American,succeeded,LOW_CONFIDENCE,1 share serve (~450g),450,950,38,70,58,8,1600,6,low
+Quesadilla,Mexican & Latin American,succeeded,,"1 serve (~250g, one large quesadilla cut in wedges)",250,620,32,48,34,3.5,1150,3,medium
+Chicken quesadilla,Mexican & Latin American,succeeded,,"1 serve (~250g, 1 large quesadilla)",250,560,32,42,29,3,980,3,medium
+Beef quesadilla,Mexican & Latin American,succeeded,,1 quesadilla (~250g),250,620,34,45,34,3.5,1150,3,medium
+Empanada,Mexican & Latin American,succeeded,,1 empanada (~120g),120,310,9.5,28,18,1.5,420,1.5,medium
+Beef empanada,Mexican & Latin American,succeeded,,1 empanada (~120g),120,300,11,27,17,1.8,420,1.5,medium
+Chicken empanada,Mexican & Latin American,succeeded,,1 empanada (~120g),120,290,10.5,28,15.5,1.8,420,2,medium
+Enchiladas,Mexican & Latin American,succeeded,,"1 serve (~350g, 3 enchiladas)",350,620,30,48,34,6,1150,5,medium
+Chicken enchiladas,Mexican & Latin American,succeeded,,2 enchiladas (~350g),350,560,32,42,29,5,1150,5,medium
+Beef enchiladas,Mexican & Latin American,succeeded,,2 enchiladas (~400g),400,620,32,46,34,5,1250,6,medium
+Burrito bowl,Mexican & Latin American,succeeded,,1 bowl (~500g),500,650,38,65,26,9,1350,6,medium
+Chipotle bowl,Mexican & Latin American,succeeded,,1 bowl (~500g),500,700,40,70,28,10,1500,5,medium
+Guacamole with chips,Mexican & Latin American,succeeded,,"1 serve (~170g, guac + chips)",170,420,5.5,40,27,6.5,480,2,medium
+Mexican rice,Mexican & Latin American,succeeded,,1 side serve (~150g),150,210,4,36,5.5,2,420,3,medium
+Refried beans,Mexican & Latin American,succeeded,,1 serve (~150g),150,165,8.5,21,5.5,8,480,1,medium
+Churros,Mexican & Latin American,succeeded,,"1 serve (~6 churros with sauce, ~120g)",120,420,5.5,52,21,1.8,320,24,medium
+Fajitas,Mexican & Latin American,succeeded,,"1 serve (~400g, 2-3 tortillas with chicken, veg & toppings)",400,680,38,58,32,6,1300,8,medium
+Chicken fajitas,Mexican & Latin American,succeeded,,1 serve with 2-3 tortillas (~450g),450,620,38,58,25,6,1050,6.5,medium
+Beef fajitas,Mexican & Latin American,succeeded,,"1 serve (~400g, 3 tortillas with beef and vegetables)",400,720,38,62,34,6,1250,6,medium
+Tamales,Mexican & Latin American,succeeded,,2 tamales (~200g),200,340,12,32,19,3,620,2,medium
+Chilaquiles,Mexican & Latin American,succeeded,,1 serve (~350g),350,480,17,40,30,5,780,6,medium
+Tostadas,Mexican & Latin American,succeeded,,2 tostadas (~200g),200,380,16,32,22,5,640,3,medium
+Ceviche,Mexican & Latin American,succeeded,,1 serve (~250g),250,180,22,12,4.5,1.5,480,3.5,medium
+Pozole,Mexican & Latin American,succeeded,,1 bowl (~450g),450,380,26,32,17,6,980,4,medium
+Carnitas,Mexican & Latin American,succeeded,,1 serve (~200g),200,430,34,0,32,0,620,0,medium
+Al pastor tacos,Mexican & Latin American,succeeded,,3 tacos (~270g),270,430,24,36,21,4.5,620,5.5,medium
+Elote,Mexican & Latin American,succeeded,,1 ear (~150g),150,250,6.5,24,16,3.5,380,6,medium
+Mexican street corn,Mexican & Latin American,succeeded,,1 ear (~150g),150,220,6.5,22,13,3,380,6,medium
+Arepas,Mexican & Latin American,succeeded,,2 arepas (~120g),120,260,5.5,45,7,4,380,0.5,medium
+Colombian empanadas,Mexican & Latin American,succeeded,,3 empanadas (~180g),180,480,14,42,28,3,620,1.5,medium
+Brazilian feijoada,Mexican & Latin American,succeeded,,"1 serve (~400g, with rice)",400,620,34,48,32,10,980,3,medium
+Brazilian churrasco,Mexican & Latin American,succeeded,,1 serve (~300g),300,650,55,3,47,0.5,950,1,medium
+Peruvian ceviche,Mexican & Latin American,succeeded,,1 serve (~300g),300,250,28,18,6,2.5,620,4,medium
+Cuban sandwich,Mexican & Latin American,succeeded,,1 sandwich (~300g),300,820,45,62,42,3.5,2100,6,medium
+Argentinian steak,Mexican & Latin American,succeeded,,1 serve (~300g steak),300,690,65,1,48,0,620,0,medium
+Chimichurri steak,Mexican & Latin American,succeeded,,1 serve (~300g steak with sauce),300,540,47,3,38,1,620,0.5,medium
+Mole chicken,Mexican & Latin American,succeeded,,"1 serve (~350g, chicken + mole sauce)",350,480,34,22,28,4.5,780,8,medium
+Mac and cheese,American/Western comfort & fast food,succeeded,,1 serve (~300g),300,450,18,42,24,2,780,6,medium
+Fried chicken,American/Western comfort & fast food,succeeded,,3 pieces (~300g),300,810,51,30,54,1.5,980,1,medium
+Buffalo wings,American/Western comfort & fast food,succeeded,,"1 serve (~6 wings, 300g)",300,720,42,6,56,0.5,1450,1.5,medium
+Chicken tenders,American/Western comfort & fast food,succeeded,,5 pieces (~150g),150,380,22,24,21,1.5,680,1,medium
+Chicken nuggets,American/Western comfort & fast food,succeeded,,6 pieces (~100g),100,280,14,18,17,1,490,1,high
+Onion rings,American/Western comfort & fast food,succeeded,,"1 serve (~150g, ~8-10 rings)",150,420,5.5,45,24,2.5,620,4.5,medium
+Hot dog American style,American/Western comfort & fast food,succeeded,,1 hot dog with bun (~150g),150,340,13,30,19,1.5,900,6,medium
+Chilli con carne,American/Western comfort & fast food,succeeded,,1 serve (~350g),350,420,28,28,20,8,780,8,medium
+Clam chowder,American/Western comfort & fast food,succeeded,,1 bowl (~300g),300,300,12,25,17,2,950,4,medium
+Baked mac and cheese,American/Western comfort & fast food,succeeded,,1 serve (~350g),350,490,20.5,42,27,2,750,6,medium
+BBQ ribs,American/Western comfort & fast food,succeeded,,1 serve (~350g),350,850,45,35,58,1,1400,28,medium
+Pulled pork sandwich,American/Western comfort & fast food,succeeded,,1 sandwich (~280g),280,620,34,58,27,3,1150,18,medium
+Coleslaw,American/Western comfort & fast food,succeeded,,1 side serve (~150g),150,210,1.7,11,18,2.5,260,8.5,medium
+Cornbread,American/Western comfort & fast food,succeeded,,1 piece (~65g),65,200,4.2,29,7.5,1.5,380,8.5,medium
+Meatloaf,American/Western comfort & fast food,succeeded,,2 slices (~200g),200,380,24,14,25,1.2,700,6,medium
+Fried chicken sandwich,American/Western comfort & fast food,succeeded,,1 sandwich (~250g),250,620,30,52,32,3,1100,8,medium
+Popcorn chicken,American/Western comfort & fast food,succeeded,,1 serve (~180g),180,470,24,32,27,1.5,780,1.5,medium
+Corn on the cob,American/Western comfort & fast food,succeeded,,"1 cob (~150g), with butter",150,155,4.3,25,5.5,3.5,130,6,medium
+Baked potato with sour cream,American/Western comfort & fast food,succeeded,,1 medium potato with sour cream (~300g),300,310,7,44,12,4.5,220,3.5,medium
+Loaded fries,American/Western comfort & fast food,succeeded,LOW_CONFIDENCE,1 serve (~400g),400,980,28,78,62,6,1450,5,low
+Poutine,American/Western comfort & fast food,succeeded,,1 serve (~400g),400,740,20,68,44,4.5,1450,2.5,medium
+Chicken and waffles,American/Western comfort & fast food,succeeded,,"1 serve (2 waffles + 2 fried chicken pieces, ~400g)",400,980,42,78,56,3,1450,20,medium
+Philly cheesesteak fries,American/Western comfort & fast food,succeeded,LOW_CONFIDENCE,1 serve (~450g),450,980,40,70,62,5,1400,3.5,low
+Buffalo cauliflower,American/Western comfort & fast food,succeeded,,1 serve (~250g),250,380,7,32,25,5.5,980,6,medium
+Southern fried chicken,American/Western comfort & fast food,succeeded,,3 pieces (~350g),350,890,55,35,58,1.5,1350,1,medium
+Biscuits and gravy,American/Western comfort & fast food,succeeded,,2 biscuits with gravy (~300g),300,620,14,50,40,2.5,1450,4,medium
+Sloppy joe,American/Western comfort & fast food,succeeded,,1 sandwich (~230g),230,410,20,38,19,3,830,10,medium
+French fries,American/Western comfort & fast food,succeeded,,1 regular serve (~150g),150,460,5.5,56,24,5,400,0.5,high
+Curly fries,American/Western comfort & fast food,succeeded,,1 regular serve (~150g),150,420,5,50,22,4.5,620,1,medium
+Waffle fries,American/Western comfort & fast food,succeeded,,1 regular serve (~120g),120,340,4,42,17,4,480,0.5,medium
+Cheese fries,American/Western comfort & fast food,succeeded,,1 serve (~350g),350,950,22,85,58,6,1100,2,medium
+Jalapeno poppers,American/Western comfort & fast food,succeeded,,6 pieces (~150g),150,420,12,30,28,2,700,3,medium
+Mozzarella sticks American style,American/Western comfort & fast food,succeeded,,"1 serve, 6 sticks (~150g) with marinara sauce",150,440,19,34,25,2,980,4,medium
+Chicken fried steak,American/Western comfort & fast food,succeeded,,"1 serve (~350g, steak + gravy)",350,700,32,35,46,2,1300,3,medium
+Ribeye steak,American/Western comfort & fast food,succeeded,,1 serve (~300g cooked),300,750,68,0,52,0,480,0,medium
+T-bone steak,American/Western comfort & fast food,succeeded,,1 steak (~300g),300,670,62,0,46,0,620,0,medium
+Steak and eggs,American/Western comfort & fast food,succeeded,,"1 serve (~350g, steak + 2 eggs)",350,650,52,2,47,0.2,620,0.5,medium
+Grilled cheese with tomato soup,American/Western comfort & fast food,succeeded,,1 sandwich + 1 cup soup (~380g),380,560,19,55,31,4,1450,13,medium
+Turkey club,American/Western comfort & fast food,succeeded,,"1 sandwich (3 slices toast, ~330g)",330,620,34,46,34,4,1450,6,medium
+Cobb salad,American/Western comfort & fast food,succeeded,,1 serve (~400g),400,620,38,12,47,4.5,1150,4,medium
+Chicken caesar salad American style,American/Western comfort & fast food,succeeded,,1 serve (~400g),400,620,35,20,44,3.5,1050,4,medium
+Pulled pork nachos,American/Western comfort & fast food,succeeded,,1 serve (~450g),450,780,38,58,42,6,1350,8,medium
+Brisket sandwich,American/Western comfort & fast food,succeeded,,1 sandwich (~300g),300,680,38,55,33,3,1300,12,medium
+Smoked brisket,American/Western comfort & fast food,succeeded,,1 serve (~200g),200,470,42,2,33,0.3,780,1,medium
+Mac and cheese bites,American/Western comfort & fast food,succeeded,,6 pieces (~120g),120,340,10,30,20,1.5,560,3,medium
+Deep dish pizza,American/Western comfort & fast food,succeeded,,"1 slice (~1/8 of 12-inch pizza, ~220g)",220,560,24,52,29,3,1150,6,medium
+New york style pizza,American/Western comfort & fast food,succeeded,,1 large slice (~150g),150,380,16,45,15,2.5,780,4,medium
+Bagel with lox,American/Western comfort & fast food,succeeded,,1 bagel with lox and cream cheese (~170g),170,380,20,48,12,2,950,6,medium
+Philadelphia cheesesteak,American/Western comfort & fast food,succeeded,,1 sandwich (~300g),300,700,38,55,35,3,1200,6,medium
+Baked beans American style,American/Western comfort & fast food,succeeded,,1 cup (~260g),260,245,12.4,46,1.6,11.5,890,17.5,medium
+Cornbread with butter,American/Western comfort & fast food,succeeded,,1 slice/piece with butter (~65g),65,210,4,28,9.5,1.5,380,8,medium
+Fried pickles,American/Western comfort & fast food,succeeded,,1 serve (~150g),150,400,6.5,40,24,2.5,1200,4,medium
+Hush puppies,American/Western comfort & fast food,succeeded,,"1 serve (~6 pieces, 120g)",120,340,6.5,40,17,2,620,5,medium
+Shrimp and grits,American/Western comfort & fast food,succeeded,,1 serve (~400g),400,560,28,40,32,2.5,980,3,medium
+Gumbo,American/Western comfort & fast food,succeeded,,1 bowl (~400g) with rice,400,420,24,32,22,3,1150,4,medium
+Jambalaya,American/Western comfort & fast food,succeeded,,1 serve (~400g),400,520,28,55,20,3.5,1100,6,medium
+Fish pie,British/European classics,succeeded,,1 serve (~400g),400,520,30,42,25,4,780,6,medium
+Shepherd's pie,British/European classics,succeeded,,1 serve (~400g),400,460,24,38,23,5,680,6,medium
+Cottage pie,British/European classics,succeeded,,1 serve (~400g),400,480,24,38,25,5,700,8,medium
+Beef stroganoff,British/European classics,succeeded,,1 serve (~400g),400,560,32,45,27,3.5,780,6,medium
+Chicken schnitzel European style,British/European classics,succeeded,,1 serve (~300g),300,650,42,38,35,2.5,780,3,medium
+Wiener schnitzel,British/European classics,succeeded,,1 serve with lemon wedge (~250g),250,580,38,30,34,2,780,2,medium
+Goulash,British/European classics,succeeded,,1 serve (~400g),400,480,28,30,26,4,850,8,medium
+Beef bourguignon,British/European classics,succeeded,,1 serve (~400g),400,520,34,18,32,3,780,5,medium
+Coq au vin,British/European classics,succeeded,,"1 serve (~400g, chicken + sauce)",400,520,38,10,32,1.5,780,4,medium
+Toad in the hole,British/European classics,succeeded,,"1 serve (~350g, sausages with batter and gravy)",350,620,24,40,40,2.5,1200,4,medium
+Bangers and mash,British/European classics,succeeded,,1 serve (~450g),450,680,26,45,42,5,1350,7,medium
+Steak and kidney pie,British/European classics,succeeded,,1 individual pie (~250g),250,650,28,42,40,2.5,950,3,medium
+Yorkshire pudding,British/European classics,succeeded,,1 piece (~40g),40,95,3.3,11,4.2,0.4,140,0.6,high
+Roast beef with Yorkshire pudding,British/European classics,succeeded,,"1 serve (~350g, incl. gravy)",350,520,35,30,27,3.5,620,4,medium
+Ploughman's lunch,British/European classics,succeeded,LOW_CONFIDENCE,1 serve (~400g),400,780,32,55,46,5.5,1450,12,low
+Cornish pasty,British/European classics,succeeded,,1 pasty (~220g),220,580,16.5,52,34,3.5,780,3,medium
+Full English breakfast,British/European classics,succeeded,,1 serve (~450g),450,850,38,40,60,5,1650,6,medium
+Chicken kiev,British/European classics,succeeded,,1 serve (~250g),250,570,35,20,38,1,780,1.5,medium
+Beef wellington,British/European classics,succeeded,,1 slice (~300g),300,720,34,38,48,2.5,780,3,medium
+Sunday roast,British/European classics,succeeded,LOW_CONFIDENCE,1 serve (~450g),450,650,40,45,32,7,850,8,low
+Pork belly with crackling,British/European classics,succeeded,,1 serve (~250g),250,720,38,4,60,0,780,1,medium
+Duck confit,British/European classics,succeeded,,1 leg serve (~200g),200,520,32,1,42,0,780,0.3,medium
+French onion soup,British/European classics,succeeded,,1 bowl (~350g),350,310,12,26,17,2.5,1200,9,medium
+Quiche lorraine,British/European classics,succeeded,,1 slice (~150g),150,420,12.5,22,31,1.2,560,2.5,high
+Croque monsieur,British/European classics,succeeded,,1 sandwich (~200g),200,520,28,32,32,1.8,980,4,high
+Ratatouille,British/European classics,succeeded,,1 serve (~300g),300,180,3.5,15,12,6.5,420,10,medium
+Paella,British/European classics,succeeded,,1 serve (~450g),450,620,32,68,23,4,980,5,medium
+Tortilla espanola,British/European classics,succeeded,,1 wedge/slice (~150g),150,260,7.5,15,18.5,1.5,320,1.2,medium
+Spanish omelette,British/European classics,succeeded,,1 wedge/slice (~180g),180,300,12.5,18,20,1.8,400,2.5,medium
+Chorizo and beans,British/European classics,succeeded,,1 serve (~350g),350,480,24,30,30,9,1350,6,medium
+Gazpacho,British/European classics,succeeded,,1 bowl (~300g),300,120,2.5,13,7,2.5,480,8,medium
+Polish pierogi,British/European classics,succeeded,,"1 serve (~7 pierogi, 350g)",350,560,16,68,24,4,780,3.5,medium
+German sausage with sauerkraut,British/European classics,succeeded,,"1 serve (~350g, 2 sausages with sauerkraut)",350,620,24,12,50,4,1900,6,medium
+Bratwurst,British/European classics,succeeded,,1 sausage (~150g),150,430,18,3,38,0,900,1,medium
+Schnitzel with chips,British/European classics,succeeded,,1 serve (~450g),450,980,42,78,55,6,950,3,medium
+Beef goulash with dumplings,British/European classics,succeeded,,1 serve (~450g),450,620,34,55,28,5,950,8,medium
+Irish stew,British/European classics,succeeded,,1 serve (~450g),450,480,25,35,25,5,850,6,medium
+Colcannon,British/European classics,succeeded,,1 serve (~250g),250,290,6.5,28,17,5.5,480,4.5,medium
+Haggis,British/European classics,succeeded,,1 serve (~200g),200,480,20,24,34,3,900,1,medium
+Swedish meatballs,British/European classics,succeeded,,"1 serve (~350g, 8-10 meatballs with sauce and mash)",350,620,28,38,38,3,950,6,medium
+Caesar salad,Salads & grain bowls,succeeded,,1 entrée serve (~300g),300,470,14,14,40,3,890,3,medium
+Chicken caesar salad,Salads & grain bowls,succeeded,,1 serve (~350g),350,520,32,16,36,3.5,980,3,medium
+Garden salad,Salads & grain bowls,succeeded,,1 serve (~150g),150,45,1.5,6,1.5,2.5,20,4,medium
+Poke bowl,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 bowl (~500g),500,620,32,70,22,6,950,9,low
+Buddha bowl,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 bowl (~450g),450,520,16,55,27,11,480,9,low
+Quinoa salad,Salads & grain bowls,succeeded,,1 serve (~250g),250,320,9.5,33,16,6.5,380,6,medium
+Superfood salad,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 serve (~350g),350,420,10.5,32,27,8.5,380,12,low
+Kale salad,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 serve (~200g),200,220,5.5,13,16,4.5,280,5,low
+Waldorf salad,Salads & grain bowls,succeeded,,1 serve (~200g),200,280,3,15,23,2.5,200,12,medium
+Potato salad,Salads & grain bowls,succeeded,,1 serve (~150g),150,220,3.5,18,15,2,320,3.5,medium
+Pasta salad,Salads & grain bowls,succeeded,,1 serve (~200g),200,320,7.5,32,18,2.5,420,5,medium
+Rice salad,Salads & grain bowls,succeeded,,1 serve (~200g),200,320,5.5,42,14,2.5,380,6,medium
+Vietnamese chicken salad,Salads & grain bowls,succeeded,,1 serve (~350g),350,320,25,20,15,5,780,12,medium
+Nicoise salad,Salads & grain bowls,succeeded,,1 serve (~350g),350,420,22,18,28,4.5,780,6,medium
+Grilled chicken salad,Salads & grain bowls,succeeded,,1 serve (~350g),350,380,32,14,21,4.5,620,6.5,medium
+Roast pumpkin salad,Salads & grain bowls,succeeded,,1 serve (~300g),300,360,8.5,24,25,5.5,380,10,medium
+Beetroot and feta salad,Salads & grain bowls,succeeded,,1 serve (~200g),200,260,7.5,14,19,4,480,10,medium
+Chickpea salad,Salads & grain bowls,succeeded,,1 serve (~200g),200,260,8.5,24,14,7,380,4,medium
+Lentil salad,Salads & grain bowls,succeeded,,1 serve (~200g),200,260,10.5,24,13.5,8,380,4.5,medium
+Couscous salad Mediterranean,Salads & grain bowls,succeeded,,1 serve (~200g),200,290,7,34,14,4,420,5,medium
+Soba noodle salad,Salads & grain bowls,succeeded,,1 serve (~300g),300,380,12.5,58,11,5,780,9,medium
+Asian slaw,Salads & grain bowls,succeeded,,1 side serve (~150g),150,160,2.8,12.5,11,3.2,320,9.5,medium
+Tabbouleh salad,Salads & grain bowls,succeeded,,1 serve (~150g),150,165,3.2,14.5,11,4,260,3.5,medium
+Fattoush,Salads & grain bowls,succeeded,,1 serve (~250g),250,220,4.5,20,14,5,380,6,medium
+Halloumi and roast veg salad,Salads & grain bowls,succeeded,,1 serve (~350g),350,480,18.5,25,33,6.5,890,12,medium
+Prawn salad,Salads & grain bowls,succeeded,,1 serve (~300g),300,320,22,12,21,3,480,7,medium
+Warm quinoa bowl,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 serve (~400g),400,480,14.5,55,22,9,480,8,low
+Falafel salad bowl,Salads & grain bowls,succeeded,,1 serve (~400g),400,480,15,45,27,10,680,8,medium
+Mexican salad bowl,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 serve (~400g),400,480,22,38,27,8,780,6.5,low
+Grain bowl with tofu,Salads & grain bowls,succeeded,,1 bowl (~450g),450,520,20.5,58,24,9.5,620,7.5,medium
+Brown rice power bowl,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 bowl (~420g),420,520,18.5,62,22,9.5,480,8,low
+Sweet potato bowl,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 bowl (~450g),450,480,12,62,20,9,480,12,low
+Vegan buddha bowl,Salads & grain bowls,succeeded,LOW_CONFIDENCE,1 bowl (~450g),450,480,14.5,58,22,12,520,10,low
+Roast vegetable salad,Salads & grain bowls,succeeded,,1 serve (~300g),300,320,6.5,28,20,6.5,320,10,medium
+Pumpkin soup,Soups & stews,succeeded,,1 serve (~300g),300,180,3.5,16,11,3.5,620,8,medium
+Chicken noodle soup,Soups & stews,succeeded,,1 bowl (~350g),350,210,16.5,22,6,1.8,980,3,medium
+Beef stew,Soups & stews,succeeded,,1 serve (~400g),400,420,30,24,20,4,780,6,medium
+Laksa,Soups & stews,succeeded,,1 serve (~550g),550,620,28,55,34,3.5,1600,6,medium
+Chicken laksa,Soups & stews,succeeded,,1 bowl (~550g),550,620,32,48,35,4,1450,8,medium
+Vegetable soup,Soups & stews,succeeded,,1 bowl (~350g),350,110,3.5,16,3.5,3.5,780,6,medium
+Tomato soup,Soups & stews,succeeded,,1 bowl (~250g),250,140,2.8,18,6.5,2,780,11,medium
+Broccoli and cheese soup,Soups & stews,succeeded,,1 bowl (~350g),350,310,12.5,16,21,3,950,5.5,medium
+Corn soup,Soups & stews,succeeded,,1 bowl (~300g),300,150,4.5,24,4.5,2.5,700,9,medium
+Lentil soup,Soups & stews,succeeded,,1 bowl (~300g),300,210,12.5,28,5.5,8,780,4.5,medium
+Split pea soup,Soups & stews,succeeded,,1 bowl (~300g),300,240,14,36,5,8,780,5,medium
+French onion soup Western,Soups & stews,succeeded,,1 bowl (~350g),350,280,10.5,24,15,2.5,1150,9,medium
+Clam chowder soup,Soups & stews,succeeded,,1 bowl (~300g),300,285,12.5,22,17,1.8,980,4.5,medium
+Seafood chowder,Soups & stews,succeeded,,1 bowl (~400g),400,420,20.5,28,25,2.5,980,6,medium
+Beef and vegetable soup,Soups & stews,succeeded,,1 bowl (~350g),350,180,15,12,7,2.5,780,4,medium
+Chicken and corn soup,Soups & stews,succeeded,,1 bowl (~300g),300,180,12.5,20,5.5,1.8,780,6.5,high
+Hot and sour soup Chinese,Soups & stews,succeeded,,1 bowl (~350g),350,180,9.5,16,8.5,1.5,980,3.5,medium
+Wonton soup Chinese,Soups & stews,succeeded,,1 serve (~400g),400,220,14,20,9,1.5,1400,2,medium
+Miso soup Japanese,Soups & stews,succeeded,,1 bowl (~250g),250,60,4.5,5.5,2.3,1.5,780,1.5,high
+Tom yum soup Thai,Soups & stews,succeeded,,1 bowl (~350g),350,180,14,9,9,1.5,1200,4,medium
+Pho soup Vietnamese,Soups & stews,succeeded,,1 serve (~600g),600,450,28,60,10,3,1800,6,medium
+Goulash soup,Soups & stews,succeeded,,1 bowl (~350g),350,280,18,20,14,3,950,5,medium
+Irish stew soup,Soups & stews,succeeded,,1 bowl (~350g),350,260,15,20,13,3,780,4,medium
+Beef bourguignon stew,Soups & stews,succeeded,,1 serve (~400g),400,480,32,16,28,3,780,5,medium
+Chicken stew,Soups & stews,succeeded,,1 serve (~400g),400,420,28,20,24,3.5,780,6,medium
+Lamb stew,Soups & stews,succeeded,,1 serve (~400g),400,420,28,22,23,3.5,780,6,medium
+Curry laksa,Soups & stews,succeeded,,1 bowl (~600g),600,620,24,55,36,4,1800,8,medium
+Asian noodle soup,Soups & stews,succeeded,LOW_CONFIDENCE,1 bowl (~500g),500,380,18,52,10,3.5,1450,5,low
+Ramen soup,Soups & stews,succeeded,,1 bowl (~600g),600,550,25,65,20,3,2200,5,medium
+Udon soup,Soups & stews,succeeded,,1 bowl (~500g),500,380,14,62,8,3,1600,4,medium
+Congee soup,Soups & stews,succeeded,,1 bowl (~350g),350,220,9,35,5,1,650,1,medium
+Mushroom soup,Soups & stews,succeeded,,1 bowl (~250ml),250,165,3.5,12,11.5,1.5,780,3.5,medium
+Carrot and ginger soup,Soups & stews,succeeded,,1 serve (~300g),300,165,3,18,9,4.5,620,11,medium
+Sweet potato soup,Soups & stews,succeeded,,1 bowl (~300g),300,180,1.8,38,3,3.5,40,20,medium
+Cauliflower soup,Soups & stews,succeeded,,1 bowl (~300g),300,210,5.5,15,14,3.5,780,6,medium
+Chicken tortilla soup,Soups & stews,succeeded,,1 bowl (~350g),350,280,20,24,13,4,980,5,medium
+Black bean soup,Soups & stews,succeeded,,1 bowl (~300g),300,210,12,32,4,9,750,3,medium
+Gumbo stew,Soups & stews,succeeded,,1 serve (~400g),400,420,26,30,20,4,980,5,medium
+Jambalaya stew,Soups & stews,succeeded,,1 serve (~400g),400,480,28,48,18,4,980,6,medium
+Beef chilli stew,Soups & stews,succeeded,LOW_CONFIDENCE,1 serve (~350g),350,420,32,15,25,3,780,6,low
+Lamb tagine stew,Soups & stews,succeeded,,1 serve (~400g),400,480,32,24,28,6,780,12,medium
+Massaman beef stew,Soups & stews,succeeded,,1 serve (~400g),400,560,32,24,36,4,820,10,medium
+Osso buco stew,Soups & stews,succeeded,,1 serve (~450g incl. shank + sauce),450,520,38,15,33,3,780,6,medium
+Vegetable minestrone,Soups & stews,succeeded,,1 bowl (~350g),350,150,5.5,22,4.5,5,780,6,medium
+Nasi goreng,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,22,78,24,3.5,1350,8,medium
+Pad see ew noodles,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,28,70,24,4,1400,8,medium
+Congee rice,Rice & noodle dishes,succeeded,,1 bowl (~400g),400,220,8,38,4,1,650,1,medium
+Paella rice,Rice & noodle dishes,succeeded,,1 serve (~400g),400,520,24,62,18,3,900,4,medium
+Biryani rice,Rice & noodle dishes,succeeded,,1 serve (~350g),350,490,22,62,16,3.5,780,5,medium
+Egg fried rice,Rice & noodle dishes,succeeded,,1 serve (~300g),300,480,11.5,68,17,1.8,780,2,medium
+Vegetable fried rice,Rice & noodle dishes,succeeded,,1 serve (~350g),350,480,10.5,78,13,4,820,4.5,medium
+Special fried rice dish,Rice & noodle dishes,succeeded,,1 serve (~350g),350,560,18,72,21,3,980,4,medium
+Char kway teow noodles,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,22,68,30,3.5,1450,6,medium
+Pad thai noodles,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,25,78,24,4,1450,18,medium
+Singapore noodles dish,Rice & noodle dishes,succeeded,,1 serve (~400g),400,520,20,68,17,4,980,8,medium
+Hokkien noodles dish,Rice & noodle dishes,succeeded,,1 serve (~450g),450,620,24,78,22,5.5,1450,9,medium
+Chow mein noodles,Rice & noodle dishes,succeeded,,1 serve (~350g),350,480,16,62,17,4,980,6,medium
+Yaki udon,Rice & noodle dishes,succeeded,,1 serve (~400g),400,520,20,68,18,4.5,1450,8,medium
+Dan dan noodles dish,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,24,65,30,4,1450,6,medium
+Beef noodle soup dish,Rice & noodle dishes,succeeded,,1 bowl (~550g),550,480,28,60,14,3.5,1600,5,medium
+Rice noodle salad,Rice & noodle dishes,succeeded,,1 serve (~350g),350,380,10.5,55,13,4.5,780,12,medium
+Glass noodle salad,Rice & noodle dishes,succeeded,,1 serve (~300g),300,280,9.5,38,10.5,3,780,9,medium
+Japchae noodles,Rice & noodle dishes,succeeded,,1 serve (~300g),300,380,8.5,58,13,3.5,780,10,medium
+Rice pilaf,Rice & noodle dishes,succeeded,,1 serve (~180g),180,260,5.5,47,6.5,1.8,420,2,medium
+Coconut rice,Rice & noodle dishes,succeeded,,1 serve (~200g),200,300,4.8,48,10.5,1.2,220,3,medium
+Lemon rice,Rice & noodle dishes,succeeded,,1 serve (~200g),200,310,5.5,48,11,2,420,1.5,medium
+Tomato rice,Rice & noodle dishes,succeeded,,1 serve (~300g),300,380,6.5,70,8.5,2.5,520,6,medium
+Jasmine rice bowl,Rice & noodle dishes,succeeded,,1 bowl (~200g cooked),200,260,4.8,57,0.6,0.8,5,0.1,high
+Sticky rice,Rice & noodle dishes,succeeded,,1 serve (~300g),300,480,10.5,75,15,2,780,3,medium
+Nasi lemak,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,18,68,32,3.5,950,6,medium
+Mee goreng,Rice & noodle dishes,succeeded,,1 serve (~400g),400,560,18,68,24,4.5,1450,8,medium
+Kway teow soup,Rice & noodle dishes,succeeded,,1 bowl (~500g),500,380,20,50,10,3,1400,4,medium
+Bihun goreng,Rice & noodle dishes,succeeded,,1 serve (~350g),350,430,15,55,16,3.5,980,6,medium
+Claypot chicken rice,Rice & noodle dishes,succeeded,,1 serve (~500g),500,650,32,85,18,2.5,1400,5,medium
+Hainanese chicken rice,Rice & noodle dishes,succeeded,,1 serve (~450g),450,650,32,75,24,2.5,1200,4,medium
+Yangzhou fried rice,Rice & noodle dishes,succeeded,,1 serve (~350g),350,560,18.5,68,22,2.5,980,3.5,medium
+Bibimbap rice bowl,Rice & noodle dishes,succeeded,,1 bowl (~550g),550,620,24,82,20,6.5,980,8,medium
+Risotto rice dish,Rice & noodle dishes,succeeded,,1 serve (~350g),350,480,14,60,19,2.5,780,3.5,medium
+Tofu stir fry,Vegetarian/vegan composite dishes,succeeded,,1 serve (~350g),350,320,15,22,19,5,780,8,medium
+Chickpea curry vegan,Vegetarian/vegan composite dishes,succeeded,,1 serve (~350g),350,320,10.5,34,16,9,620,7,medium
+Vegan bolognese,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,420,16.5,60,12,9,680,11,medium
+Vegan lasagne,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,460,15,50,22,8,720,10,medium
+Vegan pad thai,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,520,14,78,17,5,980,16,medium
+Vegan butter chicken,Vegetarian/vegan composite dishes,succeeded,,"1 serve (~350g, with sauce and tofu/protein, no rice)",350,380,14,22,26,5,780,10,medium
+Vegan mac and cheese,Vegetarian/vegan composite dishes,succeeded,,1 serve (~350g),350,480,13,55,23,4.5,780,6,medium
+Vegan nachos,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,620,15,70,32,12,980,8,medium
+Vegan burrito bowl,Vegetarian/vegan composite dishes,succeeded,,1 bowl (~500g),500,620,18.5,85,22,15,950,9,medium
+Vegan chilli,Vegetarian/vegan composite dishes,succeeded,,1 serve (~350g),350,320,15,42,9,13,680,9,medium
+Vegan curry,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,380,9.5,42,19,8,720,10,medium
+Lentil shepherd's pie,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,420,16,52,15,11,620,8,medium
+Vegan shepherd's pie,Vegetarian/vegan composite dishes,succeeded,,1 serve (~350g),350,380,12.5,48,15,9,620,8,medium
+Vegan meatballs,Vegetarian/vegan composite dishes,succeeded,,"1 serve (~6 meatballs, 150g)",150,280,16,22,14,6,620,3,medium
+Falafel bowl vegan,Vegetarian/vegan composite dishes,succeeded,,1 bowl (~450g),450,560,16.5,62,28,12,780,8.5,medium
+Vegan katsu curry,Vegetarian/vegan composite dishes,succeeded,,"1 serve (~450g, with rice)",450,620,14,92,20,6.5,950,12,medium
+Tempeh stir fry,Vegetarian/vegan composite dishes,succeeded,,1 serve (~300g),300,340,18.5,24,19,6,680,8,medium
+Vegan poke bowl,Vegetarian/vegan composite dishes,succeeded,,1 bowl (~500g),500,560,16,78,20,10,950,12,medium
+Vegan sushi rolls,Vegetarian/vegan composite dishes,succeeded,,"1 serve, ~8 pieces (~250g)",250,340,6.5,68,5,5.5,620,8,medium
+Vegan pho,Vegetarian/vegan composite dishes,succeeded,,1 bowl (~550g),550,380,12.5,65,8,5.5,1450,8,medium
+Vegan ramen,Vegetarian/vegan composite dishes,succeeded,,1 bowl (~600g),600,480,16,70,14,6,1600,8,medium
+Vegan biryani,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,480,10.5,78,15,7,780,8,medium
+Vegan dal,Vegetarian/vegan composite dishes,succeeded,,1 serve (~300g),300,260,12.5,35,8,8.5,520,4.5,medium
+Vegan korma,Vegetarian/vegan composite dishes,succeeded,,1 serve (~350g),350,320,6.5,28,21,6,520,9,medium
+Jackfruit tacos,Vegetarian/vegan composite dishes,succeeded,,3 tacos (~330g),330,480,12.5,68,17,9.5,780,8.5,medium
+Vegan pulled pork,Vegetarian/vegan composite dishes,succeeded,LOW_CONFIDENCE,1 serve (~200g),200,260,8,30,11,5,620,14,low
+Vegan burger with the lot,Vegetarian/vegan composite dishes,succeeded,LOW_CONFIDENCE,1 burger (~450g),450,780,22,82,40,10,1250,15,low
+Vegan schnitzel,Vegetarian/vegan composite dishes,succeeded,,1 schnitzel (~150g),150,320,18,28,15,4,620,2,medium
+Vegan carbonara,Vegetarian/vegan composite dishes,succeeded,LOW_CONFIDENCE,1 serve (~400g),400,560,16.5,68,24,6.5,780,5.5,low
+Vegan gnocchi,Vegetarian/vegan composite dishes,succeeded,,1 serve (~350g),350,420,9.5,62,14,5.5,620,6,medium
+Vegan risotto,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,480,10.5,68,16,6.5,780,5.5,medium
+Vegan stir fry noodles,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,480,12,68,16,6,980,9,medium
+Tofu pad thai,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,560,18,72,22,4.5,1100,16,medium
+Cauliflower buffalo wings,Vegetarian/vegan composite dishes,succeeded,,1 serve (~250g),250,380,8.5,45,19,5.5,950,8,medium
+Vegan spring rolls,Vegetarian/vegan composite dishes,succeeded,,4 rolls (~180g),180,320,6.5,38,16,3.5,480,4,medium
+Vegan dumplings,Vegetarian/vegan composite dishes,succeeded,,"1 serve (~6 dumplings, 180g)",180,300,8,45,9,3.5,620,3,medium
+Vegan sausage roll,Vegetarian/vegan composite dishes,succeeded,,1 roll (~120g),120,330,7.5,30,21,3.5,480,3,medium
+Vegan pie,Vegetarian/vegan composite dishes,succeeded,,1 pie (~200g),200,480,12,48,27,6,700,5,medium
+Stuffed capsicum vegan,Vegetarian/vegan composite dishes,succeeded,,2 stuffed capsicum halves (~400g),400,320,9.5,48,10.5,8.5,520,10,medium
+Vegan moussaka,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,380,11,34,22,9,620,12,medium
+Vegan paella,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,420,9.5,68,12,7.5,620,6.5,medium
+Vegan chow mein,Vegetarian/vegan composite dishes,succeeded,,1 serve (~400g),400,480,14,68,16,6.5,1200,8,medium
+Vegan fried rice,Vegetarian/vegan composite dishes,succeeded,,1 serve (~350g),350,480,10.5,72,15,4.5,780,4,medium
+Pavlova,"Desserts, cakes & sweets",succeeded,,1 slice (~120g),120,280,3.2,42,12,1,60,40,medium
+Lamington cake,"Desserts, cakes & sweets",succeeded,,1 piece (~70g),70,280,3.5,40,12,1.5,160,28,high
+Cheesecake,"Desserts, cakes & sweets",succeeded,,1 slice (~120g),120,400,6.5,32,27,0.5,280,24,medium
+New York cheesecake,"Desserts, cakes & sweets",succeeded,,1 slice (~120g),120,400,6.5,32,27,0.5,320,24,medium
+Chocolate cake,"Desserts, cakes & sweets",succeeded,,1 slice (~100g),100,380,5,50,19,2,320,38,medium
+Carrot cake,"Desserts, cakes & sweets",succeeded,,1 slice (~100g),100,380,4.5,45,21,1.5,300,32,medium
+Red velvet cake,"Desserts, cakes & sweets",succeeded,,1 slice (~100g),100,390,4.5,50,20,0.8,320,38,medium
+Sticky date pudding,"Desserts, cakes & sweets",succeeded,,1 serve (~150g),150,490,4.5,70,21,2.5,320,55,medium
+Chocolate mud cake,"Desserts, cakes & sweets",succeeded,,1 slice (~100g),100,400,4.5,48,22,1.8,220,38,medium
+Banoffee pie,"Desserts, cakes & sweets",succeeded,,1 slice (~120g),120,420,5,45,25,1.5,220,35,medium
+Apple pie,"Desserts, cakes & sweets",succeeded,,1 slice (~125g),125,320,2.8,45,15,2.2,220,22,medium
+Apple crumble,"Desserts, cakes & sweets",succeeded,,1 serve (~150g),150,320,3.2,48,13.5,3,120,30,medium
+Sticky toffee pudding,"Desserts, cakes & sweets",succeeded,,1 serve (~150g) with toffee sauce,150,480,4.5,68,21,1.8,320,52,medium
+Creme brulee,"Desserts, cakes & sweets",succeeded,,1 ramekin (~120g),120,330,5,22,25,0,60,21,high
+Panna cotta dessert,"Desserts, cakes & sweets",succeeded,,1 serve (~120g),120,280,4,22,20,0,45,20,medium
+Tiramisu cup,"Desserts, cakes & sweets",succeeded,,1 cup (~120g),120,320,5,28,21,0.5,60,22,medium
+Brownie,"Desserts, cakes & sweets",succeeded,,1 piece (~60g),60,260,3.2,32,13.5,1.5,150,24,medium
+Chocolate brownie,"Desserts, cakes & sweets",succeeded,,1 piece (~70g),70,300,3.8,36,16,1.8,180,27,medium
+Blondie,"Desserts, cakes & sweets",succeeded,,1 square (~60g),60,260,2.8,33,13.5,0.6,140,24,medium
+Mud cake slice,"Desserts, cakes & sweets",succeeded,,1 slice (~90g),90,380,4.5,42,22,1.5,220,33,medium
+Cupcake,"Desserts, cakes & sweets",succeeded,,1 cupcake (~65g),65,240,2.8,34,10.5,0.6,190,24,medium
+Vanilla cupcake,"Desserts, cakes & sweets",succeeded,,1 cupcake with frosting (~70g),70,260,3,34,13,0.5,190,24,medium
+Chocolate cupcake,"Desserts, cakes & sweets",succeeded,,1 cupcake (~75g),75,290,3.5,38,14,1.5,220,27,medium
+Donut dessert,"Desserts, cakes & sweets",succeeded,,1 donut (~60g),60,240,3.5,30,12,1,210,14,medium
+Churros dessert,"Desserts, cakes & sweets",succeeded,,"1 serve (~150g, 5-6 churros with sauce)",150,520,6.5,62,27,2.5,380,30,medium
+Baklava dessert,"Desserts, cakes & sweets",succeeded,,1 piece (~60g),60,250,3.8,27,15,1.2,110,18,medium
+Gulab jamun dessert,"Desserts, cakes & sweets",succeeded,,2 pieces (~90g),90,300,4.5,45,12,0.3,90,38,medium
+Mango sticky rice dessert,"Desserts, cakes & sweets",succeeded,,1 serve (~300g),300,420,6,72,13,3.5,90,32,medium
+Ice cream sundae,"Desserts, cakes & sweets",succeeded,,1 sundae (~300g),300,430,6.5,55,21,1,140,45,medium
+Chocolate mousse,"Desserts, cakes & sweets",succeeded,,1 serve (~120g),120,280,4.5,22,20,1.5,55,19,medium
+Lemon meringue pie,"Desserts, cakes & sweets",succeeded,,1 slice (~120g),120,340,4.2,51,13.5,0.8,190,37,medium
+Fruit tart,"Desserts, cakes & sweets",succeeded,,1 individual tart (~110g),110,280,4,34,14,1.5,130,20,medium
+Custard tart dessert,"Desserts, cakes & sweets",succeeded,,1 tart (~100g),100,290,5.5,33,15,1,170,16,medium
+Eclair,"Desserts, cakes & sweets",succeeded,,1 eclair (~80g),80,260,4.5,24,16.5,0.8,150,15,medium
+Profiteroles,"Desserts, cakes & sweets",succeeded,,3 pieces (~150g),150,420,6.5,32,29,1,160,20,medium
+Macarons,"Desserts, cakes & sweets",succeeded,,2 macarons (~30g),30,130,1.8,17,6.5,0.5,20,15.5,medium
+French macaron,"Desserts, cakes & sweets",succeeded,,1 macaron (~25g),25,95,1.5,13.5,4.5,0.4,20,12,high
+Cannoli,"Desserts, cakes & sweets",succeeded,,1 cannoli (~90g),90,290,6.5,30,16,1,120,18,medium
+Gelato scoop,"Desserts, cakes & sweets",succeeded,,1 scoop (~75g),75,130,2.3,18,5.6,0.2,35,16,medium
+Sorbet,"Desserts, cakes & sweets",succeeded,,2 scoops (~120g),120,150,0.5,37,0.1,0.5,10,33,medium
+Affogato,"Desserts, cakes & sweets",succeeded,,1 serve (~90g),90,160,3,15,9,0.2,45,14,medium
+Tim tam,"Desserts, cakes & sweets",succeeded,,2 biscuits (~18g each),36,190,2,22.5,10,1,45,16.5,high
+Anzac biscuits dessert,"Desserts, cakes & sweets",succeeded,,2 biscuits (~60g),60,280,3.2,36,13.5,1.8,140,20,high
+Chocolate chip cookie,"Desserts, cakes & sweets",succeeded,,1 medium cookie (~40g),40,195,2.2,26,9.5,0.9,130,15.5,medium
+Shortbread,"Desserts, cakes & sweets",succeeded,,2 biscuits (~24g),24,122,1.3,14.5,6.5,0.4,65,4.5,high
+Scones with jam and cream dessert,"Desserts, cakes & sweets",succeeded,,2 scones with jam and cream (~180g),180,480,7.5,62,22,1.5,480,28,medium
+Bread and butter pudding,"Desserts, cakes & sweets",succeeded,,1 serve (~200g),200,380,9.5,42,19,1.5,320,28,medium
+Rice pudding,"Desserts, cakes & sweets",succeeded,,1 serve (~200g),200,260,7,42,7,0.6,90,22,medium
+Trifle,"Desserts, cakes & sweets",succeeded,,1 serve (~200g),200,320,5.5,42,14,1.5,150,32,medium
+Pecan pie,"Desserts, cakes & sweets",succeeded,,"1 slice (1/8 of 9-inch pie, ~113g)",113,456,5.3,60.9,23.9,2.5,264,37,medium
+Key lime pie,"Desserts, cakes & sweets",succeeded,,1 slice (~125g),125,380,6,48,19,1,260,36,medium
+Black forest cake,"Desserts, cakes & sweets",succeeded,,1 slice (~120g),120,380,5,42,21,1.5,220,32,medium
+Opera cake,"Desserts, cakes & sweets",succeeded,,1 slice (~90g),90,350,5,33,22,1,90,26,medium
+Battenberg cake,"Desserts, cakes & sweets",succeeded,,1 slice (~70g),70,280,3.5,42,11.5,0.8,150,30,high
+Victoria sponge cake,"Desserts, cakes & sweets",succeeded,,1 slice (~90g),90,320,4.2,40,16.5,0.7,210,27,high
+Angel food cake,"Desserts, cakes & sweets",succeeded,,1 slice (~60g),60,172,3.8,39,0.2,0.2,210,26,medium
+Rocky road,"Desserts, cakes & sweets",succeeded,,1 piece (~50g),50,220,2.8,24,12.5,1,55,20,medium
+Fudge,"Desserts, cakes & sweets",succeeded,,1 piece (~30g),30,130,0.7,22,4.8,0.2,45,21,medium
+Peppermint slice,"Desserts, cakes & sweets",succeeded,,1 piece (~60g),60,280,2.2,30.5,17,1,90,26,medium
+Caramel slice,"Desserts, cakes & sweets",succeeded,,1 piece (~70g),70,330,3.5,34,21,1,140,25,medium
+Chocolate crackle,"Desserts, cakes & sweets",succeeded,,1 piece (~25g),25,125,1,14,7.5,1,45,9.5,high
+Fairy bread dessert,"Desserts, cakes & sweets",succeeded,,4 triangles (~2 slices of bread),90,260,4.5,42,9,1.5,300,18,medium
+Jelly and ice cream,"Desserts, cakes & sweets",succeeded,,1 serve (~180g),180,220,3.2,38,6.5,0,60,32,medium
+Pavlova with berries,"Desserts, cakes & sweets",succeeded,,1 slice (~120g),120,290,3.5,45,11.5,1.5,60,43,medium
+Party pies,"Snacks, dips & party food",succeeded,,3 mini pies (~120g),120,340,9.5,27,21,1.5,560,2.5,high
+Mini sausage rolls,"Snacks, dips & party food",succeeded,,4 mini rolls (~120g),120,370,9,26,25,1.5,560,2.5,medium
+Spring rolls party size,"Snacks, dips & party food",succeeded,,1 mini spring roll (~25g),25,65,1.6,6.5,3.8,0.7,110,0.8,medium
+Arancini balls,"Snacks, dips & party food",succeeded,,5 balls (~150g),150,330,10.5,38,15,2.5,620,2,medium
+Nachos platter,"Snacks, dips & party food",succeeded,LOW_CONFIDENCE,1 sharing platter (~500g),500,950,35,80,55,8,1600,8,low
+Cheese platter,"Snacks, dips & party food",succeeded,LOW_CONFIDENCE,1 serve (~150g),150,480,24,18,35,1.5,780,8,low
+Antipasto platter Aus,"Snacks, dips & party food",succeeded,LOW_CONFIDENCE,1 serve (~200g),200,480,22,12,37,2.5,1400,4,low
+Chips and dip,"Snacks, dips & party food",succeeded,,1 serve (~100g chips + 40g dip),140,580,6.5,52,38,4.5,620,3.5,medium
+Corn chips with salsa,"Snacks, dips & party food",succeeded,,"1 serve (~100g chips, ~50g salsa)",150,490,6.5,58,26,4.5,520,4,medium
+Sour cream and chive dip,"Snacks, dips & party food",succeeded,,2 tbsp (~40g),40,110,1.3,3,10.2,0.1,180,1.8,medium
+French onion dip,"Snacks, dips & party food",succeeded,,2 tbsp (~30g),30,75,1.2,3,6.8,0.2,210,2,medium
+Spinach and cheese dip,"Snacks, dips & party food",succeeded,,"1 serve (~1/2 cup, ~120g)",120,240,7.5,7,20.5,1.5,430,2.5,medium
+Hummus dip,"Snacks, dips & party food",succeeded,,"1 serve (~60g, with dipping)",60,180,5.4,10.2,13.8,3.6,300,0.6,medium
+Guacamole dip,"Snacks, dips & party food",succeeded,,1 serve (~60g),60,96,1.2,4.5,8.6,3.5,150,1,medium
+Vegetable sticks with dip,"Snacks, dips & party food",succeeded,,1 serve (~150g),150,180,3,12,13,3.5,320,6,medium
+Cheese and crackers,"Snacks, dips & party food",succeeded,,"1 serve (~60g, cheese + 4-5 crackers)",60,260,9.5,18,17,1,480,1,medium
+Chicken wings party,"Snacks, dips & party food",succeeded,,"1 serve (6 wings, ~250g)",250,620,38,12,46,0.5,900,6,medium
+Mini quiches,"Snacks, dips & party food",succeeded,,4 mini quiches (~120g),120,340,9.5,20,24,1.2,480,3,medium
+Sausage rolls party,"Snacks, dips & party food",succeeded,,3 mini sausage rolls (~90g),90,280,7,19,19.5,1.2,480,2,medium
+Party sandwiches,"Snacks, dips & party food",succeeded,,3 small triangle sandwiches (~90g),90,210,7,24,9,1.5,380,3,medium
+Cocktail meatballs,"Snacks, dips & party food",succeeded,,6 meatballs (~180g),180,380,16,28,22,1,780,18,medium
+Vol au vents,"Snacks, dips & party food",succeeded,,3 pieces (~150g),150,380,10.5,22,27,1.2,480,2.5,medium
+Mini spring rolls,"Snacks, dips & party food",succeeded,,6 pieces (~180g),180,400,8,40,22,3,620,3,medium
+Prawn twisters party,"Snacks, dips & party food",succeeded,,"1 party serve (~6 pieces, 180g)",180,470,14,40,28,2,640,3,medium
+Dim sim party platter,"Snacks, dips & party food",succeeded,,6 dim sims (~360g),360,720,24,66,39,4.2,1450,4.8,medium
+Popcorn,"Snacks, dips & party food",succeeded,,1 medium cup/bag (~30g),30,150,2.2,16,9,2.5,220,0.3,medium
+Pretzels,"Snacks, dips & party food",succeeded,,1 pretzel (~90g),90,270,7,54,2.5,2,640,3,medium
+Potato chips,"Snacks, dips & party food",succeeded,,1 regular serve (~150g),150,430,5.5,52,22,4.5,380,0.5,medium
+Cheese twists,"Snacks, dips & party food",succeeded,,3 twists (~60g),60,250,6,20,16,0.8,380,1,medium
+Cheerios biscuits,"Snacks, dips & party food",succeeded,,3 biscuits (~45g),45,210,2.3,24,12,1.2,110,13,medium
+Rice crackers,"Snacks, dips & party food",succeeded,,"1 serve (~30g, ~10 crackers)",30,120,1.8,26,0.6,0.6,220,0.3,medium
+Chicken satay skewers party,"Snacks, dips & party food",succeeded,,4 skewers (~140g) with satay sauce,140,280,22,9,18,1.5,480,5,medium
+Bruschetta party,"Snacks, dips & party food",succeeded,,3 pieces (~120g),120,220,5.5,24,11,2,380,3,medium
+Deviled eggs,"Snacks, dips & party food",succeeded,,2 halves (~60g),60,125,6,1,11,0.1,190,0.5,high
+Sausage sizzle,"Snacks, dips & party food",succeeded,,"1 serve (sausage, bread, onion, sauce)",130,330,11.5,28,19.5,1.8,760,7,medium
+BBQ sausage on bread,"Snacks, dips & party food",succeeded,,1 sausage on bread slice (~110g),110,300,11,24,18,1.5,700,6,medium
+Sausage sizzle with onions,"Snacks, dips & party food",succeeded,,1 sausage on bread with onions (~130g),130,330,12,28,19,1.8,780,6,medium
+Mini pizzas,"Snacks, dips & party food",succeeded,,4 mini pizzas (~200g),200,520,20,52,26,3,980,6,medium
+Cheese cubes,"Snacks, dips & party food",succeeded,,1 serve (~80g),80,296,19.7,1.6,23.8,0,560,0.4,medium
+Pigs in blankets,"Snacks, dips & party food",succeeded,,6 pieces (~120g),120,340,13,14,25,0.8,780,3.5,medium
+Cheese balls,"Snacks, dips & party food",succeeded,,"1 serve (~6 pieces, 150g)",150,430,12,32,28,1.5,560,2.5,medium
+Spinach and ricotta triangles,"Snacks, dips & party food",succeeded,,4 pieces (~160g),160,380,13,32,22,2.5,520,2.5,medium
+Samosas party platter,"Snacks, dips & party food",succeeded,,1 samosa (~50g),50,130,2.8,14.5,7,1.5,190,1,medium
+Vegetable spring rolls party,"Snacks, dips & party food",succeeded,,3 mini spring rolls (~90g),90,210,3.8,24,11,2,320,2.5,medium
+Cocktail franks,"Snacks, dips & party food",succeeded,,6 pieces (~90g),90,270,10.5,5,23,0.3,750,2,medium
+Chips and gravy party,"Snacks, dips & party food",succeeded,,1 serve (~350g),350,620,8.5,68,34,5.5,980,3,medium
+Chicken nuggets kids,Café/pub food & kids'/lunchbox items,succeeded,,"1 kids serve (6 nuggets, ~100g)",100,260,13.5,17,15.5,1.2,480,1,medium
+Fairy bread,Café/pub food & kids'/lunchbox items,succeeded,,4 triangles (~2 slices bread),70,220,4,34,8,1.3,220,14,medium
+Vegemite sandwich,Café/pub food & kids'/lunchbox items,succeeded,,"1 sandwich, 2 slices bread (~70g)",80,210,7.5,30,6.5,2.5,780,2.5,high
+Ham and cheese toastie kids,Café/pub food & kids'/lunchbox items,succeeded,,1 kids toastie (~120g),120,320,15,32,15,1.8,780,4,medium
+Fish fingers,Café/pub food & kids'/lunchbox items,succeeded,,5 pieces (~150g),150,300,15,27,15,1.5,480,1.5,high
+Fish finger sandwich,Café/pub food & kids'/lunchbox items,succeeded,,1 sandwich (~220g),220,480,20,48,23,3,850,6,medium
+Cheese toastie,Café/pub food & kids'/lunchbox items,succeeded,,1 toastie (2 slices bread),150,420,18,38,22,2,780,4,high
+Mac and cheese kids,Café/pub food & kids'/lunchbox items,succeeded,,1 kids serve (~200g),200,320,12,34,15,1.5,560,4,medium
+Spaghetti on toast,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (2 slices toast + 1 can spaghetti, ~350g)",350,430,13.5,72,9,5.5,1150,15,medium
+Baked beans kids,Café/pub food & kids'/lunchbox items,succeeded,,1 kids serve (~130g),130,100,5.5,16.5,0.5,4.5,480,7.5,medium
+Chicken schnitzel kids meal,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~250g, schnitzel + chips)",250,520,22,48,27,3.5,620,2,medium
+Sausages and mash,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~400g, 3 sausages + mash + gravy)",400,680,26,38,44,4,1400,6,medium
+Mini pizzas kids,Café/pub food & kids'/lunchbox items,succeeded,,3 mini pizzas (~150g),150,380,15,42,17,2.5,650,5,medium
+Chicken drumsticks,Café/pub food & kids'/lunchbox items,succeeded,,2 drumsticks (~180g),180,370,38,2,23,0,380,1,medium
+Sausage sizzle kids,Café/pub food & kids'/lunchbox items,succeeded,,1 small sausage on bread with onion (~90g),90,220,7.5,20,12,1.5,480,4.5,medium
+Party pies kids,Café/pub food & kids'/lunchbox items,succeeded,,3 mini pies (~120g),120,330,9.5,28,20,1.5,480,2.5,medium
+Cheerios kids snack,Café/pub food & kids'/lunchbox items,succeeded,,1 bowl (~30g),30,113,2.6,23,1.5,2.7,190,3,medium
+Cheese and crackers kids,Café/pub food & kids'/lunchbox items,succeeded,,1 kids serve (~60g),60,260,8.5,22,15.5,1,400,1.5,medium
+Toasted sandwich,Café/pub food & kids'/lunchbox items,succeeded,,1 sandwich (2 slices bread),150,380,18,38,17,2.5,780,5,medium
+Pub parma,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~550g),550,1150,55,90,62,6,1600,10,medium
+Pub schnitzel,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~500g),500,1150,48,90,65,6,1400,8,medium
+Chicken parmigiana pub,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~550g),550,1150,58,85,62,6,1650,12,medium
+Steak and chips pub,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~450g, steak + chips + salad/veg)",450,850,48,55,47,5,900,4,medium
+Fish and chips pub,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~450g, 1 piece battered fish + chips)",450,1050,35,90,62,7,1100,2,medium
+Pub burger,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~500g burger + chips),500,1150,45,95,65,6,1600,15,medium
+Pub nachos,Café/pub food & kids'/lunchbox items,succeeded,LOW_CONFIDENCE,1 share serve (~450g),450,1150,42,90,68,8,1900,8,low
+Pub salt and pepper squid,Café/pub food & kids'/lunchbox items,succeeded,,1 pub entrée serve (~300g incl. salad/lemon),300,620,32,40,36,2.5,980,3,medium
+Pub calamari,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~300g),300,720,32,55,40,3,980,3,medium
+Chicken wings pub,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~8 wings, ~350g)",350,850,55,20,60,1,1600,8,medium
+Pub caesar salad,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~350g),350,620,22,24,46,3.5,1150,4,medium
+Beer battered fish,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~250g fish, with batter)",250,620,34,45,34,2,720,2,medium
+Pub steak sandwich,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~400g),400,850,42,62,46,4,1450,12,medium
+Loaded potato skins,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (4 skins, ~300g)",300,620,24,40,40,4,980,3,medium
+Pub garlic bread,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~4-5 slices, ~150g)",150,480,10.5,48,27,2.5,780,3.5,medium
+Chicken caesar wrap pub,Café/pub food & kids'/lunchbox items,succeeded,,1 wrap (~350g),350,720,34,55,40,4,1250,5,medium
+Ploughman's lunch pub,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~400g),400,780,32,55,46,5,1900,12,medium
+Pub pasta,Café/pub food & kids'/lunchbox items,succeeded,LOW_CONFIDENCE,1 serve (~450g),450,780,34,68,42,4,1150,6,low
+Pub curry,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~450g),450,620,28,62,28,4,1100,8,medium
+Pub risotto,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~400g),400,640,22,68,30,4,980,5,medium
+Kids fish and chips,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~220g, 1 fish fillet + chips)",220,480,16,45,27,3.5,450,1,medium
+School lunchbox sandwich,Café/pub food & kids'/lunchbox items,succeeded,,"1 sandwich, 2 slices bread (~130g)",130,300,15,32,12,3,700,5,medium
+Lunchbox wrap,Café/pub food & kids'/lunchbox items,succeeded,LOW_CONFIDENCE,1 wrap (~220g),220,480,22,48,22,3.5,780,5,low
+Muesli bar,Café/pub food & kids'/lunchbox items,succeeded,,1 bar (~30g),30,135,2.5,19.5,5.2,1.5,55,9.5,medium
+Fruit box snack,Café/pub food & kids'/lunchbox items,succeeded,,1 box (~150g),150,75,1,17,0.3,2,5,15,medium
+Cheese stick snack,Café/pub food & kids'/lunchbox items,succeeded,,6 pieces (~120g),120,360,14,28,21,1.5,620,2.5,medium
+Roast lamb,"BBQ, roasts & grilled mains",succeeded,,"1 serve (~350g, meat + roast veg + gravy)",350,520,38,28,28,5,620,5,medium
+Roast lamb with vegetables,"BBQ, roasts & grilled mains",succeeded,,1 serve (~400g),400,560,38,32,30,6,480,6,medium
+BBQ ribs Aus,"BBQ, roasts & grilled mains",succeeded,,1 serve (~350g),350,820,45,35,55,1,1400,28,medium
+Steak with chips,"BBQ, roasts & grilled mains",succeeded,,"1 serve (~450g, 250g steak + 200g chips)",450,950,55,55,55,5,700,2,medium
+Sunday roast chicken,"BBQ, roasts & grilled mains",succeeded,,1 serve (~450g),450,620,42,40,32,6,780,7,medium
+Roast pork,"BBQ, roasts & grilled mains",succeeded,,1 serve (~200g),200,520,32,4,41,0,780,2,medium
+Roast pork with crackling,"BBQ, roasts & grilled mains",succeeded,,1 serve (~200g),200,490,32,2,38,0,780,0.5,medium
+Roast beef,"BBQ, roasts & grilled mains",succeeded,,1 serve (~150g sliced beef),150,320,36,0,19,0,320,0,medium
+Roast chicken,"BBQ, roasts & grilled mains",succeeded,,"1 serve, quarter chicken (~250g)",250,490,42,2,34,0,480,1,medium
+BBQ chicken,"BBQ, roasts & grilled mains",succeeded,,1 quarter chicken serve (~300g),300,620,48,2,45,0,780,1.5,medium
+BBQ pork ribs,"BBQ, roasts & grilled mains",succeeded,,1 serve (~400g),400,980,52,40,66,1,1400,30,medium
+Grilled steak,"BBQ, roasts & grilled mains",succeeded,,1 serve (~250g steak),250,550,62,1,33,0,480,0.5,medium
+Ribeye steak grilled,"BBQ, roasts & grilled mains",succeeded,,"1 steak (~300g raw, ~250g cooked)",250,650,58,0,47,0,480,0,medium
+T-bone steak grilled,"BBQ, roasts & grilled mains",succeeded,,1 steak (~300g),300,600,62,0,39,0,480,0,medium
+BBQ lamb skewers,"BBQ, roasts & grilled mains",succeeded,,4 skewers (~200g),200,420,32,6,30,0.8,620,3.5,medium
+Grilled sausages,"BBQ, roasts & grilled mains",succeeded,,2 sausages (~150g),150,420,20,6,34,0.5,950,2,medium
+BBQ prawns,"BBQ, roasts & grilled mains",succeeded,,1 serve (~250g),250,320,28,8,19,0.5,780,5,medium
+Grilled salmon,"BBQ, roasts & grilled mains",succeeded,,1 fillet (~180g),180,350,39,1,21,0,320,0.5,medium
+Grilled barramundi,"BBQ, roasts & grilled mains",succeeded,,1 fillet (~200g),200,320,40,2,17,0,380,0.5,medium
+BBQ chicken skewers,"BBQ, roasts & grilled mains",succeeded,,3 skewers (~180g),180,320,33,12,16,0.8,620,9,medium
+Char-grilled chicken,"BBQ, roasts & grilled mains",succeeded,,1 serve (~200g),200,330,42,2,17,0.3,560,1,medium
+Grilled pork chops,"BBQ, roasts & grilled mains",succeeded,,"1 serve (2 chops, ~250g)",250,430,45,3,26,0.2,520,2,medium
+BBQ brisket,"BBQ, roasts & grilled mains",succeeded,,1 serve (~200g),200,430,34,10,28,0.5,780,8,medium
+Smoked pork ribs,"BBQ, roasts & grilled mains",succeeded,,1 serve (~350g),350,890,52,22,65,0.5,1300,18,medium
+Grilled kangaroo steak,"BBQ, roasts & grilled mains",succeeded,,1 serve (~200g),200,300,44,1,12,0,380,0.5,medium
+BBQ mixed grill,"BBQ, roasts & grilled mains",succeeded,LOW_CONFIDENCE,1 serve (~400g),400,780,55,15,55,2,1400,8,low
+Grilled corn on the cob BBQ,"BBQ, roasts & grilled mains",succeeded,,1 cob (~150g),150,155,4.3,25,5.5,3,160,6,medium
+Roast vegetables,"BBQ, roasts & grilled mains",succeeded,,1 serve (~200g),200,220,3.8,26,11,5.5,260,8,medium
+Grilled vegetable skewers,"BBQ, roasts & grilled mains",succeeded,,2 skewers (~200g),200,150,4,15,8.5,4.5,280,8,medium

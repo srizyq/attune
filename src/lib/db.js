@@ -454,6 +454,26 @@ export async function searchAfcdFoods(query, limit = 15) {
   return fuzzyData;
 }
 
+// ─── common_dishes (seeded AI-estimate cache for composite/prepared dishes
+// AFCD covers poorly — curries, pad thai, meat pies, etc.) ──────────────────
+// Same word-boundary-ANDed / fuzzy-fallback shape as searchAfcdFoods above —
+// see scripts/seed-common-dishes/ for how this table gets populated.
+export async function searchCommonDishes(query, limit = 8) {
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  let q = supabase.from('common_dishes').select('*');
+  for (const word of words) {
+    q = q.filter('name', 'imatch', wordBoundaryPattern(word));
+  }
+  const { data, error } = await q.limit(limit);
+  if (error) throw error;
+  if (data.length > 0) return data;
+  const { data: fuzzyData, error: fuzzyError } = await supabase
+    .rpc('search_common_dishes_fuzzy', { search_query: query.trim(), match_limit: limit });
+  if (fuzzyError) throw fuzzyError;
+  return fuzzyData;
+}
+
 // ─── trainer_clients ────────────────────────────────────────────────────────
 
 export async function getMyClients(trainerId) {

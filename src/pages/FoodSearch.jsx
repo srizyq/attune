@@ -10,7 +10,7 @@ import { useLastLoggedAmounts } from '../hooks/useLastLoggedAmounts';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
-import { getBarcodeProduct, addBarcodeProduct, searchAfcdFoods } from '../lib/db';
+import { getBarcodeProduct, addBarcodeProduct, searchAfcdFoods, searchCommonDishes } from '../lib/db';
 import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
@@ -240,6 +240,32 @@ async function searchAfcd(q) {
     folate: Math.round(row.folate_mcg || 0),
     source: "afcd",
     servingGrams: 100,
+  }));
+}
+
+// Seeded cache of AI-estimated nutrition for common composite/prepared
+// dishes (curries, pad thai, meat pies, etc.) AFCD has essentially no
+// coverage of — see scripts/seed-common-dishes/. Already per-serving
+// (not per-100g like AFCD), so no scaling-base conversion is needed, same
+// shape as custom_foods below. Still labeled "AI estimate" (with a
+// low-confidence suffix where the model flagged one at generation time,
+// same wording the live estimate path uses) since it isn't lab data.
+async function searchCommonDish(q) {
+  const rows = await searchCommonDishes(q, 8);
+  return rows.map(row => ({
+    id: "dish_" + row.id,
+    name: row.name,
+    meta: `${row.serving_label} · AI estimate${row.confidence === "low" ? " (low confidence)" : ""}`,
+    cuisine: "all",
+    cal: Math.round(row.calories),
+    protein: Math.round(row.protein_g * 10) / 10,
+    carbs: Math.round(row.carbs_g * 10) / 10,
+    fat: Math.round(row.fat_g * 10) / 10,
+    fibre: Math.round(row.fibre_g * 10) / 10,
+    sodium: Math.round(row.sodium_mg),
+    sugar: Math.round(row.sugar_g * 10) / 10,
+    servingGrams: row.serving_grams || 100,
+    source: "common-dish",
   }));
 }
 
@@ -1200,6 +1226,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
               <MarqueeText text={food.name} style={{ fontSize: 14, color: "var(--text-primary)" }} onOverflowChange={px => setNameOverflowing(px > 0)} />
             </div>
             {food.source === "custom" && <span style={{ flexShrink: 0, fontSize: 10, color: "#b48fd9", border: "1px solid #b48fd950", borderRadius: 5, padding: "1px 6px" }}>Custom</span>}
+            {food.source === "common-dish" && <span style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3, fontSize: 10, color: "var(--accent)", border: "1px solid var(--border-active)", borderRadius: 5, padding: "1px 6px" }}><i className="ti ti-sparkles" style={{ fontSize: 9 }} />AI est.</span>}
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             <span style={{ color: "var(--accent)", fontWeight: 600 }}>{food.cal} kcal</span> · {food.meta}
@@ -1442,6 +1469,7 @@ export default function FoodSearch() {
   const [genericResults, setGenericResults] = useState([]);
   const [packagedLive, setPackagedLive] = useState([]);
   const [afcdResults, setAfcdResults] = useState([]);
+  const [commonDishResults, setCommonDishResults] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
   const searchTimer = useRef(null);
@@ -1612,15 +1640,16 @@ export default function FoodSearch() {
     // databases under that name — search the expanded form instead
     // ("mcdonalds", "halal snack pack") when the query is recognised.
     const searchQuery = expandFoodSlang(q) || q;
-    // Three independent sources — run them together instead of one after
-    // another, so a search takes as long as the slowest of the three
-    // rather than the sum of all three.
-    const [offResult, fatSecretResult, afcdResult] = await Promise.allSettled([
+    // Four independent sources — run them together instead of one after
+    // another, so a search takes as long as the slowest of the four
+    // rather than the sum of all four.
+    const [offResult, fatSecretResult, afcdResult, commonDishResult] = await Promise.allSettled([
       searchOpenFoodFacts(searchQuery),
       searchFatSecret(searchQuery),
       searchAfcd(searchQuery),
+      searchCommonDish(searchQuery),
     ]);
-    let off = [], fatSecretResults = [], afcd = [];
+    let off = [], fatSecretResults = [], afcd = [], commonDishes = [];
     if (offResult.status === "fulfilled") {
       off = offResult.value;
     } else {
@@ -1637,9 +1666,15 @@ export default function FoodSearch() {
     } else {
       console.error("AFCD search error:", afcdResult.reason);
     }
+    if (commonDishResult.status === "fulfilled") {
+      commonDishes = commonDishResult.value;
+    } else {
+      console.error("Common dishes search error:", commonDishResult.reason);
+    }
     setGenericResults(fatSecretResults);
     setPackagedLive(off);
     setAfcdResults(afcd);
+    setCommonDishResults(commonDishes);
     setLiveLoading(false);
   }, []);
 
@@ -1653,7 +1688,7 @@ export default function FoodSearch() {
     setAiEstimateResult(null);
     setAiEstimateError(null);
     setAiLimitReached(false);
-    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAfcdResults([]); setLiveLoading(false); setLiveError(null); return; }
+    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAfcdResults([]); setCommonDishResults([]); setLiveLoading(false); setLiveError(null); return; }
     setLiveLoading(true);
     searchTimer.current = setTimeout(() => runLiveSearch(query.trim()), 500);
     return () => clearTimeout(searchTimer.current);
@@ -1672,7 +1707,7 @@ export default function FoodSearch() {
     // instead of whichever source happened to load first — surfaces a
     // clean "Chicken Thigh" over AFCD's verbose "Chicken, thigh, lean
     // flesh, raw" when both are equally valid matches for the words typed.
-    const combined = [...customFiltered, ...afcdResults, ...genericResults]
+    const combined = [...customFiltered, ...commonDishResults, ...afcdResults, ...genericResults]
       .map((f, i) => ({ f, i, rank: foodMatchRank(f.name, queryLower, queryWords) }))
       .sort((a, b) => a.rank - b.rank || a.f.name.length - b.f.name.length || a.i - b.i)
       .map(x => x.f);
@@ -1683,7 +1718,7 @@ export default function FoodSearch() {
       seen.add(key);
       return true;
     });
-  }, [customFiltered, afcdResults, genericResults, query]);
+  }, [customFiltered, commonDishResults, afcdResults, genericResults, query]);
 
   // Whether the single best database match is only a loose/partial one
   // (foodMatchRank's bottom tier — some but not all of the typed words

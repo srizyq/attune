@@ -783,3 +783,65 @@ create policy "workout_logs: update own" on public.workout_logs
   for update using (auth.uid() = user_id);
 create policy "workout_logs: delete own" on public.workout_logs
   for delete using (auth.uid() = user_id);
+
+-- ── common_dishes ──────────────────────────────────────────────────────────
+-- A shared (not user-scoped) cache of AI-estimated nutrition for common
+-- composite/prepared dishes AFCD handles poorly (curries, pad thai, meat
+-- pies, etc. — see scripts/seed-common-dishes/ for how this gets seeded).
+-- Per-serving (not per-100g like afcd_foods) since an AI estimate's natural
+-- unit is "one typical serving," matching custom_foods' convention. Seeded
+-- once via the service_role key (which bypasses RLS) — no insert/update/
+-- delete policy is granted, same posture as afcd_foods, since this isn't
+-- user-contributed.
+create table if not exists public.common_dishes (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  category text,
+  serving_label text not null default '1 serving',
+  serving_grams numeric,
+  calories numeric not null default 0,
+  protein_g numeric default 0,
+  carbs_g numeric default 0,
+  fat_g numeric default 0,
+  fibre_g numeric default 0,
+  sodium_mg numeric default 0,
+  sugar_g numeric default 0,
+  confidence text check (confidence in ('low','medium','high')) default 'medium',
+  source_model text default 'claude-sonnet-5',
+  created_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz default now()
+);
+
+create unique index if not exists common_dishes_name_unique_idx
+  on public.common_dishes (lower(name));
+
+-- A plain unique constraint on `name` too (redundant with the case-insensitive
+-- index above for uniqueness purposes, but PostgREST's upsert needs an index
+-- whose key exactly matches its ON CONFLICT target — an expression index on
+-- lower(name) doesn't satisfy `ON CONFLICT (name)`).
+alter table public.common_dishes add constraint common_dishes_name_key unique (name);
+
+alter table public.common_dishes enable row level security;
+
+create policy "common_dishes: select any signed-in user" on public.common_dishes
+  for select using (auth.uid() is not null);
+
+-- ── common_dishes: fuzzy fallback (typo tolerance) ──────────────────────────
+-- Mirrors search_afcd_foods_fuzzy exactly (pg_trgm is already enabled by
+-- the afcd_foods migration above).
+create index if not exists common_dishes_name_trgm_idx
+  on public.common_dishes using gin (name gin_trgm_ops);
+
+create or replace function public.search_common_dishes_fuzzy(search_query text, match_limit int default 8)
+returns setof public.common_dishes
+language sql
+stable
+as $$
+  select *
+  from public.common_dishes
+  where similarity(name, search_query) > 0.2
+  order by similarity(name, search_query) desc
+  limit match_limit;
+$$;
+
+grant execute on function public.search_common_dishes_fuzzy(text, int) to authenticated;
