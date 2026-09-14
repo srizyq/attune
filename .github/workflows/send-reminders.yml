@@ -19,5 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call send-reminders endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -sf -w "\nHTTP %{http_code}\n" https://attune-nouriish.vercel.app/api/send-reminders
+          curl -sf -w "\nHTTP %{http_code}\n" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://attune-nouriish.vercel.app/api/send-reminders
