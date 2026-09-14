@@ -2,12 +2,16 @@ name: Send daily reminders
 
 # Substitutes for Vercel Cron, which isn't available on the current plan
 # (adding a `crons` entry to vercel.json was blocking every deployment
-# outright). This just pings the existing serverless endpoint on a
-# schedule — all the actual reminder logic still lives in
-# api/send-reminders.js, this workflow only provides the "every 15
-# minutes" trigger. GitHub's schedule can run a few minutes late under
-# load; that's fine since the endpoint's own logic already tolerates
-# being checked at an imprecise cadence.
+# outright — happened twice, don't re-add one there). This is the ONLY
+# trigger for /api/send-reminders; all the actual reminder logic still
+# lives in api/send-reminders.js. GitHub's schedule can run a few minutes
+# late under load; that's fine since the endpoint's own logic already
+# tolerates being checked at an imprecise cadence.
+#
+# The endpoint requires this exact bearer token (its own CRON_SECRET env
+# var in Vercel) or it 401s — keep the `CRON_SECRET` repo secret below in
+# sync with that value, and if this job ever goes red, check that pairing
+# first before assuming the reminder logic itself broke.
 
 on:
   schedule:

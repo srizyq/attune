@@ -1,10 +1,13 @@
-// Cron endpoint (see vercel.json) that sends the "log your food" reminder
-// push to any user whose local reminder time has passed today and who
-// hasn't been notified yet today. Runs on a schedule rather than at the
-// exact minute someone picked — "has today's reminder time already passed,
-// and have we not sent one yet today" is deliberately tolerant of that,
-// since Vercel cron granularity varies by plan and a tight per-minute
-// match would silently miss people between runs.
+// Triggered on a schedule by .github/workflows/send-reminders.yml (NOT
+// vercel.json — Vercel Cron isn't available on the current plan; adding
+// a crons entry there silently blocks every deployment, twice now — see
+// that file's own comment before reintroducing one). Sends the "log your
+// food" reminder push to any user whose local reminder time has passed
+// today and who hasn't been notified yet today. Runs on a schedule rather
+// than at the exact minute someone picked — "has today's reminder time
+// already passed, and have we not sent one yet today" is deliberately
+// tolerant of that, since a tight per-minute match would silently miss
+// people between runs.
 
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
@@ -37,11 +40,12 @@ export default async function handler(req, res) {
   // This endpoint sends a real push to every eligible user and burns a
   // service-role Supabase connection — with no check here, its URL is
   // otherwise fully public (anyone who finds it could spam every user's
-  // notifications on repeat, or run up billing). Vercel automatically
-  // sends this exact header on cron-triggered requests when CRON_SECRET
-  // is set in the project's environment variables — set that in Vercel,
-  // and only Vercel's own scheduler (or someone who has that secret) can
-  // trigger a send.
+  // notifications on repeat, or run up billing). The GitHub Actions
+  // workflow sends this header itself (its own CRON_SECRET repo secret,
+  // which must match this same-named env var in Vercel) since it isn't
+  // Vercel's own scheduler calling in — nothing sends it automatically
+  // here the way Vercel Cron would. Keep both values in sync if either
+  // is ever rotated.
   if (process.env.CRON_SECRET && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
