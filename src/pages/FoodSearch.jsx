@@ -774,7 +774,15 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
   return (
     <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 24 }}>
-    <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto" }}>
+    {/* maxHeight uses --vvh, not a bare vh unit, for the same reason
+        .modal-backdrop does (see its comment in index.css): tapping the
+        amount field below opens the keyboard, which shrinks the *visual*
+        viewport but not `vh` itself on iOS Safari. A bare 85vh cap here
+        stayed sized for the full (pre-keyboard) height while the backdrop
+        correctly shrank around it, so the centered panel overflowed both
+        edges of its own backdrop — the header scrolled off above the
+        screen and the food list behind the modal became visible below it. */}
+    <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth: 460, maxHeight: "calc(var(--vvh, 100vh) * 0.85)", overflowY: "auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
         <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"}</span>
         <button onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
@@ -907,7 +915,12 @@ function ModalShell({ title, onClose, children, maxWidth = 460 }) {
   const { closing, close } = useClosingTransition(onClose);
   return (
     <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth, maxHeight: "85vh", overflowY: "auto" }}>
+    {/* maxHeight uses --vvh, not a bare vh unit — see the identical
+        comment on BarcodeScanner's own modal-panel above. Any modal built
+        on this shell with a text/number input (create-food's form,
+        anything using AddControls) can trigger the same keyboard-overflow
+        bug otherwise. */}
+      <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth, maxHeight: "calc(var(--vvh, 100vh) * 0.85)", overflowY: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{title}</span>
           <button onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
