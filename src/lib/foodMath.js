@@ -1,13 +1,28 @@
 // Amount+unit selector shared by the add-food flow and the daily-log edit
 // flow, so both let you say "200g" / "1.5kg" / "2 servings" rather than
-// typing a bare, ambiguous multiplier.
+// typing a bare, ambiguous multiplier. ml uses the same 1:1 mass
+// approximation as the rest of food nutrition labelling (water-like
+// density), so it shares g's toGrams factor — only its unit id/label
+// differ, which is what lets a liquid food's servingUnit pick it out via
+// unitsFor below instead of offering kg/lb/oz for a carton of milk.
 export const UNITS = [
   { id: "serving", label: "serving", toGrams: null },
   { id: "g", label: "g", toGrams: 1 },
   { id: "kg", label: "kg", toGrams: 1000 },
   { id: "lb", label: "lb", toGrams: 453.592 },
   { id: "oz", label: "oz", toGrams: 28.3495 },
+  { id: "ml", label: "ml", toGrams: 1 },
 ];
+
+// Which UNITS options make sense for a food, based on whether its own
+// serving is measured in grams (solid food — offer g/kg/lb/oz) or
+// millilitres (a drink — offer ml instead, not a mass unit that was never
+// on its label in the first place).
+export function unitsFor(servingUnit) {
+  return servingUnit === "ml"
+    ? UNITS.filter(u => u.id === "serving" || u.id === "ml")
+    : UNITS.filter(u => u.id !== "ml");
+}
 
 // How many base servings `amount` of `unit` represents for a food whose
 // "1 serving" (its base cal/protein/etc values) weighs `servingGrams`.

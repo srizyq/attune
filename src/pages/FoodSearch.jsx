@@ -15,7 +15,7 @@ import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
-import { scaleFood, sumFoodItems, UNITS, amountToServings } from '../lib/foodMath';
+import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings } from '../lib/foodMath';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
 import MenuScanModal from '../components/MenuScanModal';
@@ -127,14 +127,32 @@ function fatSecretServings(food) {
   return Array.isArray(raw) ? raw : [raw];
 }
 
-// Most servings describe themselves in grams ("100 g", "150g slice") — pull
-// that out for unit conversion. Servings described in non-gram units
-// ("1 cup", "1 medium") fall back to 100; the default "serving" unit in the
-// add-to-log UI is unaffected either way since it uses the API's own
-// serving values directly rather than converting through grams.
-function parseGramsFromServing(serving) {
-  const match = (serving.serving_description || "").match(/([\d.]+)\s*g\b/i);
-  return match ? parseFloat(match[1]) : 100;
+// FatSecret gives every serving a structured metric weight alongside its
+// human-readable description ("1 cup" + metric_serving_amount: "240.000" +
+// metric_serving_unit: "ml") — that's the actual weight/volume the
+// nutrition values above are for, so it's used first. Only fall back to
+// regexing the free-text description (for the rare serving missing metric
+// fields) or to a bare 100g when neither is available. Previously this
+// only ever regexed the description for a trailing "g" ("150g slice"), so
+// any serving described in cups/ml/count ("1 cup", "1 medium") silently
+// defaulted to 100 regardless of its real weight — confirmed live against
+// FatSecret's barcode API: Silk almond milk's "1 cup" serving is actually
+// 240ml, but the old logic reported "≈100g" next to that serving's real
+// (240ml) nutrition values, and would have scaled grams-based logging by
+// the wrong ratio (240/100 = 2.4x).
+//
+// The unit itself (g vs ml) is kept rather than collapsed into a single
+// "grams" figure — a carton of almond milk was never labelled in grams,
+// so amount/unit pickers for a liquid food offer ml (see unitsFor in
+// foodMath.js), not a mass unit that has to lie about what it's counting.
+function parseServingWeight(serving) {
+  const metricAmount = parseFloat(serving.metric_serving_amount);
+  const metricUnit = (serving.metric_serving_unit || "").toLowerCase();
+  if (metricAmount && (metricUnit === "g" || metricUnit === "ml")) {
+    return { grams: metricAmount, unit: metricUnit };
+  }
+  const match = (serving.serving_description || "").match(/([\d.]+)\s*(g|ml)\b/i);
+  return match ? { grams: parseFloat(match[1]), unit: match[2].toLowerCase() } : { grams: 100, unit: "g" };
 }
 
 // FatSecret reports these already in the units food_logs stores them in
@@ -181,6 +199,7 @@ async function searchFatSecret(q) {
     // though FatSecret had valid matches. Only a missing serving (above)
     // means there's no usable data; 0 calories is itself usable data.
     const cal = Math.round(parseFloat(serving.calories) || 0);
+    const weight = parseServingWeight(serving);
     return {
       id: "fs_" + food.food_id,
       name: food.food_type === "Brand" && food.brand_name ? `${food.food_name} (${food.brand_name})` : food.food_name,
@@ -195,7 +214,8 @@ async function searchFatSecret(q) {
       sugar: Math.round((parseFloat(serving.sugar) || 0) * 10) / 10,
       ...extraMicrosFromFatSecretServing(serving),
       source: "fatsecret",
-      servingGrams: parseGramsFromServing(serving),
+      servingGrams: weight.grams,
+      servingUnit: weight.unit,
     };
   }).filter(Boolean);
 }
@@ -332,6 +352,7 @@ async function lookupFatSecretBarcode(barcode) {
   const servings = Array.isArray(rawServings) ? rawServings : rawServings ? [rawServings] : [];
   const serving = servings[0];
   if (!serving) return null;
+  const weight = parseServingWeight(serving);
   const found = {
     name: food.food_name,
     brand: food.brand_name || "",
@@ -345,7 +366,8 @@ async function lookupFatSecretBarcode(barcode) {
     sugar: Math.round((parseFloat(serving.sugar) || 0) * 10) / 10,
     ...extraMicrosFromFatSecretServing(serving),
     source: "fatsecret",
-    servingGrams: parseGramsFromServing(serving),
+    servingGrams: weight.grams,
+    servingUnit: weight.unit,
   };
   return found;
 }
@@ -364,6 +386,17 @@ function extractServingGrams(servingSizeStr) {
   // bug: "1 bottle (425 g)" has to match on the "425 g", not the leading "1".
   const withUnit = servingSizeStr.match(/([\d.]+)\s*(?:g|ml)\b/i);
   return withUnit ? parseFloat(withUnit[1]) : null;
+}
+
+// Same free-text label as extractServingGrams above, but reports which
+// unit the matched number was actually in — ml for a "1 bottle (425 ml)"
+// drink vs g for a "2 slices (60g)" solid — so a liquid product's
+// amount/unit picker can offer ml instead of a mass unit its own label
+// never used (see unitsFor in foodMath.js).
+function extractServingUnit(servingSizeStr) {
+  if (!servingSizeStr) return "g";
+  const withUnit = servingSizeStr.match(/[\d.]+\s*(g|ml)\b/i);
+  return withUnit ? withUnit[1].toLowerCase() : "g";
 }
 
 async function lookupOpenFoodFactsBarcode(barcode) {
@@ -386,6 +419,7 @@ async function lookupOpenFoodFactsBarcode(barcode) {
     ...extraMicrosFromOFF(per100, factor),
     source: "off",
     servingGrams: servingG,
+    servingUnit: extractServingUnit(p.serving_size),
   };
   return found;
 }
@@ -691,6 +725,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   }
 
   const servingGrams = result?.servingGrams || 100;
+  const servingUnit = result?.servingUnit || "g";
   const servings = result ? amountToServings(Number(amount) || 0, unit, servingGrams) : 0;
   const gramsEquivalent = Math.round(servings * servingGrams);
   // loggedAmount/loggedUnit were missing here — every other logging path
@@ -889,11 +924,12 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <span style={{ fontSize: 18, fontWeight: 700, color: "var(--accent)" }}>{scaled.cal}</span>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}> kcal{unit !== "g" && ` · ≈${gramsEquivalent}g`} — label serving: {result.serving}</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}> kcal{unit !== servingUnit && ` · ≈${gramsEquivalent}${servingUnit}`} — label serving: {result.serving}</span>
           </div>
           <AddControls
             amount={amount} setAmount={setAmount}
             unit={unit} setUnit={setUnit}
+            units={unitsFor(servingUnit)}
             meal={meal} setMeal={setMeal}
             time={time} setTime={setTime}
             logByTime={logByTime}
@@ -1200,6 +1236,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   useEffect(() => { setTime(defaultTime); }, [defaultTime]);
 
   const servingGrams = food.servingGrams || 100;
+  const servingUnit = food.servingUnit || "g";
   const servings = amountToServings(Number(amount) || 0, unit, servingGrams);
   const gramsEquivalent = Math.round(servings * servingGrams);
   // servingGrams on the scaled object is the actual weight THIS logged
@@ -1283,12 +1320,13 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sodium <span style={{ color: "var(--text-secondary)" }}>{scaled.sodium}mg</span></div>
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sugar <span style={{ color: "var(--text-secondary)" }}>{scaled.sugar}g</span></div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" }}>
-              <span style={{ color: "var(--accent)", fontWeight: 600 }}>{scaled.cal}</span> kcal{unit !== "g" && ` · ≈${gramsEquivalent}g`}
+              <span style={{ color: "var(--accent)", fontWeight: 600 }}>{scaled.cal}</span> kcal{unit !== servingUnit && ` · ≈${gramsEquivalent}${servingUnit}`}
             </div>
           </div>
           <AddControls
             amount={amount} setAmount={setAmount}
             unit={unit} setUnit={setUnit}
+            units={unitsFor(servingUnit)}
             meal={meal} setMeal={setMeal}
             time={time} setTime={setTime}
             logByTime={logByTime}
@@ -1307,7 +1345,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   );
 }
 
-function AddControls({ amount, setAmount, unit, setUnit, meal, setMeal, time, setTime, logByTime, onAdd, disabled, addLabel }) {
+function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, setMeal, time, setTime, logByTime, onAdd, disabled, addLabel }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", gap: 8 }}>
@@ -1317,7 +1355,7 @@ function AddControls({ amount, setAmount, unit, setUnit, meal, setMeal, time, se
           style={{ width: 70, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
         />
         <select value={unit} onChange={e => setUnit(e.target.value)} style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
-          {UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+          {units.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
         </select>
         {logByTime ? (
           <input
