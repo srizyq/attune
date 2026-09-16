@@ -284,6 +284,20 @@ h1, h2, h3, h4, h5 {
      effect in App.jsx; the 100vh fallback covers browsers without that API
      or the brief instant before the effect first runs. */
   height: var(--vvh, 100vh);
+  /* Companion to --vvh above, for a separate keyboard quirk: focusing an
+     input inside this fixed-position backdrop makes iOS Safari pan the
+     *visual* viewport down over the layout viewport it's still anchored
+     to, to keep that input clear of the keyboard. --vvh alone leaves the
+     backdrop's top pinned to the layout viewport's top, which the pan has
+     scrolled past — visibly detaching the backdrop from the real top of
+     the screen and exposing a strip of the page behind it, right above
+     the keyboard (confirmed via screen recording on the barcode-scan
+     modal). --vvo is that pan distance (visualViewport.offsetTop, same
+     effect in App.jsx); translating by it keeps the backdrop anchored to
+     the top of whatever's actually visible. transform, not top, since
+     `inset: 0` is set inline (higher specificity than this class) and a
+     bare 0px translate is a no-op everywhere this doesn't apply. */
+  transform: translateY(var(--vvo, 0px));
 }
 .modal-backdrop.is-closing {
   animation: modal-backdrop-out 160ms cubic-bezier(0.4, 0, 1, 1) both;

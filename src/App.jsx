@@ -94,16 +94,31 @@ function AnimatedRoutes() {
   );
 }
 
-// Keeps the --vvh custom property (consumed by .modal-backdrop/.sheet-panel
-// in index.css) in sync with the visual viewport, which shrinks when the
-// on-screen keyboard opens — unlike 100vh/window.innerHeight, which don't.
-// Without this, a centered modal open behind the keyboard has its bottom
-// half hidden under it instead of the whole card staying visible above it.
+// Keeps --vvh and --vvo (consumed by .modal-backdrop/.sheet-panel in
+// index.css) in sync with the visual viewport, which shrinks — and shifts —
+// when the on-screen keyboard opens, unlike 100vh/window.innerHeight, which
+// do neither. --vvh alone (the original fix here) covers the shrink: without
+// it, a centered modal stays sized for the full pre-keyboard height and its
+// bottom half ends up hidden under the keyboard. But focusing a text/number
+// input inside a `position: fixed` modal also makes iOS Safari pan the
+// *visual* viewport down over the (unmoved) layout viewport to keep that
+// input clear of the keyboard — confirmed via screen recording: with only
+// --vvh applied, the barcode-scan modal's backdrop stayed pinned to the
+// layout viewport's top while the visual viewport panned down past it,
+// visibly detaching the backdrop from the real top of the screen and
+// exposing a strip of the food list behind it, right above the keyboard.
+// --vvo (visualViewport.offsetTop) is that pan distance; translateY-ing the
+// backdrop by it keeps the backdrop visually anchored to the top of
+// whatever's actually on screen, same as --vvh keeps its bottom edge off
+// the keyboard.
 function useVisualViewportHeight() {
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const setVvh = () => document.documentElement.style.setProperty('--vvh', `${vv.height}px`);
+    const setVvh = () => {
+      document.documentElement.style.setProperty('--vvh', `${vv.height}px`);
+      document.documentElement.style.setProperty('--vvo', `${vv.offsetTop}px`);
+    };
     setVvh();
     vv.addEventListener('resize', setVvh);
     vv.addEventListener('scroll', setVvh);
