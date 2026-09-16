@@ -90,7 +90,10 @@ create table if not exists public.food_logs (
   logged_at timestamptz,
   source text,
   logged_amount numeric,
-  logged_unit text check (logged_unit in ('serving', 'g', 'kg', 'lb', 'oz')),
+  -- 'ml' added alongside the mass units for liquid foods (see unitsFor in
+  -- src/lib/foodMath.js) — a serving of a drink is measured in ml, not a
+  -- mass unit its own label never used.
+  logged_unit text check (logged_unit in ('serving', 'g', 'kg', 'lb', 'oz', 'ml')),
   -- Free-text portion description (e.g. "1 medium bowl (~350g)", "1 bottle
   -- (500ml)") for entries that don't have a clean logged_amount+logged_unit
   -- to reconstruct a display label from — an AI photo/menu scan estimate,
