@@ -62,6 +62,18 @@ export function dateToHHMM(d) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+// Re-dates a logged_at timestamp onto a different calendar day, keeping its
+// local wall-clock time — used when copying a food log to another day
+// (Pro's hourly log should still show a copied 8am item at 8am on the new
+// day, not at whatever UTC instant the source happened to fall on).
+// destDateStr is a "YYYY-MM-DD" local-date string, same convention as
+// todayLocalDate/logged_date throughout the app.
+export function shiftIsoDateKeepLocalTime(isoString, destDateStr) {
+  const src = new Date(isoString);
+  const [y, m, d] = destDateStr.split('-').map(Number);
+  return new Date(y, m - 1, d, src.getHours(), src.getMinutes(), src.getSeconds()).toISOString();
+}
+
 // Full 12am–11pm coverage for the Pro hourly view, instead of
 // groupItemsByHour's "only show hours with something in them" (which
 // reads as basically empty for most of the day). Contiguous stretches of

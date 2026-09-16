@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { shiftIsoDateKeepLocalTime } from './mealTime';
 
 // ─── profiles ──────────────────────────────────────────────────────────────
 
@@ -87,6 +88,33 @@ export async function addFoodLog(userId, entry) {
     })
     .select()
     .single();
+  if (error) throw error;
+  return data;
+}
+
+// Re-inserts a set of already-fetched food_logs rows (raw Supabase rows,
+// e.g. from getFoodLogsForDate — same snake_case shape, so callers can
+// pass them straight through without re-mapping) onto a different day, for
+// the "copy meals from another day" feature. A real array insert, unlike
+// every other write in this file — those are all one row at a time because
+// they're each reacting to a single user action, but re-doing that in a
+// loop here would be N round-trips for one "copy" tap.
+// id/created_at are dropped so Postgres generates fresh ones; logged_at is
+// re-dated onto destDate but keeps its local time-of-day (see
+// shiftIsoDateKeepLocalTime) so a copied 8am item still shows at 8am on
+// Pro's hourly log, not at whatever moment the copy happened to run.
+export async function copyFoodLogs(userId, sourceRows, destDate) {
+  if (!sourceRows.length) return [];
+  const rows = sourceRows.map(row => {
+    const copy = { ...row };
+    delete copy.id;
+    delete copy.created_at;
+    copy.user_id = userId;
+    copy.logged_date = destDate;
+    copy.logged_at = row.logged_at ? shiftIsoDateKeepLocalTime(row.logged_at, destDate) : null;
+    return copy;
+  });
+  const { data, error } = await supabase.from('food_logs').insert(rows).select();
   if (error) throw error;
   return data;
 }

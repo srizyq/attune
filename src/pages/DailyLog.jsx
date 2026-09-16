@@ -11,6 +11,7 @@ import LogItemRow from '../components/LogItemRow';
 import HourlyTimeline from '../components/HourlyTimeline';
 import DaySelector from '../components/DaySelector';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
+import CopyDayModal from '../components/CopyDayModal';
 import { round1 } from '../lib/format';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
@@ -48,9 +49,10 @@ export default function DailyLog() {
   }, [location.state, today]);
   const isToday = selectedDate === today;
   const { note: nutritionCoachNote, dismiss: dismissNutritionCoachNote } = useCoachNote('nutrition', selectedDate);
-  const { meals, dayTimeline, loading, deleteFood, updateFood } = useFoodLogs(selectedDate);
+  const { meals, dayTimeline, loading, deleteFood, updateFood, refetch } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
+  const [showCopyModal, setShowCopyModal] = useState(false);
 
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const totalCal = Object.values(meals).flat().reduce((s, i) => s + i.cal, 0);
@@ -69,6 +71,9 @@ export default function DailyLog() {
           </button>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, flexShrink: 0 }}>Daily log</span>
           <div style={{ flex: 1 }} />
+          <button onClick={() => setShowCopyModal(true)} title="Copy meals from another day" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 17, display: 'flex', flexShrink: 0, padding: 4 }}>
+            <i className="ti ti-copy" />
+          </button>
           {isPremium ? (
             <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />
           ) : (
@@ -146,6 +151,14 @@ export default function DailyLog() {
           )}
         </div>
       </div>
+
+      {showCopyModal && (
+        <CopyDayModal
+          destDate={selectedDate}
+          onClose={() => setShowCopyModal(false)}
+          onCopied={refetch}
+        />
+      )}
     </div>
   );
 }
