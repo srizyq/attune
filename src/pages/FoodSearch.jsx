@@ -373,30 +373,30 @@ async function lookupFatSecretBarcode(barcode) {
 }
 
 // Open Food Facts' serving_size is a free-text human label, not a bare
-// number — e.g. "1 bottle (425 g)", "2 slices (60g)". A plain parseFloat()
-// on that string reads the leading "1" (from "1 bottle"), not the actual
-// weight, undershooting every scaled value by ~100x. Confirmed with a real
-// scan: "1 bottle (425 g)" parsed to 1g instead of 425g, turning a
-// legitimate 289 kcal/30g-protein serving into "1 kcal, 0.1g protein".
-function extractServingGrams(servingSizeStr) {
-  if (!servingSizeStr) return null;
+// number — e.g. "1 bottle (425 g)", "2 slices (60g)", "1 portion (1 cup)".
+// A plain parseFloat() on that string reads the leading "1" (from "1
+// bottle"), not the actual weight, undershooting every scaled value by
+// ~100x. Confirmed with a real scan: "1 bottle (425 g)" parsed to 1g
+// instead of 425g, turning a legitimate 289 kcal/30g-protein serving into
+// "1 kcal, 0.1g protein". OFF also carries the same weight as a structured
+// serving_quantity/serving_quantity_unit pair (confirmed live: Silk
+// almond milk's "1 portion (1 cup)" has no parseable "g"/"ml" in the text
+// at all, but serving_quantity: 240, serving_quantity_unit: "ml" — the
+// same class of bug fixed for FatSecret's parseServingWeight above, since
+// this function only ever regexed the free text and silently defaulted to
+// 100 whenever that text had no attached weight/volume unit).
+function parseOffServingWeight(p) {
+  const structuredAmount = parseFloat(p.serving_quantity);
+  const structuredUnit = (p.serving_quantity_unit || "").toLowerCase();
+  if (structuredAmount && (structuredUnit === "g" || structuredUnit === "ml")) {
+    return { grams: structuredAmount, unit: structuredUnit };
+  }
   // Only trust a number that's actually attached to a weight/volume unit
   // (g/ml) — a bare number with no unit (e.g. "1 serving", "2 pieces") is a
   // count, not a weight, and grabbing it the same way caused this exact
   // bug: "1 bottle (425 g)" has to match on the "425 g", not the leading "1".
-  const withUnit = servingSizeStr.match(/([\d.]+)\s*(?:g|ml)\b/i);
-  return withUnit ? parseFloat(withUnit[1]) : null;
-}
-
-// Same free-text label as extractServingGrams above, but reports which
-// unit the matched number was actually in — ml for a "1 bottle (425 ml)"
-// drink vs g for a "2 slices (60g)" solid — so a liquid product's
-// amount/unit picker can offer ml instead of a mass unit its own label
-// never used (see unitsFor in foodMath.js).
-function extractServingUnit(servingSizeStr) {
-  if (!servingSizeStr) return "g";
-  const withUnit = servingSizeStr.match(/[\d.]+\s*(g|ml)\b/i);
-  return withUnit ? withUnit[1].toLowerCase() : "g";
+  const match = (p.serving_size || "").match(/([\d.]+)\s*(g|ml)\b/i);
+  return match ? { grams: parseFloat(match[1]), unit: match[2].toLowerCase() } : { grams: 100, unit: "g" };
 }
 
 async function lookupOpenFoodFactsBarcode(barcode) {
@@ -404,7 +404,7 @@ async function lookupOpenFoodFactsBarcode(barcode) {
   const data = await res.json();
   if (data.status !== 1 || !data.product) return null;
   const p = data.product; const per100 = p.nutriments || {};
-  const servingG = extractServingGrams(p.serving_size) || 100; const factor = servingG / 100;
+  const weight = parseOffServingWeight(p); const factor = weight.grams / 100;
   const cal = Math.round((per100["energy-kcal_100g"] || per100["energy_100g"] / 4.184 || 0) * factor);
   const found = {
     name: p.product_name || p.generic_name || "Unknown product",
@@ -418,8 +418,8 @@ async function lookupOpenFoodFactsBarcode(barcode) {
     sugar: Math.round((per100.sugars_100g || 0) * factor * 10) / 10,
     ...extraMicrosFromOFF(per100, factor),
     source: "off",
-    servingGrams: servingG,
-    servingUnit: extractServingUnit(p.serving_size),
+    servingGrams: weight.grams,
+    servingUnit: weight.unit,
   };
   return found;
 }
