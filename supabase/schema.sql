@@ -724,8 +724,17 @@ create policy "coach-logos: owner can delete" on storage.objects
 -- toggle it started as.
 alter table public.profiles add column if not exists stripe_customer_id text unique;
 alter table public.profiles add column if not exists stripe_subscription_id text;
+-- Full Stripe subscription-status vocabulary, not just the three statuses
+-- that happen to flip is_premium/coach_pass — the webhook (stripe-
+-- webhook.js) writes sub.status here verbatim on every
+-- customer.subscription.updated event, and Stripe also sends trialing,
+-- incomplete, incomplete_expired, unpaid and paused. Any of those hitting
+-- a narrower constraint throws, the webhook returns 500, and Stripe
+-- retries the same failing delivery indefinitely while the pass's real
+-- status (and, for a plan-defining status change, is_premium/coach_pass
+-- itself) never gets recorded.
 alter table public.profiles add column if not exists coach_pass_status text
-  check (coach_pass_status in ('active', 'canceled', 'past_due'));
+  check (coach_pass_status in ('active', 'canceled', 'past_due', 'trialing', 'incomplete', 'incomplete_expired', 'unpaid', 'paused'));
 
 -- ── Pro billing fields ──────────────────────────────────────────────────────
 -- is_premium itself (already existed as a manual test toggle) becomes the
@@ -735,8 +744,9 @@ alter table public.profiles add column if not exists coach_pass_status text
 -- and a Pro subscription at once, each with its own subscription id, and
 -- the webhook needs to tell them apart on renewal/cancellation events.
 alter table public.profiles add column if not exists stripe_pro_subscription_id text;
+-- Same full Stripe status vocabulary as coach_pass_status above.
 alter table public.profiles add column if not exists pro_status text
-  check (pro_status in ('active', 'canceled', 'past_due'));
+  check (pro_status in ('active', 'canceled', 'past_due', 'trialing', 'incomplete', 'incomplete_expired', 'unpaid', 'paused'));
 
 -- ── Daily log view preference (Pro) ─────────────────────────────────────────
 -- Pro users could previously only ever see the hourly timeline (free users
