@@ -446,10 +446,11 @@ async function lookupSharedBarcodeProduct(barcode) {
     sugar: Math.round((row.sugar_g || 0) * 10) / 10,
     source: 'community',
     servingGrams: row.serving_grams || null,
+    servingUnit: row.serving_unit || 'g',
   };
 }
 
-const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', cal: '', protein: '', carbs: '', fat: '', fibre: '', sodium: '', sugar: '' };
+const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', servingUnit: 'g', cal: '', protein: '', carbs: '', fat: '', fibre: '', sodium: '', sugar: '' };
 
 // ─── Barcode scan — menu/plate photo scanning live elsewhere as
 //    MenuScanModal/PhotoScanModal, proxied through server-side /api routes
@@ -665,6 +666,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         ...p,
         serving: data.serving || p.serving,
         servingGrams: data.servingGrams != null ? String(data.servingGrams) : p.servingGrams,
+        servingUnit: data.servingUnit === "ml" ? "ml" : "g",
         cal: String(data.cal ?? 0),
         protein: String(data.protein ?? 0),
         carbs: String(data.carbs ?? 0),
@@ -690,6 +692,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         brand: newProduct.brand.trim() || null,
         serving: newProduct.serving.trim() || "1 serving",
         serving_grams: newProduct.servingGrams ? Number(newProduct.servingGrams) : null,
+        serving_unit: newProduct.servingUnit === "ml" ? "ml" : "g",
         calories: Number(newProduct.cal) || 0,
         protein_g: Number(newProduct.protein) || 0,
         carbs_g: Number(newProduct.carbs) || 0,
@@ -709,6 +712,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         carbs: Math.round((saved.carbs_g || 0) * 10) / 10, fat: Math.round((saved.fat_g || 0) * 10) / 10,
         fibre: Math.round((saved.fibre_g || 0) * 10) / 10, sodium: Math.round(saved.sodium_mg || 0),
         sugar: Math.round((saved.sugar_g || 0) * 10) / 10, source: "community", servingGrams: saved.serving_grams || null,
+        servingUnit: saved.serving_unit || "g",
       } : saved;
       setAddingProduct(false);
       setError(null);
@@ -881,11 +885,33 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               style={{ gridColumn: "1 / -1", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
             {[
               ["cal", "Calories"], ["protein", "Protein (g)"], ["carbs", "Carbs (g)"], ["fat", "Fat (g)"],
-              ["fibre", "Fibre (g)"], ["sodium", "Sodium (mg)"], ["sugar", "Sugar (g)"], ["servingGrams", "Serving (g)"],
+              ["fibre", "Fibre (g)"], ["sodium", "Sodium (mg)"], ["sugar", "Sugar (g)"],
             ].map(([key, label]) => (
               <input key={key} type="number" inputMode="decimal" placeholder={label} value={newProduct[key]} onChange={e => updateNewProduct(key, e.target.value)}
                 style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
             ))}
+            {/* Split from the mapped fields above since it needs the g/ml
+                toggle alongside it — whichever's picked here becomes this
+                product's servingUnit for every future scan, same as the
+                live FatSecret/Open Food Facts lookups (see unitsFor in
+                lib/foodMath.js), so a manually-added drink gets an ml
+                amount/unit option later instead of g/kg/lb/oz. */}
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" inputMode="decimal" placeholder={newProduct.servingUnit === "ml" ? "Serving (ml)" : "Serving (g)"} value={newProduct.servingGrams} onChange={e => updateNewProduct("servingGrams", e.target.value)}
+                style={{ flex: 1, minWidth: 0, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+              {["g", "ml"].map(u => (
+                <button key={u} type="button" onClick={() => updateNewProduct("servingUnit", u)}
+                  style={{
+                    width: 36, flexShrink: 0, borderRadius: 8, fontSize: 12, fontFamily: "inherit", cursor: "pointer",
+                    background: newProduct.servingUnit === u ? "var(--accent)" : "var(--bg-card)",
+                    color: newProduct.servingUnit === u ? "#0f0f0f" : "var(--text-secondary)",
+                    border: `1px solid ${newProduct.servingUnit === u ? "var(--accent)" : "var(--border-default)"}`,
+                  }}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: 8 }}>

@@ -24,15 +24,16 @@ const FREE_MONTHLY_SCAN_LIMIT = 5;
 const PROMPT = `You're looking at a photo of a nutrition facts label from a packaged food or drink. Read the label carefully and extract its nutrition information.
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"serving": string, "servingGrams": number or null, "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number}
+{"serving": string, "servingGrams": number or null, "servingUnit": "g" | "ml", "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number}
 
 Field notes:
 - serving: the label's own serving size description, for example 1 cup (240ml) or 2 biscuits (30g)
-- servingGrams: the serving size in grams if the label states or implies a gram weight, otherwise null
+- servingGrams: the serving size as a plain number, in whichever unit servingUnit reports — null if the label states no weight/volume at all (e.g. "1 biscuit" with no gram or ml figure)
+- servingUnit: "ml" if the label states or implies the serving as a volume (ml, L, cup, fl oz — this is a drink), otherwise "g"
 - cal: calories per serving
 - protein, carbs, fat, fibre, sugar: grams per serving
 - sodium: milligrams per serving
-- If a value isn't shown on the label, use 0 for macros/sodium/fibre/sugar — never omit a field. Use null only for servingGrams when no gram weight is stated or impliable.
+- If a value isn't shown on the label, use 0 for macros/sodium/fibre/sugar — never omit a field. Use null only for servingGrams when no weight or volume is stated or impliable.
 
 If the photo doesn't clearly show a nutrition facts label, reply with exactly: {"error": "No nutrition label detected in this photo."}
 

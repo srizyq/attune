@@ -473,6 +473,16 @@ create table if not exists public.barcode_products (
   created_at timestamptz default now()
 );
 
+-- Whether serving_grams is actually grams or millilitres — this table
+-- only ever had grams, so a community-submitted drink (this is the
+-- "barcode not found anywhere" fallback form, and plenty of unbarcoded
+-- products are drinks) silently anchored to a 'g' unit and offered
+-- kg/lb/oz instead of ml when someone else later scanned it. Same
+-- distinction FatSecret/Open Food Facts lookups already carry (see
+-- unitsFor in src/lib/foodMath.js).
+alter table public.barcode_products add column if not exists serving_unit text
+  check (serving_unit in ('g', 'ml')) default 'g';
+
 alter table public.barcode_products enable row level security;
 
 create policy "barcode_products: select any signed-in user" on public.barcode_products
