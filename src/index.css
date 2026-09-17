@@ -322,9 +322,23 @@ h1, h2, h3, h4, h5 {
 /* Full-screen sheet (DragSheet) — slides up from the bottom on open,
    down on close. Drag-to-dismiss (DragSheet's own pointer handling) is a
    separate, inline-transform animation that takes over once the entrance
-   animation finishes, not this. */
-@keyframes sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
-@keyframes sheet-out { from { transform: translateY(0); } to { transform: translateY(100%); } }
+   animation finishes, not this.
+   The resting ("to"/"from") values carry --vvo, the same keyboard-pan
+   offset .modal-backdrop uses (see its comment above) — PhotoScanModal
+   and MenuScanModal both put a <textarea> inside this sheet, so focusing
+   it can pan the visual viewport just like a modal's input does, and
+   .sheet-panel is `position: fixed` same as .modal-backdrop. It has to
+   live in the keyframes rather than a plain `transform` rule on
+   .sheet-panel itself: `animation: ... both` keeps applying the
+   animation's own end-state transform indefinitely (that's what "both"
+   means), so a separate static transform declaration on the class would
+   never actually take effect once the entrance animation finishes. A
+   plain rule would also fight DragSheet's own inline transform while
+   actively dragging — this way, that inline style (only set once dragY is
+   non-zero) still wins during a drag, and the keyframe's value applies
+   the rest of the time, which is when a focused input would matter. */
+@keyframes sheet-in { from { transform: translateY(calc(100% + var(--vvo, 0px))); } to { transform: translateY(var(--vvo, 0px)); } }
+@keyframes sheet-out { from { transform: translateY(var(--vvo, 0px)); } to { transform: translateY(calc(100% + var(--vvo, 0px))); } }
 .sheet-panel {
   animation: sheet-in 260ms cubic-bezier(0.23, 1, 0.32, 1) both;
   /* Same keyboard-overlap fix as .modal-backdrop above — pins this
@@ -336,13 +350,21 @@ h1, h2, h3, h4, h5 {
   animation: sheet-out 200ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
+/* --vvo composed into the resting translateY, same reasoning as
+   .sheet-panel's keyframes above — a toast is `position: fixed` and can
+   be on screen while a keyboard-opened input has panned the visual
+   viewport (SettingsGoals' own save-bar toast sits right below the goal
+   inputs that trigger it), and a static transform on the class can't
+   apply once `animation: ... both` is filling with the keyframe's own
+   value instead. --vvo is 0px whenever nothing's panned it, so this is a
+   no-op for every toast that isn't near a keyboard. */
 @keyframes toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translateX(-50%) translateY(calc(8px + var(--vvo, 0px))); }
+  to { opacity: 1; transform: translateX(-50%) translateY(var(--vvo, 0px)); }
 }
 @keyframes toast-out {
-  from { opacity: 1; transform: translateX(-50%) translateY(0); }
-  to { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  from { opacity: 1; transform: translateX(-50%) translateY(var(--vvo, 0px)); }
+  to { opacity: 0; transform: translateX(-50%) translateY(calc(6px + var(--vvo, 0px))); }
 }
 .toast-in { animation: toast-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both; }
 .toast-out { animation: toast-out 160ms cubic-bezier(0.4, 0, 1, 1) both; }

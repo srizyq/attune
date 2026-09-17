@@ -470,7 +470,16 @@ export default function SettingsGoals() {
         <div
           className={popupClosing ? 'toast-out' : 'toast-in'}
           style={{
-            position: 'fixed', left: '50%', bottom: 84, zIndex: 150,
+            // Plain `bottom: 84` sits 84px above the real (layout-viewport)
+            // bottom edge — behind the keyboard once one's open, since
+            // that edge doesn't move even though the keyboard now covers
+            // it. This is the only Save affordance on a page that's all
+            // numeric goal inputs, so it's reachable behind the keyboard
+            // on every single edit otherwise. Adding back the keyboard's
+            // own height (100vh minus the shrunk --vvh) keeps it 84px
+            // above the *visible* bottom — the keyboard's top edge —
+            // instead, and is a no-op (adds 0) when no keyboard is open.
+            position: 'fixed', left: '50%', bottom: 'calc(84px + (100vh - var(--vvh, 100vh)))', zIndex: 150,
             width: 'calc(100% - 32px)', maxWidth: 420,
             background: 'var(--bg-subtle)', border: '1px solid var(--border-strong)', borderRadius: 14,
             padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,

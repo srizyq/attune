@@ -16,7 +16,11 @@ export default function Toast({ message, error, onDone }) {
     <div
       className={leaving ? 'toast-out' : 'toast-in'}
       style={{
-        position: 'fixed', bottom: 28, left: '50%', borderRadius: 10, padding: '10px 20px', fontSize: 14, zIndex: 100,
+        // See SettingsGoals' identical comment — 100vh minus the
+        // keyboard-shrunk --vvh adds the keyboard's own height back in
+        // when one's open, so this stays 28px above the keyboard instead
+        // of 28px above the real, keyboard-covered screen edge.
+        position: 'fixed', bottom: 'calc(28px + (100vh - var(--vvh, 100vh)))', left: '50%', borderRadius: 10, padding: '10px 20px', fontSize: 14, zIndex: 100,
         whiteSpace: 'nowrap', pointerEvents: 'none',
         background: error ? '#1a0f0f' : 'var(--accent-bg)',
         border: `1px solid ${error ? '#c0707040' : 'var(--accent-dark)'}`,
