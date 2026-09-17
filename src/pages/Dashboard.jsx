@@ -24,6 +24,7 @@ import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
 import HourlyTimeline from '../components/HourlyTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
+import Toast from '../components/Toast';
 import { round1 } from '../lib/format';
 import { hourToHHMM } from '../lib/mealTime';
 
@@ -783,6 +784,30 @@ export default function Dashboard() {
   const { workouts, totalCaloriesBurned, create: createWorkout, remove: removeWorkout } = useWorkoutLogs(viewedDate);
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const { closing: workoutModalClosing, close: closeWorkoutModal } = useClosingTransition(() => setShowWorkoutModal(false));
+  const [toast, setToast] = useState(null);
+  const [toastError, setToastError] = useState(false);
+  function showToast(message, isError = false) {
+    setToast(message);
+    setToastError(isError);
+  }
+  // deleteFood/removeWorkout had no error handling anywhere they were
+  // used — a failed delete just silently did nothing. Same reasoning as
+  // DailyLog.jsx's identical wrapper: LogItemRow already catches and
+  // inline-surfaces its own onSave failures, so only delete needs this.
+  async function handleDeleteFoodItem(id) {
+    try {
+      await deleteFood(id);
+    } catch {
+      showToast("Couldn't delete — try again", true);
+    }
+  }
+  async function handleDeleteWorkout(id) {
+    try {
+      await removeWorkout(id);
+    } catch {
+      showToast("Couldn't delete workout — try again", true);
+    }
+  }
 
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(viewedDate + 'T00:00:00'); d.setDate(1); return d; });
   // Clicking a streak dot or a calendar day re-navigates to this same
@@ -992,7 +1017,7 @@ export default function Dashboard() {
             workouts={workouts}
             totalCaloriesBurned={totalCaloriesBurned}
             onLogWorkout={() => setShowWorkoutModal(true)}
-            onDeleteWorkout={removeWorkout}
+            onDeleteWorkout={handleDeleteWorkout}
           />
 
           <ShortcutRow navigate={navigate} date={viewedDate} />
@@ -1017,14 +1042,14 @@ export default function Dashboard() {
             {showHourlyLog ? (
               <HourlyTimeline
                 segments={dayTimeline}
-                onDelete={deleteFood}
+                onDelete={handleDeleteFoodItem}
                 onSave={updateFood}
                 onNavigateAdd={(hour) => navigate('/food', { state: { date: viewedDate, presetTime: hourToHHMM(hour) } })}
               />
             ) : (
               <MealLog
                 groups={Object.entries(meals).map(([key, items]) => ({ key, label: key.charAt(0).toUpperCase() + key.slice(1), items }))}
-                onDelete={deleteFood}
+                onDelete={handleDeleteFoodItem}
                 onSave={updateFood}
                 onNavigateFood={(key) => navigate('/food', { state: { date: viewedDate, openMeal: key } })}
               />
@@ -1092,6 +1117,7 @@ export default function Dashboard() {
           onSave={createWorkout}
         />
       )}
+      {toast && <Toast message={toast} error={toastError} onDone={() => setToast(null)} />}
     </div>
   );
 }

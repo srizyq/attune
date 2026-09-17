@@ -12,6 +12,7 @@ import HourlyTimeline from '../components/HourlyTimeline';
 import DaySelector from '../components/DaySelector';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import CopyDayModal from '../components/CopyDayModal';
+import Toast from '../components/Toast';
 import { round1 } from '../lib/format';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
@@ -53,6 +54,28 @@ export default function DailyLog() {
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [toastError, setToastError] = useState(false);
+  function showToast(message, isError = false) {
+    setToast(message);
+    setToastError(isError);
+  }
+  // deleteFood had no error handling anywhere it was used — a failed
+  // delete (network blip, RLS hiccup) just silently did nothing, no toast,
+  // no console hint. LogItemRow already catches and inline-surfaces its
+  // own onSave failures (see its `error` state), so only delete needs
+  // this; wrapping once here reaches every call site below (the
+  // meal-grouped view's LogItemRow rows and HourlyTimeline's own, which
+  // renders LogItemRow internally) without changing either component,
+  // same as FoodSearch.jsx's showToast pattern for its own write paths
+  // (c8e1eed).
+  async function handleDeleteItem(id) {
+    try {
+      await deleteFood(id);
+    } catch {
+      showToast("Couldn't delete — try again", true);
+    }
+  }
 
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const totalCal = Object.values(meals).flat().reduce((s, i) => s + i.cal, 0);
@@ -98,7 +121,7 @@ export default function DailyLog() {
           {loading ? null : showHourly ? (
             <HourlyTimeline
               segments={dayTimeline}
-              onDelete={deleteFood}
+              onDelete={handleDeleteItem}
               onSave={updateFood}
               onNavigateAdd={(hour) => navigate('/food', { state: { date: selectedDate, presetTime: hourToHHMM(hour) } })}
               emptyMessage={isToday ? 'Nothing logged today yet.' : 'Nothing logged this day.'}
@@ -134,7 +157,7 @@ export default function DailyLog() {
                               item={item}
                               isExpanded={expandedId === item.id}
                               onToggle={() => setExpandedId(prev => (prev === item.id ? null : item.id))}
-                              onDelete={() => deleteFood(item.id)}
+                              onDelete={() => handleDeleteItem(item.id)}
                               onSave={async (fields) => { await updateFood(item.id, fields); setExpandedId(null); }}
                             />
                           ))
@@ -159,6 +182,7 @@ export default function DailyLog() {
           onCopied={refetch}
         />
       )}
+      {toast && <Toast message={toast} error={toastError} onDone={() => setToast(null)} />}
     </div>
   );
 }
