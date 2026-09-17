@@ -48,9 +48,18 @@ export function useFoodLogs(date) {
   const refetch = useCallback(async () => {
     if (!user || !date) { setLogs([]); setLoading(false); return; }
     setLoading(true);
-    const data = await getFoodLogsForDate(user.id, date);
-    setLogs(data);
-    setLoading(false);
+    // Unhandled before — a network blip here left loading stuck true
+    // forever, since setLoading(false) below never ran (see useCustomFoods
+    // for the same fix applied consistently across the data hooks).
+    try {
+      const data = await getFoodLogsForDate(user.id, date);
+      setLogs(data);
+    } catch (err) {
+      console.error('Failed to load food logs:', err);
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
   }, [user, date]);
 
   useEffect(() => { refetch(); }, [refetch]);

@@ -24,9 +24,18 @@ export function useWorkoutLogs(date) {
   const refetch = useCallback(async () => {
     if (!user || !date) { setRows([]); setLoading(false); return; }
     setLoading(true);
-    const data = await getWorkoutLogsForDate(user.id, date);
-    setRows(data);
-    setLoading(false);
+    // Unhandled before — a network blip here left loading stuck true
+    // forever (see useCustomFoods for the same fix applied consistently
+    // across the data hooks).
+    try {
+      const data = await getWorkoutLogsForDate(user.id, date);
+      setRows(data);
+    } catch (err) {
+      console.error('Failed to load workout logs:', err);
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
   }, [user, date]);
 
   useEffect(() => { refetch(); }, [refetch]);

@@ -10,9 +10,18 @@ export function useCheckins(date) {
   const refetch = useCallback(async () => {
     if (!user || !date) { setCheckin(null); setLoading(false); return; }
     setLoading(true);
-    const data = await getCheckinForDate(user.id, date);
-    setCheckin(data);
-    setLoading(false);
+    // Unhandled before — a network blip here left loading stuck true
+    // forever (see useCustomFoods for the same fix applied consistently
+    // across the data hooks).
+    try {
+      const data = await getCheckinForDate(user.id, date);
+      setCheckin(data);
+    } catch (err) {
+      console.error('Failed to load check-in:', err);
+      setCheckin(null);
+    } finally {
+      setLoading(false);
+    }
   }, [user, date]);
 
   useEffect(() => { refetch(); }, [refetch]);

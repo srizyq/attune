@@ -11,9 +11,19 @@ export function useProfile() {
   const refetch = useCallback(async () => {
     if (!user) { setProfile(null); setLoading(false); return; }
     setLoading(true);
-    const data = await getProfile(user.id);
-    setProfile(withCompGrants(data, user.email));
-    setLoading(false);
+    // Unhandled before — a network blip here left loading stuck true
+    // forever (see useCustomFoods for the same fix applied consistently
+    // across the data hooks). Especially costly on this hook specifically,
+    // since so much of the app gates rendering on profile/loading.
+    try {
+      const data = await getProfile(user.id);
+      setProfile(withCompGrants(data, user.email));
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => { refetch(); }, [refetch]);
