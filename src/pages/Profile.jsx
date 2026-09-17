@@ -65,6 +65,18 @@ function ProBillingButton({ profile, isGuest }) {
     return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Create a full account above first</span>;
   }
 
+  // is_premium true with no stripe_pro_subscription_id means there's no
+  // real Pro subscription behind it — a comp grant (compGrants.js), not a
+  // paid one. Checked against the Pro-specific subscription id, not the
+  // shared stripe_customer_id, since a Coach Pass subscriber comp'd into
+  // Pro on top has a real customer id from the Coach Pass side alone.
+  // "Manage billing" would just dead-end on create-portal-session's "No
+  // billing account found yet" error, so it's a plain badge instead of a
+  // button that goes nowhere.
+  if (profile?.is_premium && !profile?.stripe_pro_subscription_id) {
+    return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Comp access — no billing to manage</span>;
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
       <button
@@ -358,7 +370,11 @@ export default function Profile() {
             )}
             <FieldRow
               label="Pro"
-              hint={profile?.is_premium ? `Active subscription · ${profile?.pro_status || 'active'}` : 'Unlimited AI scans, custom micronutrient targets, and more'}
+              hint={
+                !profile?.is_premium ? 'Unlimited AI scans, custom micronutrient targets, and more'
+                  : profile?.stripe_pro_subscription_id ? `Active subscription · ${profile?.pro_status || 'active'}`
+                  : 'Comp access'
+              }
             >
               <ProBillingButton profile={profile} isGuest={isGuest} />
             </FieldRow>

@@ -44,6 +44,15 @@ function CoachPassButton({ profile, isGuest, onGoToProfile }) {
     );
   }
 
+  // coach_pass true with no stripe_subscription_id means there's no real
+  // subscription behind it — a comp grant (compGrants.js), not a paid
+  // one. "Manage billing" would just dead-end on create-portal-session's
+  // "No billing account found yet" error, so it's a plain badge instead
+  // of a button that goes nowhere.
+  if (profile?.coach_pass && !profile?.stripe_subscription_id) {
+    return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Comp access — no billing to manage</span>;
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
       <button
@@ -132,7 +141,11 @@ export default function CoachModal({ onClose, closing }) {
         <SectionLabel>Become a coach</SectionLabel>
         <FieldRow
           label="Coach Pass"
-          hint={profile?.coach_pass ? `Active subscription · ${profile?.coach_pass_status || 'active'}` : 'Unlimited clients'}
+          hint={
+            !profile?.coach_pass ? 'Unlimited clients'
+              : profile?.stripe_subscription_id ? `Active subscription · ${profile?.coach_pass_status || 'active'}`
+              : 'Comp access'
+          }
         >
           <CoachPassButton profile={profile} isGuest={isGuest} onGoToProfile={goToProfile} />
         </FieldRow>
