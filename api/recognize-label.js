@@ -129,6 +129,15 @@ export default async function handler(req, res) {
       ],
     });
 
+    // Counts against the cap the moment we've actually spent the money on
+    // an Anthropic call, regardless of what it returned (a real result, a
+    // "no label detected", or an unparseable reply below) — not counted if
+    // we rejected the request before ever calling Anthropic (missing
+    // image, wrong type, or already over the limit above). Same reasoning
+    // as recognize-food.js/recognize-menu.js: not charging for a failed
+    // parse would let a crafted "always fails" request bypass the cap for
+    // free indefinitely, since the real cost (the API call) already
+    // happened either way.
     if (!profile.is_premium) {
       await supabase.from('profiles')
         .update({ photo_scans_used: usedSoFar + 1, photo_scans_period_start: today })
