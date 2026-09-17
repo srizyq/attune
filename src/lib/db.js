@@ -151,12 +151,20 @@ export async function updateFoodLog(id, entry) {
     folate_mcg: entry.folate || 0,
     serving_grams: entry.servingGrams || null,
   };
-  // Both optional — only touched when the caller actually included them,
-  // so an amount-only edit never accidentally resets the other. Lets an
+  // All optional — only touched when the caller actually included them, so
+  // an amount-only edit never accidentally resets the others. Lets an
   // already-logged item move to a different meal (free tier) or a
   // different logged time (Pro), instead of requiring delete + re-add.
   if (entry.meal !== undefined) patch.meal = entry.meal;
   if (entry.loggedAt !== undefined) patch.logged_at = entry.loggedAt ? entry.loggedAt.toISOString() : null;
+  // logged_amount/logged_unit weren't in here at all until now — every
+  // other field this function patches was kept in sync on edit, but these
+  // two (which Recent/Frequent's row subtitle and quick-re-add prefill
+  // read directly off the row, see recentRowMeta in FoodSearch.jsx) stayed
+  // frozen at whatever was first logged, so editing an item's amount left
+  // its macros and its displayed portion disagreeing from then on.
+  if (entry.loggedAmount !== undefined) patch.logged_amount = entry.loggedAmount;
+  if (entry.loggedUnit !== undefined) patch.logged_unit = entry.loggedUnit;
   const { data, error } = await supabase
     .from('food_logs')
     .update(patch)

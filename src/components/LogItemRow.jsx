@@ -111,7 +111,15 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
       // Only persist a servingGrams value when the item actually had one —
       // otherwise a "2 servings" edit on a legacy item with no real weight
       // would silently fabricate one from the 100g fallback and make it
-      // look gram-accurate on the next edit.
+      // look gram-accurate on the next edit. loggedAmount/loggedUnit follow
+      // the same known-weight gate and the same reasoning: without them,
+      // Recent/Frequent's row subtitle and quick-re-add prefill (both read
+      // straight off logged_amount/logged_unit, see recentRowMeta in
+      // FoodSearch.jsx) kept showing whatever amount this item was
+      // *originally* logged with even after an edit changed it. Left
+      // unset (not nulled) when there's no known weight, since amount here
+      // is a calorie-ratio typed against the 'serving' unit, not a real
+      // portion figure worth persisting as one.
       //
       // meal/loggedAt are set explicitly here rather than left to
       // `...preview`'s spread — scaleFood() spreads every field of `item`
@@ -121,6 +129,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
       await onSave({
         ...preview,
         servingGrams: hasKnownWeight ? gramsEquivalent : null,
+        ...(hasKnownWeight ? { loggedAmount: Number(amount) || null, loggedUnit: unit } : {}),
         meal: isPremium ? item.meal : meal,
         loggedAt: isPremium ? timeStringToDate(time, effectiveLoggedAt(item)) : (item.loggedAt ? new Date(item.loggedAt) : null),
       });
@@ -135,9 +144,13 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   // A fresh AI photo estimate replaces this item's name/nutrition
   // directly — servingGrams resets to null since a new photo estimate is
   // no more a real measured weight than the original one was (see
-  // PhotoScanModal, which never sets it either). Meal/time follow the
-  // same save-payload shape as handleSave so this doesn't silently
-  // discard whatever the user already changed in the open edit form.
+  // PhotoScanModal, which never sets it either). loggedAmount/loggedUnit
+  // reset alongside it for the same reason — a stale "250g" surviving on
+  // a row that no longer has a known weight would be actively wrong, not
+  // just outdated, the next time Recent/Frequent reads it. Meal/time
+  // follow the same save-payload shape as handleSave so this doesn't
+  // silently discard whatever the user already changed in the open edit
+  // form.
   async function handleRecalculate(result) {
     await onSave({
       ...item,
@@ -147,6 +160,8 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
       carbs: result.carbs,
       fat: result.fat,
       servingGrams: null,
+      loggedAmount: null,
+      loggedUnit: null,
       meal: isPremium ? item.meal : meal,
       loggedAt: isPremium ? timeStringToDate(time, effectiveLoggedAt(item)) : (item.loggedAt ? new Date(item.loggedAt) : null),
     });

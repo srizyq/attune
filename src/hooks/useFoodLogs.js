@@ -32,6 +32,9 @@ export function mapRow(row) {
     vitaminB12: Number(row.vitamin_b12_mcg) || 0,
     folate: Number(row.folate_mcg) || 0,
     servingGrams: row.serving_grams || null,
+    loggedAmount: row.logged_amount != null ? Number(row.logged_amount) : null,
+    loggedUnit: row.logged_unit || null,
+    servingLabel: row.serving_label || null,
     loggedAt: row.logged_at || null,
     createdAt: row.created_at || null,
   };
