@@ -216,6 +216,13 @@ async function searchFatSecret(q) {
       source: "fatsecret",
       servingGrams: weight.grams,
       servingUnit: weight.unit,
+      // serving_id "0" is FatSecret's own sentinel for an auto-computed
+      // reference amount ("100 g"/"100 ml") rather than a serving that
+      // actually appears on the product — confirmed live (Silk almond
+      // milk's response carried both a real "1 cup" serving with a normal
+      // numeric id and a synthetic "100 ml" one with serving_id "0").
+      // Flagged for the same reason as OFF's servingIsFallback above.
+      servingIsFallback: serving.serving_id === "0",
     };
   }).filter(Boolean);
 }
@@ -371,6 +378,10 @@ async function lookupFatSecretBarcode(barcode) {
     source: "fatsecret",
     servingGrams: weight.grams,
     servingUnit: weight.unit,
+    // See searchFatSecret's identical comment — serving_id "0" marks an
+    // auto-computed "100 g"/"100 ml" reference amount, not a serving that
+    // actually appears on this product's packaging.
+    servingIsFallback: serving.serving_id === "0",
   };
   return found;
 }
@@ -423,6 +434,14 @@ async function lookupOpenFoodFactsBarcode(barcode) {
     source: "off",
     servingGrams: weight.grams,
     servingUnit: weight.unit,
+    // OFF has no serving_size at all for plenty of products (confirmed
+    // live: this exact "Dubai Choc Choc Coated Protein Ball" barcode has
+    // energy-kcal_100g but serving_size: null) — "100g" above is a made-up
+    // stand-in, not the packet's real single-serving weight. Flagged so
+    // the add-food UI can default the amount/unit picker to the 100g
+    // baseline it's actually showing macros for, instead of implying "1
+    // serving" is the whole product when nobody actually knows that.
+    servingIsFallback: !p.serving_size,
   };
   return found;
 }
@@ -450,6 +469,10 @@ async function lookupSharedBarcodeProduct(barcode) {
     source: 'community',
     servingGrams: row.serving_grams || null,
     servingUnit: row.serving_unit || 'g',
+    // Whoever submitted this left the serving weight blank — same
+    // "we don't actually know the packet's real serving" case as OFF's
+    // null serving_size and FatSecret's serving_id "0" above.
+    servingIsFallback: !row.serving_grams,
   };
 }
 
@@ -615,8 +638,25 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       }
       setError(null);
       setResult(found);
-      setAmount(1);
-      setUnit("serving");
+      // "1 serving" only means something when a source actually told us
+      // what a serving of *this* product is. When every source we found
+      // it through was flagged servingIsFallback (no real serving info
+      // anywhere — confirmed live for a real scan: Open Food Facts had no
+      // serving_size at all for it), defaulting to "1 serving" falsely
+      // implies the whole 454kcal figure is one ball/bar/whatever, when
+      // it's actually just the per-100g number with nothing dividing it
+      // down to a real single serving. Defaulting to the known weight in
+      // its own unit instead makes the modal's kcal figure match what's
+      // actually selected, and the amount field is still fully editable
+      // from there — typing "40" (a real ball's weight) scales correctly
+      // either way.
+      if (found.servingIsFallback && found.servingGrams) {
+        setAmount(found.servingGrams);
+        setUnit(found.servingUnit || "g");
+      } else {
+        setAmount(1);
+        setUnit("serving");
+      }
       setTime(currentTimeHHMM());
     } catch (err) { console.error(err); setResult(null); setError("Couldn't look up this product. Check your connection and try again."); }
     finally { setScanning(false); }
@@ -1247,12 +1287,18 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   // was last logged with (see FoodSearch's lastAmount/lastUnit mapping) —
   // quick-add and the expanded editor both default to that instead of
   // always guessing 1 serving. Search results and custom foods have no
-  // such history to draw on, so they keep the original 1-serving default.
-  // This never touches the food's own servingGrams/base nutrition — it's
-  // purely a starting point for the amount field.
+  // such history to draw on. Among those, a result flagged
+  // servingIsFallback (FatSecret's serving_id "0", or Open Food Facts/
+  // community data with no real serving info — see the lookup functions
+  // above) has no actual "1 serving" to default to either — defaulting to
+  // its known weight instead keeps the shown kcal matching what's
+  // selected, rather than implying the per-100g figure is one whole
+  // serving. This never touches the food's own servingGrams/base
+  // nutrition — it's purely a starting point for the amount field.
   const hasRemembered = food.lastAmount != null && !!food.lastUnit;
-  const defaultAmount = hasRemembered ? food.lastAmount : 1;
-  const defaultUnit = hasRemembered ? food.lastUnit : "serving";
+  const hasFallbackWeight = !hasRemembered && food.servingIsFallback && food.servingGrams;
+  const defaultAmount = hasRemembered ? food.lastAmount : hasFallbackWeight ? food.servingGrams : 1;
+  const defaultUnit = hasRemembered ? food.lastUnit : hasFallbackWeight ? (food.servingUnit || "g") : "serving";
 
   const [amount, setAmount] = useState(defaultAmount);
   const [unit, setUnit] = useState(defaultUnit);
