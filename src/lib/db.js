@@ -451,8 +451,9 @@ export async function addBarcodeProduct(userId, barcode, fields) {
   return data;
 }
 
-// ─── afcd_foods (Australian Food Composition Database, read-only) ──────────
-// AFCD names are written adjective-first ("Pie, savoury, meat, commercial"),
+// ─── ausnut_foods (AUSNUT 2023, read-only — see supabase/schema.sql for the
+// afcd_foods -> ausnut_foods migration history) ─────────────────────────────
+// AUSNUT names are written adjective-first ("Pie, savoury, meat, commercial"),
 // not in the word order someone actually types ("meat pie") — a single
 // substring match against the whole query would miss that entirely. Each
 // word gets its own filter instead, ANDed together by Supabase/PostgREST,
@@ -470,14 +471,21 @@ function wordBoundaryPattern(word) {
   return `\\m${escaped}`;
 }
 
-export async function searchAfcdFoods(query, limit = 15) {
+export async function searchAusnutFoods(query, limit = 15) {
   const words = query.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return [];
-  let q = supabase.from('afcd_foods').select('*');
-  for (const word of words) {
-    q = q.filter('name', 'imatch', wordBoundaryPattern(word));
-  }
-  const { data, error } = await q.limit(limit);
+  // Server-side ordering (shortest name first — see search_ausnut_foods_ranked's
+  // comment in schema.sql) rather than a plain filter-and-LIMIT: AUSNUT's
+  // ~3,700 foods routinely have more matches for a common ingredient than
+  // `limit` (e.g. 18 for "chicken breast", 98 for "rice"), and an unordered
+  // LIMIT can return a run of composite items ("Chicken burger, chicken
+  // breast, with salad, fast food chain") before ever reaching the plain
+  // "Chicken, breast, lean, raw" entry — silently dropping the best match
+  // rather than just ranking it lower.
+  const { data, error } = await supabase.rpc('search_ausnut_foods_ranked', {
+    patterns: words.map(wordBoundaryPattern),
+    match_limit: limit,
+  });
   if (error) throw error;
   // Exact substring matching doesn't tolerate typos ("chiken" won't find
   // "chicken") — only fall back to Postgres trigram similarity search
@@ -485,15 +493,15 @@ export async function searchAfcdFoods(query, limit = 15) {
   // is never displaced by a fuzzier, less certain one.
   if (data.length > 0) return data;
   const { data: fuzzyData, error: fuzzyError } = await supabase
-    .rpc('search_afcd_foods_fuzzy', { search_query: query.trim(), match_limit: limit });
+    .rpc('search_ausnut_foods_fuzzy', { search_query: query.trim(), match_limit: limit });
   if (fuzzyError) throw fuzzyError;
   return fuzzyData;
 }
 
 // ─── common_dishes (seeded AI-estimate cache for composite/prepared dishes
-// AFCD covers poorly — curries, pad thai, meat pies, etc.) ──────────────────
-// Same word-boundary-ANDed / fuzzy-fallback shape as searchAfcdFoods above —
-// see scripts/seed-common-dishes/ for how this table gets populated.
+// AUSNUT covers poorly — curries, pad thai, meat pies, etc.) ────────────────
+// Same word-boundary-ANDed / fuzzy-fallback shape as searchAusnutFoods above
+// — see scripts/seed-common-dishes/ for how this table gets populated.
 export async function searchCommonDishes(query, limit = 8) {
   const words = query.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return [];

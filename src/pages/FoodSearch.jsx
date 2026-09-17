@@ -10,7 +10,7 @@ import { useLastLoggedAmounts } from '../hooks/useLastLoggedAmounts';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
-import { getBarcodeProduct, addBarcodeProduct, searchAfcdFoods, searchCommonDishes } from '../lib/db';
+import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes } from '../lib/db';
 import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
@@ -32,12 +32,12 @@ function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// Combining custom foods + AFCD + FatSecret by source (custom, then AFCD,
-// then FatSecret) used to mean AFCD's up-to-15 matches — returned in
-// whatever order Postgres happens to store them, with no relevance
+// Combining custom foods + AUSNUT + FatSecret by source (custom, then
+// AUSNUT, then FatSecret) used to mean AUSNUT's up-to-15 matches — returned
+// in whatever order Postgres happens to store them, with no relevance
 // ranking of its own — sat above FatSecret's already relevance-sorted
 // list regardless of which was the better match for what was actually
-// typed. A search for something AFCD had 10 loose partial matches for
+// typed. A search for something AUSNUT had 10 loose partial matches for
 // could bury the one exact FatSecret hit below all of them. Scoring by
 // how closely each result's name matches the query — exact match, then
 // starts-with, then "contains every word typed" — and sorting by that
@@ -169,7 +169,7 @@ function extraMicrosFromFatSecretServing(serving) {
     calcium: Math.round(parseFloat(serving.calcium) || 0),
     iron: Math.round((parseFloat(serving.iron) || 0) * 10) / 10,
     // Pro-gated micronutrients (see Nutrients.jsx) — FatSecret doesn't
-    // provide magnesium/zinc/B12/folate, only AFCD does; those four stay
+    // provide magnesium/zinc/B12/folate, only AUSNUT does; those four stay
     // 0 for FatSecret-sourced foods, same as any other field a given
     // source just doesn't carry.
     vitaminA: Math.round(parseFloat(serving.vitamin_a) || 0),
@@ -220,25 +220,28 @@ async function searchFatSecret(q) {
   }).filter(Boolean);
 }
 
-// Australian Food Composition Database (FSANZ) — a read-only Supabase
-// table populated once from a government dataset (see
-// supabase/afcd_import.sql), covering real Australian foods FatSecret and
-// Open Food Facts often get wrong or don't have at all. All values are
-// per 100g, same convention as Open Food Facts.
+// AUSNUT 2023 (FSANZ/ABS) — a read-only Supabase table populated once from
+// a government dataset (see scripts/import-ausnut/), covering real
+// Australian raw ingredients across every common cooking method (chicken
+// breast raw/baked/boiled/grilled, beef mince at each fat %, etc.) that
+// FatSecret and Open Food Facts often get wrong or don't have at all. All
+// values are per 100g, same convention as Open Food Facts. Replaced the
+// smaller AFCD table (1,588 foods) this was originally built on — see the
+// afcd_foods block in supabase/schema.sql for that history.
 //
-// Capped well below searchAfcdFoods' own default — AFCD has no
+// Capped well below searchAusnutFoods' own default — AUSNUT has no
 // relevance ranking of its own (its query is a plain word-boundary
 // filter with no ORDER BY), so a common ingredient search can pull in a
 // dozen+ near-identical entries (raw/roasted/lean variants of the same
 // cut) that just crowd out cleaner matches from other sources. 5 is
-// enough for AFCD to contribute its real strength — genuine Australian
+// enough for AUSNUT to contribute its real strength — genuine Australian
 // foods the other two miss — without dominating the list.
-async function searchAfcd(q) {
-  const rows = await searchAfcdFoods(q, 5);
+async function searchAusnut(q) {
+  const rows = await searchAusnutFoods(q, 5);
   return rows.map(row => ({
-    id: "afcd_" + row.id,
+    id: "ausnut_" + row.id,
     name: row.name,
-    meta: "100g · AFCD",
+    meta: "100g · AUSNUT",
     cuisine: "all",
     cal: Math.round(row.calories),
     protein: Math.round(row.protein_g * 10) / 10,
@@ -247,7 +250,7 @@ async function searchAfcd(q) {
     fibre: Math.round(row.fibre_g * 10) / 10,
     sodium: Math.round(row.sodium_mg),
     sugar: Math.round(row.sugar_g * 10) / 10,
-    // Pro-gated micronutrients (see Nutrients.jsx) — AFCD is the one
+    // Pro-gated micronutrients (see Nutrients.jsx) — AUSNUT is the one
     // source that actually carries these; FatSecret only fills in
     // vitamin A/C and mono/polyunsaturated fat.
     vitaminA: Math.round(row.vitamin_a_mcg || 0),
@@ -258,15 +261,15 @@ async function searchAfcd(q) {
     zinc: Math.round((row.zinc_mg || 0) * 10) / 10,
     vitaminB12: Math.round((row.vitamin_b12_mcg || 0) * 10) / 10,
     folate: Math.round(row.folate_mcg || 0),
-    source: "afcd",
+    source: "ausnut",
     servingGrams: 100,
   }));
 }
 
 // Seeded cache of AI-estimated nutrition for common composite/prepared
-// dishes (curries, pad thai, meat pies, etc.) AFCD has essentially no
+// dishes (curries, pad thai, meat pies, etc.) AUSNUT has essentially no
 // coverage of — see scripts/seed-common-dishes/. Already per-serving
-// (not per-100g like AFCD), so no scaling-base conversion is needed, same
+// (not per-100g like AUSNUT), so no scaling-base conversion is needed, same
 // shape as custom_foods below. Still labeled "AI estimate" (with a
 // low-confidence suffix where the model flagged one at generation time,
 // same wording the live estimate path uses) since it isn't lab data.
@@ -1545,7 +1548,7 @@ export default function FoodSearch() {
   // AU-scoped) are kept separate so they can render in different sections.
   const [genericResults, setGenericResults] = useState([]);
   const [packagedLive, setPackagedLive] = useState([]);
-  const [afcdResults, setAfcdResults] = useState([]);
+  const [ausnutResults, setAusnutResults] = useState([]);
   const [commonDishResults, setCommonDishResults] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
@@ -1720,13 +1723,13 @@ export default function FoodSearch() {
     // Four independent sources — run them together instead of one after
     // another, so a search takes as long as the slowest of the four
     // rather than the sum of all four.
-    const [offResult, fatSecretResult, afcdResult, commonDishResult] = await Promise.allSettled([
+    const [offResult, fatSecretResult, ausnutResult, commonDishResult] = await Promise.allSettled([
       searchOpenFoodFacts(searchQuery),
       searchFatSecret(searchQuery),
-      searchAfcd(searchQuery),
+      searchAusnut(searchQuery),
       searchCommonDish(searchQuery),
     ]);
-    let off = [], fatSecretResults = [], afcd = [], commonDishes = [];
+    let off = [], fatSecretResults = [], ausnut = [], commonDishes = [];
     if (offResult.status === "fulfilled") {
       off = offResult.value;
     } else {
@@ -1738,10 +1741,10 @@ export default function FoodSearch() {
     } else {
       console.error("FatSecret search error:", fatSecretResult.reason);
     }
-    if (afcdResult.status === "fulfilled") {
-      afcd = afcdResult.value;
+    if (ausnutResult.status === "fulfilled") {
+      ausnut = ausnutResult.value;
     } else {
-      console.error("AFCD search error:", afcdResult.reason);
+      console.error("AUSNUT search error:", ausnutResult.reason);
     }
     if (commonDishResult.status === "fulfilled") {
       commonDishes = commonDishResult.value;
@@ -1750,7 +1753,7 @@ export default function FoodSearch() {
     }
     setGenericResults(fatSecretResults);
     setPackagedLive(off);
-    setAfcdResults(afcd);
+    setAusnutResults(ausnut);
     setCommonDishResults(commonDishes);
     setLiveLoading(false);
   }, []);
@@ -1765,7 +1768,7 @@ export default function FoodSearch() {
     setAiEstimateResult(null);
     setAiEstimateError(null);
     setAiLimitReached(false);
-    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAfcdResults([]); setCommonDishResults([]); setLiveLoading(false); setLiveError(null); return; }
+    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAusnutResults([]); setCommonDishResults([]); setLiveLoading(false); setLiveError(null); return; }
     setLiveLoading(true);
     searchTimer.current = setTimeout(() => runLiveSearch(query.trim()), 500);
     return () => clearTimeout(searchTimer.current);
@@ -1777,14 +1780,14 @@ export default function FoodSearch() {
     const queryLower = trimmed.toLowerCase();
     const queryWords = queryLower.split(/\s+/).filter(Boolean);
     // Custom foods (the user's own data) first among equally-relevant
-    // results, then AFCD (Australian government data), then FatSecret's
+    // results, then AUSNUT (Australian government data), then FatSecret's
     // broader generic coverage — but relevance to what was actually typed
     // wins over which source a result came from. See foodMatchRank.
     // Within the same relevance tier, the shortest name wins the tie
     // instead of whichever source happened to load first — surfaces a
-    // clean "Chicken Thigh" over AFCD's verbose "Chicken, thigh, lean
-    // flesh, raw" when both are equally valid matches for the words typed.
-    const combined = [...customFiltered, ...commonDishResults, ...afcdResults, ...genericResults]
+    // clean "Chicken Thigh" over AUSNUT's verbose "Chicken, thigh, lean,
+    // raw" when both are equally valid matches for the words typed.
+    const combined = [...customFiltered, ...commonDishResults, ...ausnutResults, ...genericResults]
       .map((f, i) => ({ f, i, rank: foodMatchRank(f.name, queryLower, queryWords) }))
       .sort((a, b) => a.rank - b.rank || a.f.name.length - b.f.name.length || a.i - b.i)
       .map(x => x.f);
@@ -1795,7 +1798,7 @@ export default function FoodSearch() {
       seen.add(key);
       return true;
     });
-  }, [customFiltered, commonDishResults, afcdResults, genericResults, query]);
+  }, [customFiltered, commonDishResults, ausnutResults, genericResults, query]);
 
   // Whether the single best database match is only a loose/partial one
   // (foodMatchRank's bottom tier — some but not all of the typed words

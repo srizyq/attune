@@ -499,7 +499,15 @@ alter table public.profiles add column if not exists sex text check (sex in ('ma
 alter table public.profiles add column if not exists target_weight numeric;
 alter table public.profiles add column if not exists pace_kg_per_week numeric;
 
--- ── afcd_foods ──────────────────────────────────────────────────────────────
+-- ── afcd_foods (superseded — see ausnut_foods below) ────────────────────────
+-- AFCD only ever had 1,588 foods (confirmed against FSANZ's own site, not a
+-- partial import) — replaced by ausnut_foods, which is 3,741 foods built
+-- from these same AFCD analytical values plus more recipes/preparations.
+-- The app no longer queries this table (searchAfcdFoods/searchAfcd were
+-- renamed to searchAusnutFoods/searchAusnut and point at the new table).
+-- Left in place rather than dropped — no downstream references anywhere
+-- (confirmed: afcd_foods.id is never persisted as a FK), just unused.
+--
 -- A read-only reference table of Australian foods from FSANZ's Australian
 -- Food Composition Database (Release 3, licensed CC BY-SA 3.0 AU — see
 -- https://www.foodstandards.gov.au/science-data/food-nutrient-databases/afcd).
@@ -868,3 +876,91 @@ as $$
 $$;
 
 grant execute on function public.search_common_dishes_fuzzy(text, int) to authenticated;
+
+-- ── ausnut_foods ─────────────────────────────────────────────────────────────
+-- Replaces afcd_foods (see its block above) as the app's basic/raw-ingredient
+-- food source. AUSNUT 2023 (FSANZ/ABS, licensed CC BY 4.0 — see
+-- https://foodstandards.gov.au/science-data/food-nutrient-databases/ausnut)
+-- is built from AFCD's own analytical values plus additional recipes and
+-- preparations — 3,741 foods vs AFCD's 1,588, same "raw ingredient across
+-- every common cooking method" shape (e.g. "Chicken, breast, lean, raw" /
+-- "...boiled, casseroled, microwaved, poached, steamed or stewed"), not
+-- branded products. Values are per 100g, same convention as afcd_foods.
+-- Populated once via scripts/import-ausnut/, not user-contributed — no
+-- insert policy, same posture as afcd_foods/common_dishes.
+create table if not exists public.ausnut_foods (
+  id text primary key,
+  name text not null,
+  -- 'Analysed' (lab-measured) | 'Recipe' (calculated from real ingredient
+  -- recipes) | 'Label Data' | 'Borrowed' | 'Imputed' | 'Estimated' — AUSNUT's
+  -- own provenance field, stored for future trust/ranking use, not filtered
+  -- on yet.
+  derivation text,
+  calories numeric not null default 0,
+  protein_g numeric default 0,
+  carbs_g numeric default 0,
+  fat_g numeric default 0,
+  fibre_g numeric default 0,
+  sodium_mg numeric default 0,
+  sugar_g numeric default 0,
+  vitamin_a_mcg numeric default 0,
+  vitamin_c_mg numeric default 0,
+  polyunsaturated_fat_g numeric default 0,
+  monounsaturated_fat_g numeric default 0,
+  magnesium_mg numeric default 0,
+  zinc_mg numeric default 0,
+  vitamin_b12_mcg numeric default 0,
+  folate_mcg numeric default 0,
+  created_at timestamptz default now()
+);
+
+alter table public.ausnut_foods enable row level security;
+
+create policy "ausnut_foods: select any signed-in user" on public.ausnut_foods
+  for select using (auth.uid() is not null);
+
+-- ── ausnut_foods: fuzzy fallback (typo tolerance) ───────────────────────────
+-- Mirrors search_afcd_foods_fuzzy/search_common_dishes_fuzzy exactly
+-- (pg_trgm is already enabled by the afcd_foods migration above).
+create index if not exists ausnut_foods_name_trgm_idx
+  on public.ausnut_foods using gin (name gin_trgm_ops);
+
+create or replace function public.search_ausnut_foods_fuzzy(search_query text, match_limit int default 15)
+returns setof public.ausnut_foods
+language sql
+stable
+as $$
+  select *
+  from public.ausnut_foods
+  where similarity(name, search_query) > 0.2
+  order by similarity(name, search_query) desc
+  limit match_limit;
+$$;
+
+-- ── ausnut_foods: server-side ranked search ─────────────────────────────────
+-- AUSNUT's ~2.4x bigger food list than AFCD's exposed a real gap in the old
+-- "plain word-boundary filter, no ORDER BY, cap the client-side fetch at 5"
+-- approach: for "chicken breast", AUSNUT has 18 matches, and 8 of them are
+-- composite items ("Chicken burger, chicken breast, with salad, fast food
+-- chain") that happen to come back from Postgres before any of the 10 plain
+-- "Chicken, breast, lean, raw"-style entries — a LIMIT 5 without ordering
+-- silently drops every single plain entry, not just some. Ordering by
+-- length(name) server-side (same tiebreak the client already uses to prefer
+-- "Chicken Thigh" over "Chicken, thigh, lean flesh, raw" once both are in
+-- the candidate set) fixes this at the source instead of needing an
+-- ever-larger LIMIT for broader terms ("rice" alone has 98 matches).
+create or replace function public.search_ausnut_foods_ranked(patterns text[], match_limit int default 20)
+returns setof public.ausnut_foods
+language sql
+stable
+as $$
+  select *
+  from public.ausnut_foods
+  where name ~* all(patterns)
+  order by length(name) asc
+  limit match_limit;
+$$;
+
+grant execute on function public.search_ausnut_foods_ranked(text[], int) to authenticated;
+
+grant execute on function public.search_ausnut_foods_fuzzy(text, int) to authenticated;
