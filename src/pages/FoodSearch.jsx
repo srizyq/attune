@@ -587,8 +587,25 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       try {
         const track = videoRef.current?.srcObject?.getVideoTracks?.()[0];
         if (track?.getCapabilities?.().torch) setTorchSupported(true);
+        // The `advanced: [{ focusMode: "continuous" }]` passed to
+        // getUserMedia above is only a request — several browsers (most
+        // notably iOS Safari) silently ignore unsupported `advanced`
+        // constraints at stream-acquisition time instead of honouring
+        // what they can and rejecting what they can't, so the camera can
+        // end up on a fixed/single-shot focus with no error to react to.
+        // Re-applying the same constraint directly on the live track,
+        // once we can actually check getCapabilities().focusMode
+        // supports it, is the same "don't trust the initial getUserMedia
+        // constraints alone" pattern already used for torch above —
+        // belt-and-suspenders, not a fix for hardware/OS camera modules
+        // that don't offer continuous autofocus at all.
+        if (track?.getCapabilities?.().focusMode?.includes('continuous')) {
+          track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        }
       } catch {
-        // Capability check itself unsupported — torch button stays hidden.
+        // Capability check itself unsupported — torch button stays hidden,
+        // and focus falls back to whatever the initial constraints (or the
+        // OS default) already set up.
       }
     } catch (err) {
       console.error(err);
