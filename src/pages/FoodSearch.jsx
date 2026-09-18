@@ -511,6 +511,17 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const [unit, setUnit] = useState("serving");
   const { closing, close } = useClosingTransition(onClose);
 
+  // Fallback for a barcode the camera genuinely can't read (damp/curved
+  // packaging, poor lighting, a damaged or faded code) — ZXing just keeps
+  // scanning forever with no error to react to, and "Search manually"
+  // only searches by product name, which routes through a completely
+  // different (name-matching, not barcode-keyed) lookup that can easily
+  // miss the exact product a barcode lookup would have found. Typing the
+  // digits printed under the barcode and reusing lookupBarcode is the
+  // same lookup a successful camera scan would have triggered.
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
+  const [manualBarcode, setManualBarcode] = useState("");
+
   // "Add this product" — offered when neither FatSecret, Open Food
   // Facts, nor the shared barcode_products table has this barcode.
   // Nutrition facts come from a photo of the label (recognize-label);
@@ -609,6 +620,20 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   // render, but re-running this on every render would restart the camera.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { startScanner(); return () => stopScanner(); }, []);
+
+  async function submitManualBarcode(e) {
+    e.preventDefault();
+    // Barcodes are digits only — stripping anything else lets someone
+    // paste/type "978-0-13-468599-1"-style formatting (or accidentally
+    // include a space) without it silently failing to match.
+    const digits = manualBarcode.replace(/\D/g, "");
+    if (!digits || processingRef.current) return;
+    processingRef.current = true;
+    stopScanner();
+    setManualEntryOpen(false);
+    setScanning(true);
+    await lookupBarcode(digits);
+  }
 
   async function lookupBarcode(barcode) {
     setScannedBarcode(barcode);
@@ -850,6 +875,34 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             Looking up product…
           </div>
         )}
+
+        {!scanning && (
+          <div style={{ position: "absolute", bottom: "calc(32px + env(safe-area-inset-bottom))", left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "0 24px" }}>
+            {manualEntryOpen ? (
+              <form onSubmit={submitManualBarcode} style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320 }}>
+                <input
+                  type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
+                  value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
+                  style={{ flex: 1, minWidth: 0, background: "rgba(20,20,20,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
+                />
+                <button
+                  type="submit"
+                  disabled={!manualBarcode.replace(/\D/g, "")}
+                  style={{ background: "#8fbc8f", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#0f0f0f", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+                >
+                  Look up
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setManualEntryOpen(true)}
+                style={{ background: "rgba(20,20,20,0.6)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20, padding: "8px 16px", fontSize: 13, color: "#ccc", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}
+              >
+                <i className="ti ti-keyboard" style={{ fontSize: 14 }} /> Enter barcode manually
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -884,6 +937,32 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           {scannedBarcode && (
             <button onClick={() => setAddingProduct(true)} style={{ width: "100%", background: "transparent", border: "1px dashed var(--border-default)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
               <i className="ti ti-barcode" style={{ fontSize: 14 }} /> Add this product for everyone
+            </button>
+          )}
+          {/* Same manual-entry path as the camera view (submitManualBarcode)
+              — reachable here too since this screen covers both "camera
+              access denied" (no barcode was ever read) and "product not
+              found" (a barcode was read fine, but a mistyped digit or a
+              product genuinely missing from every source is worth a
+              retry). */}
+          {manualEntryOpen ? (
+            <form onSubmit={submitManualBarcode} style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <input
+                type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
+                value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
+                style={{ flex: 1, minWidth: 0, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
+              />
+              <button
+                type="submit"
+                disabled={!manualBarcode.replace(/\D/g, "")}
+                style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#0f0f0f", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+              >
+                Look up
+              </button>
+            </form>
+          ) : (
+            <button onClick={() => setManualEntryOpen(true)} style={{ width: "100%", background: "transparent", border: "none", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
+              <i className="ti ti-keyboard" style={{ fontSize: 14 }} /> Enter barcode number manually
             </button>
           )}
         </div>
