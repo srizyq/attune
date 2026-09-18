@@ -1036,3 +1036,62 @@ create trigger protect_privileged_profile_columns_trigger
   before update on public.profiles
   for each row
   execute function public.protect_privileged_profile_columns();
+
+-- ── Protect trainer_clients/trainer_comments identity columns ──────────────
+-- Same class of gap as protect_privileged_profile_columns above, but worse:
+-- this one lets an attacker act on ANOTHER user's data, not just their own.
+-- trainer_clients has two separate UPDATE policies (trainer-side,
+-- client-side), neither with an explicit `with check` — Postgres OR's the
+-- WITH CHECK across every applicable permissive policy for an UPDATE, not
+-- AND's them, so satisfying *either* policy's check for the proposed new
+-- row is enough, regardless of which policy is what made the row
+-- updatable in the first place. Confirmed exploitable: a user who is
+-- client_id on any real row (e.g. from redeeming one legitimate invite
+-- code) can UPDATE that row setting trainer_id := auth.uid() AND
+-- client_id := <any other user's id> in the same statement — the
+-- trainer-side policy's implicit check (auth.uid() = trainer_id) now
+-- passes for the new row, so the write succeeds despite the client-side
+-- policy's own check failing. That forges a trainer relationship to an
+-- arbitrary victim with no invite code, no coach_pass, no consent —
+-- redeem_coach_invite_code() is the only intended way to create a link,
+-- but this let the RLS hole recreate its effect via UPDATE instead of
+-- INSERT. The forged row then grants real read access to the victim's
+-- profile/food_logs/weight_logs/checkins (the "select as trainer of
+-- client" policies below only ever check trainer_clients) and write
+-- access via the SECURITY DEFINER set_client_targets/
+-- share_recipe_with_client RPCs, which trust trainer_clients the same way.
+--
+-- trainer_comments' single "trainer can update own" policy has the
+-- narrower version of the same gap: trainer_id is implicitly protected
+-- (changing it away from auth.uid() would fail that same check), but
+-- client_id is not, so a genuine trainer could retarget an existing
+-- comment onto a user who was never their client.
+--
+-- WITH CHECK can only see the proposed new row, not the old one, so it
+-- can't itself express "this column can't change" — hence a trigger,
+-- same fix shape as profiles' privileged columns.
+create or replace function public.protect_trainer_link_columns()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if auth.role() <> 'service_role' then
+    new.trainer_id := old.trainer_id;
+    new.client_id := old.client_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_trainer_clients_link_trigger on public.trainer_clients;
+create trigger protect_trainer_clients_link_trigger
+  before update on public.trainer_clients
+  for each row
+  execute function public.protect_trainer_link_columns();
+
+drop trigger if exists protect_trainer_comments_link_trigger on public.trainer_comments;
+create trigger protect_trainer_comments_link_trigger
+  before update on public.trainer_comments
+  for each row
+  execute function public.protect_trainer_link_columns();
