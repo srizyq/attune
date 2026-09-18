@@ -982,3 +982,57 @@ $$;
 grant execute on function public.search_ausnut_foods_ranked(text[], int) to authenticated;
 
 grant execute on function public.search_ausnut_foods_fuzzy(text, int) to authenticated;
+
+-- ── Protect billing/privilege columns from direct client writes ────────────
+-- profiles' "update own" RLS policy (near the top of this file) only
+-- restricts which ROW a user can touch (auth.uid() = id) — RLS is
+-- row-level, not column-level, so it has never restricted WHICH columns
+-- on that row a signed-in user can change. Confirmed live and exploitable
+-- with nothing more than a normal user's own session token: a plain
+-- REST PATCH to /profiles?id=eq.<own id> with a body of
+-- {"is_premium": true, "trial_ends_at": "2099-01-01"} succeeds and
+-- applies, completely bypassing Stripe, compGrants.js, and trial.js.
+--
+-- This reverts any attempted change to the columns below back to
+-- whatever they already were, whenever the write isn't coming from the
+-- service_role key — which every legitimate writer of these columns
+-- already uses (the Stripe webhook, the four AI scan endpoints' usage
+-- counters). Silent revert, not a thrown error: a legitimate save that
+-- happens to include one of these fields unchanged (e.g. a client
+-- spreading a whole profile object back) should still succeed for
+-- everything else in the same call rather than failing the entire write.
+--
+-- coach_invite_code is deliberately NOT in this list — Coach.jsx's own
+-- "Generate/Regenerate code" button sets it directly from the client as
+-- a normal self-service action, and its `unique` constraint already
+-- stops one trainer from claiming another's code.
+create or replace function public.protect_privileged_profile_columns()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if auth.role() <> 'service_role' then
+    new.is_premium := old.is_premium;
+    new.coach_pass := old.coach_pass;
+    new.coach_mode := old.coach_mode;
+    new.coach_pass_status := old.coach_pass_status;
+    new.pro_status := old.pro_status;
+    new.stripe_customer_id := old.stripe_customer_id;
+    new.stripe_subscription_id := old.stripe_subscription_id;
+    new.stripe_pro_subscription_id := old.stripe_pro_subscription_id;
+    new.trial_ends_at := old.trial_ends_at;
+    new.photo_scans_used := old.photo_scans_used;
+    new.photo_scans_period_start := old.photo_scans_period_start;
+    new.menu_scans_used := old.menu_scans_used;
+    new.menu_scans_period_start := old.menu_scans_period_start;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_privileged_profile_columns_trigger on public.profiles;
+create trigger protect_privileged_profile_columns_trigger
+  before update on public.profiles
+  for each row
+  execute function public.protect_privileged_profile_columns();
