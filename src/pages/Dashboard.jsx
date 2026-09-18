@@ -9,7 +9,7 @@ import { useCheckins } from '../hooks/useCheckins';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
-import { useWorkoutLogs } from '../hooks/useWorkoutLogs';
+import { useWorkoutLogs, useWorkoutLogsRange } from '../hooks/useWorkoutLogs';
 import { todayLocalDate, dateNDaysAgo, dateRange, generateInsights, computeStreak } from '../lib/patterns';
 import { goalMacroSplits, buildTargets } from '../lib/calorieTargets';
 import { toKg, fromKg } from '../lib/adaptiveTDEE';
@@ -25,6 +25,7 @@ import LogCalendar from '../components/LogCalendar';
 import HourlyTimeline from '../components/HourlyTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import Toast from '../components/Toast';
+import TrialBanner from '../components/TrialBanner';
 import { round1 } from '../lib/format';
 import { hourToHHMM } from '../lib/mealTime';
 
@@ -224,7 +225,7 @@ function WaterTile({ glasses, setGlasses }) {
 // horizontal one on every device where the two ratios don't line up.
 const CHART_HEIGHT = 110;
 
-function DashboardHero({ consumed, target, chartDays, chartRange, setChartRange, onChartClick, latestWeight, onWeightClick, glasses, setGlasses }) {
+function DashboardHero({ consumed, target, baseCalorieTarget, chartDays, chartRange, setChartRange, onChartClick, latestWeight, onWeightClick, glasses, setGlasses }) {
   // Measure the chart's actual rendered width so the SVG viewBox can match
   // it 1:1 in pixels, instead of guessing a fixed width and letting the
   // browser stretch it to fit (see CHART_HEIGHT note above).
@@ -240,25 +241,32 @@ function DashboardHero({ consumed, target, chartDays, chartRange, setChartRange,
     return () => ro.disconnect();
   }, []);
 
-  // Headroom above the taller of target/actual so neither the target line
-  // nor a big over-target bar sits flush against the top edge.
-  const max = Math.max(target, ...chartDays.map(d => d.calories), 1) * 1.08;
+  // Each day's own target is the plain baseline plus whatever THAT day
+  // burned (see Dashboard's useWorkoutLogsRange) — not one shared number
+  // for the whole chart. Logging a workout for one day must only raise
+  // that day's segment of the target line, not the rest of the week's.
+  const dayTargets = chartDays.map(d => baseCalorieTarget + (d.caloriesBurned || 0));
+
+  // Headroom above the tallest of any day's target/actual so neither the
+  // target line nor a big over-target bar sits flush against the top edge.
+  const max = Math.max(target, ...chartDays.map(d => d.calories), ...dayTargets, 1) * 1.08;
   const topPad = 4;
   const baseline = CHART_HEIGHT - 6;
   const plotHeight = baseline - topPad;
-  const targetY = baseline - (target / max) * plotHeight;
   const w = chartWidth;
   // Gap shrinks as the range grows so 90 daily bars (3M) still fit without
   // overlapping — bars get thin rather than the chart scrolling or sampling.
   const gap = chartDays.length > 40 ? 1 : chartDays.length > 14 ? 2 : 5;
   const barWidth = Math.max(1, (w - gap * (chartDays.length - 1)) / chartDays.length);
   const bars = chartDays.map((d, i) => {
+    const dayTarget = dayTargets[i];
     const barHeight = (d.calories / max) * plotHeight;
     return {
       x: i * (barWidth + gap),
       y: baseline - barHeight,
       height: barHeight,
-      over: d.calories > target,
+      over: d.calories > dayTarget,
+      targetY: baseline - (dayTarget / max) * plotHeight,
     };
   });
 
@@ -295,7 +303,13 @@ function DashboardHero({ consumed, target, chartDays, chartRange, setChartRange,
         </div>
 
         <svg ref={chartRef} viewBox={`0 0 ${w} ${CHART_HEIGHT}`} style={{ width: '100%', height: CHART_HEIGHT, marginTop: 10, display: 'block' }}>
-          <line x1={0} y1={targetY} x2={w} y2={targetY} stroke="var(--text-hint)" strokeWidth="1" strokeDasharray="3,4" />
+          {/* One dashed segment per day, at that day's own target height —
+              a flat line spanning the whole chart would make logging a
+              workout for one day look like it raised the whole week's
+              target. */}
+          {bars.map((b, i) => (
+            <line key={`target-${i}`} x1={b.x} y1={b.targetY} x2={b.x + barWidth} y2={b.targetY} stroke="var(--text-hint)" strokeWidth="1" strokeDasharray="3,4" />
+          ))}
           {bars.map((b, i) => (
             <rect
               key={i}
@@ -804,9 +818,19 @@ export default function Dashboard() {
   async function handleDeleteWorkout(id) {
     try {
       await removeWorkout(id);
+      // The chart's per-day target reads from useWorkoutLogsRange, a
+      // separate fetch from useWorkoutLogs above — refetch it too so the
+      // deleted workout's day drops back down immediately, not just on
+      // next navigation.
+      refetchBurnedByDate();
     } catch {
       showToast("Couldn't delete workout — try again", true);
     }
+  }
+
+  async function handleLogWorkout(entry) {
+    await createWorkout(entry);
+    refetchBurnedByDate();
   }
 
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(viewedDate + 'T00:00:00'); d.setDate(1); return d; });
@@ -922,7 +946,16 @@ export default function Dashboard() {
 
   const [chartRange, setChartRange] = useState('1W');
   const chartRangeDays = { '1W': 7, '1M': 30, '3M': 90 }[chartRange];
-  const chartDays = dateRange(dateNDaysAgo(chartRangeDays - 1, new Date(viewedDate + 'T00:00:00')), viewedDate).map(date => byDate.get(date) || { date, calories: 0 });
+  const chartStartDate = dateNDaysAgo(chartRangeDays - 1, new Date(viewedDate + 'T00:00:00'));
+  // Per-day burned calories across the chart's own date range (not just
+  // viewedDate — see useWorkoutLogs above) so each bar's target reflects
+  // what was actually burned *that* day, not today's total applied to
+  // every day. See DashboardHero's per-bar target computation below.
+  const { burnedByDate, refetch: refetchBurnedByDate } = useWorkoutLogsRange(chartStartDate, viewedDate);
+  const chartDays = dateRange(chartStartDate, viewedDate).map(date => ({
+    ...(byDate.get(date) || { date, calories: 0 }),
+    caloriesBurned: burnedByDate.get(date) || 0,
+  }));
 
   // Real 7-day weight change from actually-logged entries — omitted (not
   // faked) if there isn't at least one weight log in each end of the
@@ -963,6 +996,7 @@ export default function Dashboard() {
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
           {isGuest && <GuestBanner daysRemaining={daysRemaining} onSave={() => navigate('/settings')} pendingConfirmation={pendingConfirmation} email={user?.email} />}
+          <TrialBanner profile={profile} userId={user?.id} />
           {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} onClick={() => setCoachChatOpen(true)} style={{ marginBottom: 16 }} />}
           {coachChatOpen && (
             <CoachChatModal
@@ -982,6 +1016,7 @@ export default function Dashboard() {
                 <DashboardHero
                   consumed={consumed}
                   target={effectiveCalorieTarget}
+                  baseCalorieTarget={calorieTarget}
                   chartDays={chartDays}
                   chartRange={chartRange}
                   setChartRange={setChartRange}
@@ -1114,7 +1149,7 @@ export default function Dashboard() {
           weightKg={weightInKg(profile)}
           closing={workoutModalClosing}
           onClose={closeWorkoutModal}
-          onSave={createWorkout}
+          onSave={handleLogWorkout}
         />
       )}
       {toast && <Toast message={toast} error={toastError} onDone={() => setToast(null)} />}

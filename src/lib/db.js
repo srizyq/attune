@@ -188,6 +188,18 @@ export async function getRecentFoodLogs(userId, limit = 40) {
 
 // ─── workout_logs ──────────────────────────────────────────────────────────
 
+export async function getWorkoutLogsForRange(userId, startDate, endDate) {
+  const { data, error } = await supabase
+    .from('workout_logs')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('logged_date', startDate)
+    .lte('logged_date', endDate)
+    .order('logged_date', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
 export async function getWorkoutLogsForDate(userId, date) {
   const { data, error } = await supabase
     .from('workout_logs')

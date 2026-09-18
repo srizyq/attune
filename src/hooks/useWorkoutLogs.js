@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getWorkoutLogsForDate, addWorkoutLog, deleteWorkoutLog } from '../lib/db';
+import { getWorkoutLogsForDate, getWorkoutLogsForRange, addWorkoutLog, deleteWorkoutLog } from '../lib/db';
 
 function mapRow(row) {
   return {
@@ -55,4 +55,39 @@ export function useWorkoutLogs(date) {
   }, [refetch]);
 
   return { workouts, totalCaloriesBurned, loading, create, remove, refetch };
+}
+
+// Per-day burned-calorie totals across a date range, for the Dashboard
+// chart's "eat back exercise calories" target line — that line needs each
+// day's own burn total, not just the currently-viewed day's (see
+// useWorkoutLogs above, which is intentionally single-date-scoped for the
+// Activity card). Returns a Map<date, totalCaloriesBurned> rather than raw
+// rows since the chart only ever needs the per-day sum.
+export function useWorkoutLogsRange(startDate, endDate) {
+  const { user } = useAuth();
+  const [burnedByDate, setBurnedByDate] = useState(new Map());
+  const [loading, setLoading] = useState(true);
+
+  const refetch = useCallback(async () => {
+    if (!user || !startDate || !endDate) { setBurnedByDate(new Map()); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const rows = await getWorkoutLogsForRange(user.id, startDate, endDate);
+      const map = new Map();
+      for (const row of rows) {
+        const date = row.logged_date;
+        map.set(date, (map.get(date) || 0) + (Number(row.calories_burned) || 0));
+      }
+      setBurnedByDate(map);
+    } catch (err) {
+      console.error('Failed to load workout logs range:', err);
+      setBurnedByDate(new Map());
+    } finally {
+      setLoading(false);
+    }
+  }, [user, startDate, endDate]);
+
+  useEffect(() => { refetch(); }, [refetch]);
+
+  return { burnedByDate, loading, refetch };
 }
