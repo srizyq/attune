@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getProfile, upsertProfile } from '../lib/db';
 import { withCompGrants } from '../lib/compGrants';
+import { withTrial } from '../lib/trial';
 
 export function useProfile() {
   const { user } = useAuth();
@@ -17,7 +18,7 @@ export function useProfile() {
     // since so much of the app gates rendering on profile/loading.
     try {
       const data = await getProfile(user.id);
-      setProfile(withCompGrants(data, user.email));
+      setProfile(withCompGrants(withTrial(data), user.email));
     } catch (err) {
       console.error('Failed to load profile:', err);
       setProfile(null);
@@ -31,7 +32,7 @@ export function useProfile() {
   const save = useCallback(async (fields) => {
     if (!user) return;
     const updated = await upsertProfile(user.id, fields);
-    const withOverride = withCompGrants(updated, user.email);
+    const withOverride = withCompGrants(withTrial(updated), user.email);
     setProfile(withOverride);
     return withOverride;
   }, [user]);

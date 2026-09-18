@@ -766,6 +766,24 @@ alter table public.profiles add column if not exists stripe_pro_subscription_id 
 alter table public.profiles add column if not exists pro_status text
   check (pro_status in ('active', 'canceled', 'past_due', 'trialing', 'incomplete', 'incomplete_expired', 'unpaid', 'paused'));
 
+-- ── Free Pro trial ───────────────────────────────────────────────────────────
+-- A 30-day, no-card-required Pro trial, set once an account attaches real
+-- credentials (supabase.auth.updateUser({email, password}) on the
+-- anonymous user created at onboarding — see onboarding/Step4.jsx and
+-- Profile.jsx's UpgradeForm, the only two places that call it) — not at
+-- profiles row creation itself, which happens at guest-account creation,
+-- before anyone has actually "signed up" for anything. Deliberately NOT
+-- backfilled for existing accounts: this column stays null for every
+-- profile that existed before this shipped, and null is treated as "never
+-- had a trial", not "an expired one" (see src/lib/trial.js) — so nobody's
+-- current access changes the moment this deploys. is_premium itself is
+-- never written to reflect an active trial; every trial check is done
+-- live against trial_ends_at instead, the same reasoning compGrants.js
+-- uses for comp accounts — a stored is_premium:true would need something
+-- to remember to flip it back false again 30 days later, and drift the
+-- moment that something failed to run.
+alter table public.profiles add column if not exists trial_ends_at timestamptz;
+
 -- ── Daily log view preference (Pro) ─────────────────────────────────────────
 -- Pro users could previously only ever see the hourly timeline (free users
 -- are locked to the meal-grouped view) — this lets a Pro user pick either,

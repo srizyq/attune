@@ -6,6 +6,8 @@ import { useTheme } from '../hooks/useTheme';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { supabase, emailRedirectTo } from '../lib/supabase';
 import { authedPost } from '../lib/billing';
+import { upsertProfile } from '../lib/db';
+import { TRIAL_DAYS, isTrialActive, trialDaysLeft } from '../lib/trial';
 import AppNav from '../components/AppNav';
 import { Card, SectionLabel, FieldRow } from '../components/settings/primitives';
 
@@ -37,16 +39,24 @@ function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) 
 }
 
 // Mirrors CoachModal's CoachPassButton exactly — same subscribe/manage
-// pattern, different plan and profile field.
+// pattern, different plan and profile field. Keyed off
+// stripe_pro_subscription_id, not is_premium, for "does this account have
+// real billing to manage" — is_premium alone is also true for a comp
+// grant or an active free trial, neither of which has a Stripe
+// subscription behind it, and both need the normal "Upgrade to Pro" →
+// checkout flow (a trial especially — that's the whole point of putting a
+// clear upgrade path in front of someone mid-trial), not "Manage billing"
+// dead-ending on create-portal-session's "No billing account found yet".
 function ProBillingButton({ profile, isGuest }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const hasRealSubscription = !!profile?.stripe_pro_subscription_id;
 
   const handleClick = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { url } = profile?.is_premium
+      const { url } = hasRealSubscription
         ? await authedPost('/api/create-portal-session')
         : await authedPost('/api/create-checkout-session', { plan: 'pro' });
       window.location.href = url;
@@ -65,15 +75,11 @@ function ProBillingButton({ profile, isGuest }) {
     return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Create a full account above first</span>;
   }
 
-  // is_premium true with no stripe_pro_subscription_id means there's no
-  // real Pro subscription behind it — a comp grant (compGrants.js), not a
-  // paid one. Checked against the Pro-specific subscription id, not the
-  // shared stripe_customer_id, since a Coach Pass subscriber comp'd into
-  // Pro on top has a real customer id from the Coach Pass side alone.
-  // "Manage billing" would just dead-end on create-portal-session's "No
-  // billing account found yet" error, so it's a plain badge instead of a
-  // button that goes nowhere.
-  if (profile?.is_premium && !profile?.stripe_pro_subscription_id) {
+  // is_premium true with no real subscription and no active trial means
+  // it's a comp grant (compGrants.js) — permanent, not something to ever
+  // upgrade away from. A trial gets the normal button below instead (see
+  // the function comment above).
+  if (profile?.is_premium && !hasRealSubscription && !isTrialActive(profile)) {
     return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Comp access — no billing to manage</span>;
   }
 
@@ -84,13 +90,13 @@ function ProBillingButton({ profile, isGuest }) {
         disabled={loading}
         style={{
           padding: '9px 16px',
-          background: profile?.is_premium ? 'transparent' : 'var(--accent)',
-          border: `1px solid ${profile?.is_premium ? 'var(--border-default)' : 'var(--accent)'}`,
-          borderRadius: 8, color: profile?.is_premium ? 'var(--text-secondary)' : '#0f0f0f',
+          background: hasRealSubscription ? 'transparent' : 'var(--accent)',
+          border: `1px solid ${hasRealSubscription ? 'var(--border-default)' : 'var(--accent)'}`,
+          borderRadius: 8, color: hasRealSubscription ? 'var(--text-secondary)' : '#0f0f0f',
           fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
-        {loading ? 'Loading…' : profile?.is_premium ? 'Manage billing' : 'Upgrade to Pro'}
+        {loading ? 'Loading…' : hasRealSubscription ? 'Manage billing' : 'Upgrade to Pro'}
       </button>
       {error && <span style={{ color: 'var(--danger)', fontSize: 11 }}>{error}</span>}
     </div>
@@ -139,6 +145,7 @@ function ResendConfirmation({ email }) {
 }
 
 function UpgradeForm() {
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -149,6 +156,17 @@ function UpgradeForm() {
     setStatus('loading');
     const { error } = await supabase.auth.updateUser({ email, password }, { emailRedirectTo });
     if (error) { setStatus(error.message); return; }
+    // Same trial-start as onboarding/Step4.jsx's identical updateUser call
+    // — this is the other place a guest attaches real credentials, so it
+    // needs the exact same "trial starts here, not at guest creation"
+    // logic. Non-fatal: a failed trial start doesn't block the upgrade.
+    if (user) {
+      try {
+        await upsertProfile(user.id, { trial_ends_at: new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString() });
+      } catch (err) {
+        console.error('Failed to start free trial:', err);
+      }
+    }
     setStatus('done');
   }
 
@@ -373,6 +391,7 @@ export default function Profile() {
               hint={
                 !profile?.is_premium ? 'Unlimited AI scans, custom micronutrient targets, and more'
                   : profile?.stripe_pro_subscription_id ? `Active subscription · ${profile?.pro_status || 'active'}`
+                  : isTrialActive(profile) ? `Free trial — ${trialDaysLeft(profile)} day${trialDaysLeft(profile) === 1 ? '' : 's'} left`
                   : 'Comp access'
               }
             >

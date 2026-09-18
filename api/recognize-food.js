@@ -16,6 +16,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { withCompGrants } from '../src/lib/compGrants.js';
+import { withTrial } from '../src/lib/trial.js';
 
 const client = new Anthropic();
 
@@ -99,16 +100,18 @@ export default async function handler(req, res) {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('is_premium, photo_scans_used, photo_scans_period_start')
+    .select('is_premium, trial_ends_at, photo_scans_used, photo_scans_period_start')
     .eq('id', userId)
     .single();
   if (profileError || !profile) {
     res.status(500).json({ error: "Couldn't verify your account. Try again." });
     return;
   }
-  // A comp'd account (see compGrants.js) otherwise only got Pro in the
-  // client's own UI — this endpoint read the real, un-comped is_premium
-  // straight from the DB and still enforced the free-scan cap on them.
+  // Both a comp'd account (compGrants.js) and an active free trial
+  // (trial.js) otherwise only granted Pro in the client's own UI — this
+  // endpoint read the real, un-comped/un-trialed is_premium straight from
+  // the DB and still enforced the free-scan cap on them.
+  Object.assign(profile, withTrial(profile));
   Object.assign(profile, withCompGrants(profile, userData.user.email));
 
   const { image, mediaType, correction, previousResult } = req.body || {};
