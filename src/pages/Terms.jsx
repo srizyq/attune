@@ -2,11 +2,11 @@ import LegalPageLayout, { Section, P, Ul } from '../components/LegalPageLayout';
 
 export default function Terms() {
   return (
-    <LegalPageLayout title="Terms of Service" updated="10 September 2026">
+    <LegalPageLayout title="Terms of Service" updated="18 September 2026">
       <P>
         These terms govern your use of Attune, currently operated by an individual
-        (not a registered company) from Australia. By creating an account or using
-        Guest mode, you agree to them.
+        (not a registered company) from Australia. By creating an account, you agree
+        to them.
       </P>
 
       <Section title="1. Not medical advice">
@@ -35,7 +35,7 @@ export default function Terms() {
         <Ul items={[
           <>You must be at least 16 years old to use Attune.</>,
           <>You're responsible for keeping your login credentials secure and for all activity under your account.</>,
-          <><b>Guest mode</b> creates a temporary account with no password. If it isn't upgraded to a real account within the trial window shown in the app, it — and all its data — may be permanently deleted with no way to recover it.</>,
+          <>Creating an account requires a valid email address you can access — some features, and regaining access if you log out beforehand, depend on confirming it.</>,
         ]} />
       </Section>
 

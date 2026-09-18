@@ -45,12 +45,14 @@ export default function OnboardingLayout({ children, step, totalSteps = 4, showS
           {/* Skip link — goes to the final step, not straight to /dashboard.
               Skipping mid-flow means no account exists yet, so /dashboard
               would just bounce you right back here via RequireAuth; the
-              final step silently creates a guest session (with whatever
-              partial answers you did give) before landing you in the app.
-              Hidden on screens (like Step5's email-verify gate) that
-              already have their own, more specific way out — a generic
-              "skip" going back to step 4 wouldn't make sense once an
-              account already exists. */}
+              final step is the mandatory signup form itself (see its own
+              "no continue as guest" comment), which silently creates the
+              anonymous session it needs to persist whatever partial
+              answers you did give, but still requires real email/password
+              before you can reach the app. Hidden on screens (like Step5's
+              email-verify gate) that already have their own, more
+              specific way out — a generic "skip" going back to step 4
+              wouldn't make sense once an account already exists. */}
           {showSkip && (
             <button
               onClick={() => navigate('/onboarding/step4')}

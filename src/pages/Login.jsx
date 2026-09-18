@@ -10,7 +10,10 @@ export default function Login() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { theme, toggleTheme, touched } = usePreAuthTheme();
-  const isGuest = !!user?.is_anonymous;
+  // RequireAuth's isUnsignedGuest gate means is_anonymous here can only
+  // mean "signed up, hasn't confirmed their email yet" — someone
+  // considering logging into a *different* existing account instead.
+  const pendingConfirmation = !!user?.is_anonymous;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -32,8 +35,8 @@ export default function Login() {
   // account" screen doesn't make sense — most likely a stale bookmark or
   // a Settings link followed after already being signed in elsewhere.
   useEffect(() => {
-    if (user && !isGuest) navigate('/dashboard', { replace: true });
-  }, [user, isGuest, navigate]);
+    if (user && !pendingConfirmation) navigate('/dashboard', { replace: true });
+  }, [user, pendingConfirmation, navigate]);
 
   const inputStyle = (filled) => ({
     background: 'var(--bg-subtle)',
@@ -105,13 +108,13 @@ export default function Login() {
             fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)',
             fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center',
           }}>Welcome back</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: isGuest ? '18px' : '28px', textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: pendingConfirmation ? '18px' : '28px', textAlign: 'center' }}>
             Log in to pick up where you left off.
           </p>
 
-          {isGuest && (
+          {pendingConfirmation && (
             <div style={{ background: '#1a1410', border: '1px solid #3a2e1e', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#c09a70', marginBottom: '18px', lineHeight: 1.5 }}>
-              You're currently in a guest session. Logging in here replaces it — this guest session's data will be left behind unless you've already upgraded it from Settings.
+              Your current account is still waiting on email confirmation. Logging into a different account here won't touch that data, but you'll need to come back and confirm it separately to get to it.
             </div>
           )}
 

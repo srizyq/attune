@@ -70,13 +70,15 @@ function draftToProfileFields(draft) {
   };
 }
 
-// The final screen is a single soft upgrade prompt, not a hard fork
-// between "create account" and "continue as guest" — by the time this
-// screen is interactive, a guest session already exists and everything
-// collected so far is already saved to it. "Maybe later" just continues;
-// the form here only ever *upgrades* that same session to a permanent
-// one (via updateUser, matching Settings' UpgradeForm) rather than
-// competing with it via a fresh signUp.
+// Email/password is mandatory here — there's no "continue as guest"
+// escape hatch (see RequireAuth.jsx's isUnsignedGuest gate, which sends
+// anyone who reaches a real app route without ever completing this form
+// straight back to it). The anonymous session created on mount is purely
+// an implementation detail that lets the goal/stats/targets collected in
+// Steps 1-3 get written to a real profiles row before email exists to
+// authenticate with — this screen upgrades that same session to a
+// permanent one (via updateUser, matching Settings' UpgradeForm) rather
+// than competing with it via a fresh signUp.
 export default function Step4() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -232,7 +234,7 @@ export default function Step4() {
           Ready to start tracking
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '36px' }}>
-          You're already set up as a guest — save your progress with an account, or keep going and do it later from Settings.
+          Create your account to save your goal, targets, and everything you log from here.
         </p>
 
         <div style={{ textAlign: 'left', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -309,18 +311,8 @@ export default function Step4() {
           {loading ? 'Creating account…' : 'Create account & continue →'}
         </button>
 
-        <button
-          onClick={() => navigate('/dashboard')}
-          style={{
-            background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '13px',
-            cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: '20px',
-          }}
-        >
-          Maybe later
-        </button>
-
         <p style={{ color: 'var(--text-hint)', fontSize: '12px', lineHeight: 1.6 }}>
-          No credit card, ever. You're saved as a guest for 7 days either way — creating an account just makes it permanent.
+          No credit card, ever.
         </p>
       </div>
     </OnboardingLayout>

@@ -7,7 +7,7 @@ import { uploadCoachLogo } from '../../lib/db';
 import { authedPost } from '../../lib/billing';
 import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
 
-function CoachPassButton({ profile, isGuest, onGoToProfile }) {
+function CoachPassButton({ profile, pendingConfirmation, onGoToProfile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -25,11 +25,13 @@ function CoachPassButton({ profile, isGuest, onGoToProfile }) {
     }
   };
 
-  // A guest has no email/password, so a subscription would be tied to a
-  // session that can vanish for good (see create-checkout-session.js) —
-  // send them to create a full account first instead of letting the
+  // Signup is already real at this point (RequireAuth's isUnsignedGuest
+  // gate is the only thing standing between "browsing" and "has an
+  // account" now) but unconfirmed — a subscription started now would
+  // still be tied to a session that depends on that confirmation
+  // completing. Send them to confirm it first instead of letting the
   // click reach checkout and bounce off the server-side block.
-  if (isGuest && !profile?.coach_pass) {
+  if (pendingConfirmation && !profile?.coach_pass) {
     return (
       <button
         onClick={onGoToProfile}
@@ -39,7 +41,7 @@ function CoachPassButton({ profile, isGuest, onGoToProfile }) {
           cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
-        Create account to subscribe
+        Confirm your email to subscribe
       </button>
     );
   }
@@ -112,7 +114,9 @@ export default function CoachModal({ onClose, closing }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile, save: saveProfile } = useProfile();
-  const isGuest = !!user?.is_anonymous;
+  // RequireAuth's isUnsignedGuest gate means is_anonymous here can only
+  // mean "signed up, hasn't confirmed their email yet".
+  const pendingConfirmation = !!user?.is_anonymous;
 
   const goToProfile = () => {
     onClose();
@@ -147,7 +151,7 @@ export default function CoachModal({ onClose, closing }) {
               : 'Comp access'
           }
         >
-          <CoachPassButton profile={profile} isGuest={isGuest} onGoToProfile={goToProfile} />
+          <CoachPassButton profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={goToProfile} />
         </FieldRow>
         <button
           onClick={() => navigate('/coach')}

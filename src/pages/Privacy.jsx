@@ -2,7 +2,7 @@ import LegalPageLayout, { Section, P, Ul } from '../components/LegalPageLayout';
 
 export default function Privacy() {
   return (
-    <LegalPageLayout title="Privacy Policy" updated="10 September 2026">
+    <LegalPageLayout title="Privacy Policy" updated="18 September 2026">
       <P>
         Attune ("Attune", "we", "us") is currently operated by an individual, not a
         registered company, from Australia. This policy explains what data the
@@ -14,7 +14,7 @@ export default function Privacy() {
       <Section title="1. What we collect">
         <P>When you use Attune, we collect:</P>
         <Ul items={[
-          <><b>Account info:</b> an email address and password if you create a real account, or nothing beyond a random anonymous ID if you use Guest mode.</>,
+          <><b>Account info:</b> an email address and password.</>,
           <><b>Profile & goals:</b> name, date of birth, sex, age, weight, target weight, height, unit preference, fitness goal, activity level, and the calorie/macro/micronutrient targets calculated or set from these.</>,
           <><b>Food logs:</b> what you log — food name, portion, meal, time, and its full nutrition breakdown (calories, macros, and any micronutrients your database source or an AI estimate provides).</>,
           <><b>Weight logs and mood/energy check-ins</b> you choose to record.</>,
@@ -47,16 +47,7 @@ export default function Privacy() {
         <P>We don't share your data with any other third party, and we don't sell it to anyone.</P>
       </Section>
 
-      <Section title="4. Guest mode">
-        <P>
-          Guest mode still creates a real, private account behind the scenes so your
-          data persists — it just doesn't require an email or password upfront. If you
-          don't upgrade a guest account to a real one within the trial window shown in
-          the app, that account and its data may be permanently deleted.
-        </P>
-      </Section>
-
-      <Section title="5. Data retention & deletion">
+      <Section title="4. Data retention & deletion">
         <P>
           We keep your data for as long as your account is active. You can request full
           deletion of your account and all associated data at any time by contacting us
@@ -64,7 +55,7 @@ export default function Privacy() {
         </P>
       </Section>
 
-      <Section title="6. Security">
+      <Section title="5. Security">
         <P>
           Data is encrypted in transit and at rest, and access to your data is
           restricted to your own account via row-level security on our database — no
@@ -74,14 +65,14 @@ export default function Privacy() {
         </P>
       </Section>
 
-      <Section title="7. Children">
+      <Section title="6. Children">
         <P>
           Attune isn't directed at children and isn't intended for use by anyone under
           16. We don't knowingly collect data from children under 16.
         </P>
       </Section>
 
-      <Section title="8. Your rights">
+      <Section title="7. Your rights">
         <P>
           Under Australian privacy law, you can request access to, correction of, or
           deletion of the personal data we hold about you. Contact us using the details
@@ -89,14 +80,14 @@ export default function Privacy() {
         </P>
       </Section>
 
-      <Section title="9. Changes to this policy">
+      <Section title="8. Changes to this policy">
         <P>
           If this policy changes materially, we'll update the date at the top of this
           page and, where practical, let you know in the app.
         </P>
       </Section>
 
-      <Section title="10. Contact">
+      <Section title="9. Contact">
         <P>
           For any privacy question or request, contact: <b>attun3app@gmail.com</b>
         </P>

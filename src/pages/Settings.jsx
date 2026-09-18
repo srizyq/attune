@@ -108,18 +108,20 @@ export default function Settings() {
     return SEARCH_INDEX.filter(item => item.label.toLowerCase().includes(q) || item.keywords.includes(q));
   }, [query]);
 
-  const isGuest = !!user?.is_anonymous;
-  const pendingConfirmation = isGuest && !!user?.email;
-  const daysRemaining = user?.created_at
-    ? Math.max(0, 7 - Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000))
-    : 7;
+  // Onboarding now requires real signup before RequireAuth lets anyone
+  // reach this page (see its isUnsignedGuest gate) — is_anonymous here can
+  // only mean "submitted the signup form, hasn't clicked the confirmation
+  // link yet". new_email (not user?.email, which Supabase leaves empty
+  // until the address is actually confirmed) is what actually carries
+  // that pending address.
+  const pendingConfirmation = !!user?.is_anonymous && !!user?.new_email;
 
   const goalLabels = { lose: 'Lose weight', maintain: 'Maintain', build: 'Build muscle' };
   const summaries = {
     goals: profile?.calorie_target ? `${profile.calorie_target.toLocaleString()} kcal · ${goalLabels[profile.goal] || 'Maintain'}` : 'Not set up yet',
     notifs: profile?.reminder_enabled ? `Daily reminder at ${profile.reminder_time || '19:00'}` : 'All reminders off',
     coach: profile?.coach_pass ? 'Coach Pass active' : 'Not active',
-    profile: pendingConfirmation ? 'Pending email confirmation' : isGuest ? `Guest mode · ${daysRemaining} days left` : (user?.email || 'Signed in'),
+    profile: pendingConfirmation ? 'Pending email confirmation' : (user?.email || 'Signed in'),
     privacy: 'Data export, Privacy Policy, Terms of Service',
   };
 
@@ -173,14 +175,14 @@ export default function Settings() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
                 <span style={{
                   fontSize: '12px', padding: '3px 10px', borderRadius: '99px',
-                  background: isGuest ? '#1a1410' : 'var(--accent-bg)',
-                  border: `1px solid ${isGuest ? '#3a2e1e' : 'var(--border-active)'}`,
-                  color: isGuest ? 'var(--warning)' : 'var(--accent)',
+                  background: pendingConfirmation ? '#1a1410' : 'var(--accent-bg)',
+                  border: `1px solid ${pendingConfirmation ? '#3a2e1e' : 'var(--border-active)'}`,
+                  color: pendingConfirmation ? 'var(--warning)' : 'var(--accent)',
                 }}>
-                  {isGuest ? `Guest · ${daysRemaining} days left` : 'Member'}
+                  {pendingConfirmation ? 'Confirming email' : 'Member'}
                 </span>
-                {(!isGuest || pendingConfirmation) && user?.email && (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.email}</span>
+                {(pendingConfirmation ? user?.new_email : user?.email) && (
+                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{pendingConfirmation ? user.new_email : user.email}</span>
                 )}
               </div>
             </div>

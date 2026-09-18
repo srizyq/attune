@@ -625,8 +625,13 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood }) {
   );
 }
 
-// ─── Guest Banner ─────────────────────────────────────────────────────────────
-function GuestBanner({ daysRemaining, onSave, pendingConfirmation, email }) {
+// ─── Confirm-email banner ───────────────────────────────────────────────────
+// Onboarding now requires real signup before this page is reachable at all
+// (RequireAuth's isUnsignedGuest gate) — the only account.is_anonymous
+// state that can still land here is "submitted the signup form, hasn't
+// clicked the confirmation link yet", so this no longer needs a separate
+// "still just browsing as a guest" branch.
+function ConfirmEmailBanner({ email }) {
   const [visible, setVisible] = useState(true);
   const [resendState, setResendState] = useState(null); // null | 'sending' | 'sent' | error string
   if (!visible) return null;
@@ -640,27 +645,20 @@ function GuestBanner({ daysRemaining, onSave, pendingConfirmation, email }) {
   return (
     <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-        <span style={{ color: 'var(--accent)', fontSize: '14px' }}>{pendingConfirmation ? '✉️' : '🌿'}</span>
-        {pendingConfirmation ? (
-          <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-            Almost there — check <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{email}</span> to confirm your account.
-            {resendState === 'sent' ? (
-              <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>Sent!</span>
-            ) : (
-              <button onClick={resend} disabled={resendState === 'sending'} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: resendState === 'sending' ? 'default' : 'pointer', marginLeft: '4px', padding: 0, textDecoration: 'underline' }}>
-                {resendState === 'sending' ? 'Sending…' : 'Resend email'}
-              </button>
-            )}
-            {resendState && resendState !== 'sending' && resendState !== 'sent' && (
-              <span style={{ color: 'var(--danger)', display: 'block', marginTop: 4 }}>{resendState}</span>
-            )}
-          </span>
-        ) : (
-          <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-            Guest mode — <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{daysRemaining} days</span> remaining.
-            <button onClick={onSave} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: 'pointer', marginLeft: '4px', padding: 0, textDecoration: 'underline' }}>Save your data →</button>
-          </span>
-        )}
+        <span style={{ color: 'var(--accent)', fontSize: '14px' }}>✉️</span>
+        <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+          Almost there — check <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{email}</span> to confirm your account.
+          {resendState === 'sent' ? (
+            <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>Sent!</span>
+          ) : (
+            <button onClick={resend} disabled={resendState === 'sending'} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: resendState === 'sending' ? 'default' : 'pointer', marginLeft: '4px', padding: 0, textDecoration: 'underline' }}>
+              {resendState === 'sending' ? 'Sending…' : 'Resend email'}
+            </button>
+          )}
+          {resendState && resendState !== 'sending' && resendState !== 'sent' && (
+            <span style={{ color: 'var(--danger)', display: 'block', marginTop: 4 }}>{resendState}</span>
+          )}
+        </span>
       </div>
       <button onClick={() => setVisible(false)} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>×</button>
     </div>
@@ -913,17 +911,17 @@ export default function Dashboard() {
   const name = profile?.name || 'there';
   const { note: coachNote, dismiss: dismissCoachNote } = useCoachNote('general');
   const [coachChatOpen, setCoachChatOpen] = useState(false);
-  const isGuest = !!user?.is_anonymous;
-  // An anonymous user with an email on their record already submitted the
-  // "Create account" form — Supabase keeps is_anonymous true until the
-  // confirmation link is clicked, so this is the one signal that tells
-  // "never signed up" apart from "signed up, just needs to confirm email".
-  // Both looked identical as plain "Guest mode" before, which is exactly
-  // what made a friend's real signup look like it silently failed.
-  const pendingConfirmation = isGuest && !!user?.email;
-  const daysRemaining = user?.created_at
-    ? Math.max(0, 7 - Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000))
-    : 7;
+  // Onboarding now requires real signup before RequireAuth lets anyone
+  // reach this page (see its isUnsignedGuest gate) — is_anonymous here can
+  // only mean "submitted the signup form, hasn't clicked the confirmation
+  // link yet", never "browsing without ever signing up". new_email (not
+  // user?.email, which Supabase leaves empty until the address is
+  // actually confirmed) is what was silently broken before: it's what
+  // actually distinguishes "signed up, needs to confirm" from a true
+  // unsigned guest, and using user?.email here — always empty for a
+  // pending account — made a friend's real signup look like it had
+  // silently failed.
+  const pendingConfirmation = !!user?.is_anonymous && !!user?.new_email;
   const insight = generateInsights(dailyData, 1)[0];
   const streak = computeStreak(dailyData);
 
@@ -995,7 +993,7 @@ export default function Dashboard() {
         </div>
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
-          {isGuest && <GuestBanner daysRemaining={daysRemaining} onSave={() => navigate('/settings')} pendingConfirmation={pendingConfirmation} email={user?.email} />}
+          {pendingConfirmation && <ConfirmEmailBanner email={user?.new_email} />}
           <TrialBanner profile={profile} userId={user?.id} />
           {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} onClick={() => setCoachChatOpen(true)} style={{ marginBottom: 16 }} />}
           {coachChatOpen && (

@@ -6,8 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { supabase, emailRedirectTo } from '../lib/supabase';
 import { authedPost } from '../lib/billing';
-import { upsertProfile } from '../lib/db';
-import { TRIAL_DAYS, isTrialActive, trialDaysLeft } from '../lib/trial';
+import { isTrialActive, trialDaysLeft } from '../lib/trial';
 import AppNav from '../components/AppNav';
 import { Card, SectionLabel, FieldRow } from '../components/settings/primitives';
 
@@ -47,7 +46,7 @@ function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) 
 // checkout flow (a trial especially — that's the whole point of putting a
 // clear upgrade path in front of someone mid-trial), not "Manage billing"
 // dead-ending on create-portal-session's "No billing account found yet".
-function ProBillingButton({ profile, isGuest }) {
+function ProBillingButton({ profile, pendingConfirmation }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const hasRealSubscription = !!profile?.stripe_pro_subscription_id;
@@ -66,13 +65,16 @@ function ProBillingButton({ profile, isGuest }) {
     }
   };
 
-  // A guest has no email/password, so a subscription would be tied to a
-  // session that can vanish for good (see create-checkout-session.js) —
-  // the account-upgrade form is right above this card, so point there
+  // Signup is real at this point (email+password already submitted — see
+  // RequireAuth's isUnsignedGuest gate, which is the only thing standing
+  // between "browsing" and "has an account" now), but the address isn't
+  // confirmed yet — a subscription started now would still be tied to a
+  // session that depends on that confirmation completing. The
+  // ResendConfirmation prompt is right above this card, so point there
   // instead of letting the click reach checkout and bounce off the
   // server-side block.
-  if (isGuest && !profile?.is_premium) {
-    return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Create a full account above first</span>;
+  if (pendingConfirmation && !profile?.is_premium) {
+    return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Confirm your email above first</span>;
   }
 
   // is_premium true with no real subscription and no active trial means
@@ -103,11 +105,12 @@ function ProBillingButton({ profile, isGuest }) {
   );
 }
 
-// Shown instead of UpgradeForm once "Create account" has already been
-// submitted — asking for email/password again would be redundant (and
-// confusing, since re-submitting the same email errors as "already
-// registered"). All that's left to do is confirm the email that's
-// already on file, or resend it if it didn't arrive.
+// Onboarding's signup form has already been submitted by the time an
+// is_anonymous account can reach this page at all (see RequireAuth's
+// isUnsignedGuest gate) — asking for email/password again here would be
+// redundant (and confusing, since re-submitting the same email errors as
+// "already registered"). All that's left to do is confirm the email
+// that's already on file, or resend it if it didn't arrive.
 function ResendConfirmation({ email }) {
   const [state, setState] = useState(null);
 
@@ -140,83 +143,6 @@ function ResendConfirmation({ email }) {
       {state && state !== 'sending' && state !== 'sent' && (
         <div style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '8px' }}>{state}</div>
       )}
-    </div>
-  );
-}
-
-function UpgradeForm() {
-  const { user } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [agreed, setAgreed] = useState(false);
-  const [status, setStatus] = useState(null);
-
-  async function handleUpgrade() {
-    if (!email || password.length < 8) return;
-    setStatus('loading');
-    const { error } = await supabase.auth.updateUser({ email, password }, { emailRedirectTo });
-    if (error) { setStatus(error.message); return; }
-    // Same trial-start as onboarding/Step4.jsx's identical updateUser call
-    // — this is the other place a guest attaches real credentials, so it
-    // needs the exact same "trial starts here, not at guest creation"
-    // logic. Non-fatal: a failed trial start doesn't block the upgrade.
-    if (user) {
-      try {
-        await upsertProfile(user.id, { trial_ends_at: new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString() });
-      } catch (err) {
-        console.error('Failed to start free trial:', err);
-      }
-    }
-    setStatus('done');
-  }
-
-  if (status === 'done') {
-    return (
-      <p style={{ color: 'var(--accent)', fontSize: '13px', margin: 0 }}>
-        Almost there — check your email to confirm the address, then you're a full account with all your guest data intact.
-      </p>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 6px' }}>Upgrade to a real account — keeps everything you've logged so far.</p>
-      <input
-        type="email" placeholder="Email address" value={email}
-        onChange={e => setEmail(e.target.value)}
-        style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none' }}
-      />
-      <input
-        type="password" placeholder="Password (min. 8 characters)" value={password}
-        onChange={e => setPassword(e.target.value)}
-        style={{ padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px', fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none' }}
-      />
-      {status && status !== 'loading' && <span style={{ color: 'var(--danger)', fontSize: '12px' }}>{status}</span>}
-      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer', marginTop: '4px' }}>
-        <input
-          type="checkbox"
-          checked={agreed}
-          onChange={e => setAgreed(e.target.checked)}
-          style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--accent)' }}
-        />
-        <span>
-          I agree to the{' '}
-          <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Terms of Service</a>
-          {' '}and{' '}
-          <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a>
-        </span>
-      </label>
-      <button
-        onClick={handleUpgrade}
-        disabled={!email || password.length < 8 || status === 'loading' || !agreed}
-        style={{
-          padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)',
-          borderRadius: '8px', color: '#0f0f0f', fontSize: '13px', fontWeight: 600,
-          cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: '4px',
-        }}
-      >
-        {status === 'loading' ? 'Upgrading…' : 'Create account'}
-      </button>
     </div>
   );
 }
@@ -267,11 +193,14 @@ export default function Profile() {
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
-  const isGuest = !!user?.is_anonymous;
-  const pendingConfirmation = isGuest && !!user?.email;
-  const daysRemaining = user?.created_at
-    ? Math.max(0, 7 - Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000))
-    : 7;
+  // Onboarding now requires real signup before RequireAuth lets anyone
+  // reach this page (see its isUnsignedGuest gate) — is_anonymous here can
+  // only mean "submitted the signup form, hasn't clicked the confirmation
+  // link yet". new_email (not user?.email, which Supabase leaves empty
+  // until the address is actually confirmed) is what actually carries
+  // that pending address — using user?.email here made a real signup look
+  // identical to never having signed up at all.
+  const pendingConfirmation = !!user?.is_anonymous && !!user?.new_email;
   const initials = (form.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
 
   const handleSave = async () => {
@@ -292,7 +221,7 @@ export default function Profile() {
   };
 
   const requestLogout = () => {
-    if (isGuest) setShowLogoutConfirm(true);
+    if (pendingConfirmation) setShowLogoutConfirm(true);
     else handleLogout();
   };
 
@@ -360,14 +289,14 @@ export default function Profile() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
                 <span style={{
                   fontSize: '12px', padding: '3px 10px', borderRadius: '99px',
-                  background: isGuest ? '#1a1410' : 'var(--accent-bg)',
-                  border: `1px solid ${isGuest ? '#3a2e1e' : 'var(--border-active)'}`,
-                  color: isGuest ? 'var(--warning)' : 'var(--accent)',
+                  background: pendingConfirmation ? '#1a1410' : 'var(--accent-bg)',
+                  border: `1px solid ${pendingConfirmation ? '#3a2e1e' : 'var(--border-active)'}`,
+                  color: pendingConfirmation ? 'var(--warning)' : 'var(--accent)',
                 }}>
-                  {isGuest ? `Guest · ${daysRemaining} days left` : 'Member'}
+                  {pendingConfirmation ? 'Confirming email' : 'Member'}
                 </span>
-                {!isGuest && user?.email && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.email}</span>}
-                {pendingConfirmation && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.email}</span>}
+                {!pendingConfirmation && user?.email && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.email}</span>}
+                {pendingConfirmation && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.new_email}</span>}
               </div>
             </div>
           </Card>
@@ -377,15 +306,7 @@ export default function Profile() {
               of being split across two places. */}
           <Card>
             <SectionLabel>Account</SectionLabel>
-            {pendingConfirmation ? <ResendConfirmation email={user.email} /> : isGuest && <UpgradeForm />}
-            {isGuest && !pendingConfirmation && (
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '16px 0 0' }}>
-                Already have an account?{' '}
-                <span onClick={() => navigate('/login')} style={{ color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}>
-                  Log in instead
-                </span>{' '}— this guest session's data will be left behind unless you upgrade it first.
-              </p>
-            )}
+            {pendingConfirmation && <ResendConfirmation email={user.new_email} />}
             <FieldRow
               label="Pro"
               hint={
@@ -395,7 +316,7 @@ export default function Profile() {
                   : 'Comp access'
               }
             >
-              <ProBillingButton profile={profile} isGuest={isGuest} />
+              <ProBillingButton profile={profile} pendingConfirmation={pendingConfirmation} />
             </FieldRow>
             <button
               onClick={requestLogout}
@@ -406,7 +327,7 @@ export default function Profile() {
                 cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
-              {isGuest ? 'Exit guest session' : 'Log out'}
+              Log out
             </button>
           </Card>
 
@@ -493,10 +414,10 @@ export default function Profile() {
         <div onClick={closeLogoutConfirm} className={`modal-backdrop${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 210, padding: 24 }}>
           <div onClick={e => e.stopPropagation()} className={`modal-panel${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
             <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
-              Exit guest session?
+              Log out before confirming your email?
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px' }}>
-              You're in guest mode. Guest accounts have no password, so once you exit there's no way to log back into this data — it's gone for good. Create a real account above first if you want to keep it.
+              You haven't confirmed {user?.new_email || 'your email'} yet — signing in again with your password won't work until you do. Make sure you can still get to that confirmation email before logging out.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button
@@ -509,7 +430,7 @@ export default function Profile() {
                 onClick={handleLogout}
                 style={{ flex: 1, padding: '11px', background: '#3a1414', border: '1px solid #6a2a2a', borderRadius: 8, color: '#e89f9f', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
-                Exit anyway
+                Log out anyway
               </button>
             </div>
           </div>

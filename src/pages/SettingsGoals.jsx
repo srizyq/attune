@@ -60,7 +60,7 @@ function AdaptiveTargetPanel({ loading, result, goal, onRefresh }) {
 
 // Starts checkout right from the paywall instead of sending the tap back
 // to Settings just to find the same button again on the Profile page.
-function UpgradeProButton({ isGuest, onGoToProfile }) {
+function UpgradeProButton({ pendingConfirmation, onGoToProfile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -76,17 +76,19 @@ function UpgradeProButton({ isGuest, onGoToProfile }) {
     }
   };
 
-  // A guest has no email/password, so a subscription would be tied to a
-  // session that can vanish for good (see create-checkout-session.js) —
-  // send them to create a full account first instead of letting the
+  // Signup is already real at this point (RequireAuth's isUnsignedGuest
+  // gate is the only thing standing between "browsing" and "has an
+  // account" now) but unconfirmed — a subscription started now would
+  // still be tied to a session that depends on that confirmation
+  // completing. Send them to confirm it first instead of letting the
   // click reach checkout and bounce off the server-side block.
-  if (isGuest) {
+  if (pendingConfirmation) {
     return (
       <button
         onClick={onGoToProfile}
         style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
       >
-        Create account to unlock Pro
+        Confirm your email to unlock Pro
       </button>
     );
   }
@@ -112,7 +114,10 @@ export default function SettingsGoals() {
   const { user } = useAuth();
   const { profile, save: saveProfile } = useProfile();
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
-  const isGuest = !!user?.is_anonymous;
+  // RequireAuth's isUnsignedGuest gate means is_anonymous here can only
+  // mean "signed up, hasn't confirmed their email yet" — never "browsing
+  // without an account".
+  const pendingConfirmation = !!user?.is_anonymous;
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -433,7 +438,7 @@ export default function SettingsGoals() {
                   <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 340 }}>
                     Set your own target for every nutrient on the Nutrients page instead of the default guideline — Pro only.
                   </p>
-                  <UpgradeProButton isGuest={isGuest} onGoToProfile={() => navigate('/profile')} />
+                  <UpgradeProButton pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />
                 </div>
               </div>
             ) : (
