@@ -37,8 +37,61 @@ export function amountToServings(amount, unitId, servingGrams) {
   if (!amount || amount <= 0) return 0;
   if (unitId === "serving") return amount;
   const unit = UNITS.find(u => u.id === unitId);
+  if (!unit) return 0;
   const grams = amount * unit.toGrams;
   return grams / (servingGrams || 100);
+}
+
+// ─── Editing an already-logged item ─────────────────────────────────────────
+// Kept here (not in LogItemRow) so the rules are unit-tested — every one of
+// these was a real bug once (edit always in grams; serving amounts
+// compounding across edits; an unrecognised saved unit crashing the log).
+
+const isKnownUnit = id => UNITS.some(u => u.id === id);
+
+// Grams in one "serving" for an item that was saved as N servings: its total
+// saved weight ÷ N. Stable across edits because servingGrams, loggedAmount
+// and loggedUnit are always saved together. null when the item wasn't saved
+// in servings (or has no weight), in which case "serving" isn't a valid
+// edit unit for it.
+export function gramsPerServing(item) {
+  if (!item?.servingGrams) return null;
+  if (item.loggedUnit !== "serving" || !(item.loggedAmount > 0)) return null;
+  return item.servingGrams / item.loggedAmount;
+}
+
+// What the edit box opens showing: the item's real saved amount+unit ("1
+// serving", "2oz", "250g"). Falls back to grams for weight-known items with
+// no usable saved unit (legacy rows, cleared by a photo recalculation, or a
+// unit this app doesn't know), and to current calories for items with no
+// weight at all.
+export function initialEditState(item) {
+  if (!item.servingGrams) return { amount: String(item.cal), unit: "serving" };
+  const usable = item.loggedAmount > 0 && isKnownUnit(item.loggedUnit)
+    && (item.loggedUnit !== "serving" || gramsPerServing(item) != null);
+  if (usable) return { amount: String(item.loggedAmount), unit: item.loggedUnit };
+  return { amount: String(item.servingGrams), unit: "g" };
+}
+
+// Which unit buttons the edit form offers.
+export function editUnitsFor(item) {
+  if (!item.servingGrams) return UNITS.filter(u => u.id === "serving");
+  const gps = gramsPerServing(item);
+  return UNITS.filter(u => u.id !== "serving" || gps != null);
+}
+
+// Multiplier to apply to the item's currently-saved nutrition for the typed
+// amount+unit. Weight-known items compare grams against the saved weight;
+// weight-less items compare the typed calories against the saved calories.
+export function editServings(item, amount, unitId) {
+  const n = Number(amount) || 0;
+  if (n <= 0) return 0;
+  if (!item.servingGrams) return n / (item.cal || 1);
+  if (unitId === "serving") {
+    const gps = gramsPerServing(item);
+    return gps ? (n * gps) / item.servingGrams : 0;
+  }
+  return amountToServings(n, unitId, item.servingGrams);
 }
 
 // Every field scaleFood scales — shared here so summing (below) touches

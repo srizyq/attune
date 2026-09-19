@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Bottom-of-screen confirmation/error toast — shared by FoodSearch and
 // Recipes (both need the exact same success/error feedback after a
@@ -7,11 +7,17 @@ import { useEffect, useState } from 'react';
 // inline transform here would just fight the animation.
 export default function Toast({ message, error, onDone, action, duration = 2200 }) {
   const [leaving, setLeaving] = useState(false);
+  // Callers pass an inline onDone, so a new function every render — keeping
+  // it in the effect's deps restarted the timers on every parent re-render
+  // and a busy page could keep the toast up indefinitely.
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
   useEffect(() => {
+    setLeaving(false);
     const leaveTimer = setTimeout(() => setLeaving(true), duration - 160);
-    const doneTimer = setTimeout(onDone, duration);
+    const doneTimer = setTimeout(() => onDoneRef.current(), duration);
     return () => { clearTimeout(leaveTimer); clearTimeout(doneTimer); };
-  }, [onDone, duration]);
+  }, [message, duration]);
   return (
     <div
       className={leaving ? 'toast-out' : 'toast-in'}

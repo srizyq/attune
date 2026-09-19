@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { round1 } from '../lib/format';
-import { scaleFood, UNITS, amountToServings, formatAmountUnit } from '../lib/foodMath';
+import { scaleFood, formatAmountUnit, initialEditState, editUnitsFor, editServings } from '../lib/foodMath';
 import { dateToHHMM, timeStringToDate } from '../lib/mealTime';
 import RecalculatePhotoModal from './RecalculatePhotoModal';
 import MarqueeText from './MarqueeText';
@@ -45,18 +45,6 @@ function MacroReadout({ value, unit, label, color }) {
   );
 }
 
-// What the amount box should open showing: whatever the item was actually
-// saved as (loggedAmount/loggedUnit — "1 serving", "2 oz", "250g"), so
-// editing a "1 serving" item doesn't make you convert to grams. Items with
-// no logged unit on record (legacy rows, or after a photo recalculation
-// cleared it) anchor to grams; items with no weight at all anchor to
-// current calories.
-function initialEdit(item, hasKnownWeight) {
-  if (!hasKnownWeight) return { amount: String(item.cal), unit: 'serving' };
-  if (item.loggedUnit && item.loggedAmount != null) return { amount: String(item.loggedAmount), unit: item.loggedUnit };
-  return { amount: String(item.servingGrams), unit: 'g' };
-}
-
 // A logged food row that expands in place to edit how much of it you had,
 // plus — since when you happened to be logging it isn't necessarily when
 // you ate it — which meal it belongs to (free tier) or what time it's
@@ -74,8 +62,8 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   const hasKnownWeight = !!item.servingGrams;
   const [nameOverflowing, setNameOverflowing] = useState(false);
 
-  const [amount, setAmount] = useState(() => initialEdit(item, hasKnownWeight).amount);
-  const [unit, setUnit] = useState(() => initialEdit(item, hasKnownWeight).unit);
+  const [amount, setAmount] = useState(() => initialEditState(item).amount);
+  const [unit, setUnit] = useState(() => initialEditState(item).unit);
   const [meal, setMeal] = useState(item.meal);
   const [time, setTime] = useState(() => dateToHHMM(effectiveLoggedAt(item)));
   const [saving, setSaving] = useState(false);
@@ -84,42 +72,20 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
 
   // Reset whenever this row opens, so stale edits from a previous expand
   // don't linger if you collapse without saving. Opens on the item's real
-  // saved amount+unit (see initialEdit), never a generic "1 serving"
+  // saved amount+unit (see initialEditState), never a generic "1 serving"
   // placeholder — typing the same number back always gives the same result.
   useEffect(() => {
     if (!isExpanded) return;
-    const init = initialEdit(item, hasKnownWeight);
+    const init = initialEditState(item);
     setAmount(init.amount);
     setUnit(init.unit);
     setMeal(item.meal);
     setTime(dateToHHMM(effectiveLoggedAt(item)));
   }, [isExpanded, item, hasKnownWeight]);
 
-  // A weight-known item saved as "N servings" has a fixed, recoverable
-  // weight per serving (its total weight ÷ N). That makes "serving" as
-  // absolute as g/oz — not the self-redefining "N × whatever's saved"
-  // ratio — and it stays stable across edits since servingGrams,
-  // loggedAmount and loggedUnit are always saved together (handleSave).
-  // Without that anchor (saved in g/oz/etc.), serving isn't offered.
-  const gramsPerServing = hasKnownWeight && item.loggedUnit === 'serving' && item.loggedAmount
-    ? item.servingGrams / item.loggedAmount
-    : null;
-  const availableUnits = hasKnownWeight
-    ? UNITS.filter(u => u.id !== 'serving' || gramsPerServing != null)
-    : UNITS.filter(u => u.id === 'serving');
-
+  const availableUnits = editUnitsFor(item);
   const servingGrams = item.servingGrams || 100;
-  // No-known-weight items scale off calories directly (a stable absolute
-  // anchor) instead of amountToServings' "amount relative to current
-  // serving" math, which is exactly the self-redefining ratio this whole
-  // effect is written to avoid. For the "serving" unit on a weight-known
-  // item, amountToServings' own serving branch (amount taken as a raw
-  // multiplier) would be wrong — go through gramsPerServing instead.
-  const servings = hasKnownWeight
-    ? (unit === 'serving'
-        ? (gramsPerServing ? ((Number(amount) || 0) * gramsPerServing) / servingGrams : 0)
-        : amountToServings(Number(amount) || 0, unit, servingGrams))
-    : (Number(amount) || 0) / (item.cal || 1);
+  const servings = editServings(item, amount, unit);
   const gramsEquivalent = Math.round(servings * servingGrams);
   const preview = scaleFood(item, servings || 0);
 

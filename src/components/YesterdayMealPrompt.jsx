@@ -42,6 +42,9 @@ export default function YesterdayMealPrompt({ names, onCommit, disabled }) {
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={reset}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        onKeyDown={e => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onCommit(); } }}
         style={{
           position: 'relative', background: 'var(--bg-subtle)', padding: '14px 18px', cursor: disabled ? 'default' : 'pointer',
           touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none', opacity: disabled ? 0.6 : 1,

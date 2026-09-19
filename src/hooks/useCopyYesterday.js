@@ -14,6 +14,10 @@ export function useCopyYesterday(date, refetch, showToast) {
   const [rows, setRows] = useState([]);
   const [copying, setCopying] = useState(false);
   const copyingRef = useRef(false);
+  // Undo can fire seconds later, after the viewed day changed — it must
+  // reload whatever day is showing *now*, not the day the copy happened on.
+  const refetchRef = useRef(refetch);
+  useEffect(() => { refetchRef.current = refetch; }, [refetch]);
 
   useEffect(() => {
     if (!user) return;
@@ -49,8 +53,11 @@ export function useCopyYesterday(date, refetch, showToast) {
             await Promise.all(created.map(r => deleteFoodLog(r.id)));
           } catch {
             showToast("Couldn't undo — try again", true);
+            await refetchRef.current();
+            return;
           }
-          await refetch();
+          await refetchRef.current();
+          showToast('Undone');
         },
       });
     } catch {
