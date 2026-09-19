@@ -25,6 +25,8 @@ import LogCalendar from '../components/LogCalendar';
 import HourlyTimeline from '../components/HourlyTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import Toast from '../components/Toast';
+import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
+import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import TrialBanner from '../components/TrialBanner';
 import { round1 } from '../lib/format';
 import { hourToHHMM } from '../lib/mealTime';
@@ -573,7 +575,7 @@ function MoodCheckin({ mood, setMood, energy, setEnergy }) {
 }
 
 // ─── Meal Log ─────────────────────────────────────────────────────────────────
-function MealLog({ groups, onDelete, onSave, onNavigateFood }) {
+function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, onCopyYesterday, copyingYesterday }) {
   const [open, setOpen] = useState({});
   const [expandedId, setExpandedId] = useState(null);
 
@@ -597,6 +599,13 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood }) {
                 <span style={{ color: 'var(--text-hint)', fontSize: '12px', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
               </div>
             </button>
+            {items.length === 0 && yesterdayByMeal?.[key]?.length > 0 && (
+              <YesterdayMealPrompt
+                names={yesterdayByMeal[key].map(r => r.food_name).join(', ')}
+                onCommit={() => onCopyYesterday(key)}
+                disabled={copyingYesterday}
+              />
+            )}
             {isOpen && (
               <div style={{ borderTop: '1px solid var(--border-default)' }}>
                 {items.length === 0 ? (
@@ -781,7 +790,7 @@ export default function Dashboard() {
     setViewSaveError(null);
     try { await saveProfile({ daily_log_view: v }); } catch { setViewSaveError("Couldn't save — try again."); }
   }
-  const { meals, dayTimeline, deleteFood, updateFood } = useFoodLogs(viewedDate);
+  const { meals, dayTimeline, deleteFood, updateFood, refetch: refetchFoodLogs } = useFoodLogs(viewedDate);
   const { checkin, save: saveCheckin } = useCheckins(viewedDate);
   // 90 days (not 30) so the pattern engine's more specific candidates
   // (fibre, hydration, sugar, breakfast) have a real chance to each reach
@@ -798,10 +807,13 @@ export default function Dashboard() {
   const { closing: workoutModalClosing, close: closeWorkoutModal } = useClosingTransition(() => setShowWorkoutModal(false));
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
-  function showToast(message, isError = false) {
+  const [toastAction, setToastAction] = useState(null);
+  function showToast(message, isError = false, action = null) {
     setToast(message);
     setToastError(isError);
+    setToastAction(action);
   }
+  const { byMeal: yesterdayByMeal, copy: copyFromYesterday, copying: copyingYesterday } = useCopyYesterday(viewedDate, refetchFoodLogs, showToast);
   // deleteFood/removeWorkout had no error handling anywhere they were
   // used — a failed delete just silently did nothing. Same reasoning as
   // DailyLog.jsx's identical wrapper: LogItemRow already catches and
@@ -1085,6 +1097,9 @@ export default function Dashboard() {
                 onDelete={handleDeleteFoodItem}
                 onSave={updateFood}
                 onNavigateFood={(key) => navigate('/food', { state: { date: viewedDate, openMeal: key } })}
+                yesterdayByMeal={yesterdayByMeal}
+                onCopyYesterday={copyFromYesterday}
+                copyingYesterday={copyingYesterday}
               />
             )}
           </div>
@@ -1150,7 +1165,7 @@ export default function Dashboard() {
           onSave={handleLogWorkout}
         />
       )}
-      {toast && <Toast message={toast} error={toastError} onDone={() => setToast(null)} />}
+      {toast && <Toast message={toast} error={toastError} action={toastAction} duration={toastAction ? 5000 : 2200} onDone={() => setToast(null)} />}
     </div>
   );
 }

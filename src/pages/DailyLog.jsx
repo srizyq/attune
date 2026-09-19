@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useFoodLogs } from '../hooks/useFoodLogs';
@@ -14,15 +14,14 @@ import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import CopyDayModal from '../components/CopyDayModal';
 import Toast from '../components/Toast';
 import { round1 } from '../lib/format';
-import { getFoodLogsForDate, copyFoodLogs, deleteFoodLog } from '../lib/db';
-import { useAuth } from '../hooks/useAuth';
+import { useCopyYesterday } from '../hooks/useCopyYesterday';
+import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
 
 export default function DailyLog() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   const { profile, save: saveProfile } = useProfile();
   const isPremium = !!profile?.is_premium;
   // Defaults to hourly (unset) — the only view that ever existed for Pro
@@ -58,7 +57,6 @@ export default function DailyLog() {
   const [expandedId, setExpandedId] = useState(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [showCopyMenu, setShowCopyMenu] = useState(false);
-  const copyingRef = useRef(false);
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
   const [toastAction, setToastAction] = useState(null);
@@ -68,43 +66,8 @@ export default function DailyLog() {
     setToastAction(action);
   }
 
-  // One-tap "copy yesterday" (relative to the day being viewed), either the
-  // whole day or a single meal. Applies immediately and offers Undo in the
-  // toast instead of a confirm step — copyFoodLogs only ever inserts new
-  // rows, so undo is just deleting exactly the rows it created.
-  async function copyFromYesterday(mealKey = null) {
-    if (!user || copyingRef.current) return;
-    copyingRef.current = true;
-    setShowCopyMenu(false);
-    try {
-      const d = new Date(selectedDate + 'T00:00:00');
-      d.setDate(d.getDate() - 1);
-      const rows = await getFoodLogsForDate(user.id, todayLocalDate(d));
-      const toCopy = mealKey ? rows.filter(r => r.meal === mealKey) : rows;
-      if (!toCopy.length) {
-        showToast(mealKey ? `No ${MEAL_LABELS[mealKey].toLowerCase()} logged yesterday` : 'Nothing logged yesterday', true);
-        return;
-      }
-      const created = await copyFoodLogs(user.id, toCopy, selectedDate);
-      await refetch();
-      showToast(`Copied ${created.length} item${created.length === 1 ? '' : 's'} from yesterday`, false, {
-        label: 'Undo',
-        onClick: async () => {
-          setToast(null);
-          try {
-            await Promise.all(created.map(r => deleteFoodLog(r.id)));
-          } catch {
-            showToast("Couldn't undo — try again", true);
-          }
-          await refetch();
-        },
-      });
-    } catch {
-      showToast("Couldn't copy — try again", true);
-    } finally {
-      copyingRef.current = false;
-    }
-  }
+  const { byMeal: yesterdayByMeal, copy: copyFromYesterday, copying: copyingYesterday } = useCopyYesterday(selectedDate, refetch, showToast);
+
   // deleteFood had no error handling anywhere it was used — a failed
   // delete (network blip, RLS hiccup) just silently did nothing, no toast,
   // no console hint. LogItemRow already catches and inline-surfaces its
@@ -147,7 +110,7 @@ export default function DailyLog() {
               <>
                 <div onClick={() => setShowCopyMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 41, minWidth: 210, background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.35)', overflow: 'hidden' }}>
-                  <button onClick={() => copyFromYesterday()} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy yesterday</button>
+                  <button onClick={() => { setShowCopyMenu(false); copyFromYesterday(); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy yesterday</button>
                   <button onClick={() => { setShowCopyMenu(false); setShowCopyModal(true); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy from another day…</button>
                 </div>
               </>
@@ -202,6 +165,13 @@ export default function DailyLog() {
                         <span style={{ color: 'var(--text-hint)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                       </div>
                     </button>
+                    {items.length === 0 && yesterdayByMeal[mealKey].length > 0 && (
+                      <YesterdayMealPrompt
+                        names={yesterdayByMeal[mealKey].map(r => r.food_name).join(', ')}
+                        onCommit={() => copyFromYesterday(mealKey)}
+                        disabled={copyingYesterday}
+                      />
+                    )}
                     {isOpen && (
                       <div style={{ borderTop: '1px solid var(--border-default)' }}>
                         {items.length === 0 ? (
@@ -218,16 +188,9 @@ export default function DailyLog() {
                             />
                           ))
                         )}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <button onClick={() => navigate('/food', { state: { openMeal: mealKey, date: selectedDate } })} style={{ background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '12px 18px', textAlign: 'left' }}>
-                            + Add food
-                          </button>
-                          {items.length === 0 && (
-                            <button onClick={() => copyFromYesterday(mealKey)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', padding: '12px 18px', fontFamily: 'inherit' }}>
-                              <i className="ti ti-copy" style={{ marginRight: 5 }} />Copy yesterday
-                            </button>
-                          )}
-                        </div>
+                        <button onClick={() => navigate('/food', { state: { openMeal: mealKey, date: selectedDate } })} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '12px 18px', textAlign: 'left' }}>
+                          + Add food
+                        </button>
                       </div>
                     )}
                   </div>
