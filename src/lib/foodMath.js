@@ -24,6 +24,13 @@ export function unitsFor(servingUnit) {
     : UNITS.filter(u => u.id !== "ml");
 }
 
+export function formatAmountUnit(amount, unitId) {
+  const unitDef = UNITS.find(u => u.id === unitId);
+  if (!unitDef) return `${amount}`;
+  if (unitId === "serving") return `${amount} serving${amount === 1 ? "" : "s"}`;
+  return `${amount}${unitDef.label}`;
+}
+
 // How many base servings `amount` of `unit` represents for a food whose
 // "1 serving" (its base cal/protein/etc values) weighs `servingGrams`.
 export function amountToServings(amount, unitId, servingGrams) {

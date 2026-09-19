@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useSavedMeals } from '../hooks/useSavedMeals';
 import { useFoodLogs } from '../hooks/useFoodLogs';
-import { scaleFood, sumFoodItems, UNITS } from '../lib/foodMath';
+import { scaleFood, sumFoodItems, formatAmountUnit } from '../lib/foodMath';
 import { todayLocalDate } from '../lib/patterns';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTimeFromDate } from '../lib/mealTime';
 import AppNav from '../components/AppNav';
@@ -14,13 +14,6 @@ import { Card, SectionLabel } from '../components/settings/primitives';
 // from there, and small enough that duplicating it here is simpler than
 // pulling it into its own module for one extra caller.
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
-
-function formatAmountUnit(amount, unitId) {
-  const unitDef = UNITS.find(u => u.id === unitId);
-  if (!unitDef) return `${amount}`;
-  if (unitId === 'serving') return `${amount} serving${amount === 1 ? '' : 's'}`;
-  return `${amount}${unitDef.label}`;
-}
 
 const inputStyle = {
   background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7,

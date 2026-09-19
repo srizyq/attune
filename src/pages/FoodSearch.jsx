@@ -15,7 +15,7 @@ import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
-import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings } from '../lib/foodMath';
+import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit } from '../lib/foodMath';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
 import MenuScanModal from '../components/MenuScanModal';
@@ -1343,13 +1343,6 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function formatAmountUnit(amount, unitId) {
-  const unitDef = UNITS.find(u => u.id === unitId);
-  if (!unitDef) return `${amount}`;
-  if (unitId === "serving") return `${amount} serving${amount === 1 ? "" : "s"}`;
-  return `${amount}${unitDef.label}`;
-}
 
 // MyFitnessPal-style row subtitle ("213 cal, 3 egg omelette", "258 cal,
 // 200g") instead of a generic "Logged before"/"Logged often" — tries, in
