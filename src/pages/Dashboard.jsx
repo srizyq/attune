@@ -653,9 +653,9 @@ function ConfirmEmailBanner({ email }) {
 
   return (
     <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '12px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-        <span style={{ color: 'var(--accent)', fontSize: '14px' }}>✉️</span>
-        <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+        <span style={{ color: 'var(--accent)', fontSize: '14px', flexShrink: 0 }}>✉️</span>
+        <span style={{ color: 'var(--text-secondary)', fontSize: '13px', minWidth: 0, overflowWrap: 'anywhere' }}>
           Almost there — check <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{email}</span> to confirm your account.
           {resendState === 'sent' ? (
             <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>Sent!</span>
