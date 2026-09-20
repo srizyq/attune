@@ -62,7 +62,7 @@ export default function NotificationsModal({ onClose, closing }) {
 
       <Card style={{ marginBottom: 0 }}>
         <SectionLabel>Updates</SectionLabel>
-        <FieldRow label="Trainer updates" hint="When your trainer leaves you a note">
+        <FieldRow label="Trainer updates" hint="When your trainer leaves you a note or sends a check-in">
           <Toggle
             on={trainerNotifs.enabled}
             onChange={async (on) => {

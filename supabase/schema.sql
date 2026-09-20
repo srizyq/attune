@@ -1873,3 +1873,186 @@ create policy "progress-photos: trainer can read client photos" on storage.objec
         and tc.client_id::text = (storage.foldername(name))[1]
     )
   );
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Weekly check-in forms (schema update — run against an existing DB; safe to
+-- re-run). Tests: supabase/tests/checkin-forms.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- The rules for a form's questions, in one place so the table constraint and
+-- the app agree: 1–12 questions, each with a unique short id, a type (a 1–10
+-- scale, free text, or yes/no) and a label. src/lib/checkinForms.js mirrors
+-- this; its tests are the drift guard.
+create or replace function public.valid_checkin_questions(q jsonb)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  item jsonb;
+  ids text[] := '{}';
+  n int;
+begin
+  if q is null or jsonb_typeof(q) is distinct from 'array' then return false; end if;
+  n := jsonb_array_length(q);
+  if n < 1 or n > 12 then return false; end if;
+  for item in select value from jsonb_array_elements(q) loop
+    if jsonb_typeof(item) is distinct from 'object' then return false; end if;
+    if jsonb_typeof(item -> 'id') is distinct from 'string' or (item ->> 'id') !~ '^[a-z0-9_]{1,40}$' then return false; end if;
+    if (item ->> 'id') = any (ids) then return false; end if;
+    ids := ids || (item ->> 'id');
+    if jsonb_typeof(item -> 'type') is distinct from 'string' or (item ->> 'type') not in ('scale', 'text', 'yesno') then return false; end if;
+    if jsonb_typeof(item -> 'label') is distinct from 'string' or char_length(item ->> 'label') not between 1 and 200 then return false; end if;
+  end loop;
+  return true;
+end;
+$$;
+
+-- A set of answers must answer every question, with the right kind of value
+-- (scale: a whole number 1–10; yes/no: true/false; text: up to 2,000
+-- characters, may be empty) and nothing extra.
+create or replace function public.valid_checkin_answers(q jsonb, a jsonb)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  item jsonb;
+  val jsonb;
+  seen int := 0;
+begin
+  if a is null or jsonb_typeof(a) is distinct from 'object' then return false; end if;
+  for item in select value from jsonb_array_elements(q) loop
+    if not (a ? (item ->> 'id')) then return false; end if;
+    val := a -> (item ->> 'id');
+    seen := seen + 1;
+    case item ->> 'type'
+      when 'scale' then
+        if jsonb_typeof(val) is distinct from 'number' then return false; end if;
+        if (val #>> '{}')::numeric <> trunc((val #>> '{}')::numeric) or (val #>> '{}')::numeric not between 1 and 10 then return false; end if;
+      when 'yesno' then
+        if jsonb_typeof(val) is distinct from 'boolean' then return false; end if;
+      when 'text' then
+        if jsonb_typeof(val) is distinct from 'string' or char_length(val #>> '{}') > 2000 then return false; end if;
+      else
+        return false;
+    end case;
+  end loop;
+  return (select count(*) from jsonb_object_keys(a)) = seen;
+end;
+$$;
+
+-- ── checkin_forms ───────────────────────────────────────────────────────────
+-- One form per trainer/client pair, edited in place. A trainer can only make
+-- one for an active client; the client can read (never change) the one
+-- addressed to them while the link is active.
+create table if not exists public.checkin_forms (
+  id uuid primary key default gen_random_uuid(),
+  trainer_id uuid not null references public.profiles (id) on delete cascade,
+  client_id uuid not null references public.profiles (id) on delete cascade,
+  title text not null default 'Weekly check-in' check (char_length(title) between 1 and 80),
+  questions jsonb not null check (public.valid_checkin_questions(questions)),
+  cadence_days int not null default 7 check (cadence_days between 1 and 60),
+  is_active boolean not null default true,
+  last_notified_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (trainer_id, client_id)
+);
+alter table public.checkin_forms enable row level security;
+
+drop policy if exists "checkin_forms: trainer select own" on public.checkin_forms;
+create policy "checkin_forms: trainer select own" on public.checkin_forms for select using (auth.uid() = trainer_id);
+drop policy if exists "checkin_forms: trainer insert for active client" on public.checkin_forms;
+create policy "checkin_forms: trainer insert for active client" on public.checkin_forms
+  for insert with check (
+    auth.uid() = trainer_id
+    and exists (select 1 from public.trainer_clients tc where tc.trainer_id = auth.uid() and tc.client_id = checkin_forms.client_id and tc.status = 'active')
+  );
+drop policy if exists "checkin_forms: trainer update own" on public.checkin_forms;
+create policy "checkin_forms: trainer update own" on public.checkin_forms for update using (auth.uid() = trainer_id) with check (auth.uid() = trainer_id);
+drop policy if exists "checkin_forms: trainer delete own" on public.checkin_forms;
+create policy "checkin_forms: trainer delete own" on public.checkin_forms for delete using (auth.uid() = trainer_id);
+drop policy if exists "checkin_forms: client select addressed to them" on public.checkin_forms;
+create policy "checkin_forms: client select addressed to them" on public.checkin_forms
+  for select using (
+    auth.uid() = client_id
+    and exists (select 1 from public.trainer_clients tc where tc.trainer_id = checkin_forms.trainer_id and tc.client_id = auth.uid() and tc.status = 'active')
+  );
+
+drop trigger if exists protect_checkin_forms_link_trigger on public.checkin_forms;
+create trigger protect_checkin_forms_link_trigger
+  before update on public.checkin_forms
+  for each row execute function public.protect_trainer_link_columns();
+drop trigger if exists touch_checkin_forms_trigger on public.checkin_forms;
+create trigger touch_checkin_forms_trigger
+  before update on public.checkin_forms
+  for each row execute function public.touch_updated_at();
+
+-- ── checkin_responses ───────────────────────────────────────────────────────
+-- Immutable once submitted. Each carries a snapshot of the questions it
+-- answered, so editing the form later can't change what an old answer meant.
+create table if not exists public.checkin_responses (
+  id uuid primary key default gen_random_uuid(),
+  form_id uuid not null references public.checkin_forms (id) on delete cascade,
+  trainer_id uuid not null references public.profiles (id) on delete cascade,
+  client_id uuid not null references public.profiles (id) on delete cascade,
+  questions_snapshot jsonb not null,
+  answers jsonb not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists checkin_responses_form_idx on public.checkin_responses (form_id, created_at desc);
+alter table public.checkin_responses enable row level security;
+
+-- The client supplies only form_id and answers; everything else comes from the
+-- form, so a response can't be filed against the wrong coach or with made-up
+-- questions. Runs before the row-level-security check, which then verifies the
+-- filled-in trainer_id against an active link.
+create or replace function public.prepare_checkin_response()
+returns trigger
+language plpgsql
+as $$
+declare
+  f public.checkin_forms;
+begin
+  select * into f from public.checkin_forms where id = new.form_id;
+  if not found or f.client_id is distinct from auth.uid() or not f.is_active then
+    raise exception 'Check-in form not found';
+  end if;
+  if exists (
+    select 1 from public.checkin_responses r
+    where r.form_id = f.id and r.created_at > now() - interval '12 hours'
+  ) then
+    raise exception 'You''ve already submitted this check-in recently';
+  end if;
+  if not public.valid_checkin_answers(f.questions, new.answers) then
+    raise exception 'Some answers are missing or invalid';
+  end if;
+  new.trainer_id := f.trainer_id;
+  new.client_id := f.client_id;
+  new.questions_snapshot := f.questions;
+  return new;
+end;
+$$;
+
+drop trigger if exists prepare_checkin_response_trigger on public.checkin_responses;
+create trigger prepare_checkin_response_trigger
+  before insert on public.checkin_responses
+  for each row execute function public.prepare_checkin_response();
+
+drop policy if exists "checkin_responses: client insert own" on public.checkin_responses;
+create policy "checkin_responses: client insert own" on public.checkin_responses
+  for insert with check (
+    auth.uid() = client_id
+    and exists (select 1 from public.trainer_clients tc where tc.trainer_id = checkin_responses.trainer_id and tc.client_id = auth.uid() and tc.status = 'active')
+  );
+drop policy if exists "checkin_responses: client select own" on public.checkin_responses;
+create policy "checkin_responses: client select own" on public.checkin_responses for select using (auth.uid() = client_id);
+drop policy if exists "checkin_responses: trainer select for active client" on public.checkin_responses;
+create policy "checkin_responses: trainer select for active client" on public.checkin_responses
+  for select using (
+    auth.uid() = trainer_id
+    and exists (select 1 from public.trainer_clients tc where tc.trainer_id = auth.uid() and tc.client_id = checkin_responses.client_id and tc.status = 'active')
+  );
+-- No update or delete policy: a submitted check-in is a record.

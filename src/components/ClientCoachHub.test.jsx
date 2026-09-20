@@ -14,6 +14,7 @@ vi.mock('../hooks/useCoach', () => ({
 vi.mock('../hooks/useProfile', () => ({ useProfile: () => ({ profile: { calorie_target: 2000, protein_g: 150 } }) }));
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => ({ user: { id: 'u1', is_anonymous: false } }) }));
 vi.mock('../lib/billing', () => ({ authedPost: vi.fn() }));
+vi.mock('../hooks/useCheckinForms', () => ({ useMyCheckinForms: () => ({ supported: true, forms: [], submit: vi.fn() }) }));
 
 import ClientCoachHub from './ClientCoachHub';
 

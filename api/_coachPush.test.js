@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { firstName, replyPayload, digestPayload, withinThrottle, pickInactive, digestDue } from './_coachPush.js';
+import { firstName, replyPayload, digestPayload, withinThrottle, pickInactive, digestDue, checkinPayload, pickDueForms, withinWakingHours } from './_coachPush.js';
 
 describe('replyPayload', () => {
   it('names the client but never includes what they wrote', () => {
@@ -80,3 +80,51 @@ describe('digestDue', () => {
     expect(digestDue('14:00', '2026-09-20', '2026-09-20')).toBe(false);
   });
 });
+
+describe('checkinPayload', () => {
+  it('names the coach and nothing else', () => {
+    expect(checkinPayload('Jordan Lee')).toEqual({ title: 'Attune', body: 'Jordan sent you a check-in', url: '/coach' });
+    expect(checkinPayload(null).body).toBe('Your coach sent you a check-in');
+  });
+});
+
+describe('pickDueForms', () => {
+  const day = 86400000;
+  const now = Date.parse('2026-09-20T12:00:00Z');
+  const iso = (msAgo) => new Date(now - msAgo).toISOString();
+  const form = (id, over = {}) => ({ id, cadence_days: 7, created_at: iso(30 * day), last_notified_at: null, ...over });
+
+  it('picks a form that has never been answered as soon as it exists', () => {
+    expect(pickDueForms([form('a', { created_at: iso(1000) })], {}, now).map(f => f.id)).toEqual(['a']);
+  });
+  it('waits the full cadence after the last answer', () => {
+    const forms = [form('due'), form('early')];
+    const last = { due: iso(7 * day), early: iso(6 * day) };
+    expect(pickDueForms(forms, last, now).map(f => f.id)).toEqual(['due']);
+  });
+  it('does not re-ping a form already nudged for this due date, but does for the next cycle', () => {
+    const last = { a: iso(8 * day) };                                   // due since 1 day ago
+    expect(pickDueForms([form('a', { last_notified_at: iso(1000) })], last, now)).toEqual([]);
+    expect(pickDueForms([form('a', { last_notified_at: iso(20 * day) })], last, now).map(f => f.id)).toEqual(['a']); // notified in an earlier cycle
+    expect(pickDueForms([form('a', { last_notified_at: iso(1000) })], { a: iso(1000) }, now)).toEqual([]);          // just answered, not due
+  });
+  it('notifies again the next cycle after answering', () => {
+    const f = form('a', { last_notified_at: iso(9 * day) });
+    expect(pickDueForms([f], { a: iso(7 * day + 1000) }, now).map(x => x.id)).toEqual(['a']);
+  });
+  it('honours each form\'s own cadence', () => {
+    expect(pickDueForms([form('m', { cadence_days: 30 })], { m: iso(10 * day) }, now)).toEqual([]);
+    expect(pickDueForms([form('m', { cadence_days: 30 })], { m: iso(31 * day) }, now).map(f => f.id)).toEqual(['m']);
+  });
+  it('ignores garbage dates and empty input', () => {
+    expect(pickDueForms([form('x', { created_at: 'garbage' })], {}, now)).toEqual([]);
+    expect(pickDueForms(undefined, undefined, now)).toEqual([]);
+  });
+});
+
+describe('withinWakingHours', () => {
+  it('is 08:00 to 21:00 inclusive', () => {
+    expect(['07:59', '08:00', '12:30', '21:00', '21:01', '03:00'].map(withinWakingHours)).toEqual([false, true, true, true, false, false]);
+  });
+});
+

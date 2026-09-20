@@ -10,7 +10,10 @@ const db = vi.hoisted(() => ({
   getLatestCoachComment: vi.fn(), getGeneralThread: vi.fn(), addClientReply: vi.fn(), getFoodLogsForDate: vi.fn(),
 }));
 vi.mock('../lib/db', () => db);
-vi.mock('./useAuth', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
+// A stable object, like the real context provides — a fresh one each render would change every
+// hook's `refetch` identity each render and cause spurious refetches.
+const auth = vi.hoisted(() => ({ user: { id: 'u1' } }));
+vi.mock('./useAuth', () => ({ useAuth: () => auth }));
 vi.mock('../lib/supabase', () => ({ supabase: { auth: { getSession: async () => ({ data: { session: null } }) } } }));
 
 import { useClientSummaries, useTrainerNotes, useClientWorkouts, useCoachInvites } from './useCoach';

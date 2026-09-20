@@ -11,7 +11,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
-import { digestDue, digestPayload, pickInactive } from './_coachPush.js';
+import { digestDue, digestPayload, pickInactive, checkinPayload, pickDueForms, withinWakingHours } from './_coachPush.js';
 
 function localDateAndTime(timezone) {
   const now = new Date();
@@ -84,6 +84,64 @@ async function runInactiveClientDigest(supabase) {
     }
   }
   return { checked: (trainers || []).length, sent };
+}
+
+// Nudges a client when a coach's check-in form falls due. Same isolation as the
+// digest above (it runs in this cron because the project is at Vercel's
+// 12-function cap): failures are logged, never allowed to break the reminder
+// pushes, and it does nothing at all before the check-in tables exist.
+// Reuses the client's "Trainer updates" opt-in (notify_trainer_comments) and
+// only sends between 08:00 and 21:00 in their own timezone when that's known.
+// The form is stamped as notified *before* sending, so a crash can only skip a
+// nudge, never repeat one.
+async function runCheckinDueNudges(supabase, nowMs = Date.now()) {
+  const { data: forms, error } = await supabase
+    .from('checkin_forms')
+    .select('id, client_id, trainer_id, cadence_days, created_at, last_notified_at')
+    .eq('is_active', true);
+  if (error || !forms || forms.length === 0) return { checked: 0, sent: 0 };
+
+  const { data: responses } = await supabase
+    .from('checkin_responses')
+    .select('form_id, created_at')
+    .in('form_id', forms.map((f) => f.id))
+    .order('created_at', { ascending: false });
+  const lastByForm = {};
+  for (const r of responses || []) if (!lastByForm[r.form_id]) lastByForm[r.form_id] = r.created_at;
+
+  let sent = 0;
+  const due = pickDueForms(forms, lastByForm, nowMs);
+  for (const form of due) {
+    const { data: link } = await supabase
+      .from('trainer_clients').select('id')
+      .eq('trainer_id', form.trainer_id).eq('client_id', form.client_id).eq('status', 'active')
+      .maybeSingle();
+    if (!link) continue;
+
+    const { data: client } = await supabase
+      .from('profiles').select('notify_trainer_comments, reminder_timezone').eq('id', form.client_id).maybeSingle();
+    if (!client?.notify_trainer_comments) continue;
+    if (client.reminder_timezone && !withinWakingHours(localDateAndTime(client.reminder_timezone).time)) continue;
+
+    await supabase.from('checkin_forms').update({ last_notified_at: new Date(nowMs).toISOString() }).eq('id', form.id);
+
+    const { data: coach } = await supabase.from('profiles').select('name').eq('id', form.trainer_id).maybeSingle();
+    const { data: subs } = await supabase.from('push_subscriptions').select('id, endpoint, subscription').eq('user_id', form.client_id);
+    const payload = JSON.stringify(checkinPayload(coach?.name));
+    for (const sub of subs || []) {
+      try {
+        await webpush.sendNotification(sub.subscription, payload);
+        sent++;
+      } catch (err) {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+        } else {
+          console.error('Check-in push failed:', sub.endpoint, err.message);
+        }
+      }
+    }
+  }
+  return { checked: forms.length, sent };
 }
 
 export default async function handler(req, res) {
@@ -191,5 +249,12 @@ export default async function handler(req, res) {
     console.error('Inactive-client digest failed:', err);
   }
 
-  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest });
+  let checkins = { checked: 0, sent: 0 };
+  try {
+    checkins = await runCheckinDueNudges(supabase);
+  } catch (err) {
+    console.error('Check-in nudges failed:', err);
+  }
+
+  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest, checkins });
 }

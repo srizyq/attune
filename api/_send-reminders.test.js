@@ -16,6 +16,11 @@ const resolver = (s) => {
   if (op === 'delete') return { error: null };
   if (table === 'profiles' && 'reminder_enabled' in filters) return { data: db.reminderProfiles, error: null };
   if (table === 'profiles' && 'notify_client_activity' in filters) return db.digestError ? { data: null, error: { message: 'column does not exist' } } : { data: db.trainers, error: null };
+  if (table === 'checkin_forms' && op === 'select') return db.checkinError ? { data: null, error: { message: 'relation does not exist' } } : { data: db.forms, error: null };
+  if (table === 'checkin_responses') return { data: db.checkinResponses };
+  if (table === 'trainer_clients' && filters.trainer_id === 'coach' && filters.client_id) return { data: db.checkinLink ? { id: 'l' } : null };
+  if (table === 'profiles' && filters.id === 'client1') return { data: db.checkinClient };
+  if (table === 'profiles' && filters.id === 'coach') return { data: { name: 'Jordan Lee' } };
   if (table === 'trainer_clients') return { data: db.links };
   if (table === 'push_subscriptions') return { data: [sub] };
   if (table === 'food_logs') return { data: [] };
@@ -34,6 +39,7 @@ beforeEach(() => {
   sendNotification.mockReset().mockResolvedValue(undefined);
   db = {
     reminderProfiles: [], updates: [], digestError: false,
+    forms: [], checkinResponses: [], checkinLink: true, checkinError: false, checkinClient: { notify_trainer_comments: true, reminder_timezone: null },
     trainers: [{ id: 'trainer', reminder_timezone: 'UTC', activity_alert_last_sent_date: null }],
     links: [
       { client_id: 'quiet', created_at: '2026-08-01T00:00:00Z' },
@@ -100,3 +106,51 @@ describe('inactive-client digest', () => {
     expect(res.body.digest).toEqual({ checked: 0, sent: 0 });
   });
 });
+
+describe('check-in due nudges', () => {
+  const dayMs = 86400000;
+  const dueForm = () => ({ id: 'f1', client_id: 'client1', trainer_id: 'coach', cadence_days: 7, created_at: new Date(Date.now() - 20 * dayMs).toISOString(), last_notified_at: null });
+  beforeEach(() => { db.trainers = []; db.forms = [dueForm()]; });
+
+  it('nudges a client whose check-in is due, and stamps it so it is not repeated', async () => {
+    const res = await run();
+    expect(res.body.checkins).toEqual({ checked: 1, sent: 1 });
+    expect(JSON.parse(sendNotification.mock.calls.at(-1)[1])).toEqual({ title: 'Attune', body: 'Jordan sent you a check-in', url: '/coach' });
+    expect(db.updates).toContainEqual(expect.objectContaining({ table: 'checkin_forms', payload: expect.objectContaining({ last_notified_at: expect.any(String) }), filters: { id: 'f1' } }));
+  });
+
+  it('does not nudge a form already notified for this due date', async () => {
+    db.forms = [{ ...dueForm(), last_notified_at: new Date().toISOString() }];
+    expect((await run()).body.checkins.sent).toBe(0);
+  });
+
+  it('does not nudge when the client answered recently', async () => {
+    db.checkinResponses = [{ form_id: 'f1', created_at: new Date(Date.now() - 2 * dayMs).toISOString() }];
+    expect((await run()).body.checkins.sent).toBe(0);
+  });
+
+  it('respects the client\'s opt-out, and a disconnected coach', async () => {
+    db.checkinClient = { notify_trainer_comments: false, reminder_timezone: null };
+    expect((await run()).body.checkins.sent).toBe(0);
+    db.checkinClient = { notify_trainer_comments: true, reminder_timezone: null };
+    db.checkinLink = false;
+    expect((await run()).body.checkins.sent).toBe(0);
+  });
+
+  it('stays quiet in the client\'s small hours, when their timezone is known', async () => {
+    db.checkinClient = { notify_trainer_comments: true, reminder_timezone: 'Australia/Sydney' }; // 20:00 UTC-day10:00 -> 20:00 in Sydney: awake
+    expect((await run()).body.checkins.sent).toBe(1);
+    sendNotification.mockClear();
+    vi.setSystemTime(new Date('2026-09-20T17:00:00Z')); // 03:00 next day in Sydney
+    db.forms = [dueForm()];
+    expect((await run()).body.checkins.sent).toBe(0);
+  });
+
+  it('is harmless before the check-in tables exist, and never breaks the response', async () => {
+    db.checkinError = true;
+    const res = await run();
+    expect(res.code).toBe(200);
+    expect(res.body.checkins).toEqual({ checked: 0, sent: 0 });
+  });
+});
+

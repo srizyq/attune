@@ -17,6 +17,7 @@ export const COACH_CAN_DO = [
   { icon: 'ti-message-circle', text: 'Message you and leave notes' },
   { icon: 'ti-target', text: 'Change your calorie, macro and nutrient targets' },
   { icon: 'ti-bookmark', text: 'Add recipes to your saved meals' },
+  { icon: 'ti-clipboard-check', text: 'Send you a check-in form to fill in' },
 ];
 
 export const COACH_REASSURANCE = 'You can disconnect at any time, and they lose access immediately.';

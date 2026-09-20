@@ -58,3 +58,35 @@ export function pickInactive(links, lastLogByClient, today, days = 3) {
 export function digestDue(localTime, lastSentDate, localDate, notBefore = '09:00') {
   return lastSentDate !== localDate && localTime >= notBefore;
 }
+
+// ── check-in due notifications ──────────────────────────────────────────────
+
+export function checkinPayload(coachName) {
+  return { title: 'Attune', body: `${firstName(coachName, 'Your coach')} sent you a check-in`, url: '/coach' };
+}
+
+// Which check-in forms should nudge their client right now? One that is due
+// (a form never answered is due from creation; otherwise `cadence_days` after
+// the last answer) and hasn't already been nudged for *this* due date —
+// last_notified_at is stamped when a push goes out, so a client who ignores it
+// isn't re-pinged every 15 minutes, but the next cycle notifies again.
+// forms: [{ id, cadence_days, created_at, last_notified_at }];
+// lastResponseByForm: { [formId]: ISO timestamp }.
+export function pickDueForms(forms, lastResponseByForm, nowMs = Date.now()) {
+  const day = 86400000;
+  return (forms || []).filter((form) => {
+    const last = lastResponseByForm?.[form.id];
+    const dueAt = last ? new Date(last).getTime() + form.cadence_days * day : new Date(form.created_at).getTime();
+    if (!Number.isFinite(dueAt) || nowMs < dueAt) return false;
+    const notifiedAt = form.last_notified_at ? new Date(form.last_notified_at).getTime() : null;
+    return notifiedAt == null || notifiedAt < dueAt;
+  });
+}
+
+// Don't buzz someone at 3am: only between 08:00 and 21:00 in their own
+// timezone (localTime is 'HH:MM'). Callers skip this check when the person's
+// timezone isn't known.
+export function withinWakingHours(localTime) {
+  return localTime >= '08:00' && localTime <= '21:00';
+}
+

@@ -908,3 +908,85 @@ export async function getSignedPhotoUrls(paths, expiresInSeconds = 3600) {
   return Object.fromEntries((data || []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
 }
 
+// ─── weekly check-in forms ──────────────────────────────────────────────────
+// Each returns { supported: false } until the database update that creates the
+// tables has been applied, so callers can hide the feature instead of failing.
+
+export async function getCheckinForm(trainerId, clientId) {
+  const { data, error } = await supabase
+    .from('checkin_forms')
+    .select('*')
+    .eq('trainer_id', trainerId)
+    .eq('client_id', clientId)
+    .maybeSingle();
+  if (error) {
+    if (isMissingTable(error)) return { supported: false, form: null };
+    throw error;
+  }
+  return { supported: true, form: data };
+}
+
+// One form per coach/client pair, edited in place.
+export async function saveCheckinForm(trainerId, clientId, { title, questions, cadenceDays, isActive }) {
+  const { data, error } = await supabase
+    .from('checkin_forms')
+    .upsert(
+      { trainer_id: trainerId, client_id: clientId, title, questions, cadence_days: cadenceDays, is_active: isActive },
+      { onConflict: 'trainer_id,client_id' }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCheckinForm(id) {
+  const { error } = await supabase.from('checkin_forms').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// A client's recent submitted check-ins, newest first (a coach reads these).
+export async function getCheckinResponses(clientId, limit = 12) {
+  const { data, error } = await supabase
+    .from('checkin_responses')
+    .select('id, created_at, questions_snapshot, answers')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    if (isMissingTable(error)) return { supported: false, rows: [] };
+    throw error;
+  }
+  return { supported: true, rows: data };
+}
+
+// The forms a coach has set for the signed-in client, each with when it was
+// last answered.
+export async function getMyCheckinForms() {
+  const { data: forms, error } = await supabase
+    .from('checkin_forms')
+    .select('id, title, questions, cadence_days, is_active, created_at, trainer:profiles!checkin_forms_trainer_id_fkey(name)')
+    .eq('is_active', true);
+  if (error) {
+    if (isMissingTable(error)) return { supported: false, forms: [] };
+    throw error;
+  }
+  if (forms.length === 0) return { supported: true, forms: [] };
+  const { data: responses, error: responseError } = await supabase
+    .from('checkin_responses')
+    .select('form_id, created_at')
+    .in('form_id', forms.map((f) => f.id))
+    .order('created_at', { ascending: false });
+  if (responseError) throw responseError;
+  const last = new Map();
+  for (const r of responses) if (!last.has(r.form_id)) last.set(r.form_id, r.created_at);
+  return { supported: true, forms: forms.map((f) => ({ ...f, last_response_at: last.get(f.id) || null })) };
+}
+
+// Only form_id and answers are sent — the database fills in the coach, the
+// client and a snapshot of the questions, and validates the answers.
+export async function submitCheckinResponse(formId, answers) {
+  const { error } = await supabase.from('checkin_responses').insert({ form_id: formId, answers });
+  if (error) throw error;
+}
+
