@@ -8,6 +8,7 @@ import CoachNote from './CoachNote';
 import CoachChatModal from './CoachChatModal';
 import CoachConsentCard from './CoachConsentCard';
 import CoachCheckinCard from './CoachCheckinCard';
+import MealPlanCard from './MealPlanCard';
 import { coachPassButtonLabel } from '../lib/coachPass';
 
 const COACH_PASS_PRICE = 'A$19.99/month';
@@ -249,6 +250,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
       {trainer && (
         <>
           <CoachCheckinCard />
+          <MealPlanCard />
 
           {hasTargets && (
             <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>

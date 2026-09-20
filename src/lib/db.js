@@ -990,3 +990,51 @@ export async function submitCheckinResponse(formId, answers) {
   if (error) throw error;
 }
 
+// ─── meal plans ─────────────────────────────────────────────────────────────
+
+export async function getMealPlan(trainerId, clientId) {
+  const { data, error } = await supabase
+    .from('meal_plans')
+    .select('*')
+    .eq('trainer_id', trainerId)
+    .eq('client_id', clientId)
+    .maybeSingle();
+  if (error) {
+    if (isMissingTable(error)) return { supported: false, plan: null };
+    throw error;
+  }
+  return { supported: true, plan: data };
+}
+
+// One plan per coach/client pair, edited in place.
+export async function saveMealPlan(trainerId, clientId, { name, notes, days, isActive }) {
+  const { data, error } = await supabase
+    .from('meal_plans')
+    .upsert(
+      { trainer_id: trainerId, client_id: clientId, name, notes: notes || null, days, is_active: isActive },
+      { onConflict: 'trainer_id,client_id' }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteMealPlan(id) {
+  const { error } = await supabase.from('meal_plans').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// The active plan(s) coaches have set for the signed-in client.
+export async function getMyMealPlans() {
+  const { data, error } = await supabase
+    .from('meal_plans')
+    .select('id, name, notes, days, updated_at, trainer:profiles!meal_plans_trainer_id_fkey(name)')
+    .eq('is_active', true);
+  if (error) {
+    if (isMissingTable(error)) return { supported: false, plans: [] };
+    throw error;
+  }
+  return { supported: true, plans: data };
+}
+

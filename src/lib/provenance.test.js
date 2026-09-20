@@ -10,6 +10,7 @@ describe('provenanceOf', () => {
     expect(['ai-estimate', 'photo', 'menu', 'common-dish'].map(provenanceOf)).toEqual(['ai', 'ai', 'ai', 'ai']);
     expect(provenanceOf('custom')).toBe('custom');
     expect(provenanceOf('recipe')).toBe('recipe');
+    expect(provenanceOf('plan')).toBe('plan');
   });
   it('is case-insensitive and never throws on odd input', () => {
     expect(provenanceOf('AUSNUT')).toBe('verified');

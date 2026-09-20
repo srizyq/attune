@@ -2056,3 +2056,103 @@ create policy "checkin_responses: trainer select for active client" on public.ch
     and exists (select 1 from public.trainer_clients tc where tc.trainer_id = auth.uid() and tc.client_id = checkin_responses.client_id and tc.status = 'active')
   );
 -- No update or delete policy: a submitted check-in is a record.
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Meal plans (schema update — run against an existing DB; safe to re-run).
+-- Tests: supabase/tests/meal-plans.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- The shape of a plan's content, checked in the database so a malformed or
+-- oversized plan can never be stored: { mon..sun: { breakfast|lunch|dinner|
+-- snacks: [ { name, label?, calories?, protein_g?, carbs_g?, fat_g? } ] } },
+-- at most 20 items a meal, sensible number ranges, 200 KB overall.
+-- src/lib/mealPlan.js mirrors this; its tests are the drift guard.
+create or replace function public.valid_meal_plan_days(d jsonb)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  day_key text; day_val jsonb;
+  meal_key text; meal_val jsonb;
+  item jsonb;
+  k text; v jsonb; n numeric; lim numeric;
+begin
+  if d is null or jsonb_typeof(d) is distinct from 'object' then return false; end if;
+  if octet_length(d::text) > 200000 then return false; end if;
+  for day_key, day_val in select key, value from jsonb_each(d) loop
+    if day_key not in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun') then return false; end if;
+    if jsonb_typeof(day_val) is distinct from 'object' then return false; end if;
+    for meal_key, meal_val in select key, value from jsonb_each(day_val) loop
+      if meal_key not in ('breakfast', 'lunch', 'dinner', 'snacks') then return false; end if;
+      if jsonb_typeof(meal_val) is distinct from 'array' or jsonb_array_length(meal_val) > 20 then return false; end if;
+      for item in select value from jsonb_array_elements(meal_val) loop
+        if jsonb_typeof(item) is distinct from 'object' then return false; end if;
+        if jsonb_typeof(item -> 'name') is distinct from 'string' or char_length(item ->> 'name') not between 1 and 120 then return false; end if;
+        for k, v in select key, value from jsonb_each(item) loop
+          if k = 'name' then
+            continue;
+          elsif k = 'label' then
+            if jsonb_typeof(v) is distinct from 'string' or char_length(v #>> '{}') > 60 then return false; end if;
+          elsif k in ('calories', 'protein_g', 'carbs_g', 'fat_g') then
+            if jsonb_typeof(v) is distinct from 'number' then return false; end if;
+            n := (v #>> '{}')::numeric;
+            -- (a variable, not an inline CASE: plpgsql's IF..THEN parser would
+            -- stop at the CASE's own THEN.)
+            lim := case when k = 'calories' then 5000 else 1000 end;
+            if n < 0 or n > lim then return false; end if;
+          else
+            return false;
+          end if;
+        end loop;
+      end loop;
+    end loop;
+  end loop;
+  return true;
+end;
+$$;
+
+-- One plan per coach/client pair, edited in place; the client reads (never
+-- changes) the active one while the link is active.
+create table if not exists public.meal_plans (
+  id uuid primary key default gen_random_uuid(),
+  trainer_id uuid not null references public.profiles (id) on delete cascade,
+  client_id uuid not null references public.profiles (id) on delete cascade,
+  name text not null default 'Meal plan' check (char_length(name) between 1 and 80),
+  notes text check (notes is null or char_length(notes) <= 2000),
+  days jsonb not null default '{}'::jsonb check (public.valid_meal_plan_days(days)),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (trainer_id, client_id)
+);
+alter table public.meal_plans enable row level security;
+
+drop policy if exists "meal_plans: trainer select own" on public.meal_plans;
+create policy "meal_plans: trainer select own" on public.meal_plans for select using (auth.uid() = trainer_id);
+drop policy if exists "meal_plans: trainer insert for active client" on public.meal_plans;
+create policy "meal_plans: trainer insert for active client" on public.meal_plans
+  for insert with check (
+    auth.uid() = trainer_id
+    and exists (select 1 from public.trainer_clients tc where tc.trainer_id = auth.uid() and tc.client_id = meal_plans.client_id and tc.status = 'active')
+  );
+drop policy if exists "meal_plans: trainer update own" on public.meal_plans;
+create policy "meal_plans: trainer update own" on public.meal_plans for update using (auth.uid() = trainer_id) with check (auth.uid() = trainer_id);
+drop policy if exists "meal_plans: trainer delete own" on public.meal_plans;
+create policy "meal_plans: trainer delete own" on public.meal_plans for delete using (auth.uid() = trainer_id);
+drop policy if exists "meal_plans: client select active plan" on public.meal_plans;
+create policy "meal_plans: client select active plan" on public.meal_plans
+  for select using (
+    auth.uid() = client_id and is_active
+    and exists (select 1 from public.trainer_clients tc where tc.trainer_id = meal_plans.trainer_id and tc.client_id = auth.uid() and tc.status = 'active')
+  );
+
+drop trigger if exists protect_meal_plans_link_trigger on public.meal_plans;
+create trigger protect_meal_plans_link_trigger
+  before update on public.meal_plans
+  for each row execute function public.protect_trainer_link_columns();
+drop trigger if exists touch_meal_plans_trigger on public.meal_plans;
+create trigger touch_meal_plans_trigger
+  before update on public.meal_plans
+  for each row execute function public.touch_updated_at();

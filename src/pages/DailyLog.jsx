@@ -6,6 +6,7 @@ import { todayLocalDate } from '../lib/patterns';
 import { hourToHHMM } from '../lib/mealTime';
 import AppNav from '../components/AppNav';
 import CoachNote from '../components/CoachNote';
+import TodayPlanStrip from '../components/TodayPlanStrip';
 import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import HourlyTimeline from '../components/HourlyTimeline';
@@ -134,6 +135,8 @@ export default function DailyLog() {
             </div>
             {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', marginTop: 8 }}>{viewSaveError}</p>}
           </div>
+
+          <TodayPlanStrip date={selectedDate} style={{ marginBottom: 20 }} />
 
           {nutritionCoachNote && <CoachNote note={nutritionCoachNote} onDismiss={dismissNutritionCoachNote} style={{ marginBottom: 20 }} />}
 

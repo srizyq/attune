@@ -7,6 +7,13 @@ export default defineConfig({
   server: {
     port: Number(process.env.PORT) || 5183,
   },
+  // Generous timeouts: the SQL tests boot an in-process Postgres and every
+  // component test spins up jsdom, so on a busy machine (or CI) the 5s default
+  // fails tests that are merely slow, not broken.
+  test: {
+    testTimeout: 30000,
+    hookTimeout: 120000,
+  },
   plugins: [
     react(),
     VitePWA({
