@@ -64,10 +64,21 @@ export function sliceMigration(titleFragment) {
   throw new Error(`No migration titled "${titleFragment}"`);
 }
 
+// Building the schema takes a second or more, and every test wants a pristine
+// database — so build it once per test file and hand each test a clone.
+let templatePromise = null;
+function template() {
+  templatePromise ??= (async () => {
+    const db = new PGlite({ extensions: { pg_trgm } });
+    await db.exec(SUPABASE_STUBS);
+    await db.exec(readSchema());
+    return db;
+  })();
+  return templatePromise;
+}
+
 export async function createDb({ extraSql = [] } = {}) {
-  const db = new PGlite({ extensions: { pg_trgm } });
-  await db.exec(SUPABASE_STUBS);
-  await db.exec(readSchema());
+  const db = await (await template()).clone();
   for (const sql of extraSql) await db.exec(sql);
   return db;
 }

@@ -5,7 +5,6 @@ import OnboardingLayout from '../../components/OnboardingLayout';
 import { supabase, emailRedirectTo } from '../../lib/supabase';
 import { getProfile, upsertProfile, upsertWeightLog } from '../../lib/db';
 import { todayLocalDate } from '../../lib/patterns';
-import { TRIAL_DAYS } from '../../lib/trial';
 
 // Writing to `profiles` immediately after a fresh signInAnonymously()
 // can occasionally hit "new row violates row-level security policy"
@@ -170,13 +169,17 @@ export default function Step4() {
     // Starts the free trial clock the moment real credentials attach —
     // not at the signInAnonymously() above, which happens before anyone's
     // committed to an actual account (see trial_ends_at's comment in
-    // schema.sql). Non-fatal like the name upsert above: a trial that
-    // fails to start here is a lost perk, not a blocked signup, so it
-    // doesn't hold up navigating to email confirmation.
+    // schema.sql). Goes through start_free_trial() rather than writing
+    // trial_ends_at directly: the profile row already exists by now, and a
+    // direct client write to that column is (deliberately) reverted by
+    // protect_privileged_profile_columns. Non-fatal like the name upsert
+    // above: a trial that fails to start here is a lost perk, not a blocked
+    // signup, so it doesn't hold up navigating to email confirmation.
     try {
-      await withRetry(() => upsertProfile(userIdRef.current, {
-        trial_ends_at: new Date(Date.now() + TRIAL_DAYS * 86400000).toISOString(),
-      }));
+      await withRetry(async () => {
+        const { error: trialError } = await supabase.rpc('start_free_trial');
+        if (trialError) throw trialError;
+      }, 2);
     } catch (err) {
       console.error('Failed to start free trial:', err);
     }

@@ -14,7 +14,7 @@ export const COACH_CAN_SEE = [
 
 export const COACH_CAN_DO = [
   { icon: 'ti-message-circle', text: 'Message you and leave notes' },
-  { icon: 'ti-target', text: 'Change your calorie and macro targets' },
+  { icon: 'ti-target', text: 'Change your calorie, macro and nutrient targets' },
   { icon: 'ti-bookmark', text: 'Add recipes to your saved meals' },
 ];
 

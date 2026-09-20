@@ -2,6 +2,8 @@ import DayHeatmapStrip from '../DayHeatmapStrip';
 import MacroSplitBar from '../MacroSplitBar';
 import StreakItem from '../StreakItem';
 import TargetsForm from './TargetsForm';
+import MicroTargetsCard from './MicroTargetsCard';
+import WeeklySummaryCard from './WeeklySummaryCard';
 import { Card, SectionLabel, StatRow, StatCard, EmptyChartBox, RangeToggle } from './shared';
 import { ACCENT, WATER_BLUE, AI_PURPLE, GOAL_LABELS, RANGES } from './constants';
 import { attentionFlags } from '../../lib/clientInsights';
@@ -25,7 +27,7 @@ function AttentionFlags({ summary, today }) {
   );
 }
 
-export default function OverviewTab({ clientData, d, editingTargets, setEditingTargets, onSaveTargets, summary }) {
+export default function OverviewTab({ clientData, d, editingTargets, setEditingTargets, onSaveTargets, onSaveMicroTargets, summary }) {
   const handleSaveTargets = onSaveTargets;
   const { calorieTarget, historyLoading, calorieHeatmapDays } = d;
   const { hasData, loggedDays, energyDays, avgCalories, avgProtein, avgCarbs, avgFat, daysOnTarget, avgEnergy } = d.stats;
@@ -34,6 +36,7 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
   return (
     <div>
       <AttentionFlags summary={summary} today={d.today} />
+      <WeeklySummaryCard summary={summary} clientData={clientData} today={d.today} />
       <div className="grid-2" style={{ marginBottom: 16, alignItems: 'start' }}>
         <Card style={{ marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
@@ -67,6 +70,8 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
           <StatCard label="Avg. energy" value={avgEnergy || '—'} hint={avgEnergy ? `over ${energyDays.length} check-ins` : 'No check-ins yet'} color={AI_PURPLE} />
         </div>
       </div>
+
+      <MicroTargetsCard clientData={clientData} onSave={onSaveMicroTargets} />
 
       <div style={{ marginBottom: 16 }}>
         <RangeToggle value={d.range} onChange={d.setRange} options={RANGES} />

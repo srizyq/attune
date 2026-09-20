@@ -122,3 +122,49 @@ export function activityLabel(s, today) {
   if (since === 1) return 'Last logged yesterday';
   return `Last logged ${since} days ago`;
 }
+
+// ── weekly summary ──────────────────────────────────────────────────────────
+
+const shortDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+const fromKgTo = (kg, unit) => (unit === 'lb' ? kg / 0.45359237 : kg);
+const oneDp = (n) => (Math.round(n * 10) / 10).toString();
+
+// A few plain-English lines a coach can read at a glance or paste into a
+// message to the client — deterministic (no AI, so no invented claims) and
+// built only from the numbers get_client_summaries already returns.
+// Returns { lines, text }, or null when there's no summary to describe.
+export function weeklySummary(s, { today, name, unit = 'kg' } = {}) {
+  if (!s) return null;
+  const lines = [];
+  const logged = Number(s.days_logged_7d) || 0;
+
+  const avg = s.avg_cal_7d != null ? Math.round(Number(s.avg_cal_7d)) : null;
+  let logging = `Logged food on ${logged} of the last 7 days`;
+  if (avg != null && logged > 0) logging += ` (average ${avg.toLocaleString()} kcal${s.calorie_target ? `, target ${Number(s.calorie_target).toLocaleString()}` : ''})`;
+  lines.push(logging);
+
+  if (logged > 0 && (s.calorie_target || s.protein_g)) {
+    const parts = [];
+    if (s.calorie_target) parts.push(`within 15% of calorie target on ${Number(s.days_on_target_7d) || 0} of ${logged} logged days`);
+    if (s.protein_g) parts.push(`protein target (90%+) met on ${Number(s.days_protein_7d) || 0}`);
+    lines.push(parts.join('; ').replace(/^./, (c) => c.toUpperCase()));
+  }
+
+  if (s.latest_weight_kg != null) {
+    const now = oneDp(fromKgTo(Number(s.latest_weight_kg), unit));
+    if (s.weight_change_kg_14d != null) {
+      const change = fromKgTo(Number(s.weight_change_kg_14d), unit);
+      const sign = change > 0 ? '+' : change < 0 ? '−' : '';
+      lines.push(`Weight ${sign}${oneDp(Math.abs(change))} ${unit} over the last 2 weeks (now ${now} ${unit})`);
+    } else {
+      lines.push(`Weight ${now} ${unit} (no earlier weigh-in in the last 2 weeks to compare)`);
+    }
+  }
+
+  const since = daysSinceLastLog(s, today);
+  lines.push(since == null ? 'Has never logged food' : since === 0 ? 'Last logged today' : since === 1 ? 'Last logged yesterday' : `Last logged ${since} days ago`);
+
+  const first = String(name ?? '').trim().split(/\s+/)[0] || 'Client';
+  const header = `${first} — the 7 days to ${today ? shortDate(today) : 'today'}`;
+  return { header, lines, text: [header, ...lines.map((l) => `• ${l}`)].join('\n') };
+}

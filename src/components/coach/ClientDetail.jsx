@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { setClientTargets } from '../../lib/db';
+import { setClientTargets, setClientMicroTargets } from '../../lib/db';
 import { adherenceScore, adherenceTone } from '../../lib/clientInsights';
 import { useClientDashboard } from './useClientDashboard';
 import { ClientAvatar } from './shared';
@@ -40,6 +40,11 @@ export default function ClientDetail({ client, summary }) {
     await setClientTargets(client.id, fields);
     setClientData(prev => ({ ...prev, ...fields }));
     setEditingTargets(false);
+  };
+
+  const handleSaveMicroTargets = async (targets) => {
+    await setClientMicroTargets(client.id, targets);
+    setClientData(prev => ({ ...prev, micro_targets: targets }));
   };
 
   const d = useClientDashboard(client, clientData);
@@ -108,7 +113,7 @@ export default function ClientDetail({ client, summary }) {
 
       <div role="tabpanel" id={`client-panel-${tab}`} aria-labelledby={`client-tab-${tab}`}>
         {tab === 'overview' && (
-          <OverviewTab clientData={clientData} d={d} summary={summary} editingTargets={editingTargets} setEditingTargets={setEditingTargets} onSaveTargets={handleSaveTargets} />
+          <OverviewTab clientData={clientData} d={d} summary={summary} editingTargets={editingTargets} setEditingTargets={setEditingTargets} onSaveTargets={handleSaveTargets} onSaveMicroTargets={handleSaveMicroTargets} />
         )}
         {tab === 'diary' && <DiaryTab d={d} />}
         {tab === 'progress' && <ProgressTab d={d} />}

@@ -132,6 +132,31 @@ describe('buildReport — weight, energy, workouts, micros', () => {
   });
 });
 
+describe('buildReport — data sources', () => {
+  const foodLogs = [
+    log('2026-09-14', 'lunch', 700, { source: 'ausnut' }),
+    log('2026-09-14', 'dinner', 300, { source: 'photo' }),
+    log('2026-09-15', 'lunch', 1000, { source: 'photo' }), // a day the filter excludes below
+  ];
+  it('reports where the included days\' calories came from', () => {
+    const r = buildReport({ ...base, foodLogs, dayFilter: 'all' });
+    expect(r.summary.sources.map((x) => [x.key, x.pct])).toEqual([['ai', 65], ['verified', 35]]);
+  });
+  it('counts only the days that pass the filter, like every other average', () => {
+    // 09-14 has three meal slots (complete); 09-15's 1,000 AI calories are on an
+    // incomplete day and must not drag the mix towards "AI estimate".
+    const r = buildReport({ ...base, foodLogs: foodLogs.concat(log('2026-09-14', 'breakfast', 0, { source: 'photo' })), dayFilter: 'complete' });
+    expect(r.summary.sources.map((x) => [x.key, x.pct])).toEqual([['verified', 70], ['ai', 30]]);
+  });
+  it('is empty when nothing was logged, and printed in the document', () => {
+    expect(buildReport({ ...base }).summary.sources).toEqual([]);
+    const html = buildReportHtml(buildReport({ ...base, foodLogs }));
+    expect(html).toContain('Data sources (by calories)');
+    expect(html).toContain('65% ai estimate · 35% verified');
+    expect(buildReportHtml(buildReport({ ...base }))).toContain('<span>Data sources (by calories)</span><strong>—</strong>');
+  });
+});
+
 describe('csvCell', () => {
   it('quotes commas, quotes and newlines', () => {
     expect(csvCell('a,b')).toBe('"a,b"');

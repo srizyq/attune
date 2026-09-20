@@ -35,6 +35,7 @@ export function mapRow(row) {
     loggedAmount: row.logged_amount != null ? Number(row.logged_amount) : null,
     loggedUnit: row.logged_unit || null,
     servingLabel: row.serving_label || null,
+    source: row.source || null,
     loggedAt: row.logged_at || null,
     createdAt: row.created_at || null,
   };

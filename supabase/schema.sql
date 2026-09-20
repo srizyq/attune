@@ -1610,3 +1610,162 @@ as $$
 $$;
 revoke all on function public.client_last_log_dates(uuid[]) from public, anon, authenticated;
 grant execute on function public.client_last_log_dates(uuid[]) to service_role;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Trainer-set nutrient targets (schema update — run against an existing DB;
+-- safe to re-run). Tests: supabase/tests/coach-targets.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- The one place SQL knows which nutrients exist. Must list exactly the keys
+-- in src/lib/microNutrients.js — supabase/tests/coach-targets.test.js fails
+-- if the two drift, so adding a nutrient in JS can't silently leave a
+-- trainer unable to set its target.
+create or replace function public.micro_nutrient_keys()
+returns text[]
+language sql
+immutable
+as $$
+  select array[
+    'fibre', 'sodium', 'sugar', 'saturatedFat', 'transFat', 'cholesterol', 'addedSugar', 'potassium',
+    'vitaminD', 'calcium', 'iron', 'vitaminA', 'vitaminC', 'vitaminB12', 'folate', 'magnesium', 'zinc',
+    'polyunsaturatedFat', 'monounsaturatedFat'
+  ]::text[];
+$$;
+
+-- A trainer sets a connected client's per-nutrient targets, replacing the
+-- whole map (a nutrient left out means "use the default guideline", the same
+-- meaning profiles.micro_targets has everywhere else). SECURITY DEFINER for
+-- the same reason as set_client_targets — profiles' own RLS only lets a user
+-- write their own row — so it validates everything itself: an active link,
+-- known nutrient keys, numeric values in a sane range. Blank/null entries are
+-- dropped rather than stored.
+create or replace function public.set_client_micro_targets(p_client_id uuid, p_targets jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  k text;
+  v jsonb;
+  n numeric;
+  clean jsonb := '{}'::jsonb;
+begin
+  if not exists (
+    select 1 from public.trainer_clients
+    where trainer_id = auth.uid() and client_id = p_client_id and status = 'active'
+  ) then
+    raise exception 'Not an active trainer for this client';
+  end if;
+  if p_targets is null or jsonb_typeof(p_targets) <> 'object' then
+    raise exception 'Targets must be an object of nutrient to number';
+  end if;
+
+  for k, v in select key, value from jsonb_each(p_targets) loop
+    if not (k = any (public.micro_nutrient_keys())) then
+      raise exception 'Unknown nutrient: %', k;
+    end if;
+    if v is null or jsonb_typeof(v) = 'null' then
+      continue;
+    end if;
+    if jsonb_typeof(v) <> 'number' then
+      raise exception 'Target for % must be a number', k;
+    end if;
+    n := (v #>> '{}')::numeric;
+    if n < 0 or n > 100000 then
+      raise exception 'Target for % is out of range', k;
+    end if;
+    clean := clean || jsonb_build_object(k, n);
+  end loop;
+
+  update public.profiles set micro_targets = clean, updated_at = now() where id = p_client_id;
+end;
+$$;
+revoke all on function public.set_client_micro_targets(uuid, jsonb) from public, anon;
+grant execute on function public.set_client_micro_targets(uuid, jsonb) to authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Start the free trial server-side (schema update — run against an existing
+-- DB; safe to re-run). Tests: supabase/tests/free-trial.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- protect_privileged_profile_columns (above) reverts any client write to
+-- trial_ends_at, which is what stops a user granting themselves a trial. But
+-- onboarding/Step4 used to start the trial with exactly such a write — and by
+-- then the profile row already exists, so it became an UPDATE that the
+-- trigger silently reverted: no new signup got their 30 days. The trial now
+-- starts through start_free_trial(), which picks the date itself (the caller
+-- can't choose it), only ever sets it once, and only for accounts created
+-- since the trial launched that have attached an email.
+
+-- Same protections as before; the only change is that trial_ends_at may be
+-- set from null by start_free_trial() below, which flags its own transaction.
+create or replace function public.protect_privileged_profile_columns()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if auth.role() <> 'service_role' then
+    new.is_premium := old.is_premium;
+    new.coach_pass := old.coach_pass;
+    new.coach_mode := old.coach_mode;
+    new.coach_pass_status := old.coach_pass_status;
+    new.pro_status := old.pro_status;
+    new.stripe_customer_id := old.stripe_customer_id;
+    new.stripe_subscription_id := old.stripe_subscription_id;
+    new.stripe_pro_subscription_id := old.stripe_pro_subscription_id;
+    if not (old.trial_ends_at is null and coalesce(current_setting('app.allow_trial_start', true), '') = 'on') then
+      new.trial_ends_at := old.trial_ends_at;
+    end if;
+    new.photo_scans_used := old.photo_scans_used;
+    new.photo_scans_period_start := old.photo_scans_period_start;
+    new.menu_scans_used := old.menu_scans_used;
+    new.menu_scans_period_start := old.menu_scans_period_start;
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.start_free_trial()
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  existing timestamptz;
+  acct record;
+  ends timestamptz;
+begin
+  if uid is null then
+    raise exception 'Not signed in';
+  end if;
+
+  select trial_ends_at into existing from public.profiles where id = uid;
+  if existing is not null then
+    return existing;
+  end if;
+
+  select created_at, email, new_email into acct from auth.users where id = uid;
+  -- New signups only: created since the trial launched (2026-09-18), and
+  -- has attached real credentials (email is empty until confirmed, so
+  -- new_email counts too).
+  if acct.created_at is null or acct.created_at < timestamptz '2026-09-18 00:00:00+00' then
+    return null;
+  end if;
+  if coalesce(acct.email, '') = '' and coalesce(acct.new_email, '') = '' then
+    return null;
+  end if;
+
+  ends := now() + interval '30 days';
+  perform set_config('app.allow_trial_start', 'on', true);
+  update public.profiles set trial_ends_at = ends where id = uid and trial_ends_at is null;
+  perform set_config('app.allow_trial_start', 'off', true);
+  return ends;
+end;
+$$;
+
+revoke all on function public.start_free_trial() from public, anon;
+grant execute on function public.start_free_trial() to authenticated;

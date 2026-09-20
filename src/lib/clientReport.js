@@ -5,6 +5,7 @@
 import { MICRO_NUTRIENTS } from './microNutrients';
 import { toKg, fromKg } from './adaptiveTDEE';
 import { daysBetween } from './dates';
+import { provenanceBreakdown, describeBreakdown } from './provenance';
 
 export const MAX_REPORT_DAYS = 366;
 
@@ -107,7 +108,13 @@ export function buildReport({ client, start, end, dayFilter = 'all', foodLogs = 
     weight = { first, last, change: round(last - first, 1), unit, entries: sortedWeights.length };
   }
 
+  // Where the included days' calories came from, so a reader can weigh how
+  // exact the totals are (a report full of AI estimates is a rougher guide).
+  const includedDates = new Set(included.map((d) => d.date));
+  const sources = provenanceBreakdown(foodLogs.filter((l) => includedDates.has(l.logged_date)));
+
   const summary = {
+    sources,
     rangeDays: days.length,
     includedDays: included.length,
     loggedDays: days.filter((d) => d.logged).length,
@@ -218,6 +225,7 @@ ${kv('Complete days (3+ meals)', `${summary.completeDays} of ${summary.rangeDays
 ${kv('Average calories', `${summary.avgCalories.toLocaleString()} kcal`)}
 ${kv('Average protein / carbs / fat', `${summary.avgProtein} / ${summary.avgCarbs} / ${summary.avgFat} g`)}
 ${kv('Days within 10% of calorie target', summary.daysOnTarget == null ? '—' : `${summary.daysOnTarget} of ${summary.daysEvaluatedForTarget} logged days`)}
+${kv('Data sources (by calories)', summary.sources.length ? describeBreakdown(summary.sources) : '—')}
 ${kv('Average energy (check-ins)', summary.avgEnergy == null ? '—' : `${summary.avgEnergy} / 10`)}
 ${w ? kv('Weight', `${w.first} → ${w.last} ${w.unit} (${w.change > 0 ? '+' : ''}${w.change} ${w.unit})`) : kv('Weight', 'No entries')}
 ${kv('Workouts', summary.workouts.sessions ? `${summary.workouts.sessions} sessions · ${summary.workouts.minutes} min · ${summary.workouts.calories.toLocaleString()} kcal` : 'None logged')}

@@ -4,6 +4,8 @@ import LogItemRow from '../LogItemRow';
 import MicroCard from '../MicroCard';
 import { Card, SectionLabel, StatRow } from './shared';
 import WorkoutsCard from './WorkoutsCard';
+import ProvenanceBadge from './ProvenanceBadge';
+import { PROVENANCE, provenanceBreakdown } from '../../lib/provenance';
 import { MEAL_LABELS, MICRO_GROUPS } from './constants';
 import { MICRO_NUTRIENTS } from '../../lib/microNutrients';
 import { round1 } from '../../lib/format';
@@ -15,12 +17,28 @@ export default function DiaryTab({ d }) {
   const [expandedId, setExpandedId] = useState(null);
   const { meals, foodLoading, checkin, microTotals, microTargets, hasAnyFood, date, setDate } = d;
   const dayWorkouts = d.workouts.filter(w => w.date === date);
+  // How much of today's intake rests on verified data vs estimates — the
+  // caveat a coach needs before reading the totals as exact.
+  const quality = provenanceBreakdown(Object.values(meals).flat(), (i) => i.cal, (i) => i.source);
 
   return (
     <div>
       <div style={{ margin: '0 0 16px' }}>
         <DaySelector selectedDate={date} onSelect={(day) => { setDate(day); setExpandedId(null); }} />
       </div>
+
+      {quality.length > 0 && (
+        <div style={{ marginBottom: 16 }} aria-label="Data sources for this day">
+          <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', background: 'var(--border-default)', marginBottom: 6 }}>
+            {quality.map(q => (
+              <div key={q.key} title={`${PROVENANCE[q.key].label}: ${q.pct}%`} style={{ width: `${q.pct}%`, background: { good: 'var(--accent)', fair: 'var(--gold)', ai: 'var(--ai-purple)', none: 'var(--text-hint)' }[PROVENANCE[q.key].tone] }} />
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+            Data sources by calories: {quality.map(q => `${q.pct}% ${PROVENANCE[q.key].label.toLowerCase()}`).join(' · ')}
+          </div>
+        </div>
+      )}
 
       <div className="grid-2" style={{ alignItems: 'start', marginBottom: 16 }}>
         <Card style={{ marginBottom: 0 }}>
@@ -53,13 +71,15 @@ export default function DiaryTab({ d }) {
                           <p style={{ color: 'var(--text-hint)', fontSize: 13, padding: '14px 18px' }}>Nothing logged</p>
                         ) : (
                           items.map(item => (
-                            <LogItemRow
-                              key={item.id}
-                              item={item}
-                              isExpanded={expandedId === item.id}
-                              onToggle={() => setExpandedId(prev => (prev === item.id ? null : item.id))}
-                              readOnly
-                            />
+                            <div key={item.id}>
+                              <LogItemRow
+                                item={item}
+                                isExpanded={expandedId === item.id}
+                                onToggle={() => setExpandedId(prev => (prev === item.id ? null : item.id))}
+                                readOnly
+                              />
+                              <div style={{ padding: '0 18px 10px' }}><ProvenanceBadge source={item.source} /></div>
+                            </div>
                           ))
                         )}
                       </div>

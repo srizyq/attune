@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   adherenceScore, adherenceTone, daysSinceLastLog, attentionFlags, needsAttention,
-  matchesSearch, sortSummaries, activityLabel, INACTIVE_DAYS,
+  matchesSearch, sortSummaries, activityLabel, weeklySummary, INACTIVE_DAYS,
 } from './clientInsights.js';
 
 const TODAY = '2026-09-20';
@@ -143,5 +143,48 @@ describe('sortSummaries', () => {
     const input = [ok, quiet];
     sortSummaries(input, 'attention', TODAY);
     expect(input).toEqual([ok, quiet]);
+  });
+});
+
+describe('weeklySummary', () => {
+  const full = row({ avg_cal_7d: 1950.4, latest_weight_kg: 81.44, weight_change_kg_14d: -0.62, days_on_target_7d: 5, days_protein_7d: 4, days_logged_7d: 6 });
+  const w = (s, o = {}) => weeklySummary(s, { today: TODAY, name: 'Sam Client', ...o });
+
+  it('reads as a handful of plain lines, with a copy-ready text block', () => {
+    const r = w(full);
+    expect(r.header).toBe('Sam \u2014 the 7 days to 20 Sept');
+    expect(r.lines).toEqual([
+      'Logged food on 6 of the last 7 days (average 1,950 kcal, target 2,000)',
+      'Within 15% of calorie target on 5 of 6 logged days; protein target (90%+) met on 4',
+      'Weight \u22120.6 kg over the last 2 weeks (now 81.4 kg)',
+      'Last logged today',
+    ]);
+    expect(r.text).toBe(`${r.header}\n${r.lines.map(l => '\u2022 ' + l).join('\n')}`);
+  });
+  it('is null without a summary', () => {
+    expect(weeklySummary(null, { today: TODAY })).toBeNull();
+  });
+  it('converts weight to the client\'s own unit', () => {
+    expect(w(full, { unit: 'lb' }).lines[2]).toBe('Weight \u22121.4 lb over the last 2 weeks (now 179.5 lb)');
+  });
+  it('says so when there is no earlier weigh-in to compare, and omits weight entirely when there is none', () => {
+    expect(w(row({ latest_weight_kg: 80, weight_change_kg_14d: null })).lines.some(l => l.includes('no earlier weigh-in'))).toBe(true);
+    expect(w(row({ latest_weight_kg: null })).lines.some(l => l.startsWith('Weight'))).toBe(false);
+  });
+  it('shows a gain with a plus sign', () => {
+    expect(w(row({ latest_weight_kg: 82, weight_change_kg_14d: 0.7 })).lines.find(l => l.startsWith('Weight'))).toContain('+0.7 kg');
+  });
+  it('leaves out target lines for a client with no targets, and average when nothing was logged', () => {
+    const r = w(row({ calorie_target: null, protein_g: null, days_logged_7d: 0, avg_cal_7d: null, last_log_date: '2026-09-10' }));
+    expect(r.lines).toEqual(['Logged food on 0 of the last 7 days', 'Last logged 10 days ago']);
+  });
+  it('handles a client who has never logged, and missing name/date', () => {
+    const r = weeklySummary(row({ last_log_date: null, days_logged_7d: 0, avg_cal_7d: null, calorie_target: null, protein_g: null }), {});
+    expect(r.lines.at(-1)).toBe('Has never logged food');
+    expect(r.header).toBe('Client \u2014 the 7 days to today');
+  });
+  it('words yesterday and days-ago', () => {
+    expect(w(row({ last_log_date: '2026-09-19' })).lines.at(-1)).toBe('Last logged yesterday');
+    expect(w(row({ last_log_date: '2026-09-16' })).lines.at(-1)).toBe('Last logged 4 days ago');
   });
 });

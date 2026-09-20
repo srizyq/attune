@@ -561,6 +561,17 @@ export async function setClientTargets(clientId, { calorie_target, protein_g, ca
   if (error) throw error;
 }
 
+// Replaces the client's whole per-nutrient target map (a missing nutrient =
+// "use the default guideline"). Validated server-side; see
+// set_client_micro_targets in schema.sql.
+export async function setClientMicroTargets(clientId, targets) {
+  const { error } = await supabase.rpc('set_client_micro_targets', { p_client_id: clientId, p_targets: targets });
+  if (error) {
+    if (isMissingFunctionError(error)) throw new Error('Nutrient targets need the latest database update, which hasn\'t been applied yet.');
+    throw error;
+  }
+}
+
 export async function setClientGroup(trainerClientRowId, groupLabel) {
   const { error } = await supabase
     .from('trainer_clients')
