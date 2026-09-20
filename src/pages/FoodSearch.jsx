@@ -17,6 +17,7 @@ import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
 import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit } from '../lib/foodMath';
 import { ausnutExtraMicros } from '../lib/ausnutFood';
+import { loggedRowToFood, favouriteRowToFood } from '../lib/foodRows';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
 import MenuScanModal from '../components/MenuScanModal';
@@ -1972,83 +1973,27 @@ export default function FoodSearch() {
   // a scroll past everything else to reach the bottom two.
   const [browseTab, setBrowseTab] = useState('frequent');
 
-  const recentFoods = useMemo(() => recentRows.map(row => {
-    const lastAmount = row.logged_amount != null ? Number(row.logged_amount) : null;
-    const lastUnit = row.logged_unit || null;
-    return {
-      id: "recent_" + row.id,
-      name: row.food_name,
-      meta: recentRowMeta(row, "Logged before"),
-      cuisine: "all",
-      cal: Number(row.calories) || 0,
-      protein: Number(row.protein_g) || 0,
-      carbs: Number(row.carbs_g) || 0,
-      fat: Number(row.fat_g) || 0,
-      fibre: 0,
-      sodium: 0,
-      sugar: 0,
-      servingGrams: row.serving_grams || 100,
-      source: row.source || "log",
-      // Row is already the most recent food_logs entry for this name, so
-      // its own logged_amount/logged_unit *is* "last used" — no extra
-      // lookup needed here.
-      lastAmount,
-      lastUnit,
-    };
-  }), [recentRows]);
+  // Recent / Frequent / Favourite cards carry every nutrient of the stored row,
+  // so logging one again keeps its micronutrients (see lib/foodRows.js).
+  const recentFoods = useMemo(() => recentRows.map(row => loggedRowToFood(row, {
+    idPrefix: "recent_", meta: recentRowMeta(row, "Logged before"), cuisine: "all",
+  })), [recentRows]);
 
   // Frequently logged (real log-count data) mapped to the same food-card
   // shape as everything else.
-  const frequentFoods = useMemo(() => frequent.rows.map(row => {
-    const lastAmount = row.logged_amount != null ? Number(row.logged_amount) : null;
-    const lastUnit = row.logged_unit || null;
-    return {
-      id: "freq_" + row.id,
-      name: row.food_name,
-      meta: recentRowMeta(row, "Logged often"),
-      cal: Number(row.calories) || 0,
-      protein: Number(row.protein_g) || 0,
-      carbs: Number(row.carbs_g) || 0,
-      fat: Number(row.fat_g) || 0,
-      fibre: 0,
-      sodium: 0,
-      sugar: 0,
-      servingGrams: row.serving_grams || 100,
-      source: row.source || "log",
-      lastAmount,
-      lastUnit,
-    };
-  }), [frequent.rows]);
+  const frequentFoods = useMemo(() => frequent.rows.map(row => loggedRowToFood(row, {
+    idPrefix: "freq_", meta: recentRowMeta(row, "Logged often"),
+  })), [frequent.rows]);
 
   // Favourites the user has starred, snapshotted at favourite time. Not
   // sourced from food_logs directly, so "last used amount" comes from the
   // separate lastLogged lookup rather than the row itself.
   const favouriteFoods = useMemo(() => favourites.rows.map(row => {
     const last = lastLogged.map.get(row.name.trim().toLowerCase());
-    return {
-      id: "fav_" + row.id,
-      name: row.name,
+    return favouriteRowToFood(row, {
       meta: (row.brand ? row.brand + " · " : "") + (last ? formatAmountUnit(last.amount, last.unit) : (row.serving_label || "1 serving")),
-      cal: Number(row.calories) || 0,
-      protein: Number(row.protein_g) || 0,
-      carbs: Number(row.carbs_g) || 0,
-      fat: Number(row.fat_g) || 0,
-      fibre: Number(row.fibre_g) || 0,
-      sodium: Number(row.sodium_mg) || 0,
-      sugar: Number(row.sugar_g) || 0,
-      saturatedFat: Number(row.saturated_fat_g) || 0,
-      transFat: Number(row.trans_fat_g) || 0,
-      cholesterol: Number(row.cholesterol_mg) || 0,
-      potassium: Number(row.potassium_mg) || 0,
-      addedSugar: Number(row.added_sugar_g) || 0,
-      vitaminD: Number(row.vitamin_d_mcg) || 0,
-      calcium: Number(row.calcium_mg) || 0,
-      iron: Number(row.iron_mg) || 0,
-      servingGrams: row.serving_grams || 100,
-      source: row.source || "favourite",
-      lastAmount: last?.amount ?? null,
-      lastUnit: last?.unit ?? null,
-    };
+      last,
+    });
   }), [favourites.rows, lastLogged.map]);
 
   async function logFood(food, meal, loggedAt) {

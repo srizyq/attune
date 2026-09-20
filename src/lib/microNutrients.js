@@ -117,3 +117,21 @@ export function extendedNote({ withData, of }) {
   if (withData === 0) return 'None of the foods logged carry these — only some food databases (like AUSNUT) do.';
   return `Based on ${withData} of ${of} foods logged. Only some food databases carry these, so treat the totals as a minimum.`;
 }
+
+// The older nutrients favourite_foods only gained columns for in the
+// "Favourite foods: all nutrients" update (it began with the first eleven).
+export const FAVOURITE_LATE_KEYS = ['vitaminA', 'vitaminC', 'vitaminB12', 'folate', 'magnesium', 'zinc', 'polyunsaturatedFat', 'monounsaturatedFat'];
+
+// The favourite_foods columns that need that update, for one food: the extended
+// nutrients it carries (0 is a real value) and the late older ones that are
+// non-zero — a zero there is the column default anyway, so leaving it out keeps
+// a database without the update from ever seeing a column it doesn't have.
+export function lateFavouriteToRow(food) {
+  const out = extendedToRow(food);
+  for (const key of FAVOURITE_LATE_KEYS) {
+    const v = Number(food?.[key]);
+    if (Number.isFinite(v) && v !== 0) out[MICRO_COLUMNS[key]] = v;
+  }
+  return out;
+}
+

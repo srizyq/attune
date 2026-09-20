@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
   MICRO_NUTRIENTS, MICRO_KEYS, MICRO_COLUMNS, EXTENDED_NUTRIENTS, EXTENDED_KEYS,
-  extendedFromRow, extendedToRow, extendedCoverage, extendedSummary, extendedNote, formatMicro,
+  extendedFromRow, extendedToRow, extendedCoverage, extendedSummary, extendedNote, formatMicro, lateFavouriteToRow, FAVOURITE_LATE_KEYS,
 } from './microNutrients';
 import { MICRO_GROUPS } from '../components/coach/constants';
 
@@ -110,3 +110,20 @@ describe('formatMicro', () => {
     expect(formatMicro(by('iron'), 'x')).toBe(0);
   });
 });
+
+describe('lateFavouriteToRow', () => {
+  it('sends non-zero late older nutrients and the extended ones a food has, nothing else', () => {
+    expect(lateFavouriteToRow({ vitaminA: 120, zinc: 2.5, folate: 0, thiamin: 0.25, caffeine: 0, selenium: null, calcium: 40, fibre: 3 }))
+      .toEqual({ vitamin_a_mcg: 120, zinc_mg: 2.5, thiamin_mg: 0.25, caffeine_mg: 0 });
+  });
+  it('is empty for a food with none of them — so an un-updated database sees no new column', () => {
+    expect(lateFavouriteToRow({ name: 'Toast', calcium: 20 })).toEqual({});
+    expect(lateFavouriteToRow(null)).toEqual({});
+    expect(lateFavouriteToRow({ vitaminA: NaN, zinc: 'x' })).toEqual({});
+  });
+  it('covers exactly the eight older nutrients favourites originally lacked', () => {
+    expect(FAVOURITE_LATE_KEYS).toHaveLength(8);
+    for (const k of FAVOURITE_LATE_KEYS) expect(MICRO_KEYS).toContain(k);
+  });
+});
+

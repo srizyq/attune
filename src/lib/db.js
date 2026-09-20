@@ -3,7 +3,7 @@ import { shiftIsoDateKeepLocalTime } from './mealTime';
 import { isMissingFunctionError } from './coachInvite';
 import { selectAll } from './paging';
 import { isMissingColumnError } from './dbErrors';
-import { extendedToRow } from './microNutrients';
+import { extendedToRow, lateFavouriteToRow } from './microNutrients';
 
 // ─── profiles ──────────────────────────────────────────────────────────────
 
@@ -373,9 +373,7 @@ export async function getFavouriteFoods(userId) {
 }
 
 export async function addFavouriteFood(userId, food) {
-  const { data, error } = await supabase
-    .from('favourite_foods')
-    .upsert({
+  const row = {
       user_id: userId,
       name: food.name,
       brand: food.brand || null,
@@ -397,9 +395,14 @@ export async function addFavouriteFood(userId, food) {
       calcium_mg: food.calcium || 0,
       iron_mg: food.iron || 0,
       source: food.source || null,
-    }, { onConflict: 'user_id,name' })
-    .select()
-    .single();
+  };
+  // Vitamins, minerals and the extended nutrients go in only when the food has
+  // them; if the database hasn't had the update that adds those columns, retry
+  // without them so starring a food never fails over a nutrient column.
+  const late = lateFavouriteToRow(food);
+  const upsert = (r) => supabase.from('favourite_foods').upsert(r, { onConflict: 'user_id,name' }).select().single();
+  let { data, error } = await upsert({ ...row, ...late });
+  if (error && Object.keys(late).length > 0 && isMissingColumnError(error)) ({ data, error } = await upsert(row));
   if (error) throw error;
   return data;
 }

@@ -2782,3 +2782,34 @@ as $$
 $$;
 revoke all on function public.get_my_coach_links() from public, anon;
 grant execute on function public.get_my_coach_links() to authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Favourite foods: all nutrients (schema update — run against an existing DB;
+-- safe to re-run). Tests: supabase/tests/favourite-foods.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- favourite_foods was created with only the first eleven nutrients, so a
+-- starred food lost its vitamins, minerals and fats the next time it was logged
+-- from Favourites. This adds the rest. The eight older ones default to 0 like
+-- their siblings; the thirteen extended ones (see "Extended micronutrients")
+-- are NULL when the food's source didn't say — never 0.
+alter table public.favourite_foods add column if not exists vitamin_a_mcg numeric default 0;
+alter table public.favourite_foods add column if not exists vitamin_c_mg numeric default 0;
+alter table public.favourite_foods add column if not exists vitamin_b12_mcg numeric default 0;
+alter table public.favourite_foods add column if not exists folate_mcg numeric default 0;
+alter table public.favourite_foods add column if not exists magnesium_mg numeric default 0;
+alter table public.favourite_foods add column if not exists zinc_mg numeric default 0;
+alter table public.favourite_foods add column if not exists polyunsaturated_fat_g numeric default 0;
+alter table public.favourite_foods add column if not exists monounsaturated_fat_g numeric default 0;
+alter table public.favourite_foods add column if not exists thiamin_mg numeric;
+alter table public.favourite_foods add column if not exists riboflavin_mg numeric;
+alter table public.favourite_foods add column if not exists niacin_mg numeric;
+alter table public.favourite_foods add column if not exists vitamin_b6_mg numeric;
+alter table public.favourite_foods add column if not exists vitamin_e_mg numeric;
+alter table public.favourite_foods add column if not exists phosphorus_mg numeric;
+alter table public.favourite_foods add column if not exists selenium_mcg numeric;
+alter table public.favourite_foods add column if not exists iodine_mcg numeric;
+alter table public.favourite_foods add column if not exists omega3_mg numeric;
+alter table public.favourite_foods add column if not exists omega6_g numeric;
+alter table public.favourite_foods add column if not exists ala_g numeric;
+alter table public.favourite_foods add column if not exists caffeine_mg numeric;
+alter table public.favourite_foods add column if not exists alcohol_g numeric;
