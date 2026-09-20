@@ -1770,3 +1770,106 @@ $$;
 
 revoke all on function public.start_free_trial() from public, anon;
 grant execute on function public.start_free_trial() to authenticated;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Body measurements and progress photos (schema update — run against an
+-- existing DB; safe to re-run). Tests: supabase/tests/body-progress.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ── body_measurements ───────────────────────────────────────────────────────
+-- One value per kind per day (logging again the same day replaces it, like
+-- weight_logs). Body fat is a percentage; every other kind is a length in
+-- cm or inches, and the check below keeps the two from being mixed up.
+create table if not exists public.body_measurements (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  logged_date date not null,
+  kind text not null check (kind in ('waist', 'hips', 'chest', 'arm', 'thigh', 'body_fat')),
+  value numeric not null check (value > 0 and value < 1000),
+  unit text not null check (unit in ('cm', 'in', 'pct')),
+  created_at timestamptz not null default now(),
+  unique (user_id, logged_date, kind),
+  check ((kind = 'body_fat') = (unit = 'pct')),
+  check (kind <> 'body_fat' or value < 75)
+);
+create index if not exists body_measurements_user_idx on public.body_measurements (user_id, logged_date desc);
+alter table public.body_measurements enable row level security;
+
+drop policy if exists "body_measurements: select own" on public.body_measurements;
+create policy "body_measurements: select own" on public.body_measurements for select using (auth.uid() = user_id);
+drop policy if exists "body_measurements: insert own" on public.body_measurements;
+create policy "body_measurements: insert own" on public.body_measurements for insert with check (auth.uid() = user_id);
+drop policy if exists "body_measurements: update own" on public.body_measurements;
+create policy "body_measurements: update own" on public.body_measurements for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "body_measurements: delete own" on public.body_measurements;
+create policy "body_measurements: delete own" on public.body_measurements for delete using (auth.uid() = user_id);
+drop policy if exists "body_measurements: select as trainer of client" on public.body_measurements;
+create policy "body_measurements: select as trainer of client" on public.body_measurements
+  for select using (
+    exists (
+      select 1 from public.trainer_clients tc
+      where tc.client_id = body_measurements.user_id and tc.trainer_id = auth.uid() and tc.status = 'active'
+    )
+  );
+
+-- ── progress_photos ─────────────────────────────────────────────────────────
+-- Metadata for a photo kept in the private 'progress-photos' bucket. `path`
+-- must live in the owner's own folder (<user id>/…), so a row can never point
+-- at someone else's file.
+create table if not exists public.progress_photos (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  taken_date date not null,
+  path text not null unique,
+  note text check (note is null or char_length(note) <= 200),
+  created_at timestamptz not null default now(),
+  check (position(user_id::text || '/' in path) = 1)
+);
+create index if not exists progress_photos_user_idx on public.progress_photos (user_id, taken_date desc);
+alter table public.progress_photos enable row level security;
+
+drop policy if exists "progress_photos: select own" on public.progress_photos;
+create policy "progress_photos: select own" on public.progress_photos for select using (auth.uid() = user_id);
+drop policy if exists "progress_photos: insert own" on public.progress_photos;
+create policy "progress_photos: insert own" on public.progress_photos for insert with check (auth.uid() = user_id);
+drop policy if exists "progress_photos: delete own" on public.progress_photos;
+create policy "progress_photos: delete own" on public.progress_photos for delete using (auth.uid() = user_id);
+drop policy if exists "progress_photos: select as trainer of client" on public.progress_photos;
+create policy "progress_photos: select as trainer of client" on public.progress_photos
+  for select using (
+    exists (
+      select 1 from public.trainer_clients tc
+      where tc.client_id = progress_photos.user_id and tc.trainer_id = auth.uid() and tc.status = 'active'
+    )
+  );
+
+-- ── progress-photos storage bucket ──────────────────────────────────────────
+-- PRIVATE (unlike coach-logos): the app only ever shows photos through
+-- short-lived signed URLs, which Supabase only issues to someone the policies
+-- below let read the object. Capped at 8 MB and images only.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('progress-photos', 'progress-photos', false, 8388608, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 8388608, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
+
+drop policy if exists "progress-photos: owner can upload" on storage.objects;
+create policy "progress-photos: owner can upload" on storage.objects
+  for insert with check (bucket_id = 'progress-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "progress-photos: owner can read" on storage.objects;
+create policy "progress-photos: owner can read" on storage.objects
+  for select using (bucket_id = 'progress-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "progress-photos: owner can delete" on storage.objects;
+create policy "progress-photos: owner can delete" on storage.objects
+  for delete using (bucket_id = 'progress-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+-- A coach reads an *active* client's photos. Compared as text on purpose:
+-- casting the folder name to uuid could raise on some unrelated object.
+drop policy if exists "progress-photos: trainer can read client photos" on storage.objects;
+create policy "progress-photos: trainer can read client photos" on storage.objects
+  for select using (
+    bucket_id = 'progress-photos'
+    and exists (
+      select 1 from public.trainer_clients tc
+      where tc.trainer_id = auth.uid() and tc.status = 'active'
+        and tc.client_id::text = (storage.foldername(name))[1]
+    )
+  );

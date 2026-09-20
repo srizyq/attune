@@ -6,6 +6,7 @@ import '@testing-library/jest-dom/vitest';
 import WeeklySummaryCard from './WeeklySummaryCard';
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+const SHORT = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
 const summary = { calorie_target: 2000, protein_g: 150, last_log_date: '2026-09-20', days_logged_7d: 6, days_on_target_7d: 5, days_protein_7d: 4, avg_cal_7d: 1950, latest_weight_kg: 80, weight_change_kg_14d: -0.5 };
 
 describe('WeeklySummaryCard', () => {
@@ -20,7 +21,7 @@ describe('WeeklySummaryCard', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     render(<WeeklySummaryCard summary={summary} clientData={{ name: 'Sam Client' }} today="2026-09-20" />);
     await userEvent.click(screen.getByRole('button', { name: /Copy summary/ }));
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Sam — the 7 days to 20 Sept\n• Logged food on 6 of the last 7 days'));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining(`Sam — the 7 days to ${SHORT('2026-09-20')}\n• Logged food on 6 of the last 7 days`));
     expect(await screen.findByRole('button', { name: /Copied/ })).toBeInTheDocument();
   });
 

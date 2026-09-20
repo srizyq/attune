@@ -15,6 +15,7 @@ import AppNav from '../components/AppNav';
 import CoachNote from '../components/CoachNote';
 import { useCoachNote } from '../hooks/useCoach';
 import LogCalendar from '../components/LogCalendar';
+import BodyProgressCard from '../components/BodyProgressCard';
 import StreakItem from '../components/StreakItem';
 import DayHeatmapStrip from '../components/DayHeatmapStrip';
 import MacroSplitBar from '../components/MacroSplitBar';
@@ -543,6 +544,9 @@ export default function Expenditure() {
               <EmptyChartBox icon="ti-scale" message="Log your weight above to see a trend here" />
             )}
           </div>
+
+          {/* body measurements + progress photos */}
+          <BodyProgressCard />
 
           {/* streaks + week-at-a-glance */}
           <div className="grid-2">

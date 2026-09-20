@@ -8,6 +8,7 @@ export const COACH_CAN_SEE = [
   { icon: 'ti-tools-kitchen-2', text: 'Everything you log: foods, meals and their nutrients' },
   { icon: 'ti-scale', text: 'Your weight history' },
   { icon: 'ti-barbell', text: 'Your workouts' },
+  { icon: 'ti-camera', text: 'Your body measurements and progress photos' },
   { icon: 'ti-mood-smile', text: 'Your daily check-ins: mood, energy, water and notes' },
   { icon: 'ti-user', text: 'Your profile: goal, body stats and targets' },
 ];

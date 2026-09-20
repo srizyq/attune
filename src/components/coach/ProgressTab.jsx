@@ -5,13 +5,14 @@ import {
 import { Line } from 'react-chartjs-2';
 import { Card, SectionLabel, EmptyChartBox, RangeToggle } from './shared';
 import WorkoutsCard from './WorkoutsCard';
+import BodyProgressPanel from './BodyProgressPanel';
 import { RANGES } from './constants';
 import { dateNDaysAgo } from '../../lib/patterns';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
 // Body and training over the selected range: weight trend and workouts.
-export default function ProgressTab({ d }) {
+export default function ProgressTab({ client, d }) {
   const { latestWeight, weightLoading, weightLogs, weightChartData, chartOptions } = d;
   const since = dateNDaysAgo(d.range - 1);
   const rangeWorkouts = d.workouts.filter(w => w.date >= since);
@@ -32,6 +33,8 @@ export default function ProgressTab({ d }) {
           <EmptyChartBox icon="ti-scale" message="Not enough weight entries in this range" />
         )}
       </Card>
+
+      <BodyProgressPanel client={client} />
 
       <WorkoutsCard title={`Workouts \u2014 last ${d.range} days`} workouts={rangeWorkouts} loading={d.workoutsLoading} showDate style={{ marginBottom: 0 }} />
     </div>

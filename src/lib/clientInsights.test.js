@@ -5,6 +5,8 @@ import {
 } from './clientInsights.js';
 
 const TODAY = '2026-09-20';
+// en-AU month abbreviations differ between ICU versions ("Sept"/"Sep"); format the way the code does.
+const SHORT = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
 const row = (over = {}) => ({
   client_id: 'c', client_name: 'Sam', group_label: null, connected_at: '2026-08-01T00:00:00Z', goal: 'maintain',
   calorie_target: 2000, protein_g: 150, last_log_date: '2026-09-20', days_logged_7d: 7, days_on_target_7d: 7,
@@ -152,7 +154,7 @@ describe('weeklySummary', () => {
 
   it('reads as a handful of plain lines, with a copy-ready text block', () => {
     const r = w(full);
-    expect(r.header).toBe('Sam \u2014 the 7 days to 20 Sept');
+    expect(r.header).toBe(`Sam \u2014 the 7 days to ${SHORT(TODAY)}`);
     expect(r.lines).toEqual([
       'Logged food on 6 of the last 7 days (average 1,950 kcal, target 2,000)',
       'Within 15% of calorie target on 5 of 6 logged days; protein target (90%+) met on 4',

@@ -829,3 +829,82 @@ export async function deleteTrainerNote(id) {
   if (error) throw error;
 }
 
+// ─── body measurements + progress photos ────────────────────────────────────
+
+// null = the table isn't there yet (database update not applied).
+export async function getBodyMeasurements(userId, sinceDate = null) {
+  const { data, error } = await supabase
+    .from('body_measurements')
+    .select('id, logged_date, kind, value, unit')
+    .eq('user_id', userId)
+    .gte('logged_date', sinceDate || '1970-01-01')
+    .order('logged_date', { ascending: false });
+  if (error) {
+    if (isMissingTable(error)) return null;
+    throw error;
+  }
+  return data;
+}
+
+// One value per kind per day — logging again the same day replaces it.
+export async function upsertBodyMeasurement(userId, { date, kind, value, unit }) {
+  const { error } = await supabase
+    .from('body_measurements')
+    .upsert({ user_id: userId, logged_date: date, kind, value, unit }, { onConflict: 'user_id,logged_date,kind' });
+  if (error) throw error;
+}
+
+export async function deleteBodyMeasurement(id) {
+  const { error } = await supabase.from('body_measurements').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function getProgressPhotos(userId) {
+  const { data, error } = await supabase
+    .from('progress_photos')
+    .select('id, taken_date, path, note, created_at')
+    .eq('user_id', userId)
+    .order('taken_date', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) {
+    if (isMissingTable(error)) return null;
+    throw error;
+  }
+  return data;
+}
+
+const PHOTO_BUCKET = 'progress-photos';
+
+// Upload first, then the row; if the row fails, take the file back out so a
+// failed save can't leave an orphaned photo behind.
+export async function uploadProgressPhoto(userId, blob, takenDate, note = null) {
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const { error: uploadError } = await supabase.storage.from(PHOTO_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+  if (uploadError) throw uploadError;
+  const { error: rowError } = await supabase.from('progress_photos').insert({ user_id: userId, taken_date: takenDate, path, note });
+  if (rowError) {
+    await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+    throw rowError;
+  }
+  return path;
+}
+
+// File first, then the row: if removing the file fails we keep the row (the
+// photo is still there and still listed) instead of orphaning the file.
+export async function deleteProgressPhoto(photo) {
+  const { error: removeError } = await supabase.storage.from(PHOTO_BUCKET).remove([photo.path]);
+  if (removeError) throw removeError;
+  const { error } = await supabase.from('progress_photos').delete().eq('id', photo.id);
+  if (error) throw error;
+}
+
+// Short-lived links: the bucket is private, and Supabase only signs a path
+// the caller's storage policies let them read (the owner, or their active
+// coach). Returns { [path]: url }.
+export async function getSignedPhotoUrls(paths, expiresInSeconds = 3600) {
+  if (!paths.length) return {};
+  const { data, error } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrls(paths, expiresInSeconds);
+  if (error) throw error;
+  return Object.fromEntries((data || []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+}
+

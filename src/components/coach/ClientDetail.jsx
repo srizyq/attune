@@ -116,7 +116,7 @@ export default function ClientDetail({ client, summary }) {
           <OverviewTab clientData={clientData} d={d} summary={summary} editingTargets={editingTargets} setEditingTargets={setEditingTargets} onSaveTargets={handleSaveTargets} onSaveMicroTargets={handleSaveMicroTargets} />
         )}
         {tab === 'diary' && <DiaryTab d={d} />}
-        {tab === 'progress' && <ProgressTab d={d} />}
+        {tab === 'progress' && <ProgressTab client={client} d={d} />}
         {tab === 'messages' && <MessagesTab client={client} clientData={clientData} d={d} />}
         {tab === 'plan' && <PlanTab clientData={clientData} />}
         {tab === 'reports' && <ReportsTab client={client} clientData={clientData} />}
