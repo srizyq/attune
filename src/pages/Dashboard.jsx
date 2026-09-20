@@ -601,7 +601,9 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
             </button>
             {items.length === 0 && yesterdayByMeal?.[key]?.length > 0 && (
               <YesterdayMealPrompt
+                mealLabel={label}
                 names={yesterdayByMeal[key].map(r => r.food_name).join(', ')}
+                kcal={Math.round(yesterdayByMeal[key].reduce((sum, r) => sum + (Number(r.calories) || 0), 0))}
                 onCommit={() => onCopyYesterday(key)}
                 disabled={copyingYesterday}
               />

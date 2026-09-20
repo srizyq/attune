@@ -386,6 +386,11 @@ h1, h2, h3, h4, h5 {
    any button that already has one. `animation` is a separate CSS
    property untouched by that, so it survives regardless of what a
    button's own inline style sets. */
+/* Idle hint on the slide-to-log handle: a small nudge to the right. */
+@keyframes slide-hint { 0%, 70%, 100% { transform: translateX(0); } 82% { transform: translateX(7px); } 92% { transform: translateX(0); } }
+.slide-hint { animation: slide-hint 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .slide-hint { animation: none; } }
+
 @keyframes button-press { from { transform: scale(1); } to { transform: scale(0.97); } }
 button:not(:disabled):active {
   animation: button-press 160ms cubic-bezier(0.23, 1, 0.32, 1) forwards;

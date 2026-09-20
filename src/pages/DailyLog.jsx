@@ -167,7 +167,9 @@ export default function DailyLog() {
                     </button>
                     {items.length === 0 && yesterdayByMeal[mealKey].length > 0 && (
                       <YesterdayMealPrompt
+                        mealLabel={MEAL_LABELS[mealKey]}
                         names={yesterdayByMeal[mealKey].map(r => r.food_name).join(', ')}
+                        kcal={Math.round(yesterdayByMeal[mealKey].reduce((sum, r) => sum + (Number(r.calories) || 0), 0))}
                         onCommit={() => copyFromYesterday(mealKey)}
                         disabled={copyingYesterday}
                       />
