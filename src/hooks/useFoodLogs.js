@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { addFoodLog, deleteFoodLog, updateFoodLog, getFoodLogsForDate } from '../lib/db';
 import { mealFromDate, buildDayTimeline } from '../lib/mealTime';
+import { extendedFromRow, EXTENDED_KEYS } from '../lib/microNutrients';
 
 export function mapRow(row) {
   return {
@@ -31,6 +32,7 @@ export function mapRow(row) {
     zinc: Number(row.zinc_mg) || 0,
     vitaminB12: Number(row.vitamin_b12_mcg) || 0,
     folate: Number(row.folate_mcg) || 0,
+    ...extendedFromRow(row),
     servingGrams: row.serving_grams || null,
     loggedAmount: row.logged_amount != null ? Number(row.logged_amount) : null,
     loggedUnit: row.logged_unit || null,
@@ -39,6 +41,11 @@ export function mapRow(row) {
     loggedAt: row.logged_at || null,
     createdAt: row.created_at || null,
   };
+}
+
+// The extended nutrients of a food, passed through as-is (null = unknown).
+function extendedOf(food) {
+  return Object.fromEntries(EXTENDED_KEYS.map((key) => [key, food[key] ?? null]));
 }
 
 export function useFoodLogs(date) {
@@ -116,6 +123,7 @@ export function useFoodLogs(date) {
       zinc: food.zinc || 0,
       vitaminB12: food.vitaminB12 || 0,
       folate: food.folate || 0,
+      ...extendedOf(food),
       servingGrams: food.servingGrams || null,
       source: food.source,
       loggedAmount: food.loggedAmount ?? null,

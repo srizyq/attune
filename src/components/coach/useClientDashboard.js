@@ -6,7 +6,7 @@ import { useClientFoodLogs, useClientWorkouts } from '../../hooks/useCoach';
 import { getCheckinForDate } from '../../lib/db';
 import { todayLocalDate, dateNDaysAgo, dateRange, streakFor, computeStreak } from '../../lib/patterns';
 import { computeTrendWeight, toKg, fromKg } from '../../lib/adaptiveTDEE';
-import { MICRO_NUTRIENTS } from '../../lib/microNutrients';
+import { MICRO_NUTRIENTS, extendedSummary } from '../../lib/microNutrients';
 import { ACCENT, WATER_BLUE, avg } from './constants';
 
 // Everything the trainer's client tabs read, fetched and derived once so the
@@ -129,6 +129,7 @@ export function useClientDashboard(client, clientData) {
     }
     return totals;
   }, [meals]);
+  const extendedInfo = useMemo(() => extendedSummary(Object.values(meals).flat()), [meals]);
 
   return {
     today, date, setDate, range, setRange,
@@ -136,7 +137,7 @@ export function useClientDashboard(client, clientData) {
     historyLoading, stats, streaks, calorieHeatmapDays,
     weightLogs, latestWeight, weightLoading, weightChartData, chartOptions,
     meals, foodLoading, checkin,
-    microTotals, microTargets: clientData.micro_targets || {}, hasAnyFood: Object.values(meals).some(items => items.length > 0),
+    microTotals, extendedInfo, microTargets: clientData.micro_targets || {}, hasAnyFood: Object.values(meals).some(items => items.length > 0),
     workouts, workoutsLoading,
   };
 }

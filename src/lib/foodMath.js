@@ -5,6 +5,8 @@
 // density), so it shares g's toGrams factor — only its unit id/label
 // differ, which is what lets a liquid food's servingUnit pick it out via
 // unitsFor below instead of offering kg/lb/oz for a carton of milk.
+import { EXTENDED_NUTRIENTS } from './microNutrients';
+
 export const UNITS = [
   { id: "serving", label: "serving", toGrams: null },
   { id: "g", label: "g", toGrams: 1 },
@@ -115,6 +117,12 @@ export function sumFoodItems(items) {
       totals[field] += Number(item[field]) || 0;
     }
   }
+  // Extended nutrients: only ingredients that carry a value contribute, and a
+  // recipe none of whose ingredients do stays unknown (null) rather than 0.
+  for (const { key } of EXTENDED_NUTRIENTS) {
+    const known = items.map(item => item[key]).filter(hasValue);
+    totals[key] = known.length ? known.reduce((sum, v) => sum + Number(v), 0) : null;
+  }
   return totals;
 }
 
@@ -149,5 +157,18 @@ export function scaleFood(food, servings) {
     zinc: round1((food.zinc || 0) * servings),
     vitaminB12: round1((food.vitaminB12 || 0) * servings),
     folate: round1((food.folate || 0) * servings),
+    ...scaleExtended(food, servings),
   };
+}
+
+const hasValue = v => v != null && v !== '' && Number.isFinite(Number(v));
+
+// Extended nutrients scale only when known; unknown stays null so it can never
+// turn into a made-up zero on the way through an edit. Two decimals, not one:
+// B vitamins are tenths and hundredths of a milligram.
+function scaleExtended(food, servings) {
+  return Object.fromEntries(EXTENDED_NUTRIENTS.map(({ key }) => [
+    key,
+    hasValue(food[key]) ? Math.round(Number(food[key]) * servings * 100) / 100 : null,
+  ]));
 }

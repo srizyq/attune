@@ -7,7 +7,7 @@ import WorkoutsCard from './WorkoutsCard';
 import ProvenanceBadge from './ProvenanceBadge';
 import { PROVENANCE, provenanceBreakdown } from '../../lib/provenance';
 import { MEAL_LABELS, MICRO_GROUPS } from './constants';
-import { MICRO_NUTRIENTS } from '../../lib/microNutrients';
+import { MICRO_NUTRIENTS, extendedNote, formatMicro } from '../../lib/microNutrients';
 import { round1 } from '../../lib/format';
 
 // One day at a time: what they ate (with the full micronutrient breakdown),
@@ -15,7 +15,7 @@ import { round1 } from '../../lib/format';
 export default function DiaryTab({ d }) {
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
-  const { meals, foodLoading, checkin, microTotals, microTargets, hasAnyFood, date, setDate } = d;
+  const { meals, foodLoading, checkin, microTotals, extendedInfo, microTargets, hasAnyFood, date, setDate } = d;
   const dayWorkouts = d.workouts.filter(w => w.date === date);
   // How much of today's intake rests on verified data vs estimates — the
   // caveat a coach needs before reading the totals as exact.
@@ -118,7 +118,8 @@ export default function DiaryTab({ d }) {
         ) : (
           MICRO_GROUPS.map((group, gi) => (
             <div key={group.label} style={{ marginBottom: gi < MICRO_GROUPS.length - 1 ? 20 : 0 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{group.label}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: group.extended ? 4 : 10 }}>{group.label}</div>
+              {group.extended && extendedNote(extendedInfo) && <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 0 10px', lineHeight: 1.5 }}>{extendedNote(extendedInfo)}</p>}
               <div className="grid-3">
                 {group.keys.map(key => {
                   const n = MICRO_NUTRIENTS.find(m => m.key === key);
@@ -127,7 +128,7 @@ export default function DiaryTab({ d }) {
                       key={key}
                       icon={n.icon}
                       label={n.label}
-                      value={n.unit === 'g' || n.unit === 'mg' ? round1(microTotals[key]) : Math.round(microTotals[key])}
+                      value={formatMicro(n, microTotals[key])}
                       unit={n.unit}
                       guideline={n.guideline}
                       target={microTargets[key]}

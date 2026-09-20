@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
 import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit } from '../lib/foodMath';
+import { ausnutExtraMicros } from '../lib/ausnutFood';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
 import MenuScanModal from '../components/MenuScanModal';
@@ -268,6 +269,7 @@ async function searchAusnut(q) {
     zinc: Math.round((row.zinc_mg || 0) * 10) / 10,
     vitaminB12: Math.round((row.vitamin_b12_mcg || 0) * 10) / 10,
     folate: Math.round(row.folate_mcg || 0),
+    ...ausnutExtraMicros(row),
     source: "ausnut",
     servingGrams: 100,
   }));

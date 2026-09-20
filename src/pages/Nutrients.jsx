@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
 import AppNav from '../components/AppNav';
 import MicroCard from '../components/MicroCard';
-import { MICRO_NUTRIENTS } from '../lib/microNutrients';
+import { MICRO_NUTRIENTS, extendedCoverage, extendedNote, extendedSummary, formatMicro } from '../lib/microNutrients';
+import { MICRO_GROUPS } from '../components/coach/constants';
 
 const DEFAULT_TARGETS = Object.fromEntries(MICRO_NUTRIENTS.map(m => [m.key, m.defaultTarget]));
 
@@ -55,7 +56,12 @@ export default function Nutrients() {
     setSelectedDate(next);
   }
 
-  const { logs, loading } = useFoodLogs(selectedDate);
+  const { logs, meals, loading } = useFoodLogs(selectedDate);
+  // The extended nutrients (B vitamins, selenium, ...) are only carried by some
+  // food databases: sum just the foods that have them, and say how many did.
+  const items = useMemo(() => Object.values(meals).flat(), [meals]);
+  const extended = useMemo(() => extendedCoverage(items), [items]);
+  const extendedInfo = useMemo(() => extendedSummary(items), [items]);
 
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
 
@@ -176,6 +182,26 @@ export default function Nutrients() {
                 <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-fish" label="Polyunsaturated fat" value={round1(totals.polyunsaturatedFat)} unit="g" guideline="A source of essential fatty acids" target={microTargets.polyunsaturatedFat} color="var(--water-blue)" />
                 <MicroCard locked={!isPremium} onUpgrade={goUpgrade} icon="ti-droplet-half-2" label="Monounsaturated fat" value={round1(totals.monounsaturatedFat)} unit="g" guideline="Guideline: favour over saturated fat" target={microTargets.monounsaturatedFat} color="var(--ai-purple)" />
               </div>
+
+              {MICRO_GROUPS.filter(g => g.extended).map(group => (
+                <div key={group.label} style={{ marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{group.label}</span>
+                    {!isPremium && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>PRO</span>
+                    )}
+                  </div>
+                  {extendedNote(extendedInfo) && <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 0 10px', lineHeight: 1.5 }}>{extendedNote(extendedInfo)}</p>}
+                  <div className="grid-3">
+                    {group.keys.map(key => {
+                      const n = MICRO_NUTRIENTS.find(m => m.key === key);
+                      return (
+                        <MicroCard key={key} locked={!isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, extended[key].total)} unit={n.unit} guideline={n.guideline} target={microTargets[key]} defaultTarget={n.defaultTarget} color={n.color} />
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
 
               {logs.length === 0 && (
                 <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)', fontSize: 13, background: 'var(--bg-subtle)', border: '1px dashed var(--border-strong)', borderRadius: 10 }}>

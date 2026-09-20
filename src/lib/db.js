@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 import { shiftIsoDateKeepLocalTime } from './mealTime';
 import { isMissingFunctionError } from './coachInvite';
 import { selectAll } from './paging';
+import { isMissingColumnError } from './dbErrors';
+import { extendedToRow } from './microNutrients';
 
 // ─── profiles ──────────────────────────────────────────────────────────────
 
@@ -55,9 +57,7 @@ export async function getFoodLogsForRange(userId, startDate, endDate) {
 }
 
 export async function addFoodLog(userId, entry) {
-  const { data, error } = await supabase
-    .from('food_logs')
-    .insert({
+  const row = {
       user_id: userId,
       logged_date: entry.loggedDate,
       meal: entry.meal,
@@ -91,9 +91,14 @@ export async function addFoodLog(userId, entry) {
       logged_amount: entry.loggedAmount ?? null,
       logged_unit: entry.loggedUnit ?? null,
       serving_label: entry.servingLabel ?? null,
-    })
-    .select()
-    .single();
+  };
+  // The extended nutrients (B vitamins, selenium, ...) only go in when the food
+  // actually carries them. If the database hasn't had its update yet, retry
+  // without them so logging food never breaks over a nutrient column.
+  const extended = extendedToRow(entry);
+  const insert = (r) => supabase.from('food_logs').insert(r).select().single();
+  let { data, error } = await insert({ ...row, ...extended });
+  if (error && Object.keys(extended).length > 0 && isMissingColumnError(error)) ({ data, error } = await insert(row));
   if (error) throw error;
   return data;
 }
@@ -171,12 +176,13 @@ export async function updateFoodLog(id, entry) {
   // its macros and its displayed portion disagreeing from then on.
   if (entry.loggedAmount !== undefined) patch.logged_amount = entry.loggedAmount;
   if (entry.loggedUnit !== undefined) patch.logged_unit = entry.loggedUnit;
-  const { data, error } = await supabase
-    .from('food_logs')
-    .update(patch)
-    .eq('id', id)
-    .select()
-    .single();
+  // Extended nutrients: only touched when the entry has a value, so an edit can
+  // never overwrite an unknown with a made-up zero (and never trips on a
+  // database that hasn't had its update yet, unless real data needs saving).
+  const extended = extendedToRow(entry);
+  const update = (p) => supabase.from('food_logs').update(p).eq('id', id).select().single();
+  let { data, error } = await update({ ...patch, ...extended });
+  if (error && Object.keys(extended).length > 0 && isMissingColumnError(error)) ({ data, error } = await update(patch));
   if (error) throw error;
   return data;
 }

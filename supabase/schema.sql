@@ -1629,7 +1629,9 @@ as $$
   select array[
     'fibre', 'sodium', 'sugar', 'saturatedFat', 'transFat', 'cholesterol', 'addedSugar', 'potassium',
     'vitaminD', 'calcium', 'iron', 'vitaminA', 'vitaminC', 'vitaminB12', 'folate', 'magnesium', 'zinc',
-    'polyunsaturatedFat', 'monounsaturatedFat'
+    'polyunsaturatedFat', 'monounsaturatedFat',
+    'thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'vitaminE', 'phosphorus', 'selenium', 'iodine',
+    'omega3', 'omega6', 'alphaLinolenicAcid', 'caffeine', 'alcohol'
   ]::text[];
 $$;
 
@@ -2156,3 +2158,70 @@ drop trigger if exists touch_meal_plans_trigger on public.meal_plans;
 create trigger touch_meal_plans_trigger
   before update on public.meal_plans
   for each row execute function public.touch_updated_at();
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Extended micronutrients (schema update — run against an existing DB; safe
+-- to re-run). Tests: supabase/tests/micronutrients.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Thirteen more nutrients: B1, B2, B3, B6, E, phosphorus, selenium, iodine,
+-- long-chain omega-3, omega-6, alpha-linolenic acid, caffeine and alcohol.
+-- Only AUSNUT carries them, so on food_logs they are NULLABLE with no default:
+-- NULL means "this food's source didn't say", which must never be counted as
+-- zero. (The older nutrient columns keep their default 0.)
+alter table public.food_logs add column if not exists thiamin_mg numeric;
+alter table public.food_logs add column if not exists riboflavin_mg numeric;
+alter table public.food_logs add column if not exists niacin_mg numeric;
+alter table public.food_logs add column if not exists vitamin_b6_mg numeric;
+alter table public.food_logs add column if not exists vitamin_e_mg numeric;
+alter table public.food_logs add column if not exists phosphorus_mg numeric;
+alter table public.food_logs add column if not exists selenium_mcg numeric;
+alter table public.food_logs add column if not exists iodine_mcg numeric;
+alter table public.food_logs add column if not exists omega3_mg numeric;
+alter table public.food_logs add column if not exists omega6_g numeric;
+alter table public.food_logs add column if not exists ala_g numeric;
+alter table public.food_logs add column if not exists caffeine_mg numeric;
+alter table public.food_logs add column if not exists alcohol_g numeric;
+
+-- ausnut_foods gets the same thirteen (NULL until the backfill in
+-- supabase/ausnut_micronutrients_backfill.sql is run), plus eight nutrients the
+-- app already tracks but this table never carried — so AUSNUT foods logged
+-- calcium, iron, potassium, saturated/trans fat, cholesterol, added sugar and
+-- vitamin D as 0 even though the source measures them. Those eight keep the
+-- default 0 like their siblings.
+alter table public.ausnut_foods add column if not exists thiamin_mg numeric;
+alter table public.ausnut_foods add column if not exists riboflavin_mg numeric;
+alter table public.ausnut_foods add column if not exists niacin_mg numeric;
+alter table public.ausnut_foods add column if not exists vitamin_b6_mg numeric;
+alter table public.ausnut_foods add column if not exists vitamin_e_mg numeric;
+alter table public.ausnut_foods add column if not exists phosphorus_mg numeric;
+alter table public.ausnut_foods add column if not exists selenium_mcg numeric;
+alter table public.ausnut_foods add column if not exists iodine_mcg numeric;
+alter table public.ausnut_foods add column if not exists omega3_mg numeric;
+alter table public.ausnut_foods add column if not exists omega6_g numeric;
+alter table public.ausnut_foods add column if not exists ala_g numeric;
+alter table public.ausnut_foods add column if not exists caffeine_mg numeric;
+alter table public.ausnut_foods add column if not exists alcohol_g numeric;
+alter table public.ausnut_foods add column if not exists saturated_fat_g numeric default 0;
+alter table public.ausnut_foods add column if not exists trans_fat_g numeric default 0;
+alter table public.ausnut_foods add column if not exists cholesterol_mg numeric default 0;
+alter table public.ausnut_foods add column if not exists potassium_mg numeric default 0;
+alter table public.ausnut_foods add column if not exists added_sugar_g numeric default 0;
+alter table public.ausnut_foods add column if not exists vitamin_d_mcg numeric default 0;
+alter table public.ausnut_foods add column if not exists calcium_mg numeric default 0;
+alter table public.ausnut_foods add column if not exists iron_mg numeric default 0;
+
+-- The keys a trainer may set targets for (see the same function in the "Trainer-
+-- set nutrient targets" block above; this is the current list).
+create or replace function public.micro_nutrient_keys()
+returns text[]
+language sql
+immutable
+as $$
+  select array[
+    'fibre', 'sodium', 'sugar', 'saturatedFat', 'transFat', 'cholesterol', 'addedSugar', 'potassium',
+    'vitaminD', 'calcium', 'iron', 'vitaminA', 'vitaminC', 'vitaminB12', 'folate', 'magnesium', 'zinc',
+    'polyunsaturatedFat', 'monounsaturatedFat',
+    'thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'vitaminE', 'phosphorus', 'selenium', 'iodine',
+    'omega3', 'omega6', 'alphaLinolenicAcid', 'caffeine', 'alcohol'
+  ]::text[];
+$$;

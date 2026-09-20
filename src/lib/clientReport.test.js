@@ -126,6 +126,23 @@ describe('buildReport — weight, energy, workouts, micros', () => {
     expect(m.find((n) => n.key === 'vitaminD').avg).toBe(3);
     expect(m).toHaveLength(MICRO_NUTRIENTS.length);
   });
+  it('keeps two decimals for the small extended nutrients, and treats a food without data as adding nothing', () => {
+    const foodLogs = [log('2026-09-14', 'lunch', 100, { thiamin_mg: 0.4 }), log('2026-09-14', 'dinner', 100, { thiamin_mg: null, caffeine_mg: 95 }), log('2026-09-15', 'lunch', 100, { thiamin_mg: 0.05 })];
+    const m = buildReport({ ...base, foodLogs, dayFilter: 'logged', includeMicros: true }).micros;
+    expect(m.find((n) => n.key === 'thiamin')).toMatchObject({ avg: 0.23, extended: true }); // (0.4 + 0.05) / 2 days
+    expect(m.find((n) => n.key === 'caffeine').avg).toBe(47.5);
+    expect(m.find((n) => n.key === 'fibre').extended).toBe(false);
+  });
+  it('flags extended nutrients in the CSV columns and the printed report as a minimum', () => {
+    const report = buildReport({ ...base, foodLogs: [log('2026-09-14', 'lunch', 100, { thiamin_mg: 0.4 })], dayFilter: 'logged', includeMicros: true });
+    expect(buildCsv(report)).toContain('Thiamin (B1) (mg)');
+    expect(buildCsv(report)).toContain(',0.4');
+    const html = buildReportHtml(report);
+    expect(html).toContain('Thiamin (B1) †');
+    expect(html).toMatch(/marked †.*minimum/);
+    const without = buildReportHtml(buildReport({ ...base, foodLogs: [log('2026-09-14', 'lunch', 100)], dayFilter: 'logged' }));
+    expect(without).not.toContain('†');
+  });
   it('maps every micronutrient to a food_logs column (add a nutrient => add its column)', () => {
     for (const n of MICRO_NUTRIENTS) expect(MICRO_COLUMNS[n.key], n.key).toMatch(/^[a-z0-9_]+_(g|mg|mcg)$/);
     expect(Object.keys(MICRO_COLUMNS).sort()).toEqual(MICRO_NUTRIENTS.map((n) => n.key).sort());
