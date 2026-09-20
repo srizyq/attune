@@ -635,6 +635,8 @@ export async function getMyTrainers(clientId) {
       status: r.status,
       created_at: r.created_at,
       consented_at: r.consented_at,
+      // Who suggested this coach (set when a coach brings in a teammate) — null otherwise.
+      referredByName: r.referred_by_name ?? null,
       trainer: { id: r.trainer_id, name: r.trainer_name, coach_logo_url: r.trainer_logo_url },
     }));
   }
@@ -1061,5 +1063,48 @@ export async function getMyMealPlans() {
     throw error;
   }
   return { supported: true, plans: data };
+}
+
+// ─── coach teams ───────────────────────────────────────────────────────────
+
+const TEAMS_MISSING = "Teams need the latest database update, which hasn't been applied yet.";
+
+// The caller's team (see get_my_team in schema.sql) or null. `supported` is
+// false until the SQL update is run, so the UI can simply hide.
+export async function getMyTeam() {
+  const { data, error } = await supabase.rpc('get_my_team');
+  if (error) {
+    if (isMissingFunctionError(error)) return { supported: false, team: null };
+    throw error;
+  }
+  return { supported: true, team: data || null };
+}
+
+async function teamRpc(name, args) {
+  const { data, error } = await supabase.rpc(name, args);
+  if (error) {
+    if (isMissingFunctionError(error)) throw new Error(TEAMS_MISSING);
+    throw error;
+  }
+  return data;
+}
+
+export const createCoachTeam = (name) => teamRpc('create_coach_team', { p_name: name });
+export const createTeamInvite = (days = 7) => teamRpc('create_team_invite', { p_days: days });
+export const revokeTeamInvite = (inviteId) => teamRpc('revoke_team_invite', { p_invite_id: inviteId });
+export const redeemTeamInvite = (code) => teamRpc('redeem_team_invite', { p_code: code });
+export const leaveCoachTeam = () => teamRpc('leave_coach_team', {});
+export const removeTeamMember = (userId) => teamRpc('remove_team_member', { p_user_id: userId });
+export const deleteCoachTeam = () => teamRpc('delete_coach_team', {});
+export const shareClientWithTeammate = (clientId, teammateId) => teamRpc('share_client_with_teammate', { p_client_id: clientId, p_teammate_id: teammateId });
+
+// The other coaches on one of your clients who are on your team.
+export async function getClientCoaches(clientId) {
+  const { data, error } = await supabase.rpc('get_client_coaches', { p_client_id: clientId });
+  if (error) {
+    if (isMissingFunctionError(error)) return { supported: false, coaches: [] };
+    throw error;
+  }
+  return { supported: true, coaches: (data || []).map((r) => ({ id: r.trainer_id, name: r.trainer_name, status: r.status })) };
 }
 

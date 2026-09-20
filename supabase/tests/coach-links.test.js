@@ -307,7 +307,7 @@ describe('get_my_coach_links', () => {
     const rows = (await as(db, client, `select * from public.get_my_coach_links()`)).rows;
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ status: 'pending', trainer_name: 'Trainer', trainer_logo_url: 'https://x.test/logo.png' });
-    expect(Object.keys(rows[0]).sort()).toEqual(['consented_at', 'created_at', 'id', 'status', 'trainer_id', 'trainer_logo_url', 'trainer_name']);
+    expect(Object.keys(rows[0]).sort()).toEqual(['consented_at', 'created_at', 'id', 'referred_by_name', 'status', 'trainer_id', 'trainer_logo_url', 'trainer_name']);
     expect((await as(db, stranger, `select * from public.get_my_coach_links()`)).rows).toHaveLength(0);
     // The trainer isn't a "client" of themselves, so they see nothing here either.
     expect((await as(db, trainer, `select * from public.get_my_coach_links()`)).rows).toHaveLength(0);

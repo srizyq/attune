@@ -3,6 +3,7 @@ import MacroSplitBar from '../MacroSplitBar';
 import StreakItem from '../StreakItem';
 import TargetsForm from './TargetsForm';
 import MicroTargetsCard from './MicroTargetsCard';
+import CoCoachCard from './CoCoachCard';
 import WeeklySummaryCard from './WeeklySummaryCard';
 import { Card, SectionLabel, StatRow, StatCard, EmptyChartBox, RangeToggle } from './shared';
 import { ACCENT, WATER_BLUE, AI_PURPLE, GOAL_LABELS, RANGES } from './constants';
@@ -80,6 +81,8 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
       </div>
 
       <MicroTargetsCard clientData={clientData} onSave={onSaveMicroTargets} />
+
+      <CoCoachCard clientId={clientData.id} clientName={clientData.name} />
 
       <div style={{ marginBottom: 16 }}>
         <RangeToggle value={d.range} onChange={d.setRange} options={RANGES} />

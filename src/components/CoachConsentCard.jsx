@@ -47,7 +47,7 @@ export default function CoachConsentCard({ link, variant = 'invite', busy = fals
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
             {isInvite
-              ? 'Nothing is shared until you accept.'
+              ? `${link.referredByName ? `Suggested by ${link.referredByName}, who already coaches you. ` : ''}Nothing is shared until you accept.`
               : 'You connected before we added this step, so here’s exactly what they can access.'}
           </div>
         </div>

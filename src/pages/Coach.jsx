@@ -7,6 +7,7 @@ import ClientCoachHub from '../components/ClientCoachHub';
 import CoachInvitePanel from '../components/CoachInvitePanel';
 import LogoMark from '../components/LogoMark';
 import ClientList from '../components/coach/ClientList';
+import TeamCard from '../components/coach/TeamCard';
 import ClientDetail from '../components/coach/ClientDetail';
 import { needsAttention } from '../lib/clientInsights';
 import { todayLocalDate } from '../lib/patterns';
@@ -130,6 +131,7 @@ export default function Coach() {
           ) : trainerTab === 'my-coach' ? (
             <ClientCoachHub showUpsell={false} />
           ) : !selectedClient ? (
+            <>
             <div className="grid-2" style={{ alignItems: 'start' }}>
               <CoachInvitePanel hasClients={clients.length > 0} />
               <ClientList
@@ -147,6 +149,8 @@ export default function Coach() {
                 allLoggedToday={allLoggedToday}
               />
             </div>
+            <div style={{ marginTop: 20 }}><TeamCard /></div>
+            </>
           ) : (
             <ClientDetail client={selectedClient} summary={selectedSummary} />
           )}

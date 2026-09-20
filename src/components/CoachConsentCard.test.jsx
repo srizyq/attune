@@ -49,3 +49,15 @@ describe('CoachConsentCard', () => {
     expect(screen.getByText('A coach invited you to be coached')).toBeInTheDocument();
   });
 });
+
+describe('CoachConsentCard — a coach suggested by another coach', () => {
+  it('tells the client who suggested this coach, and that nothing is shared yet', () => {
+    render(<CoachConsentCard link={{ ...link, referredByName: 'Olive Owner' }} onAccept={() => {}} onDecline={() => {}} />);
+    expect(screen.getByText('Suggested by Olive Owner, who already coaches you. Nothing is shared until you accept.')).toBeInTheDocument();
+  });
+  it('says nothing extra for an ordinary invitation', () => {
+    render(<CoachConsentCard link={link} onAccept={() => {}} onDecline={() => {}} />);
+    expect(screen.queryByText(/Suggested by/)).not.toBeInTheDocument();
+  });
+});
+

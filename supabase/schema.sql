@@ -1412,7 +1412,12 @@ grant execute on function public.get_pending_clients() to authenticated;
 -- profile to *active* clients (and hands over every column), so a pending
 -- invitation couldn't even show who it's from. This returns just the two
 -- fields the UI needs — name and logo — without widening that policy.
-create or replace function public.get_my_coach_links()
+-- Dropped first because a later block ("Coach teams") gives it one more return
+-- column, and CREATE OR REPLACE can't change a function's return type — so
+-- re-running this whole file must not trip over the newer version. (The Coach
+-- teams block, which comes later, recreates the newer one.)
+drop function if exists public.get_my_coach_links();
+create function public.get_my_coach_links()
 returns table (
   id uuid, status text, created_at timestamptz, consented_at timestamptz,
   trainer_id uuid, trainer_name text, trainer_logo_url text
@@ -2423,3 +2428,357 @@ as $$
 $$;
 revoke all on function public.get_client_summaries(date) from public, anon;
 grant execute on function public.get_client_summaries(date) to authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Coach teams (schema update — run against an existing DB; safe to re-run).
+-- Tests: supabase/tests/coach-teams.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- A team is a named group of practitioners (a clinic, a gym's coaching staff).
+-- Every member keeps their OWN Coach Pass — teams change nothing about billing.
+--
+-- Deliberately, a team does NOT open anyone's clients to their teammates: a
+-- client agreed to be coached by one person, not that person's colleagues.
+-- What a team gives is (1) a roster of who is on the team and how many clients
+-- each coaches (a count, never names), and (2) a way to bring a teammate in on
+-- a client — share_client_with_teammate — which creates an ordinary *pending*
+-- link that the client must accept, exactly like an invite code. Until they do,
+-- the teammate can see nothing (every trainer read policy needs status active).
+--
+-- The three tables have RLS on and no policies: they are reached only through
+-- the functions below, which is what makes "owner only", the size cap and
+-- "single-use invite" enforceable rather than advisory.
+create table if not exists public.coach_teams (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(name) between 1 and 60),
+  owner_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+-- user_id is the primary key: a practitioner is on at most one team.
+create table if not exists public.coach_team_members (
+  user_id uuid primary key references public.profiles (id) on delete cascade,
+  team_id uuid not null references public.coach_teams (id) on delete cascade,
+  role text not null default 'member' check (role in ('owner', 'member')),
+  joined_at timestamptz not null default now()
+);
+create index if not exists coach_team_members_team_idx on public.coach_team_members (team_id);
+create table if not exists public.coach_team_invites (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.coach_teams (id) on delete cascade,
+  code text not null unique,
+  created_by uuid not null references public.profiles (id) on delete cascade,
+  expires_at timestamptz not null default (now() + interval '7 days'),
+  redeemed_by uuid references public.profiles (id) on delete set null,
+  redeemed_at timestamptz,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists coach_team_invites_team_idx on public.coach_team_invites (team_id, created_at desc);
+
+alter table public.coach_teams enable row level security;
+alter table public.coach_team_members enable row level security;
+alter table public.coach_team_invites enable row level security;
+
+-- Who suggested a link (set when a coach brings in a teammate), so the client
+-- can be told "Riley was suggested by Jordan" when asked to accept.
+alter table public.trainer_clients add column if not exists referred_by uuid references public.profiles (id) on delete set null;
+
+create or replace function public.create_coach_team(p_name text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_name text := left(trim(coalesce(p_name, '')), 60);
+  v_id uuid;
+begin
+  if auth.uid() is null or not public.has_coach_pass(auth.uid()) then
+    raise exception 'A Coach Pass is required to create a team';
+  end if;
+  if v_name = '' then raise exception 'Give the team a name'; end if;
+  if exists (select 1 from public.coach_team_members where user_id = auth.uid()) then
+    raise exception 'You are already in a team';
+  end if;
+  insert into public.coach_teams (name, owner_id) values (v_name, auth.uid()) returning id into v_id;
+  insert into public.coach_team_members (user_id, team_id, role) values (auth.uid(), v_id, 'owner');
+  return v_id;
+end;
+$$;
+revoke all on function public.create_coach_team(text) from public, anon;
+grant execute on function public.create_coach_team(text) to authenticated;
+
+-- The caller's team as one JSON document, or null when they aren't in one:
+-- { id, name, is_owner, max_members, members: [{ user_id, name, role,
+-- joined_at, client_count, has_pass }], invites: [{ id, code, expires_at }] }.
+-- client_count is a number only. invites are visible to the owner alone.
+create or replace function public.get_my_team()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_team public.coach_teams;
+  v_role text;
+begin
+  select m.role into v_role from public.coach_team_members m where m.user_id = auth.uid();
+  if not found then return null; end if;
+  select t.* into v_team
+  from public.coach_teams t join public.coach_team_members m on m.team_id = t.id
+  where m.user_id = auth.uid();
+  return jsonb_build_object(
+    'id', v_team.id,
+    'name', v_team.name,
+    'is_owner', v_role = 'owner',
+    'max_members', 25,
+    'members', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'user_id', m.user_id,
+        'name', coalesce(nullif(trim(p.name), ''), 'Coach'),
+        'role', m.role,
+        'joined_at', m.joined_at,
+        'client_count', (select count(*) from public.trainer_clients tc where tc.trainer_id = m.user_id and tc.status = 'active'),
+        'has_pass', public.has_coach_pass(m.user_id)
+      ) order by (m.role = 'owner') desc, m.joined_at, m.user_id), '[]'::jsonb)
+      from public.coach_team_members m join public.profiles p on p.id = m.user_id
+      where m.team_id = v_team.id
+    ),
+    'invites', case when v_role = 'owner' then (
+      select coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'code', i.code, 'expires_at', i.expires_at) order by i.created_at desc), '[]'::jsonb)
+      from public.coach_team_invites i
+      where i.team_id = v_team.id and i.redeemed_at is null and i.revoked_at is null and i.expires_at > now()
+    ) else '[]'::jsonb end
+  );
+end;
+$$;
+revoke all on function public.get_my_team() from public, anon;
+grant execute on function public.get_my_team() to authenticated;
+
+create or replace function public.create_team_invite(p_days int default 7)
+returns public.coach_team_invites
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_team_id uuid;
+  v_row public.coach_team_invites;
+  v_days int := least(greatest(coalesce(p_days, 7), 1), 30);
+begin
+  select team_id into v_team_id from public.coach_team_members where user_id = auth.uid() and role = 'owner';
+  if v_team_id is null then raise exception 'Only the team owner can invite people'; end if;
+  if (select count(*) from public.coach_team_invites
+      where team_id = v_team_id and redeemed_at is null and revoked_at is null and expires_at > now()) >= 10 then
+    raise exception 'You have 10 open invites — revoke some before creating more';
+  end if;
+  for attempt in 1..5 loop
+    begin
+      insert into public.coach_team_invites (team_id, code, created_by, expires_at)
+      values (v_team_id, public.generate_invite_code(), auth.uid(), now() + make_interval(days => v_days))
+      returning * into v_row;
+      return v_row;
+    exception when unique_violation then
+      if attempt = 5 then raise; end if;
+    end;
+  end loop;
+end;
+$$;
+revoke all on function public.create_team_invite(int) from public, anon;
+grant execute on function public.create_team_invite(int) to authenticated;
+
+create or replace function public.revoke_team_invite(p_invite_id uuid)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.coach_team_invites set revoked_at = now()
+  where id = p_invite_id and redeemed_at is null and revoked_at is null
+    and team_id in (select team_id from public.coach_team_members where user_id = auth.uid() and role = 'owner');
+$$;
+revoke all on function public.revoke_team_invite(uuid) from public, anon;
+grant execute on function public.revoke_team_invite(uuid) to authenticated;
+
+-- Joins the team an invite code belongs to. The caller needs their own Coach
+-- Pass and must not already be on a team. The invite is single use.
+create or replace function public.redeem_team_invite(p_code text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_code text := upper(trim(coalesce(p_code, '')));
+  v_invite public.coach_team_invites;
+begin
+  if auth.uid() is null or not public.has_coach_pass(auth.uid()) then
+    raise exception 'A Coach Pass is required to join a team';
+  end if;
+  if v_code = '' then raise exception 'Enter an invite code'; end if;
+  if exists (select 1 from public.coach_team_members where user_id = auth.uid()) then
+    raise exception 'You are already in a team';
+  end if;
+  select * into v_invite from public.coach_team_invites where code = v_code for update;
+  if not found or v_invite.revoked_at is not null or v_invite.redeemed_at is not null or v_invite.expires_at <= now() then
+    raise exception 'That invite code is invalid or no longer active';
+  end if;
+  if (select count(*) from public.coach_team_members where team_id = v_invite.team_id) >= 25 then
+    raise exception 'That team is full';
+  end if;
+  insert into public.coach_team_members (user_id, team_id, role) values (auth.uid(), v_invite.team_id, 'member');
+  update public.coach_team_invites set redeemed_by = auth.uid(), redeemed_at = now() where id = v_invite.id;
+  return v_invite.team_id;
+end;
+$$;
+revoke all on function public.redeem_team_invite(text) from public, anon;
+grant execute on function public.redeem_team_invite(text) to authenticated;
+
+-- A member leaves. The owner can't (the team would be left without one): they
+-- remove the team instead. Leaving never touches anyone's coaching links.
+create or replace function public.leave_coach_team()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text;
+begin
+  select role into v_role from public.coach_team_members where user_id = auth.uid();
+  if v_role is null then raise exception 'You are not in a team'; end if;
+  if v_role = 'owner' then raise exception 'The owner can''t leave — remove the team instead'; end if;
+  delete from public.coach_team_members where user_id = auth.uid();
+end;
+$$;
+revoke all on function public.leave_coach_team() from public, anon;
+grant execute on function public.leave_coach_team() to authenticated;
+
+create or replace function public.remove_team_member(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_team_id uuid;
+begin
+  select team_id into v_team_id from public.coach_team_members where user_id = auth.uid() and role = 'owner';
+  if v_team_id is null then raise exception 'Only the team owner can remove people'; end if;
+  if p_user_id = auth.uid() then raise exception 'You can''t remove yourself — remove the team instead'; end if;
+  delete from public.coach_team_members where user_id = p_user_id and team_id = v_team_id;
+  if not found then raise exception 'That person is not on your team'; end if;
+end;
+$$;
+revoke all on function public.remove_team_member(uuid) from public, anon;
+grant execute on function public.remove_team_member(uuid) to authenticated;
+
+-- Deletes the team (members and invites go with it). Coaching links are
+-- untouched: each is between a coach and a client, not the team.
+create or replace function public.delete_coach_team()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from public.coach_teams where owner_id = auth.uid();
+  if not found then raise exception 'Only the team owner can remove the team'; end if;
+end;
+$$;
+revoke all on function public.delete_coach_team() from public, anon;
+grant execute on function public.delete_coach_team() to authenticated;
+
+-- Brings a teammate in on one of your clients. Creates an ordinary PENDING
+-- link for the teammate, which the client must accept before the teammate can
+-- see anything. A client who has already ended things with that teammate is
+-- not asked again — the coach doesn't get to re-pend a link the client closed.
+create or replace function public.share_client_with_teammate(p_client_id uuid, p_teammate_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_status text;
+  v_link uuid;
+begin
+  if not exists (
+    select 1 from public.trainer_clients
+    where trainer_id = auth.uid() and client_id = p_client_id and status = 'active'
+  ) then
+    raise exception 'Not an active trainer for this client';
+  end if;
+  if p_teammate_id = auth.uid() then raise exception 'You already coach this client'; end if;
+  if not exists (
+    select 1 from public.coach_team_members a join public.coach_team_members b on a.team_id = b.team_id
+    where a.user_id = auth.uid() and b.user_id = p_teammate_id
+  ) then
+    raise exception 'That person isn''t on your team';
+  end if;
+  if not public.has_coach_pass(p_teammate_id) then
+    raise exception 'That teammate needs a Coach Pass to take on a client';
+  end if;
+  select status into v_status from public.trainer_clients where trainer_id = p_teammate_id and client_id = p_client_id;
+  if v_status = 'revoked' then
+    raise exception 'This client has already ended coaching with that teammate';
+  elsif v_status is not null then
+    raise exception 'That teammate is already connected to this client or waiting for their reply';
+  end if;
+  insert into public.trainer_clients (trainer_id, client_id, status, referred_by)
+  values (p_teammate_id, p_client_id, 'pending', auth.uid())
+  returning id into v_link;
+  return v_link;
+end;
+$$;
+revoke all on function public.share_client_with_teammate(uuid, uuid) from public, anon;
+grant execute on function public.share_client_with_teammate(uuid, uuid) to authenticated;
+
+-- The other coaches on one of your clients who are on your team (pending or
+-- active), so you can see "Riley is also coaching Sam". Coaches outside your
+-- team are never listed.
+create or replace function public.get_client_coaches(p_client_id uuid)
+returns table (trainer_id uuid, trainer_name text, status text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select tc.trainer_id, coalesce(nullif(trim(p.name), ''), 'Coach'), tc.status
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.trainer_id
+  where tc.client_id = p_client_id
+    and tc.trainer_id <> auth.uid()
+    and tc.status in ('pending', 'active')
+    and exists (select 1 from public.trainer_clients me where me.trainer_id = auth.uid() and me.client_id = p_client_id and me.status = 'active')
+    and exists (
+      select 1 from public.coach_team_members a join public.coach_team_members b on a.team_id = b.team_id
+      where a.user_id = auth.uid() and b.user_id = tc.trainer_id
+    )
+  order by tc.created_at;
+$$;
+revoke all on function public.get_client_coaches(uuid) from public, anon;
+grant execute on function public.get_client_coaches(uuid) to authenticated;
+
+-- get_my_coach_links again, now also saying who suggested the link, so a
+-- client asked to accept a teammate sees who brought them in.
+drop function if exists public.get_my_coach_links();
+create function public.get_my_coach_links()
+returns table (
+  id uuid, status text, created_at timestamptz, consented_at timestamptz,
+  trainer_id uuid, trainer_name text, trainer_logo_url text, referred_by_name text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select tc.id, tc.status, tc.created_at, tc.consented_at, tc.trainer_id, p.name, p.coach_logo_url,
+         (select nullif(trim(r.name), '') from public.profiles r where r.id = tc.referred_by)
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.trainer_id
+  where tc.client_id = auth.uid() and tc.status in ('pending', 'active')
+  order by tc.created_at desc;
+$$;
+revoke all on function public.get_my_coach_links() from public, anon;
+grant execute on function public.get_my_coach_links() to authenticated;
