@@ -3,10 +3,12 @@ import { useAuth } from './useAuth';
 import { supabase } from '../lib/supabase';
 import {
   getMyClients, getMyTrainers, redeemCoachInviteCode, revokeClientLink, setClientGroup,
+  respondToCoachLink, getMyInvites, createCoachInvite, revokeCoachInvite, getPendingClients,
   getTrainerComments, addTrainerComment, deleteTrainerComment, getLatestCoachComment,
   getGeneralThread, addClientReply,
   getFoodLogsForDate,
 } from '../lib/db';
+import { extractInviteCode } from '../lib/coachInvite';
 import { mapRow } from './useFoodLogs';
 
 export function useMyClients() {
@@ -14,9 +16,11 @@ export function useMyClients() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const refetch = useCallback(async () => {
+  // `silent` skips the loading flag for background refreshes (returning to
+  // the tab after a client accepted an invite), so the list doesn't blink.
+  const refetch = useCallback(async ({ silent = false } = {}) => {
     if (!user) { setClients([]); setLoading(false); return; }
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       setClients(await getMyClients(user.id));
     } catch (err) {
@@ -67,8 +71,9 @@ export function useMyTrainers() {
 
   useEffect(() => { refetch(); }, [refetch]);
 
-  const redeemCode = useCallback(async (code) => {
-    await redeemCoachInviteCode(code);
+  // Accepts a bare code or a whole pasted invite link.
+  const redeemCode = useCallback(async (codeOrLink) => {
+    await redeemCoachInviteCode(extractInviteCode(codeOrLink));
     await refetch();
   }, [refetch]);
 
@@ -77,7 +82,62 @@ export function useMyTrainers() {
     await refetch();
   }, [refetch]);
 
-  return { trainers, loading, refetch, redeemCode, disconnect };
+  // The client's consent decision: accept a pending invitation (or confirm
+  // the notice on a connection that predates consent), or decline it.
+  const respond = useCallback(async (linkId, accept) => {
+    await respondToCoachLink(linkId, accept);
+    await refetch();
+  }, [refetch]);
+
+  // Pending invitations awaiting an answer, active links, and the subset of
+  // active links that predate consent and still need the one-time notice.
+  const pending = useMemo(() => trainers.filter(t => t.status === 'pending'), [trainers]);
+  const active = useMemo(() => trainers.filter(t => t.status === 'active'), [trainers]);
+  const needsNotice = useMemo(() => active.filter(t => !t.consented_at), [active]);
+
+  return { trainers, active, pending, needsNotice, loading, refetch, redeemCode, disconnect, respond };
+}
+
+// Trainer-side: per-client invites (single-use, expiring) plus the clients
+// who've redeemed one and are waiting to be accepted on the other side.
+// `supported` is false when the invites table doesn't exist yet (app deployed
+// before the migration was run), so the UI can fall back to the old shared
+// code instead of showing a broken panel.
+export function useCoachInvites() {
+  const { user } = useAuth();
+  const [invites, setInvites] = useState([]);
+  const [pending, setPending] = useState([]);
+  const [supported, setSupported] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  const refetch = useCallback(async () => {
+    if (!user) { setInvites([]); setPending([]); setLoading(false); return; }
+    try {
+      const [inv, pend] = await Promise.all([getMyInvites(user.id), getPendingClients()]);
+      setSupported(inv !== null);
+      setInvites(inv || []);
+      setPending(pend);
+    } catch (err) {
+      console.error('Failed to load invites:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => { refetch(); }, [refetch]);
+
+  const create = useCallback(async (label, days) => {
+    const row = await createCoachInvite(label, days);
+    await refetch();
+    return row;
+  }, [refetch]);
+
+  const revoke = useCallback(async (inviteId) => {
+    await revokeCoachInvite(inviteId);
+    await refetch();
+  }, [refetch]);
+
+  return { invites, pending, supported, loading, refetch, create, revoke };
 }
 
 // Read-only mirror of useFoodLogs, scoped to a specific client rather than

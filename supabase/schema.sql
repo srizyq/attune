@@ -1095,3 +1095,338 @@ create trigger protect_trainer_comments_link_trigger
   before update on public.trainer_comments
   for each row
   execute function public.protect_trainer_link_columns();
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Coach consent + per-client invites (schema update — run against an
+-- existing DB; safe to re-run). Tests: supabase/tests/coach-links.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ── has_coach_pass ─────────────────────────────────────────────────────────
+-- The single server-side answer to "does this user hold a Coach Pass?".
+-- profiles.coach_pass is only the Stripe-driven flag; comp accounts (see
+-- src/lib/compGrants.js) get theirs forced on in the React layer instead,
+-- so any SQL gate that read the column alone silently rejected comp'd
+-- coaches. The list below mirrors COMP_GRANTS' coach_pass entries —
+-- src/lib/compGrants.test.js fails if the two ever drift apart.
+create or replace function public.has_coach_pass(p_uid uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((select coach_pass from public.profiles where id = p_uid), false)
+      or exists (
+        select 1 from auth.users u
+        where u.id = p_uid
+          and lower(u.email) in ('csrreddy9@gmail.com', 'sriramreddy1m@gmail.com', 'erenhdeniz@gmail.com')
+      );
+$$;
+revoke all on function public.has_coach_pass(uuid) from public, anon;
+grant execute on function public.has_coach_pass(uuid) to authenticated, service_role;
+
+-- ── trainer_clients: pending state + consent timestamp ─────────────────────
+-- 'pending' = the client redeemed a code but hasn't accepted yet. Every
+-- trainer-side read policy above already requires status = 'active', so a
+-- pending link grants the trainer exactly nothing until the client says yes.
+-- consented_at is when the client explicitly accepted; links that predate
+-- this change are left active with consented_at null, which is what drives
+-- the one-time "here's what your coach can see" notice for them.
+alter table public.trainer_clients drop constraint if exists trainer_clients_status_check;
+alter table public.trainer_clients add constraint trainer_clients_status_check
+  check (status in ('pending', 'active', 'revoked'));
+alter table public.trainer_clients add column if not exists consented_at timestamptz;
+
+-- Who may move a link between states. The two UPDATE policies above only
+-- say "either party may update the row" — with no column rules, a trainer
+-- could flip a client's revoked (or still-pending) link straight to active,
+-- undoing a disconnect and bypassing consent entirely. Only the client can
+-- activate, only from pending, and revoked is terminal (a fresh invite
+-- goes through redeem_coach_invite_code, which re-pends it). Security
+-- INVOKER on purpose: current_user is the API role for a direct client
+-- write but the function owner inside the SECURITY DEFINER RPCs below, so
+-- those RPCs (which enforce their own rules) aren't blocked by this.
+create or replace function public.protect_trainer_client_status()
+returns trigger
+language plpgsql
+as $$
+begin
+  if current_user in ('authenticated', 'anon') then
+    if new.status is distinct from old.status then
+      if new.status = 'active' then
+        if old.status = 'pending' and auth.uid() = old.client_id then
+          new.consented_at := coalesce(new.consented_at, now());
+        else
+          new.status := old.status;
+        end if;
+      elsif new.status = 'pending' then
+        new.status := old.status;
+      end if;
+      -- 'revoked' is allowed from either side, from any state.
+    end if;
+    if new.consented_at is distinct from old.consented_at
+       and auth.uid() is distinct from old.client_id then
+      new.consented_at := old.consented_at;
+    end if;
+    if new.group_label is distinct from old.group_label
+       and auth.uid() is distinct from old.trainer_id then
+      new.group_label := old.group_label;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_trainer_client_status_trigger on public.trainer_clients;
+create trigger protect_trainer_client_status_trigger
+  before update on public.trainer_clients
+  for each row
+  execute function public.protect_trainer_client_status();
+
+-- ── coach_invites ───────────────────────────────────────────────────────────
+-- One invite per client: single-use, expiring, individually revocable —
+-- replacing the single permanent code shared by every client (still
+-- honoured by redeem_coach_invite_code below so nothing already handed out
+-- breaks, but the app no longer generates new ones).
+create table if not exists public.coach_invites (
+  id uuid primary key default gen_random_uuid(),
+  trainer_id uuid not null references public.profiles (id) on delete cascade,
+  code text not null unique,
+  label text check (label is null or char_length(label) <= 60),
+  expires_at timestamptz not null default (now() + interval '7 days'),
+  redeemed_by uuid references public.profiles (id) on delete set null,
+  redeemed_at timestamptz,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists coach_invites_trainer_idx on public.coach_invites (trainer_id, created_at desc);
+
+alter table public.coach_invites enable row level security;
+-- Read-only from the client: creating, redeeming and revoking all go
+-- through the RPCs below, which is what makes "single use" and the
+-- outstanding-invite cap enforceable rather than advisory.
+drop policy if exists "coach_invites: trainer can read own" on public.coach_invites;
+create policy "coach_invites: trainer can read own" on public.coach_invites
+  for select using (auth.uid() = trainer_id);
+
+-- 8 chars from an alphabet with no 0/O/1/I. Each char comes from the first
+-- byte of a fresh gen_random_uuid() (cryptographically random) mod 32 —
+-- 256 is a multiple of 32, so there's no modulo bias.
+create or replace function public.generate_invite_code()
+returns text
+language plpgsql
+volatile
+as $$
+declare
+  alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  result text := '';
+begin
+  for i in 1..8 loop
+    result := result || substr(alphabet, (get_byte(uuid_send(gen_random_uuid()), 0) % 32) + 1, 1);
+  end loop;
+  return result;
+end;
+$$;
+
+create or replace function public.create_coach_invite(p_label text default null, p_days int default 7)
+returns public.coach_invites
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.coach_invites;
+  v_days int := least(greatest(coalesce(p_days, 7), 1), 30);
+  v_label text := nullif(left(trim(coalesce(p_label, '')), 60), '');
+  v_outstanding int;
+begin
+  if auth.uid() is null or not public.has_coach_pass(auth.uid()) then
+    raise exception 'A Coach Pass is required to invite clients';
+  end if;
+
+  select count(*) into v_outstanding from public.coach_invites
+  where trainer_id = auth.uid() and redeemed_at is null and revoked_at is null and expires_at > now();
+  if v_outstanding >= 25 then
+    raise exception 'You have 25 open invites — revoke some before creating more';
+  end if;
+
+  -- The unique index makes a code collision an error rather than a silent
+  -- duplicate; retry a few times with a fresh code before giving up.
+  for attempt in 1..5 loop
+    begin
+      insert into public.coach_invites (trainer_id, code, label, expires_at)
+      values (auth.uid(), public.generate_invite_code(), v_label, now() + make_interval(days => v_days))
+      returning * into v_row;
+      return v_row;
+    exception when unique_violation then
+      if attempt = 5 then raise; end if;
+    end;
+  end loop;
+end;
+$$;
+revoke all on function public.create_coach_invite(text, int) from public, anon;
+grant execute on function public.create_coach_invite(text, int) to authenticated;
+
+create or replace function public.revoke_coach_invite(p_invite_id uuid)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.coach_invites set revoked_at = now()
+  where id = p_invite_id and trainer_id = auth.uid() and redeemed_at is null and revoked_at is null;
+$$;
+revoke all on function public.revoke_coach_invite(uuid) from public, anon;
+grant execute on function public.revoke_coach_invite(uuid) to authenticated;
+
+-- ── redeem_coach_invite_code (replaces the earlier version) ─────────────────
+-- Now creates a *pending* link — the client has to accept it (see
+-- respond_to_coach_link) before the trainer can see anything. Accepts a
+-- per-client invite (single-use, expiring) or, for compatibility, the old
+-- permanent per-trainer code. An already-active or already-pending link is
+-- left alone and doesn't burn the invite; a previously revoked one goes back
+-- to pending, since the client has just been invited again.
+create or replace function public.redeem_coach_invite_code(p_code text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_code text := upper(trim(coalesce(p_code, '')));
+  v_trainer_id uuid;
+  v_invite public.coach_invites;
+  v_status text;
+  v_changed boolean := false;
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in first';
+  end if;
+  if length(v_code) = 0 then
+    raise exception 'Enter an invite code';
+  end if;
+
+  select * into v_invite from public.coach_invites where code = v_code for update;
+  if found then
+    if v_invite.revoked_at is not null or v_invite.redeemed_at is not null
+       or v_invite.expires_at <= now() or not public.has_coach_pass(v_invite.trainer_id) then
+      raise exception 'That invite code is invalid or no longer active';
+    end if;
+    v_trainer_id := v_invite.trainer_id;
+  else
+    select id into v_trainer_id from public.profiles where coach_invite_code = v_code;
+    if v_trainer_id is null or not public.has_coach_pass(v_trainer_id) then
+      raise exception 'That invite code is invalid or no longer active';
+    end if;
+  end if;
+
+  if v_trainer_id = auth.uid() then
+    raise exception 'You can''t connect to your own coach account';
+  end if;
+
+  select status into v_status from public.trainer_clients
+  where trainer_id = v_trainer_id and client_id = auth.uid();
+
+  if v_status is null then
+    insert into public.trainer_clients (trainer_id, client_id, status)
+    values (v_trainer_id, auth.uid(), 'pending');
+    v_changed := true;
+  elsif v_status = 'revoked' then
+    update public.trainer_clients set status = 'pending', consented_at = null
+    where trainer_id = v_trainer_id and client_id = auth.uid();
+    v_changed := true;
+  end if;
+
+  if v_changed and v_invite.id is not null then
+    update public.coach_invites set redeemed_by = auth.uid(), redeemed_at = now() where id = v_invite.id;
+  end if;
+
+  return v_trainer_id;
+end;
+$$;
+revoke all on function public.redeem_coach_invite_code(text) from public, anon;
+grant execute on function public.redeem_coach_invite_code(text) to authenticated;
+
+-- ── respond_to_coach_link ───────────────────────────────────────────────────
+-- The client's side of consent. Accept: pending -> active (stamping
+-- consented_at), or — for links that predate the consent step — just record
+-- that they've seen and confirmed what their coach can access. Decline /
+-- disconnect: -> revoked.
+create or replace function public.respond_to_coach_link(p_link_id uuid, p_accept boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_link public.trainer_clients;
+begin
+  select * into v_link from public.trainer_clients
+  where id = p_link_id and client_id = auth.uid() for update;
+  if not found then
+    raise exception 'Invitation not found';
+  end if;
+
+  if p_accept then
+    if v_link.status = 'pending' then
+      update public.trainer_clients set status = 'active', consented_at = now() where id = p_link_id;
+    elsif v_link.status = 'active' and v_link.consented_at is null then
+      update public.trainer_clients set consented_at = now() where id = p_link_id;
+    else
+      raise exception 'This invitation is no longer available';
+    end if;
+  else
+    update public.trainer_clients set status = 'revoked' where id = p_link_id and status <> 'revoked';
+  end if;
+end;
+$$;
+revoke all on function public.respond_to_coach_link(uuid, boolean) from public, anon;
+grant execute on function public.respond_to_coach_link(uuid, boolean) to authenticated;
+
+-- ── get_pending_clients ─────────────────────────────────────────────────────
+-- Lets a trainer see "Sam accepted the code, awaiting their OK" without
+-- opening any read access: it returns a first name and a date, nothing
+-- from the client's profile or logs.
+create or replace function public.get_pending_clients()
+returns table (link_id uuid, client_name text, requested_at timestamptz)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select tc.id,
+         coalesce(nullif(split_part(trim(coalesce(p.name, '')), ' ', 1), ''), 'A client'),
+         tc.created_at
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.client_id
+  where tc.trainer_id = auth.uid() and tc.status = 'pending'
+  order by tc.created_at desc;
+$$;
+revoke all on function public.get_pending_clients() from public, anon;
+grant execute on function public.get_pending_clients() to authenticated;
+
+-- ── get_my_coach_links ──────────────────────────────────────────────────────
+-- A client's view of the trainers they're linked to, pending or active. The
+-- existing "profiles: select own trainer" policy only opens a trainer's
+-- profile to *active* clients (and hands over every column), so a pending
+-- invitation couldn't even show who it's from. This returns just the two
+-- fields the UI needs — name and logo — without widening that policy.
+create or replace function public.get_my_coach_links()
+returns table (
+  id uuid, status text, created_at timestamptz, consented_at timestamptz,
+  trainer_id uuid, trainer_name text, trainer_logo_url text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select tc.id, tc.status, tc.created_at, tc.consented_at, tc.trainer_id, p.name, p.coach_logo_url
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.trainer_id
+  where tc.client_id = auth.uid() and tc.status in ('pending', 'active')
+  order by tc.created_at desc;
+$$;
+revoke all on function public.get_my_coach_links() from public, anon;
+grant execute on function public.get_my_coach_links() to authenticated;

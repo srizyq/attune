@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ThemeProvider } from '../context/ThemeProvider';
+import CoachConsentGate from './CoachConsentGate';
 
 export default function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -39,5 +40,10 @@ export default function RequireAuth({ children }) {
 
   // Every authenticated page gets theme context from here — nothing
   // outside RequireAuth (marketing, onboarding, login) is theme-aware.
-  return <ThemeProvider>{children}</ThemeProvider>;
+  return (
+    <ThemeProvider>
+      {children}
+      <CoachConsentGate />
+    </ThemeProvider>
+  );
 }

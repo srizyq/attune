@@ -185,10 +185,23 @@ export default function CoachModal({ onClose, closing }) {
         ) : trainers.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 14px' }}>Not connected to a trainer yet.</p>
         ) : (
-          trainers.map(row => (
+          trainers.map(row => row.status === 'pending' ? (
+            // The full "here's what they'll see" consent card lives on the
+            // Coach tab — one place to accept, not a second, thinner copy here.
+            <FieldRow key={row.id} label={`${row.trainer?.name || 'A coach'} invited you`} hint="Nothing is shared until you accept">
+              <button
+                onClick={() => { onClose(); navigate('/coach'); }}
+                style={{ padding: '7px 12px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 7, color: '#0f0f0f', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                Review
+              </button>
+            </FieldRow>
+          ) : (
             <FieldRow key={row.id} label={row.trainer?.name || 'Trainer'} hint={`Connected ${new Date(row.created_at).toLocaleDateString()}`}>
               <button
-                onClick={() => disconnect(row.id)}
+                onClick={() => {
+                  if (window.confirm(`Disconnect from ${row.trainer?.name || 'your coach'}? They'll lose access to your data immediately, and you'd need a new invite to reconnect.`)) disconnect(row.id);
+                }}
                 style={{ padding: '7px 12px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 7, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Disconnect
@@ -199,9 +212,10 @@ export default function CoachModal({ onClose, closing }) {
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
           <input
             value={inviteCodeInput}
-            onChange={e => { setInviteCodeInput(e.target.value.toUpperCase()); setInviteStatus(null); }}
-            placeholder="Enter invite code"
-            style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', textTransform: 'uppercase' }}
+            onChange={e => { setInviteCodeInput(e.target.value); setInviteStatus(null); }}
+            onKeyDown={e => { if (e.key === 'Enter') handleRedeemCode(); }}
+            placeholder="Invite link or code"
+            style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
           />
           <button
             onClick={handleRedeemCode}

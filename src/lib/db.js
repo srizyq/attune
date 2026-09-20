@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { shiftIsoDateKeepLocalTime } from './mealTime';
+import { isMissingFunctionError } from './coachInvite';
 
 // ─── profiles ──────────────────────────────────────────────────────────────
 
@@ -579,15 +580,33 @@ export async function uploadCoachLogo(userId, file) {
   return `${data.publicUrl}?t=${Date.now()}`; // cache-bust so a re-upload shows immediately
 }
 
+// A client's linked coaches: pending invitations (awaiting the client's
+// accept/decline) and active links. Each row keeps the shape the UI has
+// always used — { id, status, created_at, consented_at, trainer: { id,
+// name, coach_logo_url } }. consented_at null on an active link means it
+// predates the consent step, which is what triggers the one-time notice.
 export async function getMyTrainers(clientId) {
-  const { data, error } = await supabase
+  const { data, error } = await supabase.rpc('get_my_coach_links');
+  if (!error) {
+    return (data || []).map((r) => ({
+      id: r.id,
+      status: r.status,
+      created_at: r.created_at,
+      consented_at: r.consented_at,
+      trainer: { id: r.trainer_id, name: r.trainer_name, coach_logo_url: r.trainer_logo_url },
+    }));
+  }
+  if (!isMissingFunctionError(error)) throw error;
+  // The app shipped before the consent migration was run: behave exactly as
+  // before (active links only, no pending state, no consent notice).
+  const { data: legacy, error: legacyError } = await supabase
     .from('trainer_clients')
     .select('id, status, created_at, trainer:profiles!trainer_clients_trainer_id_fkey(id, name, coach_logo_url)')
     .eq('client_id', clientId)
     .eq('status', 'active')
     .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data;
+  if (legacyError) throw legacyError;
+  return legacy.map((r) => ({ ...r, consented_at: r.created_at }));
 }
 
 export async function redeemCoachInviteCode(code) {
@@ -602,6 +621,57 @@ export async function revokeClientLink(trainerClientRowId) {
     .update({ status: 'revoked' })
     .eq('id', trainerClientRowId);
   if (error) throw error;
+}
+
+// Accepting a pending invitation, or confirming the one-time notice on a
+// connection that predates the consent step. Declining/disconnecting goes
+// through respondToCoachLink(id, false) too.
+export async function respondToCoachLink(linkId, accept) {
+  const { error } = await supabase.rpc('respond_to_coach_link', { p_link_id: linkId, p_accept: accept });
+  if (error) {
+    if (isMissingFunctionError(error)) throw new Error('This needs the latest database update — try again shortly.');
+    throw error;
+  }
+}
+
+// ─── coach_invites (trainer side) ───────────────────────────────────────────
+
+export async function getMyInvites(trainerId) {
+  const { data, error } = await supabase
+    .from('coach_invites')
+    .select('id, code, label, expires_at, redeemed_at, revoked_at, created_at')
+    .eq('trainer_id', trainerId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) {
+    // Table not created yet (migration not run): no invites, and the caller
+    // falls back to the old shared-code flow.
+    if (error.code === '42P01' || error.code === 'PGRST205') return null;
+    throw error;
+  }
+  return data;
+}
+
+export async function createCoachInvite(label, days = 7) {
+  const { data, error } = await supabase.rpc('create_coach_invite', { p_label: label || null, p_days: days });
+  if (error) throw error;
+  return data;
+}
+
+export async function revokeCoachInvite(inviteId) {
+  const { error } = await supabase.rpc('revoke_coach_invite', { p_invite_id: inviteId });
+  if (error) throw error;
+}
+
+// Clients who redeemed a code and haven't accepted yet — a first name and a
+// date only; the trainer has no data access until the client says yes.
+export async function getPendingClients() {
+  const { data, error } = await supabase.rpc('get_pending_clients');
+  if (error) {
+    if (isMissingFunctionError(error)) return [];
+    throw error;
+  }
+  return data || [];
 }
 
 // ─── trainer_comments ───────────────────────────────────────────────────────

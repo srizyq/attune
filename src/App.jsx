@@ -22,6 +22,7 @@ import Nutrients from "./pages/Nutrients";
 import Expenditure from "./pages/Expenditure";
 import DailyLog from "./pages/DailyLog";
 import Coach from "./pages/Coach";
+import JoinCoach from "./pages/JoinCoach";
 import DashboardRedesignHarness from "./prototypes/dashboard-redesign/Harness";
 import SettingsRedesignHarness from "./prototypes/settings-redesign/Harness";
 import Terms from "./pages/Terms";
@@ -85,6 +86,7 @@ function AnimatedRoutes() {
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
         <Route path="/settings/goals" element={<RequireAuth><SettingsGoals /></RequireAuth>} />
         <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
+        <Route path="/join/:code" element={<JoinCoach />} />
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="/prototypes/dashboard-redesign" element={<DashboardRedesignHarness />} />
         <Route path="/prototypes/settings-redesign" element={<SettingsRedesignHarness />} />

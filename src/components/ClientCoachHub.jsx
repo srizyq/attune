@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useMyTrainers, useCoachNote } from '../hooks/useCoach';
 import { authedPost } from '../lib/billing';
 import CoachNote from './CoachNote';
 import CoachChatModal from './CoachChatModal';
+import CoachConsentCard from './CoachConsentCard';
 
 const COACH_PASS_PRICE = 'A$19.99/month';
 
@@ -91,17 +92,47 @@ export default function ClientCoachHub({ showUpsell = true }) {
   // RequireAuth's isUnsignedGuest gate means is_anonymous here can only
   // mean "signed up, hasn't confirmed their email yet".
   const pendingConfirmation = !!user?.is_anonymous;
-  const { trainers, loading: trainersLoading, redeemCode, disconnect } = useMyTrainers();
+  const location = useLocation();
+  const { active, pending, needsNotice, loading: trainersLoading, redeemCode, disconnect, respond } = useMyTrainers();
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [inviteStatus, setInviteStatus] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  // Which link's accept/decline is in flight, and the last failure — one
+  // pair is enough since a person answers one invitation at a time.
+  const [respondingId, setRespondingId] = useState(null);
+  const [respondError, setRespondError] = useState(null);
+  // Set by the /join/ redemption in CoachConsentGate when a stashed code
+  // turned out to be expired, used or revoked.
+  const arrivalError = location.state?.inviteError || null;
 
   const { note: weightNote, dismiss: dismissWeight } = useCoachNote('weight');
   const { note: nutritionNote, dismiss: dismissNutrition } = useCoachNote('nutrition');
   const { note: checkinNote, dismiss: dismissCheckin } = useCoachNote('checkin');
 
-  const link = trainers[0];
+  const link = active[0];
   const trainer = link?.trainer;
+
+  const answer = async (linkId, accept) => {
+    setRespondingId(linkId);
+    setRespondError(null);
+    try {
+      await respond(linkId, accept);
+    } catch (err) {
+      setRespondError(err.message || 'Something went wrong — try again.');
+    } finally {
+      setRespondingId(null);
+    }
+  };
+
+  // Disconnecting is one click from a button next to "Message coach" and
+  // can't be undone from this side (getting back in takes a new invite), so
+  // it asks first.
+  const confirmDisconnect = (row) => {
+    const name = row.trainer?.name || 'your coach';
+    if (window.confirm(`Disconnect from ${name}? They'll lose access to your data immediately, and you'd need a new invite to reconnect.`)) {
+      disconnect(row.id);
+    }
+  };
 
   const handleRedeem = async () => {
     const code = inviteCodeInput.trim();
@@ -129,6 +160,36 @@ export default function ClientCoachHub({ showUpsell = true }) {
     <div style={{ maxWidth: 900 }}>
       {showUpsell && <CoachPassUpsell pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />}
 
+      {arrivalError && (
+        <div role="alert" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: 'var(--danger)', fontSize: 13 }}>
+          {arrivalError}
+        </div>
+      )}
+
+      {pending.map(row => (
+        <CoachConsentCard
+          key={row.id}
+          link={row}
+          variant="invite"
+          busy={respondingId === row.id}
+          error={respondError}
+          onAccept={() => answer(row.id, true)}
+          onDecline={() => answer(row.id, false)}
+        />
+      ))}
+
+      {needsNotice.map(row => (
+        <CoachConsentCard
+          key={row.id}
+          link={row}
+          variant="notice"
+          busy={respondingId === row.id}
+          error={respondError}
+          onAccept={() => answer(row.id, true)}
+          onDecline={() => confirmDisconnect(row)}
+        />
+      ))}
+
       <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>
         {trainersLoading ? (
@@ -152,20 +213,23 @@ export default function ClientCoachHub({ showUpsell = true }) {
               <button onClick={() => setChatOpen(true)} className="btn-press" style={{ padding: '8px 14px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Message coach
               </button>
-              <button onClick={() => disconnect(link.id)} style={{ padding: '8px 14px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <button onClick={() => confirmDisconnect(link)} style={{ padding: '8px 14px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Disconnect
               </button>
             </div>
           </div>
+        ) : pending.length > 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Accept the invitation above to connect.</p>
         ) : (
           <>
-            <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 14px' }}>Not connected to a trainer yet — enter the invite code they gave you.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 14px' }}>Not connected to a trainer yet — paste the invite link or code they gave you.</p>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 value={inviteCodeInput}
-                onChange={e => { setInviteCodeInput(e.target.value.toUpperCase()); setInviteStatus(null); }}
-                placeholder="Enter invite code"
-                style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', textTransform: 'uppercase' }}
+                onChange={e => { setInviteCodeInput(e.target.value); setInviteStatus(null); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleRedeem(); }}
+                placeholder="Invite link or code"
+                style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
               />
               <button
                 onClick={handleRedeem}

@@ -11,6 +11,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useMyClients, useTrainerComments, useClientFoodLogs } from '../hooks/useCoach';
 import AppNav from '../components/AppNav';
 import ClientCoachHub from '../components/ClientCoachHub';
+import CoachInvitePanel from '../components/CoachInvitePanel';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { getCheckinForDate, setClientTargets, getSavedMeals, shareRecipeWithClient } from '../lib/db';
@@ -29,7 +30,6 @@ import MacroSplitBar from '../components/MacroSplitBar';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
-const INVITE_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I ambiguity
 const ACCENT = '#8fbc8f';
 const WATER_BLUE = '#6aabcf';
 const AI_PURPLE = '#9f97e8';
@@ -57,12 +57,6 @@ const COMMENT_CATEGORIES = [
 function timeOfDayGreeting() {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-}
-
-function generateInviteCode() {
-  let code = '';
-  for (let i = 0; i < 6; i++) code += INVITE_CODE_CHARS[Math.floor(Math.random() * INVITE_CODE_CHARS.length)];
-  return code;
 }
 
 function avg(nums) {
@@ -157,12 +151,17 @@ function EmptyChartBox({ icon, message }) {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function Coach() {
-  const { profile, save: saveProfile } = useProfile();
-  const { clients, loading: clientsLoading, revoke, setGroup } = useMyClients();
+  const { profile } = useProfile();
+  const { clients, loading: clientsLoading, revoke, setGroup, refetch: refetchClients } = useMyClients();
+
+  // A client accepting an invite happens on their device — pick it up when
+  // the trainer comes back to this tab instead of leaving a stale list.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') refetchClients({ silent: true }); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [refetchClients]);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [codeError, setCodeError] = useState(null);
   // A trainer can *also* be someone else's client (a coach with their own
   // nutritionist, say) — this tab is how they reach that relationship's
   // notes/chat/targets without it being hidden behind their own trainer
@@ -184,39 +183,6 @@ export default function Coach() {
 
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const isTrainer = !!profile?.coach_pass;
-
-  const handleGenerateCode = async () => {
-    setGenerating(true);
-    setCodeError(null);
-    try {
-      let lastErr = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          await saveProfile({ coach_invite_code: generateInviteCode() });
-          lastErr = null;
-          break;
-        } catch (err) {
-          lastErr = err; // likely a code collision — retry with a fresh one
-        }
-      }
-      if (lastErr) throw lastErr;
-    } catch (err) {
-      setCodeError(err.message || "Couldn't generate a code — try again.");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleCopyCode = async () => {
-    if (!profile.coach_invite_code) return;
-    try {
-      await navigator.clipboard.writeText(profile.coach_invite_code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // Clipboard permission denied — the code is still visible to copy by hand.
-    }
-  };
 
   if (!profile) return null;
 
@@ -284,14 +250,8 @@ export default function Coach() {
             <ClientCoachHub showUpsell={false} />
           ) : !selectedClient ? (
             <ClientListView
-              profile={profile}
               clients={clients}
               loading={clientsLoading}
-              generating={generating}
-              codeError={codeError}
-              copied={copied}
-              onGenerate={handleGenerateCode}
-              onCopy={handleCopyCode}
               onSelect={setSelectedClient}
               onRevoke={revoke}
               onSetGroup={setGroup}
@@ -310,13 +270,7 @@ export default function Coach() {
 }
 
 // ─── Client list + invite code ────────────────────────────────────────────────
-const INVITE_STEPS = [
-  { icon: 'ti-sparkles', text: 'Generate a code' },
-  { icon: 'ti-share-3', text: 'Share it with your client' },
-  { icon: 'ti-link', text: 'They connect in Settings — food, weight and check-ins show up here' },
-];
-
-function ClientListView({ profile, clients, loading, generating, codeError, copied, onGenerate, onCopy, onSelect, onRevoke, onStatus, onSetGroup, loggedTodayCount, resolvedCount, allLoggedToday }) {
+function ClientListView({ clients, loading, onSelect, onRevoke, onStatus, onSetGroup, loggedTodayCount, resolvedCount, allLoggedToday }) {
   const hasClients = clients.length > 0;
   const groupedClients = useMemo(() => {
     const map = new Map();
@@ -334,59 +288,7 @@ function ClientListView({ profile, clients, loading, generating, codeError, copi
 
   return (
     <div className="grid-2" style={{ alignItems: 'start' }}>
-      <Card style={{
-        marginBottom: 0,
-        background: profile.coach_invite_code
-          ? 'linear-gradient(160deg, var(--accent-bg) 0%, var(--bg-subtle) 65%)'
-          : 'var(--bg-subtle)',
-        border: `1px solid ${profile.coach_invite_code ? 'var(--border-active)' : 'var(--card-border)'}`,
-      }}>
-        <SectionLabel icon="ti-user-plus">{hasClients ? 'Invite another client' : 'Invite your first client'}</SectionLabel>
-        {profile.coach_invite_code ? (
-          <>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px', lineHeight: 1.6 }}>
-              Share this code — a client enters it in Settings to connect their data to your dashboard.
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <div style={{
-                flex: 1, padding: '14px 16px', background: 'var(--bg-primary)', border: '1px solid var(--border-active)',
-                borderRadius: 10, fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 700, letterSpacing: '0.14em',
-                color: 'var(--accent)', textAlign: 'center',
-              }}>
-                {profile.coach_invite_code}
-              </div>
-              <button
-                onClick={onCopy}
-                className="btn-press"
-                style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 10, color: copied ? 'var(--accent)' : 'var(--text-secondary)', fontSize: 16, cursor: 'pointer', flexShrink: 0 }}
-                title="Copy code"
-              >
-                {copied ? <i className="ti ti-check pop-in" /> : <i className="ti ti-copy" />}
-              </button>
-            </div>
-          </>
-        ) : (
-          <div style={{ marginBottom: 18 }}>
-            {INVITE_STEPS.map((step, i) => (
-              <div key={step.text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < INVITE_STEPS.length - 1 ? 14 : 0 }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--accent)', fontSize: 13 }}>
-                  <i className={`ti ${step.icon}`} />
-                </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>{step.text}</p>
-              </div>
-            ))}
-          </div>
-        )}
-        {codeError && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 12px' }}>{codeError}</p>}
-        <button
-          onClick={onGenerate}
-          disabled={generating}
-          className="btn-press"
-          style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-        >
-          {generating ? 'Generating…' : profile.coach_invite_code ? 'Regenerate code' : 'Generate code'}
-        </button>
-      </Card>
+      <CoachInvitePanel hasClients={hasClients} />
 
       <Card style={{ marginBottom: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
