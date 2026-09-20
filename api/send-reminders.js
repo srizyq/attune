@@ -11,6 +11,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
+import { digestDue, digestPayload, pickInactive } from './_coachPush.js';
 
 function localDateAndTime(timezone) {
   const now = new Date();
@@ -24,6 +25,65 @@ function localDateAndTime(timezone) {
     date: `${get('year')}-${get('month')}-${get('day')}`,
     time: `${get('hour')}:${get('minute')}`,
   };
+}
+
+
+const INACTIVE_DAYS = 3;
+
+// Once a morning (09:00 in the coach's own timezone), a single push telling a
+// coach how many of their clients have gone quiet — the "who needs a nudge
+// today" signal without opening the app. Opt-in via profiles.
+// notify_client_activity. Marked sent *before* sending so a crash mid-run can
+// only skip a day, never spam repeats. Runs inside this existing cron because
+// the project is at Vercel's 12-function cap (no room for a second endpoint),
+// and is fully isolated: any failure here is logged and must never affect the
+// reminder pushes above.
+async function runInactiveClientDigest(supabase) {
+  const { data: trainers, error } = await supabase
+    .from('profiles')
+    .select('id, reminder_timezone, activity_alert_last_sent_date')
+    .eq('notify_client_activity', true);
+  // Before the coach-tools migration has been run these columns don't exist.
+  if (error) return { checked: 0, sent: 0 };
+
+  let sent = 0;
+  for (const trainer of trainers || []) {
+    const { date, time } = localDateAndTime(trainer.reminder_timezone);
+    if (!digestDue(time, trainer.activity_alert_last_sent_date, date)) continue;
+
+    await supabase.from('profiles').update({ activity_alert_last_sent_date: date }).eq('id', trainer.id);
+
+    const { data: links } = await supabase
+      .from('trainer_clients')
+      .select('client_id, created_at')
+      .eq('trainer_id', trainer.id)
+      .eq('status', 'active');
+    if (!links || links.length === 0) continue;
+
+    const { data: lastRows } = await supabase.rpc('client_last_log_dates', { p_client_ids: links.map((l) => l.client_id) });
+    const lastLogByClient = Object.fromEntries((lastRows || []).map((r) => [r.user_id, r.last_log_date]));
+    const inactive = pickInactive(links, lastLogByClient, date, INACTIVE_DAYS);
+    if (inactive.length === 0) continue;
+
+    const { data: subs } = await supabase
+      .from('push_subscriptions')
+      .select('id, endpoint, subscription')
+      .eq('user_id', trainer.id);
+    const payload = JSON.stringify(digestPayload(inactive.length, INACTIVE_DAYS));
+    for (const sub of subs || []) {
+      try {
+        await webpush.sendNotification(sub.subscription, payload);
+        sent++;
+      } catch (err) {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+        } else {
+          console.error('Digest push failed:', sub.endpoint, err.message);
+        }
+      }
+    }
+  }
+  return { checked: (trainers || []).length, sent };
 }
 
 export default async function handler(req, res) {
@@ -124,5 +184,12 @@ export default async function handler(req, res) {
     }
   }
 
-  res.status(200).json({ checked: (profiles || []).length, sent, skipped });
+  let digest = { checked: 0, sent: 0 };
+  try {
+    digest = await runInactiveClientDigest(supabase);
+  } catch (err) {
+    console.error('Inactive-client digest failed:', err);
+  }
+
+  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest });
 }

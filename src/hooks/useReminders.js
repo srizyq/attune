@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { useProfile } from './useProfile';
 import { savePushSubscription, deletePushSubscriptionByEndpoint } from '../lib/db';
 import { pushSupported, requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '../lib/pushNotifications';
+import { stillNeedsPush } from '../lib/pushPrefs';
 
 // Ties together the profile's reminder settings (enabled/time/timezone)
 // with the actual browser push subscription — enabling reminders means
@@ -40,11 +41,11 @@ export function useReminders() {
     setBusy(true);
     setError(null);
     try {
-      // Trainer-comment notifications (see useTrainerCommentNotifications
-      // below) share this same device's one push subscription — only tear
-      // it down once nothing else on this profile still needs it, or
-      // disabling reminders alone would silently kill trainer updates too.
-      if (!profile?.notify_trainer_comments) {
+      // Trainer notifications (below) share this same device's one push
+      // subscription — only tear it down once nothing else on this profile
+      // still needs it, or disabling reminders alone would silently kill
+      // those too.
+      if (!stillNeedsPush(profile, 'reminder_enabled')) {
         const existing = await unsubscribeFromPush();
         if (existing) await deletePushSubscriptionByEndpoint(existing.endpoint);
       }
@@ -110,7 +111,7 @@ export function useTrainerCommentNotifications() {
     setBusy(true);
     setError(null);
     try {
-      if (!profile?.reminder_enabled) {
+      if (!stillNeedsPush(profile, 'notify_trainer_comments')) {
         const existing = await unsubscribeFromPush();
         if (existing) await deletePushSubscriptionByEndpoint(existing.endpoint);
       }
@@ -131,4 +132,60 @@ export function useTrainerCommentNotifications() {
     enable,
     disable,
   };
+}
+
+// Settings > Notifications' "Client activity" toggle, for coaches: a push when
+// a client replies to them, plus a once-a-morning digest of clients who've
+// gone quiet (api/notify-trainer-comment.js and api/send-reminders.js). Same
+// single push subscription as the two above. Enabling also records the
+// coach's timezone if there isn't one yet, since the digest is timed to
+// their local 09:00 and the timezone is otherwise only saved by reminders.
+export function useClientActivityNotifications() {
+  const { user } = useAuth();
+  const { profile, save } = useProfile();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const enable = useCallback(async () => {
+    if (!user) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (!pushSupported()) throw new Error('Push notifications are not supported in this browser.');
+      const permission = await requestNotificationPermission();
+      if (permission !== 'granted') throw new Error('Notification permission was not granted.');
+      const subscription = await subscribeToPush();
+      await savePushSubscription(user.id, subscription.toJSON());
+      await save({
+        notify_client_activity: true,
+        ...(profile?.reminder_timezone ? {} : { reminder_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      });
+    } catch (err) {
+      console.error('Failed to enable client-activity notifications:', err);
+      setError(err.message || "Couldn't enable this — try again.");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [user, save, profile]);
+
+  const disable = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      if (!stillNeedsPush(profile, 'notify_client_activity')) {
+        const existing = await unsubscribeFromPush();
+        if (existing) await deletePushSubscriptionByEndpoint(existing.endpoint);
+      }
+      await save({ notify_client_activity: false });
+    } catch (err) {
+      console.error('Failed to disable client-activity notifications:', err);
+      setError("Couldn't disable this — try again.");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [save, profile]);
+
+  return { enabled: !!profile?.notify_client_activity, busy, error, enable, disable };
 }

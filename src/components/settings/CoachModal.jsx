@@ -5,6 +5,7 @@ import { useProfile } from '../../hooks/useProfile';
 import { useMyTrainers } from '../../hooks/useCoach';
 import { uploadCoachLogo } from '../../lib/db';
 import { authedPost } from '../../lib/billing';
+import { coachPassHint, eligibleForCoachTrial, COACH_TRIAL_DAYS } from '../../lib/coachPass';
 import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
 
 function CoachPassButton({ profile, pendingConfirmation, onGoToProfile }) {
@@ -68,7 +69,7 @@ function CoachPassButton({ profile, pendingConfirmation, onGoToProfile }) {
           fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
-        {loading ? 'Loading…' : profile?.coach_pass ? 'Manage billing' : 'Subscribe'}
+        {loading ? 'Loading…' : profile?.coach_pass ? 'Manage billing' : eligibleForCoachTrial(profile) ? 'Start free trial' : 'Subscribe'}
       </button>
       {error && <span style={{ color: 'var(--danger)', fontSize: 11 }}>{error}</span>}
     </div>
@@ -145,11 +146,7 @@ export default function CoachModal({ onClose, closing }) {
         <SectionLabel>Become a coach</SectionLabel>
         <FieldRow
           label="Coach Pass"
-          hint={
-            !profile?.coach_pass ? 'Unlimited clients'
-              : profile?.stripe_subscription_id ? `Active subscription · ${profile?.coach_pass_status || 'active'}`
-              : 'Comp access'
-          }
+          hint={eligibleForCoachTrial(profile) ? `Unlimited clients · ${COACH_TRIAL_DAYS}-day free trial` : coachPassHint(profile)}
         >
           <CoachPassButton profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={goToProfile} />
         </FieldRow>

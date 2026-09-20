@@ -7,10 +7,11 @@ import { authedPost } from '../lib/billing';
 import CoachNote from './CoachNote';
 import CoachChatModal from './CoachChatModal';
 import CoachConsentCard from './CoachConsentCard';
+import { coachPassButtonLabel } from '../lib/coachPass';
 
 const COACH_PASS_PRICE = 'A$19.99/month';
 
-function CoachPassUpsell({ pendingConfirmation, onGoToProfile }) {
+function CoachPassUpsell({ profile, pendingConfirmation, onGoToProfile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -63,7 +64,7 @@ function CoachPassUpsell({ pendingConfirmation, onGoToProfile }) {
           className="btn-press"
           style={{ padding: '10px 20px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
         >
-          {loading ? 'Loading…' : 'Start Coach Pass'}
+          {loading ? 'Loading…' : coachPassButtonLabel(profile)}
         </button>
       )}
     </div>
@@ -158,7 +159,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
 
   return (
     <div style={{ maxWidth: 900 }}>
-      {showUpsell && <CoachPassUpsell pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />}
+      {showUpsell && <CoachPassUpsell profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />}
 
       {arrivalError && (
         <div role="alert" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: 'var(--danger)', fontSize: 13 }}>

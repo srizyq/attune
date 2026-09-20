@@ -296,6 +296,21 @@ export function useGeneralThread(trainerId) {
     if (!user || !trainerId) return;
     await addClientReply(user.id, trainerId, body);
     await refetch();
+    // Best-effort, same as the trainer->client note: a failed push must not
+    // surface as a failed message, which already saved above. The server
+    // opts the coach in/out and throttles bursts.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await fetch('/api/notify-trainer-comment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ direction: 'to-trainer', trainerId }),
+        });
+      }
+    } catch (err) {
+      console.error('Failed to notify coach of reply:', err);
+    }
   }, [user, trainerId, refetch]);
 
   return { messages, loading, sendReply, refetch };

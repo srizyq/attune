@@ -10,6 +10,7 @@
 // disabled and read manually below.
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { planOf, checkoutCompletedFields, subscriptionUpdate, subscriptionDeletion } from './_stripeState.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -61,50 +62,39 @@ export default async function handler(req, res) {
       case 'checkout.session.completed': {
         const session = event.data.object;
         const userId = session.client_reference_id || session.metadata?.supabase_user_id;
-        const plan = session.metadata?.plan || 'coach';
         if (userId) {
-          const fields = plan === 'pro'
-            ? { is_premium: true, pro_status: 'active', stripe_customer_id: session.customer, stripe_pro_subscription_id: session.subscription }
-            : { coach_pass: true, coach_pass_status: 'active', stripe_customer_id: session.customer, stripe_subscription_id: session.subscription };
+          // A trial signup is 'trialing', not 'active' — ask Stripe for the
+          // real status rather than assuming. If that lookup fails, the
+          // subscription.updated event that follows corrects it.
+          let status;
+          if (session.subscription) {
+            try {
+              status = (await stripe.subscriptions.retrieve(session.subscription)).status;
+            } catch (err) {
+              console.error('Could not read subscription status at checkout:', err.message);
+            }
+          }
+          const fields = checkoutCompletedFields({
+            plan: planOf(session), customerId: session.customer, subscriptionId: session.subscription, status,
+          });
           const { error } = await supabase.from('profiles').update(fields).eq('id', userId);
           if (error) throw error;
         }
         break;
       }
-      // Covers renewals, past-due (failed card), and reactivation — the
-      // relevant pass tracks live with Stripe's own subscription status.
+      // Renewals, a trial converting to paid, past-due (failed card) and
+      // reactivation — the relevant pass tracks live with Stripe's status.
       case 'customer.subscription.updated': {
-        const sub = event.data.object;
-        const plan = sub.metadata?.plan || 'coach';
-        const { error } = plan === 'pro'
-          ? await supabase.from('profiles').update({
-              pro_status: sub.status,
-              is_premium: sub.status === 'active',
-            }).eq('stripe_pro_subscription_id', sub.id)
-          : await supabase.from('profiles').update({
-              coach_pass_status: sub.status,
-              coach_pass: sub.status === 'active',
-            }).eq('stripe_subscription_id', sub.id);
+        const { match, fields } = subscriptionUpdate(event.data.object);
+        const { error } = await supabase.from('profiles').update(fields).eq(match.column, match.value);
         if (error) throw error;
         break;
       }
-      // Cancellation — also drop coach_mode so a lapsed trainer isn't left
-      // sitting on /coach with no way to reach it (Coach.jsx's own guard
-      // would redirect them, but this keeps the profile state consistent
-      // even before they next open the app).
+      // Cancellation — also drops coach_mode so a lapsed trainer isn't left
+      // sitting on /coach with no way to reach it.
       case 'customer.subscription.deleted': {
-        const sub = event.data.object;
-        const plan = sub.metadata?.plan || 'coach';
-        const { error } = plan === 'pro'
-          ? await supabase.from('profiles').update({
-              is_premium: false,
-              pro_status: 'canceled',
-            }).eq('stripe_pro_subscription_id', sub.id)
-          : await supabase.from('profiles').update({
-              coach_pass: false,
-              coach_mode: false,
-              coach_pass_status: 'canceled',
-            }).eq('stripe_subscription_id', sub.id);
+        const { match, fields } = subscriptionDeletion(event.data.object);
+        const { error } = await supabase.from('profiles').update(fields).eq(match.column, match.value);
         if (error) throw error;
         break;
       }

@@ -46,24 +46,22 @@ export function readSchema() {
   return readFileSync(join(here, '..', 'schema.sql'), 'utf8');
 }
 
-// Returns one appended migration block (from its `-- ═══` header comment
-// through to the next such header, or end of file) so a test can re-run it
-// on a database that already has it applied.
+// Returns one appended migration block so a test can re-run it on a
+// database that already has it applied. Blocks are introduced by a comment
+// header framed by two `-- ═══` rules (open / close); a block runs from its
+// opening rule to the next block's opening rule (or end of file).
 export function sliceMigration(titleFragment) {
   const lines = readSchema().split('\n');
-  const isHeader = (l) => l.startsWith('-- ═══');
-  const titleIdx = lines.findIndex((l) => l.includes(titleFragment));
-  if (titleIdx < 0) throw new Error(`No migration titled "${titleFragment}"`);
-  let start = titleIdx;
-  while (start > 0 && !isHeader(lines[start])) start--;
-  let end = titleIdx + 1;
-  while (end < lines.length && !isHeader(lines[end])) end++;
-  // A block is header / title / header, so skip past its own closing rule.
-  if (end < lines.length && end - start <= 3) {
-    end++;
-    while (end < lines.length && !isHeader(lines[end])) end++;
+  const rules = lines.map((l, i) => (l.startsWith('-- ═══') ? i : -1)).filter((i) => i >= 0);
+  if (rules.length % 2 !== 0) throw new Error('Unbalanced `-- ═══` header rules in schema.sql');
+  for (let k = 0; k < rules.length; k += 2) {
+    const header = lines.slice(rules[k], rules[k + 1] + 1).join('\n');
+    if (header.includes(titleFragment)) {
+      const end = k + 2 < rules.length ? rules[k + 2] : lines.length;
+      return lines.slice(rules[k], end).join('\n');
+    }
   }
-  return lines.slice(start, end).join('\n');
+  throw new Error(`No migration titled "${titleFragment}"`);
 }
 
 export async function createDb({ extraSql = [] } = {}) {

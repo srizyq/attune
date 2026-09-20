@@ -4,6 +4,7 @@
 // recognize-food.js keeping the Anthropic key off the browser.
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { coachTrialDays } from './_stripeState.js';
 
 const PLANS = {
   coach: { priceEnv: 'STRIPE_COACH_PRICE_ID', successParam: 'coach_pass' },
@@ -56,11 +57,12 @@ export default async function handler(req, res) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('stripe_customer_id')
+    .select('stripe_customer_id, stripe_subscription_id, coach_pass_status')
     .eq('id', userId)
     .maybeSingle();
 
   const origin = req.headers.origin || `https://${req.headers.host}`;
+  const trialDays = coachTrialDays(plan, profile);
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -73,7 +75,17 @@ export default async function handler(req, res) {
       customer_email: profile?.stripe_customer_id ? undefined : (userData.user.email || undefined),
       client_reference_id: userId,
       metadata: { supabase_user_id: userId, plan },
-      subscription_data: { metadata: { supabase_user_id: userId, plan } },
+      subscription_data: {
+        metadata: { supabase_user_id: userId, plan },
+        // Coach Pass only, once per person — see coachTrialDays. The card is
+        // collected up front (Checkout's default for subscriptions), so the
+        // first charge happens automatically when the trial ends.
+        ...(trialDays ? { trial_period_days: trialDays } : {}),
+      },
+      ...(trialDays ? {
+        payment_method_collection: 'always',
+        custom_text: { submit: { message: `Your ${trialDays}-day free trial starts today. You won't be charged until it ends, and you can cancel any time before then.` } },
+      } : {}),
       success_url: `${origin}/settings?${successParam}=success`,
       cancel_url: `${origin}/settings?${successParam}=cancelled`,
     });

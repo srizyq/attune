@@ -1430,3 +1430,182 @@ as $$
 $$;
 revoke all on function public.get_my_coach_links() from public, anon;
 grant execute on function public.get_my_coach_links() to authenticated;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Coach tools: private notes, workout access, client summaries, alert prefs
+-- (schema update — run against an existing DB; safe to re-run).
+-- Tests: supabase/tests/coach-tools.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ── trainer_notes ───────────────────────────────────────────────────────────
+-- A trainer's private notes about a client ("mentioned a knee injury").
+-- Deliberately a separate table from trainer_comments rather than a flag on
+-- it: there is no policy that lets a client (or any other trainer) read this
+-- table at all, so a note can't leak to the client through a query that
+-- forgot to filter on a flag. Notes outlive the connection — a trainer keeps
+-- their own records after a client disconnects — but new ones need an active
+-- link.
+create table if not exists public.trainer_notes (
+  id uuid primary key default gen_random_uuid(),
+  trainer_id uuid not null references public.profiles (id) on delete cascade,
+  client_id uuid not null references public.profiles (id) on delete cascade,
+  body text not null check (char_length(body) between 1 and 4000),
+  note_date date,
+  pinned boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists trainer_notes_client_idx on public.trainer_notes (trainer_id, client_id, created_at desc);
+
+alter table public.trainer_notes enable row level security;
+
+drop policy if exists "trainer_notes: select own" on public.trainer_notes;
+create policy "trainer_notes: select own" on public.trainer_notes
+  for select using (auth.uid() = trainer_id);
+drop policy if exists "trainer_notes: insert for active client" on public.trainer_notes;
+create policy "trainer_notes: insert for active client" on public.trainer_notes
+  for insert with check (
+    auth.uid() = trainer_id
+    and exists (
+      select 1 from public.trainer_clients tc
+      where tc.trainer_id = auth.uid() and tc.client_id = trainer_notes.client_id and tc.status = 'active'
+    )
+  );
+drop policy if exists "trainer_notes: update own" on public.trainer_notes;
+create policy "trainer_notes: update own" on public.trainer_notes
+  for update using (auth.uid() = trainer_id) with check (auth.uid() = trainer_id);
+drop policy if exists "trainer_notes: delete own" on public.trainer_notes;
+create policy "trainer_notes: delete own" on public.trainer_notes
+  for delete using (auth.uid() = trainer_id);
+
+create or replace function public.touch_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_trainer_notes_link_trigger on public.trainer_notes;
+create trigger protect_trainer_notes_link_trigger
+  before update on public.trainer_notes
+  for each row
+  execute function public.protect_trainer_link_columns();
+drop trigger if exists touch_trainer_notes_trigger on public.trainer_notes;
+create trigger touch_trainer_notes_trigger
+  before update on public.trainer_notes
+  for each row
+  execute function public.touch_updated_at();
+
+-- ── trainers can read a connected client's workouts ─────────────────────────
+-- Same shape as the food/weight/check-in policies above. The consent screen
+-- (src/lib/coachAccess.js) lists workouts alongside them.
+drop policy if exists "workout_logs: select as trainer of client" on public.workout_logs;
+create policy "workout_logs: select as trainer of client" on public.workout_logs
+  for select using (
+    exists (
+      select 1 from public.trainer_clients tc
+      where tc.client_id = workout_logs.user_id and tc.trainer_id = auth.uid() and tc.status = 'active'
+    )
+  );
+
+-- ── get_client_summaries ────────────────────────────────────────────────────
+-- One row per active client with the numbers a trainer scans to decide who
+-- needs attention today — replacing the client list firing a separate
+-- 7-day history query per client. SECURITY INVOKER: it runs as the trainer,
+-- so the same RLS that guards direct reads decides what each subquery can
+-- see; there is no way for this function to return a client the trainer
+-- couldn't already read. p_today is the trainer's local date (food_logs
+-- dates are each client's local date, so UTC "today" would be off by a day
+-- for anyone far from it).
+create or replace function public.get_client_summaries(p_today date default current_date)
+returns table (
+  link_id uuid, client_id uuid, client_name text, group_label text, connected_at timestamptz,
+  calorie_target int, protein_g int,
+  last_log_date date, days_logged_7d int, days_on_target_7d int, days_protein_7d int,
+  avg_cal_7d numeric, today_cal numeric,
+  latest_weight_kg numeric, latest_weight_date date, weight_change_kg_14d numeric,
+  last_checkin_date date
+)
+language sql
+stable
+set search_path = public
+as $$
+  select
+    tc.id, tc.client_id, p.name, tc.group_label, tc.created_at,
+    p.calorie_target, p.protein_g,
+    (select max(f.logged_date) from public.food_logs f where f.user_id = tc.client_id),
+    coalesce(d.days_logged, 0)::int,
+    coalesce(d.days_on_target, 0)::int,
+    coalesce(d.days_protein, 0)::int,
+    d.avg_cal,
+    coalesce(t.cal, 0),
+    w.kg, w.dt,
+    case when w.kg is not null and w0.kg is not null and w0.dt < w.dt then round(w.kg - w0.kg, 2) end,
+    (select max(c.checkin_date) from public.checkins c where c.user_id = tc.client_id)
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.client_id
+  left join lateral (
+    select
+      count(*) filter (where s.cal > 0) as days_logged,
+      count(*) filter (where s.cal > 0 and p.calorie_target is not null
+                       and s.cal between p.calorie_target * 0.85 and p.calorie_target * 1.15) as days_on_target,
+      count(*) filter (where s.cal > 0 and p.protein_g is not null and s.prot >= p.protein_g * 0.9) as days_protein,
+      avg(s.cal) filter (where s.cal > 0) as avg_cal
+    from (
+      select f.logged_date, sum(f.calories) as cal, sum(f.protein_g) as prot
+      from public.food_logs f
+      where f.user_id = tc.client_id and f.logged_date > p_today - 7 and f.logged_date <= p_today
+      group by f.logged_date
+    ) s
+  ) d on true
+  left join lateral (
+    select sum(f.calories) as cal from public.food_logs f
+    where f.user_id = tc.client_id and f.logged_date = p_today
+  ) t on true
+  left join lateral (
+    select case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg, wl.logged_date as dt
+    from public.weight_logs wl where wl.user_id = tc.client_id and wl.logged_date <= p_today
+    order by wl.logged_date desc limit 1
+  ) w on true
+  left join lateral (
+    select case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg, wl.logged_date as dt
+    from public.weight_logs wl
+    where wl.user_id = tc.client_id and w.dt is not null and wl.logged_date >= w.dt - 14 and wl.logged_date <= w.dt
+    order by wl.logged_date asc limit 1
+  ) w0 on true
+  where tc.trainer_id = auth.uid() and tc.status = 'active'
+  order by p.name nulls last;
+$$;
+revoke all on function public.get_client_summaries(date) from public, anon;
+grant execute on function public.get_client_summaries(date) to authenticated;
+
+-- ── trainer alert preferences ───────────────────────────────────────────────
+-- notify_client_activity: one opt-in covering "a client messaged you" and
+-- the daily "clients who haven't logged" digest (api/send-reminders.js).
+-- activity_alert_last_sent_date makes the digest at-most-once per local day.
+alter table public.profiles add column if not exists notify_client_activity boolean not null default false;
+alter table public.profiles add column if not exists activity_alert_last_sent_date date;
+
+-- ── client_last_log_dates ───────────────────────────────────────────────────
+-- For the inactivity digest, which runs as the service role: the newest
+-- food-log date for each of a list of clients, in one query. Locked to the
+-- service role — for anyone else it would be a way to probe when arbitrary
+-- users last logged food.
+create or replace function public.client_last_log_dates(p_client_ids uuid[])
+returns table (user_id uuid, last_log_date date)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select f.user_id, max(f.logged_date)
+  from public.food_logs f
+  where f.user_id = any(p_client_ids)
+  group by f.user_id;
+$$;
+revoke all on function public.client_last_log_dates(uuid[]) from public, anon, authenticated;
+grant execute on function public.client_last_log_dates(uuid[]) to service_role;

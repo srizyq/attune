@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { useReminders, useTrainerCommentNotifications } from '../../hooks/useReminders';
+import { useReminders, useTrainerCommentNotifications, useClientActivityNotifications } from '../../hooks/useReminders';
+import { useProfile } from '../../hooks/useProfile';
 import { pushSupported } from '../../lib/pushNotifications';
 import { SettingsModal, Card, SectionLabel, FieldRow, Toggle } from './primitives';
 
 export default function NotificationsModal({ onClose, closing }) {
   const reminders = useReminders();
   const trainerNotifs = useTrainerCommentNotifications();
+  const activityNotifs = useClientActivityNotifications();
+  const { profile } = useProfile();
+  const [activityNotifError, setActivityNotifError] = useState(null);
   const [reminderTimeInput, setReminderTimeInput] = useState(reminders.time);
   const [reminderError, setReminderError] = useState(null);
   const [trainerNotifError, setTrainerNotifError] = useState(null);
@@ -73,6 +77,25 @@ export default function NotificationsModal({ onClose, closing }) {
           />
         </FieldRow>
         {trainerNotifError && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 16px' }}>{trainerNotifError}</p>}
+        {profile?.coach_pass && (
+          <>
+            <FieldRow label="Client activity" hint="When a client messages you, plus a morning heads-up if any haven't logged in 3+ days">
+              <Toggle
+                on={activityNotifs.enabled}
+                onChange={async (on) => {
+                  setActivityNotifError(null);
+                  try {
+                    if (on) await activityNotifs.enable();
+                    else await activityNotifs.disable();
+                  } catch (err) {
+                    setActivityNotifError(err.message || "Couldn't update this — try again.");
+                  }
+                }}
+              />
+            </FieldRow>
+            {activityNotifError && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 16px' }}>{activityNotifError}</p>}
+          </>
+        )}
         {[
           { key: 'recap', label: 'Weekly recap',     hint: 'Your shareable Sunday summary — coming soon' },
           { key: 'ai',    label: 'Pattern insights', hint: 'Nudges based on your logged patterns — coming soon' },
