@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { firstName, replyPayload, digestPayload, withinThrottle, daysBetween, pickInactive, digestDue } from './_coachPush.js';
+import { firstName, replyPayload, digestPayload, withinThrottle, pickInactive, digestDue } from './_coachPush.js';
 
 describe('replyPayload', () => {
   it('names the client but never includes what they wrote', () => {
@@ -41,18 +41,6 @@ describe('withinThrottle', () => {
   it('errs towards notifying on bad data', () => {
     expect(withinThrottle(['nope', t(1)])).toBe(false);
     expect(withinThrottle(null)).toBe(false);
-  });
-});
-
-describe('daysBetween', () => {
-  it('counts whole calendar days, immune to daylight saving', () => {
-    expect(daysBetween('2026-09-17', '2026-09-20')).toBe(3);
-    expect(daysBetween('2026-10-03', '2026-10-05')).toBe(2); // spans the AU DST change
-    expect(daysBetween('2026-09-20', '2026-09-20')).toBe(0);
-    expect(daysBetween('2026-09-20T23:59:59Z', '2026-09-21')).toBe(1);
-  });
-  it('returns NaN for garbage', () => {
-    expect(daysBetween('x', '2026-09-20')).toBeNaN();
   });
 });
 

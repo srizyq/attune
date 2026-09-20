@@ -1,3 +1,5 @@
+import { daysBetween } from '../src/lib/dates.js';
+
 // Pure helpers for the coach push notifications (client replies and the
 // inactive-clients digest). No I/O, so they're unit-tested in
 // _coachPush.test.js; the endpoints that use them —
@@ -36,15 +38,6 @@ export function withinThrottle(timesDesc, windowMs = 120000) {
   const previous = new Date(timesDesc[1]).getTime();
   if (Number.isNaN(latest) || Number.isNaN(previous)) return false;
   return latest - previous < windowMs;
-}
-
-// 'YYYY-MM-DD' -> whole days between two such dates. Parsed as UTC midnight
-// so a daylight-saving change between them can't make a day 23 or 25 hours.
-export function daysBetween(fromIso, toIso) {
-  const a = Date.parse(`${String(fromIso).slice(0, 10)}T00:00:00Z`);
-  const b = Date.parse(`${String(toIso).slice(0, 10)}T00:00:00Z`);
-  if (Number.isNaN(a) || Number.isNaN(b)) return NaN;
-  return Math.round((b - a) / 86400000);
 }
 
 // Which of a trainer's active clients have gone quiet. A client who has

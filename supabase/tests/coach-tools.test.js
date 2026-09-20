@@ -94,7 +94,7 @@ describe('workout_logs trainer access', () => {
 describe('get_client_summaries', () => {
   it('computes the numbers a trainer scans, relative to the trainer\'s own "today"', async () => {
     const { db, trainer, client } = await setup();
-    await svc(db, `update public.profiles set calorie_target = 2000, protein_g = 150 where id = $1`, [client]);
+    await svc(db, `update public.profiles set calorie_target = 2000, protein_g = 150, goal = 'lose' where id = $1`, [client]);
     await food(db, client, 0, 2000, 150);   // today: on target, protein hit
     await food(db, client, -1, 2200, 100);  // on target (within 15%), protein miss
     await food(db, client, -2, 1000, 140);  // off target, protein hit (>=135)
@@ -104,7 +104,7 @@ describe('get_client_summaries', () => {
     await svc(db, `insert into public.checkins (user_id, checkin_date, mood) values ($1, ${day(-3)}, 'good')`, [client]);
 
     const [r] = (await as(db, trainer, `select * from public.get_client_summaries('2026-09-20')`)).rows;
-    expect(r).toMatchObject({ client_name: 'Sam Client', calorie_target: 2000, protein_g: 150, days_logged_7d: 4, days_on_target_7d: 3, days_protein_7d: 3 });
+    expect(r).toMatchObject({ client_name: 'Sam Client', goal: 'lose', calorie_target: 2000, protein_g: 150, days_logged_7d: 4, days_on_target_7d: 3, days_protein_7d: 3 });
     expect(Number(r.today_cal)).toBe(2000);
     expect(Number(r.avg_cal_7d)).toBeCloseTo((2000 + 2200 + 1000 + 1800) / 4, 5);
     expect(r.last_log_date.toISOString().slice(0, 10)).toBe('2026-09-20');

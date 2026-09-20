@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import {
   getMyClients, getMyTrainers, redeemCoachInviteCode, revokeClientLink, setClientGroup,
   respondToCoachLink, getMyInvites, createCoachInvite, revokeCoachInvite, getPendingClients,
+  getClientSummaries, getTrainerNotes, addTrainerNote, updateTrainerNote, deleteTrainerNote, getWorkoutLogsForRange,
   getTrainerComments, addTrainerComment, deleteTrainerComment, getLatestCoachComment,
   getGeneralThread, addClientReply,
   getFoodLogsForDate,
@@ -315,3 +316,103 @@ export function useGeneralThread(trainerId) {
 
   return { messages, loading, sendReply, refetch };
 }
+
+// The trainer's client list, as one query (see get_client_summaries).
+// `summaries` is null when that function isn't deployed yet, which tells the
+// list to fall back to fetching each client's history itself. `today` is the
+// trainer's own local date, since "logged today" is relative to them.
+export function useClientSummaries(today) {
+  const { user } = useAuth();
+  const [summaries, setSummaries] = useState(undefined); // undefined = not loaded yet
+  const [loading, setLoading] = useState(true);
+
+  const refetch = useCallback(async ({ silent = false } = {}) => {
+    if (!user) { setSummaries([]); setLoading(false); return; }
+    if (!silent) setLoading(true);
+    try {
+      setSummaries(await getClientSummaries(today));
+    } catch (err) {
+      console.error('Failed to load client summaries:', err);
+      setSummaries((prev) => (prev === undefined ? null : prev));
+    } finally {
+      setLoading(false);
+    }
+  }, [user, today]);
+
+  useEffect(() => { refetch(); }, [refetch]);
+  // Always an array: null (function not deployed yet) and undefined (not
+  // loaded yet) both read as "no rows", and `supported` carries the difference.
+  return { summaries: Array.isArray(summaries) ? summaries : [], supported: summaries !== null, loading, refetch };
+}
+
+// A trainer's private notes about one client — visible to no one else, not
+// even that client. `supported` is false until the trainer_notes table exists.
+export function useTrainerNotes(clientId) {
+  const { user } = useAuth();
+  const [notes, setNotes] = useState([]);
+  const [supported, setSupported] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  const refetch = useCallback(async () => {
+    if (!user || !clientId) { setNotes([]); setLoading(false); return; }
+    try {
+      const rows = await getTrainerNotes(user.id, clientId);
+      setSupported(rows !== null);
+      setNotes(rows || []);
+    } catch (err) {
+      console.error('Failed to load notes:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, clientId]);
+
+  useEffect(() => { setLoading(true); refetch(); }, [refetch]);
+
+  const add = useCallback(async (body, noteDate = null) => {
+    if (!user || !clientId) return;
+    await addTrainerNote(user.id, clientId, body, noteDate);
+    await refetch();
+  }, [user, clientId, refetch]);
+
+  const update = useCallback(async (id, patch) => {
+    await updateTrainerNote(id, patch);
+    await refetch();
+  }, [refetch]);
+
+  const remove = useCallback(async (id) => {
+    await deleteTrainerNote(id);
+    await refetch();
+  }, [refetch]);
+
+  return { notes, supported, loading, add, update, remove };
+}
+
+// A connected client's workouts over a date range, newest first. Read-only:
+// a trainer can see them (workout_logs has a trainer read policy) but never
+// write them.
+export function useClientWorkouts(clientId, startDate, endDate) {
+  const [workouts, setWorkouts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!clientId || !startDate || !endDate) { setWorkouts([]); setLoading(false); return undefined; }
+    setLoading(true);
+    getWorkoutLogsForRange(clientId, startDate, endDate)
+      .then((rows) => {
+        if (cancelled) return;
+        setWorkouts(rows
+          .map((r) => ({
+            id: r.id, date: r.logged_date, type: r.type, intensity: r.intensity,
+            durationMinutes: Number(r.duration_minutes) || 0, caloriesBurned: Number(r.calories_burned) || 0,
+          }))
+          .sort((a, b) => b.date.localeCompare(a.date)));
+      })
+      .catch((err) => { console.error('Failed to load client workouts:', err); if (!cancelled) setWorkouts([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [clientId, startDate, endDate]);
+
+  return { workouts, loading };
+}
+

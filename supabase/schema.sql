@@ -1521,10 +1521,11 @@ create policy "workout_logs: select as trainer of client" on public.workout_logs
 -- couldn't already read. p_today is the trainer's local date (food_logs
 -- dates are each client's local date, so UTC "today" would be off by a day
 -- for anyone far from it).
-create or replace function public.get_client_summaries(p_today date default current_date)
+drop function if exists public.get_client_summaries(date);
+create function public.get_client_summaries(p_today date default current_date)
 returns table (
   link_id uuid, client_id uuid, client_name text, group_label text, connected_at timestamptz,
-  calorie_target int, protein_g int,
+  goal text, calorie_target int, protein_g int,
   last_log_date date, days_logged_7d int, days_on_target_7d int, days_protein_7d int,
   avg_cal_7d numeric, today_cal numeric,
   latest_weight_kg numeric, latest_weight_date date, weight_change_kg_14d numeric,
@@ -1536,7 +1537,7 @@ set search_path = public
 as $$
   select
     tc.id, tc.client_id, p.name, tc.group_label, tc.created_at,
-    p.calorie_target, p.protein_g,
+    p.goal, p.calorie_target, p.protein_g,
     (select max(f.logged_date) from public.food_logs f where f.user_id = tc.client_id),
     coalesce(d.days_logged, 0)::int,
     coalesce(d.days_on_target, 0)::int,

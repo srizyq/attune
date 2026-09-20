@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { shiftIsoDateKeepLocalTime } from './mealTime';
 import { isMissingFunctionError } from './coachInvite';
+import { selectAll } from './paging';
 
 // ─── profiles ──────────────────────────────────────────────────────────────
 
@@ -37,16 +38,20 @@ export async function getFoodLogsForDate(userId, date) {
   return data;
 }
 
+// Paged: a plain select caps at 1,000 rows without saying so, which a heavy
+// logger over 90+ days exceeds — the newest days would silently go missing
+// from every chart and average built on this. The extra ordering columns make
+// page boundaries deterministic.
 export async function getFoodLogsForRange(userId, startDate, endDate) {
-  const { data, error } = await supabase
+  return selectAll(() => supabase
     .from('food_logs')
     .select('*')
     .eq('user_id', userId)
     .gte('logged_date', startDate)
     .lte('logged_date', endDate)
-    .order('logged_date', { ascending: true });
-  if (error) throw error;
-  return data;
+    .order('logged_date', { ascending: true })
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true }));
 }
 
 export async function addFoodLog(userId, entry) {
@@ -190,15 +195,15 @@ export async function getRecentFoodLogs(userId, limit = 40) {
 // ─── workout_logs ──────────────────────────────────────────────────────────
 
 export async function getWorkoutLogsForRange(userId, startDate, endDate) {
-  const { data, error } = await supabase
+  return selectAll(() => supabase
     .from('workout_logs')
     .select('*')
     .eq('user_id', userId)
     .gte('logged_date', startDate)
     .lte('logged_date', endDate)
-    .order('logged_date', { ascending: true });
-  if (error) throw error;
-  return data;
+    .order('logged_date', { ascending: true })
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true }));
 }
 
 export async function getWorkoutLogsForDate(userId, date) {
@@ -248,15 +253,14 @@ export async function getCheckinForDate(userId, date) {
 }
 
 export async function getCheckinsForRange(userId, startDate, endDate) {
-  const { data, error } = await supabase
+  return selectAll(() => supabase
     .from('checkins')
     .select('*')
     .eq('user_id', userId)
     .gte('checkin_date', startDate)
     .lte('checkin_date', endDate)
-    .order('checkin_date', { ascending: true });
-  if (error) throw error;
-  return data;
+    .order('checkin_date', { ascending: true })
+    .order('id', { ascending: true }));
 }
 
 export async function upsertCheckin(userId, date, fields) {
@@ -401,17 +405,19 @@ export async function removeFavouriteFoodByName(userId, name) {
 
 // ─── weight_logs ────────────────────────────────────────────────────────────
 
+// One row per day, but "All time" over 5+ years passes the 1,000-row cap.
 export async function getWeightLogsForRange(userId, startDate, endDate) {
-  let query = supabase
-    .from('weight_logs')
-    .select('*')
-    .eq('user_id', userId)
-    .order('logged_date', { ascending: true });
-  if (startDate) query = query.gte('logged_date', startDate);
-  if (endDate) query = query.lte('logged_date', endDate);
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
+  return selectAll(() => {
+    let query = supabase
+      .from('weight_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .order('logged_date', { ascending: true })
+      .order('id', { ascending: true });
+    if (startDate) query = query.gte('logged_date', startDate);
+    if (endDate) query = query.lte('logged_date', endDate);
+    return query;
+  });
 }
 
 export async function getLatestWeightLog(userId) {
@@ -759,3 +765,56 @@ export async function deletePushSubscriptionByEndpoint(endpoint) {
   const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
   if (error) throw error;
 }
+
+// ─── trainer-side: client summaries, private notes ─────────────────────────
+
+// One row per active client with the numbers the client list is built from
+// (see get_client_summaries in schema.sql). null means the function isn't
+// there yet — the list then falls back to per-client history queries.
+export async function getClientSummaries(todayIso) {
+  const { data, error } = await supabase.rpc('get_client_summaries', { p_today: todayIso });
+  if (error) {
+    if (isMissingFunctionError(error)) return null;
+    throw error;
+  }
+  return data || [];
+}
+
+const isMissingTable = (error) => error?.code === '42P01' || error?.code === 'PGRST205';
+
+// Private notes a trainer keeps about a client. null = table not created yet.
+export async function getTrainerNotes(trainerId, clientId) {
+  const { data, error } = await supabase
+    .from('trainer_notes')
+    .select('id, body, note_date, pinned, created_at, updated_at')
+    .eq('trainer_id', trainerId)
+    .eq('client_id', clientId)
+    .order('pinned', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) {
+    if (isMissingTable(error)) return null;
+    throw error;
+  }
+  return data;
+}
+
+export async function addTrainerNote(trainerId, clientId, body, noteDate = null) {
+  const { data, error } = await supabase
+    .from('trainer_notes')
+    .insert({ trainer_id: trainerId, client_id: clientId, body, note_date: noteDate })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTrainerNote(id, patch) {
+  const { error } = await supabase.from('trainer_notes').update(patch).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteTrainerNote(id) {
+  const { error } = await supabase.from('trainer_notes').delete().eq('id', id);
+  if (error) throw error;
+}
+
