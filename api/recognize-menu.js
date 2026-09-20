@@ -10,6 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { withCompGrants } from '../src/lib/compGrants.js';
 import { withTrial } from '../src/lib/trial.js';
+import { targetsForDate } from '../src/lib/dayTargets.js';
 
 const client = new Anthropic();
 
@@ -179,11 +180,20 @@ export default async function handler(req, res) {
       }),
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     );
+    // A rest day can have its own targets. Read separately from the main
+    // profile query, which must keep working before that SQL update is run: on
+    // an error (missing columns) this just falls back to the everyday targets.
+    const { data: dayCols } = await supabase
+      .from('profiles')
+      .select('rest_day_targets, training_days')
+      .eq('id', userId)
+      .single();
+    const todays = targetsForDate({ ...profile, ...(dayCols || {}) }, today);
     remaining = {
-      calories: Math.max(0, Math.round((profile.calorie_target || 2000) - consumed.calories)),
-      protein: Math.max(0, Math.round((profile.protein_g || 0) - consumed.protein)),
-      carbs: Math.max(0, Math.round((profile.carbs_g || 0) - consumed.carbs)),
-      fat: Math.max(0, Math.round((profile.fat_g || 0) - consumed.fat)),
+      calories: Math.max(0, Math.round((todays.calories || 2000) - consumed.calories)),
+      protein: Math.max(0, Math.round((todays.protein_g || 0) - consumed.protein)),
+      carbs: Math.max(0, Math.round((todays.carbs_g || 0) - consumed.carbs)),
+      fat: Math.max(0, Math.round((todays.fat_g || 0) - consumed.fat)),
     };
   }
 

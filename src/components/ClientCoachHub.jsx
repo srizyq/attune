@@ -10,6 +10,8 @@ import CoachConsentCard from './CoachConsentCard';
 import CoachCheckinCard from './CoachCheckinCard';
 import MealPlanCard from './MealPlanCard';
 import { coachPassButtonLabel } from '../lib/coachPass';
+import { targetsForDate, dayTargetsActive, describeTrainingDays } from '../lib/dayTargets';
+import { todayLocalDate } from '../lib/patterns';
 
 const COACH_PASS_PRICE = 'A$19.99/month';
 
@@ -150,12 +152,16 @@ export default function ClientCoachHub({ showUpsell = true }) {
     }
   };
 
+  // Today's targets — on a rest day these are the coach's rest-day numbers.
+  const todayTargets = targetsForDate(profile, todayLocalDate());
   const targets = {
-    calories: profile?.calorie_target,
-    protein: profile?.protein_g,
-    carbs: profile?.carbs_g,
-    fat: profile?.fat_g,
+    calories: todayTargets.calories,
+    protein: todayTargets.protein_g,
+    carbs: todayTargets.carbs_g,
+    fat: todayTargets.fat_g,
   };
+  const dayNote = !dayTargetsActive(profile) ? null
+    : `${todayTargets.isRestDay ? "Today's a rest day, so these are your rest-day targets." : "Today's a training day."} Training days: ${describeTrainingDays(profile.training_days)}.`;
   const hasTargets = !!(targets.calories || targets.protein || targets.carbs || targets.fat);
   const hasNotes = !!(weightNote || nutritionNote || checkinNote);
 
@@ -261,6 +267,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
                 <TargetStat label="Carbs" value={targets.carbs ? `${targets.carbs}g` : '—'} />
                 <TargetStat label="Fat" value={targets.fat ? `${targets.fat}g` : '—'} />
               </div>
+              {dayNote && <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '14px 0 0' }}>{dayNote}</p>}
             </div>
           )}
 

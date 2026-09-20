@@ -5,6 +5,8 @@ import { useProfile } from '../hooks/useProfile';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
 import { goalMacroSplits, calcCalories, buildTargets, splitFromGrams } from '../lib/calorieTargets';
 import { MICRO_NUTRIENTS } from '../lib/microNutrients';
+import { dayTargetsToInputs, parseDayTargetInputs } from '../lib/dayTargets';
+import RestDayTargetsCard from '../components/settings/RestDayTargetsCard';
 import AppNav from '../components/AppNav';
 import Slider from '../components/Slider';
 import MacroPreviewBar from '../components/MacroPreviewBar';
@@ -129,6 +131,12 @@ export default function SettingsGoals() {
   // so an input can sit genuinely empty — a nutrient absent here means
   // "use the default guideline" (see Nutrients.jsx's MicroCard), not "0".
   const [microTargets, setMicroTargets] = useState({});
+  // Optional rest-day targets + training weekdays (strings, like microTargets,
+  // so a field can sit genuinely empty). Only offered once the database has the
+  // columns — an un-updated profile row simply has no such field.
+  const supportsDay = !!profile && 'rest_day_targets' in profile;
+  const [restDay, setRestDay] = useState({ inputs: dayTargetsToInputs(null).inputs, trainingDays: [] });
+  const [dayError, setDayError] = useState(null);
 
   // Baseline snapshot of the draft fields as of the last profile sync
   // (initial load, or right after a save resolves and profile updates) —
@@ -141,7 +149,8 @@ export default function SettingsGoals() {
     form.goal !== baseline.goal || form.activity !== baseline.activity ||
     calMode !== baseline.calMode || customCal !== baseline.customCal ||
     proteinPct !== baseline.proteinPct || fatPct !== baseline.fatPct ||
-    JSON.stringify(microTargets) !== JSON.stringify(baseline.microTargets)
+    JSON.stringify(microTargets) !== JSON.stringify(baseline.microTargets) ||
+    JSON.stringify(restDay) !== JSON.stringify(baseline.restDay)
   );
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupClosing, setPopupClosing] = useState(false);
@@ -207,10 +216,14 @@ export default function SettingsGoals() {
       Object.entries(profile.micro_targets || {}).map(([k, v]) => [k, String(v)])
     );
     setMicroTargets(syncedMicroTargets);
+    const syncedRestDay = { inputs: dayTargetsToInputs(profile).inputs, trainingDays: dayTargetsToInputs(profile).trainingDays };
+    setRestDay(syncedRestDay);
+    setDayError(null);
     setBaseline({
       ...syncedForm, age: Number(syncedForm.age), weight: Number(syncedForm.weight), height: Number(syncedForm.height),
       calMode: syncedMode, customCal: syncedCal, proteinPct: syncedProtein, fatPct: syncedFat,
       microTargets: syncedMicroTargets,
+      restDay: syncedRestDay,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
@@ -243,6 +256,20 @@ export default function SettingsGoals() {
   };
 
   const handleSave = async () => {
+    // Rest-day targets: validated up front so a typo is reported before anything
+    // is saved. Adaptive mode can't have them (it rewrites the everyday numbers
+    // itself), so saving in that mode turns them off.
+    let dayFields = {};
+    if (supportsDay) {
+      if (calMode === 'adaptive') {
+        dayFields = { rest_day_targets: null, training_days: null };
+      } else {
+        const parsed = parseDayTargetInputs(restDay.inputs, restDay.trainingDays);
+        if (parsed.error) { setDayError(parsed.error); return; }
+        dayFields = { rest_day_targets: parsed.rest, training_days: parsed.trainingDays };
+      }
+    }
+    setDayError(null);
     setSaving(true);
     try {
       // Drop empty/invalid entries so clearing an input actually removes
@@ -267,6 +294,7 @@ export default function SettingsGoals() {
         fat_g: preview.fat.g,
         water_target: preview.water,
         micro_targets: cleanedMicroTargets,
+        ...dayFields,
       });
       // No need to touch popup state here — saveProfile updates `profile`,
       // which re-runs the sync effect above and refreshes `baseline` to
@@ -417,6 +445,17 @@ export default function SettingsGoals() {
           </Card>
 
           </div>
+
+          {supportsDay && (
+            <RestDayTargetsCard
+              inputs={restDay.inputs}
+              trainingDays={restDay.trainingDays}
+              onChange={(update) => { setRestDay(update); setDayError(null); }}
+              baseTargets={{ calories: preview.calories, protein_g: preview.protein.g, carbs_g: preview.carbs.g, fat_g: preview.fat.g }}
+              adaptive={calMode === 'adaptive'}
+              error={dayError}
+            />
+          )}
 
           <Card>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>

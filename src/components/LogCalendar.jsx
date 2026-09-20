@@ -72,7 +72,8 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
           {cells.map((dateStr, i) => {
             if (!dateStr) return <div key={`empty-${i}`} />;
             const day = byDate.get(dateStr);
-            const pct = dayFillPct(day, calorieTarget);
+            // A number, or a function of the date (rest days can have their own target).
+            const pct = dayFillPct(day, typeof calorieTarget === 'function' ? calorieTarget(dateStr) : calorieTarget);
             const isToday = dateStr === today;
             const isFuture = dateStr > today;
             return (

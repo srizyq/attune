@@ -26,6 +26,7 @@ import HourlyTimeline from '../components/HourlyTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import Toast from '../components/Toast';
 import { targetLineSegments } from '../lib/chartTarget';
+import { targetsForDate } from '../lib/dayTargets';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import TrialBanner from '../components/TrialBanner';
@@ -248,7 +249,7 @@ function DashboardHero({ consumed, target, baseCalorieTarget, chartDays, chartRa
   // burned (see Dashboard's useWorkoutLogsRange) — not one shared number
   // for the whole chart. Logging a workout for one day must only raise
   // that day's segment of the target line, not the rest of the week's.
-  const dayTargets = chartDays.map(d => baseCalorieTarget + (d.caloriesBurned || 0));
+  const dayTargets = chartDays.map(d => (d.baseTarget ?? baseCalorieTarget) + (d.caloriesBurned || 0));
 
   // Headroom above the tallest of any day's target/actual so neither the
   // target line nor a big over-target bar sits flush against the top edge.
@@ -865,12 +866,16 @@ export default function Dashboard() {
   const calByDate = new Map(calData.map(d => [d.date, d]));
   const canGoNextMonth = calMonthStart < todayLocalDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
 
+  // The targets for the day being viewed — a rest day can have its own (see
+  // lib/dayTargets.js); with none set every day gets the everyday targets.
+  const viewedTargets = targetsForDate(profile, viewedDate);
   const targets = {
-    calories: profile?.calorie_target || 2000,
-    protein: { g: profile?.protein_g || 150 },
-    carbs: { g: profile?.carbs_g || 200 },
-    fat: { g: profile?.fat_g || 67 },
+    calories: viewedTargets.calories || 2000,
+    protein: { g: viewedTargets.protein_g || 150 },
+    carbs: { g: viewedTargets.carbs_g || 200 },
+    fat: { g: viewedTargets.fat_g || 67 },
   };
+  const calorieTargetFor = (date) => targetsForDate(profile, date).calories || 2000;
   const calorieTarget = targets.calories;
   // Logged workouts add back to today's budget ("eat back exercise
   // calories") — burn 300kcal, the day's target goes up by 300. Only
@@ -967,6 +972,7 @@ export default function Dashboard() {
   const chartDays = dateRange(chartStartDate, viewedDate).map(date => ({
     ...(byDate.get(date) || { date, calories: 0 }),
     caloriesBurned: burnedByDate.get(date) || 0,
+    baseTarget: calorieTargetFor(date),
   }));
 
   // Real 7-day weight change from actually-logged entries — omitted (not
@@ -1041,7 +1047,7 @@ export default function Dashboard() {
                 <LogCalendar
                   month={calMonth}
                   byDate={calByDate}
-                  calorieTarget={calorieTarget}
+                  calorieTarget={calorieTargetFor}
                   loading={calLoading}
                   onPrevMonth={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
                   onNextMonth={() => canGoNextMonth && setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}

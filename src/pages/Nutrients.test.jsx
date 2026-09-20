@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
@@ -11,8 +11,8 @@ vi.mock('../components/AppNav', () => ({ default: () => <nav /> }));
 import Nutrients from './Nutrients';
 
 const row = (over) => ({ id: 'r', calories: 100, protein_g: 5, carbs_g: 10, fat_g: 2, ...over });
-const setup = ({ premium = true, meals, logs }) => {
-  h.profile = { profile: { is_premium: premium, calorie_target: 2000, micro_targets: {} } };
+const setup = ({ premium = true, meals, logs, profile = {} }) => {
+  h.profile = { profile: { is_premium: premium, calorie_target: 2000, micro_targets: {}, ...profile } };
   h.logs = { loading: false, logs, meals };
   render(<Nutrients />);
 };
@@ -44,5 +44,32 @@ describe('Nutrients — extended sections', () => {
     setup({ meals: empty, logs: [] });
     expect(screen.queryByText(/foods logged/)).not.toBeInTheDocument();
     expect(screen.getByText(/Nothing logged today yet/)).toBeInTheDocument();
+  });
+});
+
+describe('Nutrients — rest-day targets', () => {
+  // Pinned to Wednesday 23 Sep 2026 (local), so which days are training days is
+  // the same whatever day the tests run; the page opens on "today".
+  const dow = 3;
+  beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 8, 23, 12, 0, 0)); });
+  afterEach(() => vi.useRealTimers());
+  const day = { calorie_target: 2500, protein_g: 180, rest_day_targets: { calories: 1800, protein_g: 150 } };
+
+  it('shows the everyday target on a training day', () => {
+    setup({ meals: empty, logs: [], profile: { ...day, training_days: [dow] } });
+    expect(screen.getByText(/\/ 2,500 kcal/)).toBeInTheDocument();
+    expect(screen.getByText(/\/ 180g/)).toBeInTheDocument();
+  });
+
+  it('shows the rest-day target on a rest day', () => {
+    setup({ meals: empty, logs: [], profile: { ...day, training_days: [(dow + 1) % 7] } });
+    expect(screen.getByText(/\/ 1,800 kcal/)).toBeInTheDocument();
+    expect(screen.getByText(/\/ 150g/)).toBeInTheDocument();
+    expect(screen.queryByText(/2,500/)).not.toBeInTheDocument();
+  });
+
+  it('is unchanged for someone not using rest-day targets', () => {
+    setup({ meals: empty, logs: [], profile: { calorie_target: 2500 } });
+    expect(screen.getByText(/\/ 2,500 kcal/)).toBeInTheDocument();
   });
 });

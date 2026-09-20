@@ -19,6 +19,7 @@ import BodyProgressCard from '../components/BodyProgressCard';
 import StreakItem from '../components/StreakItem';
 import DayHeatmapStrip from '../components/DayHeatmapStrip';
 import MacroSplitBar from '../components/MacroSplitBar';
+import { targetsForDate, dayTargetsActive } from '../lib/dayTargets';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
@@ -87,14 +88,17 @@ function EmptyChartBox({ icon, message }) {
 
 // Week-at-a-glance bars — a fixed last-7-days view regardless of the page's
 // own range picker, same as Dashboard's own week view.
-function WeekBars({ days, calorieTarget }) {
-  const max = Math.max(calorieTarget || 0, ...days.map(d => d.calories), 1);
+function WeekBars({ days, calorieTarget, targetFor }) {
+  // A rest day can have its own target, so each bar is judged against its own day's.
+  const targetOf = (d) => (targetFor ? targetFor(d.date) : calorieTarget);
+  const max = Math.max(...days.map(d => targetOf(d) || 0), ...days.map(d => d.calories), 1);
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 100 }}>
         {days.map((d) => {
           const pct = Math.max(4, (d.calories / max) * 100);
-          const onTarget = calorieTarget && d.calories > 0 && Math.abs(d.calories - calorieTarget) <= calorieTarget * 0.15;
+          const dayTarget = targetOf(d);
+          const onTarget = dayTarget && d.calories > 0 && Math.abs(d.calories - dayTarget) <= dayTarget * 0.15;
           return (
             <div key={d.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: 100 }}>
               <div style={{
@@ -232,6 +236,16 @@ export default function Expenditure() {
   const weightUnit = profile?.unit === 'imperial' ? 'lb' : 'kg';
   const calorieTarget = profile?.calorie_target || null;
   const proteinTarget = profile?.protein_g || null;
+  // What applies on a given day — a rest day may have its own targets (see
+  // lib/dayTargets.js). With none set this is just the everyday target.
+  const restTargets = dayTargetsActive(profile) ? profile.rest_day_targets : null;
+  const hasCalorieTarget = !!(calorieTarget || restTargets?.calories);
+  const hasProteinTarget = !!(proteinTarget || restTargets?.protein_g);
+  const calorieTargetFor = (date) => targetsForDate(profile, date).calories || null;
+  const onCalorieTarget = (d, tolerance) => {
+    const t = calorieTargetFor(d.date);
+    return !!t && Math.abs(d.calories - t) <= t * tolerance;
+  };
 
   const fullHistory = useMemo(
     () => computeExpenditureHistory(weightLogs, dailyData.map(d => ({ date: d.date, calories: d.calories }))),
@@ -262,19 +276,19 @@ export default function Expenditure() {
 
   const avgCalories = Math.round(avg(loggedDaysInRange.map(d => d.calories)));
   const avgProtein = Math.round(avg(loggedDaysInRange.map(d => d.protein_g)));
-  const daysOnTarget = calorieTarget
-    ? loggedDaysInRange.filter(d => Math.abs(d.calories - calorieTarget) <= calorieTarget * 0.1).length
+  const daysOnTarget = hasCalorieTarget
+    ? loggedDaysInRange.filter(d => onCalorieTarget(d, 0.1)).length
     : 0;
   const energyDays = filledDays.filter(d => d.energy != null);
   const avgEnergy = energyDays.length ? (avg(energyDays.map(d => d.energy))).toFixed(1) : null;
 
   const loggingStreak = computeStreak(badgeData);
-  const calorieStreak = calorieTarget
-    ? streakFor(badgeData, d => d.calories > 0 && Math.abs(d.calories - calorieTarget) <= calorieTarget * 0.15)
+  const calorieStreak = hasCalorieTarget
+    ? streakFor(badgeData, d => d.calories > 0 && onCalorieTarget(d, 0.15))
     : 0;
   const moodStreak = streakFor(badgeData, d => d.mood != null);
-  const proteinStreak = proteinTarget
-    ? streakFor(badgeData, d => d.protein_g >= proteinTarget * 0.9)
+  const proteinStreak = hasProteinTarget
+    ? streakFor(badgeData, d => { const t = targetsForDate(profile, d.date).protein_g; return !!t && d.protein_g >= t * 0.9; })
     : 0;
 
   // Heatmap cells for "calories vs goal" — pct is share of the calorie
@@ -282,13 +296,14 @@ export default function Expenditure() {
   // not how far over it a day went); null (no cell fill) on a day with
   // nothing logged at all, same "no data" treatment LogCalendar uses.
   const calorieHeatmapDays = useMemo(() => filledDays.map(d => {
-    const pct = !d.calories ? null : calorieTarget ? Math.min(100, Math.round((d.calories / calorieTarget) * 100)) : 100;
+    const dayTarget = targetsForDate(profile, d.date).calories;
+    const pct = !d.calories ? null : dayTarget ? Math.min(100, Math.round((d.calories / dayTarget) * 100)) : 100;
     return {
       date: d.date,
       pct,
       tooltip: `${new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}: ${d.calories ? `${Math.round(d.calories)} kcal` : 'nothing logged'}`,
     };
-  }), [filledDays, calorieTarget]);
+  }), [filledDays, profile]);
 
   // Heatmap cells for the expenditure trend — pct is this day's TDEE
   // normalized against the range's own min/max, since TDEE has no fixed
@@ -485,7 +500,7 @@ export default function Expenditure() {
           {/* stat cards */}
           <div className="grid-4" style={{ marginBottom: 20 }}>
             <StatCard label="Avg. calories" value={hasAnyLogs ? avgCalories.toLocaleString() : '—'} hint={hasAnyLogs ? `over ${loggedDaysInRange.length} logged days` : 'No data yet'} />
-            <StatCard label="Days on target" value={hasAnyLogs && calorieTarget ? daysOnTarget : '—'} hint={calorieTarget ? 'within 10% of goal' : 'Set a calorie target in Settings'} />
+            <StatCard label="Days on target" value={hasAnyLogs && hasCalorieTarget ? daysOnTarget : '—'} hint={hasCalorieTarget ? (restTargets ? "within 10% of each day's goal" : 'within 10% of goal') : 'Set a calorie target in Settings'} />
             <StatCard label="Avg. protein" value={hasAnyLogs ? `${avgProtein}g` : '—'} hint={hasAnyLogs ? `over ${loggedDaysInRange.length} logged days` : 'No data yet'} />
             <StatCard label="Avg. energy" value={avgEnergy || '—'} hint={avgEnergy ? `over ${energyDays.length} check-ins` : 'Check in on mood to unlock this'} />
           </div>
@@ -511,7 +526,7 @@ export default function Expenditure() {
             <LogCalendar
               month={calMonth}
               byDate={calByDate}
-              calorieTarget={calorieTarget}
+              calorieTarget={calorieTargetFor}
               loading={calLoading}
               onPrevMonth={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
               onNextMonth={() => canGoNextMonth && setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
@@ -567,7 +582,7 @@ export default function Expenditure() {
             <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>This week at a glance</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Calories logged each day</div>
-              <WeekBars days={dateRange(dateNDaysAgo(6), today).map(date => filledByDate.get(date) || { date, calories: 0 })} calorieTarget={calorieTarget} />
+              <WeekBars days={dateRange(dateNDaysAgo(6), today).map(date => filledByDate.get(date) || { date, calories: 0 })} calorieTarget={calorieTarget} targetFor={calorieTargetFor} />
               <div style={{ marginTop: 20, padding: '12px 14px', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 8, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
                 Green = within 15% of your target. Blue = logged but off target. Grey = nothing logged.
               </div>

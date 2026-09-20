@@ -11,7 +11,8 @@ vi.mock('../hooks/useCoach', () => ({
   useCoachNote: () => ({ note: null, dismiss: () => {} }),
   useGeneralThread: () => ({ messages: [], loading: false, sendReply: vi.fn() }),
 }));
-vi.mock('../hooks/useProfile', () => ({ useProfile: () => ({ profile: { calorie_target: 2000, protein_g: 150 } }) }));
+const DEFAULT_PROFILE = { calorie_target: 2000, protein_g: 150 };
+vi.mock('../hooks/useProfile', () => ({ useProfile: () => ({ profile: state.profile ?? DEFAULT_PROFILE }) }));
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => ({ user: { id: 'u1', is_anonymous: false } }) }));
 vi.mock('../lib/billing', () => ({ authedPost: vi.fn() }));
 vi.mock('../hooks/useCheckinForms', () => ({ useMyCheckinForms: () => ({ supported: true, forms: [], submit: vi.fn() }) }));
@@ -32,7 +33,7 @@ function setup({ links = [], initialEntry = '/coach', showUpsell = false } = {})
   return state.trainers;
 }
 
-beforeEach(() => vi.stubGlobal('confirm', vi.fn(() => false)));
+beforeEach(() => { state.profile = undefined; vi.stubGlobal('confirm', vi.fn(() => false)); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('ClientCoachHub — consent', () => {
@@ -112,5 +113,37 @@ describe('ClientCoachHub — connecting', () => {
       </MemoryRouter>
     );
     expect(screen.getByRole('alert')).toHaveTextContent('invalid or no longer active');
+  });
+});
+
+describe('ClientCoachHub — rest-day targets', () => {
+  // Pinned to Wednesday 23 Sep 2026 so the training/rest split doesn't depend on the day tests run.
+  const dow = 3;
+  beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 8, 23, 12, 0, 0)); });
+  afterEach(() => vi.useRealTimers());
+  const withDays = (trainingDays) => ({ calorie_target: 2500, protein_g: 180, carbs_g: 280, fat_g: 70, rest_day_targets: { calories: 1800, protein_g: 150 }, training_days: trainingDays });
+
+  it('shows the everyday targets, with no day note, when rest-day targets are not in use', () => {
+    setup({ links: [row()] });
+    expect(screen.getByText('Your current targets')).toBeInTheDocument();
+    expect(screen.getByText('2000')).toBeInTheDocument();
+    expect(screen.queryByText(/training day/i)).not.toBeInTheDocument();
+  });
+
+  it("shows today's training-day targets and says so", () => {
+    state.profile = withDays([dow]);
+    setup({ links: [row()] });
+    expect(screen.getByText('2500')).toBeInTheDocument();
+    expect(screen.getByText(/Today's a training day\./)).toBeInTheDocument();
+  });
+
+  it("shows the rest-day targets on a rest day (falling back to everyday for what isn't overridden)", () => {
+    state.profile = withDays([(dow + 1) % 7]);
+    setup({ links: [row()] });
+    expect(screen.getByText('1800')).toBeInTheDocument();
+    expect(screen.getByText('150g')).toBeInTheDocument();
+    expect(screen.getByText('280g')).toBeInTheDocument(); // carbs not overridden
+    expect(screen.getByText(/rest day, so these are your rest-day targets/)).toBeInTheDocument();
+    expect(screen.queryByText('2500')).not.toBeInTheDocument();
   });
 });

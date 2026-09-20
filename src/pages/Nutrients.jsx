@@ -7,6 +7,7 @@ import AppNav from '../components/AppNav';
 import MicroCard from '../components/MicroCard';
 import { MICRO_NUTRIENTS, extendedCoverage, extendedNote, extendedSummary, formatMicro } from '../lib/microNutrients';
 import { MICRO_GROUPS } from '../components/coach/constants';
+import { targetsForDate } from '../lib/dayTargets';
 
 const DEFAULT_TARGETS = Object.fromEntries(MICRO_NUTRIENTS.map(m => [m.key, m.defaultTarget]));
 
@@ -97,6 +98,8 @@ export default function Nutrients() {
     magnesium: 0, zinc: 0, polyunsaturatedFat: 0, monounsaturatedFat: 0,
   });
 
+  // The selected day's targets — a rest day can have its own (see lib/dayTargets.js).
+  const dayTargets = targetsForDate(profile, selectedDate);
   const isPremium = !!profile?.is_premium;
   const goUpgrade = () => navigate('/settings');
   // Pro-only custom targets (Settings → Goals & Targets) — a nutrient
@@ -136,11 +139,11 @@ export default function Nutrients() {
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{isToday ? "Today's calories" : 'Calories'}</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
                   {Math.round(totals.cal).toLocaleString()}
-                  {profile?.calorie_target ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 400 }}> / {profile.calorie_target.toLocaleString()} kcal</span> : ' kcal'}
+                  {dayTargets.calories ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 400 }}> / {dayTargets.calories.toLocaleString()} kcal</span> : ' kcal'}
                 </div>
-                <MacroRow label="Protein" value={round1(totals.protein)} unit="g" target={profile?.protein_g} color="var(--accent)" />
-                <MacroRow label="Carbs" value={round1(totals.carbs)} unit="g" target={profile?.carbs_g} color="var(--water-blue)" />
-                <MacroRow label="Fat" value={round1(totals.fat)} unit="g" target={profile?.fat_g} color="var(--ai-purple)" />
+                <MacroRow label="Protein" value={round1(totals.protein)} unit="g" target={dayTargets.protein_g} color="var(--accent)" />
+                <MacroRow label="Carbs" value={round1(totals.carbs)} unit="g" target={dayTargets.carbs_g} color="var(--water-blue)" />
+                <MacroRow label="Fat" value={round1(totals.fat)} unit="g" target={dayTargets.fat_g} color="var(--ai-purple)" />
               </div>
 
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Other nutrients</div>
