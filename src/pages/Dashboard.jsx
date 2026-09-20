@@ -25,6 +25,7 @@ import LogCalendar from '../components/LogCalendar';
 import HourlyTimeline from '../components/HourlyTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import Toast from '../components/Toast';
+import { targetLineSegments } from '../lib/chartTarget';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import TrialBanner from '../components/TrialBanner';
@@ -268,7 +269,6 @@ function DashboardHero({ consumed, target, baseCalorieTarget, chartDays, chartRa
       y: baseline - barHeight,
       height: barHeight,
       over: d.calories > dayTarget,
-      targetY: baseline - (dayTarget / max) * plotHeight,
     };
   });
 
@@ -305,13 +305,13 @@ function DashboardHero({ consumed, target, baseCalorieTarget, chartDays, chartRa
         </div>
 
         <svg ref={chartRef} viewBox={`0 0 ${w} ${CHART_HEIGHT}`} style={{ width: '100%', height: CHART_HEIGHT, marginTop: 10, display: 'block' }}>
-          {/* One dashed segment per day, at that day's own target height —
-              a flat line spanning the whole chart would make logging a
-              workout for one day look like it raised the whole week's
-              target. */}
-          {bars.map((b, i) => (
-            <line key={`target-${i}`} x1={b.x} y1={b.targetY} x2={b.x + barWidth} y2={b.targetY} stroke="var(--text-hint)" strokeWidth="1" strokeDasharray="3,4" />
-          ))}
+          {/* The user's own target is one continuous line across the whole
+              chart; a day with burned calories breaks out of it as its own
+              raised segment (see targetLineSegments). */}
+          {targetLineSegments(chartDays, baseCalorieTarget).map(seg => {
+            const y = baseline - (seg.value / max) * plotHeight;
+            return <line key={`target-${seg.start}`} x1={bars[seg.start].x} y1={y} x2={bars[seg.end].x + barWidth} y2={y} stroke="var(--text-hint)" strokeWidth="1.5" strokeLinecap="round" />;
+          })}
           {bars.map((b, i) => (
             <rect
               key={i}
