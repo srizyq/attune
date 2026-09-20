@@ -123,3 +123,14 @@ export async function asService(db, fn) {
     await db.query(`select set_config('request.jwt.claim.role', '', false)`);
   }
 }
+
+// A fresh database built from the given SQL (rather than the shared template of
+// the whole schema) — for tests that need a specific starting point, such as
+// "the schema as it stood before these updates".
+export async function createDbFromSql(...sqlParts) {
+  const db = new PGlite({ extensions: { pg_trgm } });
+  await db.exec(SUPABASE_STUBS);
+  for (const sql of sqlParts) await db.exec(sql);
+  return db;
+}
+
