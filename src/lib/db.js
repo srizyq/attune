@@ -546,12 +546,17 @@ export async function searchCommonDishes(query, limit = 8) {
 // ─── trainer_clients ────────────────────────────────────────────────────────
 
 export async function getMyClients(trainerId) {
-  const { data, error } = await supabase
+  const clients = (columns) => supabase
     .from('trainer_clients')
-    .select('id, status, created_at, group_label, client:profiles!trainer_clients_client_id_fkey(id, name, goal, calorie_target, protein_g, carbs_g, fat_g, unit, micro_targets)')
+    .select(`id, status, created_at, group_label, client:profiles!trainer_clients_client_id_fkey(${columns})`)
     .eq('trainer_id', trainerId)
     .eq('status', 'active')
     .order('created_at', { ascending: false });
+  const base = 'id, name, goal, calorie_target, protein_g, carbs_g, fat_g, unit, micro_targets';
+  let { data, error } = await clients(`${base}, rest_day_targets, training_days`);
+  // The rest-day columns come from a later SQL update; until it's run, fall
+  // back to the original columns so the client list keeps working.
+  if (error && isMissingColumnError(error)) ({ data, error } = await clients(base));
   if (error) throw error;
   return data;
 }
@@ -565,6 +570,20 @@ export async function setClientTargets(clientId, { calorie_target, protein_g, ca
     p_fat_g: fat_g,
   });
   if (error) throw error;
+}
+
+// Replaces the client's rest-day targets and training weekdays (null / empty
+// clears both). Validated server-side; see set_client_day_targets in schema.sql.
+export async function setClientDayTargets(clientId, restDayTargets, trainingDays) {
+  const { error } = await supabase.rpc('set_client_day_targets', {
+    p_client_id: clientId,
+    p_rest: restDayTargets,
+    p_training_days: trainingDays,
+  });
+  if (error) {
+    if (isMissingFunctionError(error)) throw new Error("Rest-day targets need the latest database update, which hasn't been applied yet.");
+    throw error;
+  }
 }
 
 // Replaces the client's whole per-nutrient target map (a missing nutrient =

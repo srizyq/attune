@@ -2225,3 +2225,201 @@ as $$
     'omega3', 'omega6', 'alphaLinolenicAcid', 'caffeine', 'alcohol'
   ]::text[];
 $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Training-day / rest-day targets (schema update — run against an existing DB;
+-- safe to re-run). Tests: supabase/tests/day-targets.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- A profile's calorie_target / protein_g / carbs_g / fat_g stay the everyday
+-- (training-day) targets. rest_day_targets optionally overrides them on days
+-- that are not training days; training_days lists the weekdays that are
+-- (0 = Sunday .. 6 = Saturday, the same numbering as JavaScript's getDay and
+-- Postgres's extract(dow ...)). The feature is only in effect when BOTH are
+-- present — with rest_day_targets null, or no training days chosen, every day
+-- uses the base targets exactly as before. A nutrient missing from
+-- rest_day_targets falls back to its base target.
+alter table public.profiles add column if not exists rest_day_targets jsonb;
+alter table public.profiles add column if not exists training_days int[];
+
+create or replace function public.valid_rest_day_targets(t jsonb)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  k text;
+  v jsonb;
+  lim numeric;
+begin
+  if t is null then return true; end if;
+  if jsonb_typeof(t) <> 'object' then return false; end if;
+  for k, v in select * from jsonb_each(t) loop
+    if k not in ('calories', 'protein_g', 'carbs_g', 'fat_g') then return false; end if;
+    if jsonb_typeof(v) <> 'number' then return false; end if;
+    -- Kept in a variable: an inline CASE inside IF ... THEN breaks PL/pgSQL's parser.
+    lim := case when k = 'calories' then 20000 else 2000 end;
+    if (v #>> '{}')::numeric < 0 or (v #>> '{}')::numeric > lim then return false; end if;
+  end loop;
+  return true;
+end;
+$$;
+
+create or replace function public.valid_training_days(d int[])
+returns boolean
+language sql
+immutable
+as $$
+  select d is null or (
+    cardinality(d) <= 7
+    and not exists (select 1 from unnest(d) x where x is null or x < 0 or x > 6)
+    and (select count(distinct x) = cardinality(d) from unnest(d) x)
+  );
+$$;
+
+alter table public.profiles drop constraint if exists profiles_rest_day_targets_valid;
+alter table public.profiles add constraint profiles_rest_day_targets_valid
+  check (public.valid_rest_day_targets(rest_day_targets));
+alter table public.profiles drop constraint if exists profiles_training_days_valid;
+alter table public.profiles add constraint profiles_training_days_valid
+  check (public.valid_training_days(training_days));
+
+-- The target that applies on one date. p_key is calories | protein_g | carbs_g
+-- | fat_g. src/lib/dayTargets.js (targetsForDate) mirrors this; the tests
+-- compare the two.
+create or replace function public.target_for_date(p_base numeric, p_rest jsonb, p_key text, p_training int[], p_date date)
+returns numeric
+language sql
+immutable
+as $$
+  select case
+    when p_rest is null or coalesce(cardinality(p_training), 0) = 0 then p_base
+    when extract(dow from p_date)::int = any (p_training) then p_base
+    else coalesce((p_rest ->> p_key)::numeric, p_base)
+  end;
+$$;
+
+-- A trainer sets a connected client's rest-day targets and training weekdays,
+-- replacing both (null / empty clears the feature). SECURITY DEFINER for the
+-- same reason as set_client_targets, so it validates everything itself.
+-- Setting rest-day targets also switches the client to custom calorie mode:
+-- an adaptive target rewrites the base numbers on its own, which would leave
+-- the two sets out of step.
+create or replace function public.set_client_day_targets(p_client_id uuid, p_rest jsonb, p_training_days int[])
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  clean jsonb := null;
+  days int[] := null;
+  k text;
+  v jsonb;
+begin
+  if not exists (
+    select 1 from public.trainer_clients
+    where trainer_id = auth.uid() and client_id = p_client_id and status = 'active'
+  ) then
+    raise exception 'Not an active trainer for this client';
+  end if;
+
+  if p_rest is not null and jsonb_typeof(p_rest) <> 'null' then
+    if jsonb_typeof(p_rest) <> 'object' then raise exception 'Rest-day targets must be an object'; end if;
+    clean := '{}'::jsonb;
+    for k, v in select * from jsonb_each(p_rest) loop
+      if jsonb_typeof(v) = 'null' then continue; end if;
+      if k not in ('calories', 'protein_g', 'carbs_g', 'fat_g') then raise exception 'Unknown target: %', k; end if;
+      if jsonb_typeof(v) <> 'number' then raise exception 'Target % must be a number', k; end if;
+      clean := clean || jsonb_build_object(k, v);
+    end loop;
+    if clean = '{}'::jsonb then clean := null; end if;
+    if not public.valid_rest_day_targets(clean) then raise exception 'A rest-day target is out of range'; end if;
+  end if;
+
+  if p_training_days is not null and cardinality(p_training_days) > 0 then
+    if not public.valid_training_days(p_training_days) then raise exception 'Training days must be distinct weekdays 0-6'; end if;
+    select array_agg(x order by x) into days from unnest(p_training_days) x;
+  end if;
+
+  update public.profiles
+  set rest_day_targets = clean,
+      training_days = days,
+      calorie_mode = case when clean is not null then 'custom' else calorie_mode end,
+      updated_at = now()
+  where id = p_client_id;
+end;
+$$;
+
+revoke all on function public.set_client_day_targets(uuid, jsonb, int[]) from public, anon;
+grant execute on function public.set_client_day_targets(uuid, jsonb, int[]) to authenticated;
+
+-- get_client_summaries again, now day-aware: calorie_target / protein_g are the
+-- targets for p_today, and days_on_target_7d / days_protein_7d judge each day
+-- against that day's own target. With no rest-day targets set the numbers are
+-- identical to before.
+drop function if exists public.get_client_summaries(date);
+create function public.get_client_summaries(p_today date default current_date)
+returns table (
+  link_id uuid, client_id uuid, client_name text, group_label text, connected_at timestamptz,
+  goal text, calorie_target int, protein_g int,
+  last_log_date date, days_logged_7d int, days_on_target_7d int, days_protein_7d int,
+  avg_cal_7d numeric, today_cal numeric,
+  latest_weight_kg numeric, latest_weight_date date, weight_change_kg_14d numeric,
+  last_checkin_date date
+)
+language sql
+stable
+set search_path = public
+as $$
+  select
+    tc.id, tc.client_id, p.name, tc.group_label, tc.created_at,
+    p.goal,
+    public.target_for_date(p.calorie_target, p.rest_day_targets, 'calories', p.training_days, p_today)::int,
+    public.target_for_date(p.protein_g, p.rest_day_targets, 'protein_g', p.training_days, p_today)::int,
+    (select max(f.logged_date) from public.food_logs f where f.user_id = tc.client_id),
+    coalesce(d.days_logged, 0)::int,
+    coalesce(d.days_on_target, 0)::int,
+    coalesce(d.days_protein, 0)::int,
+    d.avg_cal,
+    coalesce(t.cal, 0),
+    w.kg, w.dt,
+    case when w.kg is not null and w0.kg is not null and w0.dt < w.dt then round(w.kg - w0.kg, 2) end,
+    (select max(c.checkin_date) from public.checkins c where c.user_id = tc.client_id)
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.client_id
+  left join lateral (
+    select
+      count(*) filter (where s.cal > 0) as days_logged,
+      count(*) filter (where s.cal > 0 and s.cal_target is not null
+                       and s.cal between s.cal_target * 0.85 and s.cal_target * 1.15) as days_on_target,
+      count(*) filter (where s.cal > 0 and s.prot_target is not null and s.prot >= s.prot_target * 0.9) as days_protein,
+      avg(s.cal) filter (where s.cal > 0) as avg_cal
+    from (
+      select f.logged_date, sum(f.calories) as cal, sum(f.protein_g) as prot,
+             public.target_for_date(p.calorie_target, p.rest_day_targets, 'calories', p.training_days, f.logged_date) as cal_target,
+             public.target_for_date(p.protein_g, p.rest_day_targets, 'protein_g', p.training_days, f.logged_date) as prot_target
+      from public.food_logs f
+      where f.user_id = tc.client_id and f.logged_date > p_today - 7 and f.logged_date <= p_today
+      group by f.logged_date
+    ) s
+  ) d on true
+  left join lateral (
+    select sum(f.calories) as cal from public.food_logs f
+    where f.user_id = tc.client_id and f.logged_date = p_today
+  ) t on true
+  left join lateral (
+    select case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg, wl.logged_date as dt
+    from public.weight_logs wl where wl.user_id = tc.client_id and wl.logged_date <= p_today
+    order by wl.logged_date desc limit 1
+  ) w on true
+  left join lateral (
+    select case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg, wl.logged_date as dt
+    from public.weight_logs wl
+    where wl.user_id = tc.client_id and w.dt is not null and wl.logged_date >= w.dt - 14 and wl.logged_date <= w.dt
+    order by wl.logged_date asc limit 1
+  ) w0 on true
+  where tc.trainer_id = auth.uid() and tc.status = 'active'
+  order by p.name nulls last;
+$$;
+revoke all on function public.get_client_summaries(date) from public, anon;
+grant execute on function public.get_client_summaries(date) to authenticated;

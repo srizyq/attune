@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useHistory } from '../../hooks/useHistory';
 import { todayLocalDate, dateNDaysAgo } from '../../lib/patterns';
+import { targetsForDate } from '../../lib/dayTargets';
 import {
   adherenceScore, adherenceTone, attentionFlags, activityLabel, matchesSearch, sortSummaries, needsAttention, SORTS,
 } from '../../lib/clientInsights';
@@ -103,7 +104,7 @@ function LegacyClientRow({ row, index, onSelect, onRevoke, onStatus, onSetGroup 
   const todayData = dailyData.find(d => d.date === today);
   const loggedDays = dailyData.filter(d => d.loggedMeals > 0);
   const avgCal = loggedDays.length ? Math.round(avg(loggedDays.map(d => d.calories))) : null;
-  const calorieTarget = row.client?.calorie_target || null;
+  const calorieTarget = targetsForDate(row.client, today).calories || null;
   const todayPct = calorieTarget && todayData ? todayData.calories / calorieTarget : 0;
   const loggedToday = !!todayData;
   const [editingGroup, setEditingGroup] = useState(false);

@@ -7,6 +7,7 @@ import { getCheckinForDate } from '../../lib/db';
 import { todayLocalDate, dateNDaysAgo, dateRange, streakFor, computeStreak } from '../../lib/patterns';
 import { computeTrendWeight, toKg, fromKg } from '../../lib/adaptiveTDEE';
 import { MICRO_NUTRIENTS, extendedSummary } from '../../lib/microNutrients';
+import { targetsForDate, dayTargetsActive } from '../../lib/dayTargets';
 import { ACCENT, WATER_BLUE, avg } from './constants';
 
 // Everything the trainer's client tabs read, fetched and derived once so the
@@ -45,8 +46,19 @@ export function useClientDashboard(client, clientData) {
   }, [client.id, date]);
 
   const weightUnit = clientData.unit === 'imperial' ? 'lb' : 'kg';
+  // The everyday (training-day) targets, as set — what the Overview shows.
   const calorieTarget = clientData.calorie_target || null;
   const proteinTarget = clientData.protein_g || null;
+  // What applies on a given date (a rest day may have its own targets), used
+  // for every judgement about a specific day below.
+  const targetFor = (date) => targetsForDate(clientData, date);
+  const rest = dayTargetsActive(clientData) ? clientData.rest_day_targets : null;
+  const hasCalorieTarget = !!(calorieTarget || rest?.calories);
+  const hasProteinTarget = !!(proteinTarget || rest?.protein_g);
+  const onCalorieTarget = (d, tolerance) => {
+    const t = targetFor(d.date).calories;
+    return !!t && Math.abs(d.calories - t) <= t * tolerance;
+  };
 
   const byDate = useMemo(() => new Map(dailyData.map(d => [d.date, d])), [dailyData]);
   const allDates = useMemo(() => dateRange(dateNDaysAgo(range - 1), today), [range, today]);
@@ -63,21 +75,22 @@ export function useClientDashboard(client, clientData) {
     avgProtein: Math.round(avg(loggedDays.map(d => d.protein_g))),
     avgCarbs: Math.round(avg(loggedDays.map(d => d.carbs_g))),
     avgFat: Math.round(avg(loggedDays.map(d => d.fat_g))),
-    daysOnTarget: calorieTarget ? loggedDays.filter(d => Math.abs(d.calories - calorieTarget) <= calorieTarget * 0.1).length : 0,
+    daysOnTarget: hasCalorieTarget ? loggedDays.filter(d => onCalorieTarget(d, 0.1)).length : 0,
     avgEnergy: energyDays.length ? avg(energyDays.map(d => d.energy)).toFixed(1) : null,
   };
 
   const streaks = {
     logging: computeStreak(badgeData),
-    calorie: calorieTarget ? streakFor(badgeData, d => d.calories > 0 && Math.abs(d.calories - calorieTarget) <= calorieTarget * 0.15) : 0,
+    calorie: hasCalorieTarget ? streakFor(badgeData, d => d.calories > 0 && onCalorieTarget(d, 0.15)) : 0,
     mood: streakFor(badgeData, d => d.mood != null),
-    protein: proteinTarget ? streakFor(badgeData, d => d.protein_g >= proteinTarget * 0.9) : 0,
+    protein: hasProteinTarget ? streakFor(badgeData, d => { const t = targetFor(d.date).protein_g; return !!t && d.protein_g >= t * 0.9; }) : 0,
   };
 
   // Same heatmap-strip treatment as the client's own Expenditure page, so a
   // trainer's view matches what the client sees.
   const calorieHeatmapDays = filledDays.map(d => {
-    const pct = !d.calories ? null : calorieTarget ? Math.min(100, Math.round((d.calories / calorieTarget) * 100)) : 100;
+    const dayCalories = targetFor(d.date).calories;
+    const pct = !d.calories ? null : dayCalories ? Math.min(100, Math.round((d.calories / dayCalories) * 100)) : 100;
     return {
       date: d.date,
       pct,
@@ -133,7 +146,7 @@ export function useClientDashboard(client, clientData) {
 
   return {
     today, date, setDate, range, setRange,
-    calorieTarget, proteinTarget, weightUnit,
+    calorieTarget, proteinTarget, hasCalorieTarget, targetFor, weightUnit,
     historyLoading, stats, streaks, calorieHeatmapDays,
     weightLogs, latestWeight, weightLoading, weightChartData, chartOptions,
     meals, foodLoading, checkin,

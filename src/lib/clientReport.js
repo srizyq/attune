@@ -3,6 +3,7 @@
 // to a file are unit-tested. clientReportData.js does the fetching; the
 // Reports tab wires the two to buttons.
 import { MICRO_NUTRIENTS, MICRO_COLUMNS } from './microNutrients';
+import { targetsForDate, dayTargetsActive, describeTrainingDays, TARGET_FIELDS } from './dayTargets';
 import { toKg, fromKg } from './adaptiveTDEE';
 import { daysBetween } from './dates';
 import { provenanceBreakdown, describeBreakdown } from './provenance';
@@ -58,6 +59,10 @@ export function buildReport({ client, start, end, dayFilter = 'all', foodLogs = 
   if (problem) throw new RangeError(problem);
 
   const target = client.calorie_target ? num(client.calorie_target) : null;
+  // A rest day may have its own calorie target; each day is judged against its own.
+  const restActive = dayTargetsActive(client);
+  const hasAnyTarget = !!target || (restActive && client.rest_day_targets.calories != null);
+  const dayTarget = (date) => { const t = targetsForDate(client, date).calories; return t ? num(t) : null; };
   const byDate = new Map(datesInRange(start, end).map((date) => [date, {
     date, calories: 0, protein: 0, carbs: 0, fat: 0, fibre: 0, items: 0, slots: new Set(),
     mood: null, energy: null, water: null, micros: {},
@@ -94,6 +99,7 @@ export function buildReport({ client, start, end, dayFilter = 'all', foodLogs = 
   const keep = { all: () => true, logged: (d) => d.logged, complete: (d) => d.complete }[dayFilter] || (() => true);
   const included = days.filter(keep);
   const loggedIncluded = included.filter((d) => d.logged);
+  const evaluated = loggedIncluded.map((d) => ({ ...d, target: dayTarget(d.date) })).filter((d) => d.target);
 
   const energyValues = included.filter((d) => d.energy != null).map((d) => num(d.energy));
   const sortedWeights = [...weightLogs].sort((a, b) => a.logged_date.localeCompare(b.logged_date));
@@ -121,8 +127,8 @@ export function buildReport({ client, start, end, dayFilter = 'all', foodLogs = 
     avgProtein: round(mean(included.map((d) => d.protein)) ?? 0),
     avgCarbs: round(mean(included.map((d) => d.carbs)) ?? 0),
     avgFat: round(mean(included.map((d) => d.fat)) ?? 0),
-    daysOnTarget: target ? loggedIncluded.filter((d) => Math.abs(d.calories - target) <= target * ON_TARGET_TOLERANCE).length : null,
-    daysEvaluatedForTarget: target ? loggedIncluded.length : 0,
+    daysOnTarget: hasAnyTarget ? evaluated.filter((d) => Math.abs(d.calories - d.target) <= d.target * ON_TARGET_TOLERANCE).length : null,
+    daysEvaluatedForTarget: hasAnyTarget ? evaluated.length : 0,
     avgEnergy: energyValues.length ? round(mean(energyValues), 1) : null,
     weight,
     workouts: {
@@ -141,7 +147,7 @@ export function buildReport({ client, start, end, dayFilter = 'all', foodLogs = 
 
   return {
     meta: { clientName: client.name || 'Client', start, end, dayFilter },
-    targets: { goal: client.goal || null, calories: target, protein: client.protein_g ? num(client.protein_g) : null, carbs: client.carbs_g ? num(client.carbs_g) : null, fat: client.fat_g ? num(client.fat_g) : null },
+    targets: { restDay: restActive ? { trainingDays: describeTrainingDays(client.training_days), values: Object.fromEntries(TARGET_FIELDS.filter((f) => client.rest_day_targets[f.key] != null).map((f) => [f.key, num(client.rest_day_targets[f.key])])) } : null, goal: client.goal || null, calories: target, protein: client.protein_g ? num(client.protein_g) : null, carbs: client.carbs_g ? num(client.carbs_g) : null, fat: client.fat_g ? num(client.fat_g) : null },
     days, included, summary, micros,
   };
 }
@@ -216,6 +222,7 @@ ${kv('Calorie target', targets.calories ? `${targets.calories.toLocaleString()} 
 ${kv('Protein', targets.protein ? `${targets.protein} g` : '—')}
 ${kv('Carbs', targets.carbs ? `${targets.carbs} g` : '—')}
 ${kv('Fat', targets.fat ? `${targets.fat} g` : '—')}
+${targets.restDay ? kv('Training days', targets.restDay.trainingDays) + kv('Rest-day targets', TARGET_FIELDS.filter((f) => targets.restDay.values[f.key] != null).map((f) => `${f.label} ${targets.restDay.values[f.key].toLocaleString()}${f.unit === 'g' ? ' g' : ' kcal'}`).join(' · ')) : ''}
 
 <h2>Summary (${esc(summary.includedDays)} of ${esc(summary.rangeDays)} days)</h2>
 ${kv('Days with food logged', `${summary.loggedDays} of ${summary.rangeDays}`)}

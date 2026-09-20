@@ -149,6 +149,39 @@ describe('buildReport — weight, energy, workouts, micros', () => {
   });
 });
 
+describe('buildReport — rest-day targets', () => {
+  // 2026-09-14 is a Monday. Training days Mon/Wed/Fri; everything else is a rest day.
+  const dayClient = { ...client, calorie_target: 2500, rest_day_targets: { calories: 1800 }, training_days: [1, 3, 5] };
+  const logs = [
+    log('2026-09-14', 'lunch', 2500), // Mon, training: on target
+    log('2026-09-15', 'lunch', 1800), // Tue, rest: on target
+    log('2026-09-16', 'lunch', 1800), // Wed, training: 1800 vs 2500 -> off
+    log('2026-09-17', 'lunch', 2500), // Thu, rest: 2500 vs 1800 -> off
+    log('2026-09-18', 'lunch', 2500), // Fri, training: on target
+    log('2026-09-19', 'lunch', 1800), // Sat, rest: on target
+  ];
+  it('judges each day against that day\'s own target', () => {
+    const r = buildReport({ ...base, client: dayClient, foodLogs: logs });
+    expect(r.summary).toMatchObject({ daysOnTarget: 4, daysEvaluatedForTarget: 6 });
+  });
+  it('would have got it wrong with a single target (why this matters)', () => {
+    const r = buildReport({ ...base, client: { ...dayClient, rest_day_targets: null }, foodLogs: logs });
+    expect(r.summary.daysOnTarget).toBe(3); // Mon, Thu, Fri — counts Thursday's overeat, misses both good rest days
+  });
+  it('states the rest-day set in the printed report, and nothing when unused', () => {
+    const html = buildReportHtml(buildReport({ ...base, client: dayClient, foodLogs: logs }));
+    expect(html).toContain('Training days');
+    expect(html).toContain('Mon, Wed, Fri');
+    expect(html).toContain('Calories 1,800 kcal');
+    expect(buildReportHtml(buildReport({ ...base, foodLogs: logs }))).not.toContain('Training days');
+  });
+  it('counts rest days for a client with no everyday calorie target, skipping training days that have none', () => {
+    const r = buildReport({ ...base, client: { ...client, calorie_target: null, rest_day_targets: { calories: 1800 }, training_days: [1] }, foodLogs: logs });
+    // Monday is the only training day (no target -> not evaluated); Tue..Sat are rest days at 1800.
+    expect(r.summary).toMatchObject({ daysOnTarget: 3, daysEvaluatedForTarget: 5 });
+  });
+});
+
 describe('buildReport — data sources', () => {
   const foodLogs = [
     log('2026-09-14', 'lunch', 700, { source: 'ausnut' }),

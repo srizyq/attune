@@ -7,6 +7,7 @@ import WeeklySummaryCard from './WeeklySummaryCard';
 import { Card, SectionLabel, StatRow, StatCard, EmptyChartBox, RangeToggle } from './shared';
 import { ACCENT, WATER_BLUE, AI_PURPLE, GOAL_LABELS, RANGES } from './constants';
 import { attentionFlags } from '../../lib/clientInsights';
+import { dayTargetsActive, describeTrainingDays, TARGET_FIELDS } from '../../lib/dayTargets';
 
 const SEVERITY_COLOR = { high: 'var(--danger)', medium: 'var(--gold)' };
 
@@ -29,7 +30,8 @@ function AttentionFlags({ summary, today }) {
 
 export default function OverviewTab({ clientData, d, editingTargets, setEditingTargets, onSaveTargets, onSaveMicroTargets, summary }) {
   const handleSaveTargets = onSaveTargets;
-  const { calorieTarget, historyLoading, calorieHeatmapDays } = d;
+  const { calorieTarget, hasCalorieTarget, historyLoading, calorieHeatmapDays } = d;
+  const restActive = dayTargetsActive(clientData);
   const { hasData, loggedDays, energyDays, avgCalories, avgProtein, avgCarbs, avgFat, daysOnTarget, avgEnergy } = d.stats;
   const { logging: loggingStreak, calorie: calorieStreak, mood: moodStreak, protein: proteinStreak } = d.streaks;
 
@@ -60,12 +62,18 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
               <StatRow label="Protein" value={clientData.protein_g ? `${clientData.protein_g}g` : '—'} />
               <StatRow label="Carbs" value={clientData.carbs_g ? `${clientData.carbs_g}g` : '—'} />
               <StatRow label="Fat" value={clientData.fat_g ? `${clientData.fat_g}g` : '—'} />
+              {restActive && (
+                <>
+                  <StatRow label="Training days" value={describeTrainingDays(clientData.training_days)} />
+                  <StatRow label="Rest-day targets" value={TARGET_FIELDS.filter(f => clientData.rest_day_targets[f.key] != null).map(f => `${f.label} ${Number(clientData.rest_day_targets[f.key]).toLocaleString()}${f.unit === 'g' ? 'g' : ' kcal'}`).join(' · ')} />
+                </>
+              )}
             </>
           )}
         </Card>
         <div className="grid-2" style={{ gap: 12 }}>
           <StatCard label="Avg. calories" value={hasData ? avgCalories.toLocaleString() : '—'} hint={hasData ? `over ${loggedDays.length} logged days` : 'No data yet'} color={ACCENT} />
-          <StatCard label="Days on target" value={hasData && calorieTarget ? daysOnTarget : '—'} hint={calorieTarget ? 'within 10% of goal' : 'No calorie target set'} color={ACCENT} />
+          <StatCard label="Days on target" value={hasData && hasCalorieTarget ? daysOnTarget : '—'} hint={hasCalorieTarget ? (restActive ? "within 10% of each day's goal" : 'within 10% of goal') : 'No calorie target set'} color={ACCENT} />
           <StatCard label="Avg. protein" value={hasData ? `${avgProtein}g` : '—'} hint={hasData ? `over ${loggedDays.length} logged days` : 'No data yet'} color={WATER_BLUE} />
           <StatCard label="Avg. energy" value={avgEnergy || '—'} hint={avgEnergy ? `over ${energyDays.length} check-ins` : 'No check-ins yet'} color={AI_PURPLE} />
         </div>

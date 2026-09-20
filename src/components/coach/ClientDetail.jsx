@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { setClientTargets, setClientMicroTargets } from '../../lib/db';
+import { setClientTargets, setClientMicroTargets, setClientDayTargets } from '../../lib/db';
 import { adherenceScore, adherenceTone } from '../../lib/clientInsights';
 import { useClientDashboard } from './useClientDashboard';
 import { ClientAvatar } from './shared';
@@ -36,9 +36,14 @@ export default function ClientDetail({ client, summary }) {
     tabRefs.current[tab]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
   }, [tab]);
 
-  const handleSaveTargets = async (fields) => {
+  const handleSaveTargets = async (fields, day) => {
     await setClientTargets(client.id, fields);
     setClientData(prev => ({ ...prev, ...fields }));
+    // Rest-day targets are a separate call and only made when they changed.
+    if (day) {
+      await setClientDayTargets(client.id, day.rest, day.trainingDays);
+      setClientData(prev => ({ ...prev, rest_day_targets: day.rest, training_days: day.trainingDays }));
+    }
     setEditingTargets(false);
   };
 
