@@ -6,13 +6,15 @@ import { TRIAL_DAYS } from '../../src/lib/trial.js';
 beforeAll(() => createDb(), 60000);
 
 // The stub auth.users only has id/email; start_free_trial also reads
-// created_at and new_email, which real Supabase always has.
-const AUTH_COLUMNS = `alter table auth.users add column if not exists created_at timestamptz not null default now(), add column if not exists new_email text`;
+// created_at and email_change, which real Supabase always has. (The pending
+// address lives in email_change — `new_email` is only the API's name for it;
+// no such column exists, and using it once broke this live.)
+const AUTH_COLUMNS = `alter table auth.users add column if not exists created_at timestamptz not null default now(), add column if not exists email_change text not null default ''`;
 
 async function setup({ email = 'new@example.test', newEmail = null, createdAt = null } = {}) {
   const db = await createDb({ extraSql: [AUTH_COLUMNS] });
   const { rows } = await db.query(
-    `insert into auth.users (email, new_email, created_at) values ($1, $2, coalesce($3::timestamptz, now())) returning id`,
+    `insert into auth.users (email, email_change, created_at) values ($1, coalesce($2, ''), coalesce($3::timestamptz, now())) returning id`,
     [email, newEmail, createdAt]
   );
   const id = rows[0].id;
@@ -39,7 +41,7 @@ describe('the signup flow starts the free trial', () => {
     expect(daysFromNow(await trialOf(db, id))).toBeGreaterThan(29.9);
   });
 
-  it('works while the email is still unconfirmed (new_email only)', async () => {
+  it('works while the email is still unconfirmed (email_change only)', async () => {
     const { db, id } = await setup({ email: null, newEmail: 'pending@example.test' });
     const { rows } = await as(db, id, `select public.start_free_trial() as ends`);
     expect(rows[0].ends).not.toBeNull();

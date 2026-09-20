@@ -1748,14 +1748,15 @@ begin
     return existing;
   end if;
 
-  select created_at, email, new_email into acct from auth.users where id = uid;
+  select created_at, email, email_change into acct from auth.users where id = uid;
   -- New signups only: created since the trial launched (2026-09-18), and
-  -- has attached real credentials (email is empty until confirmed, so
-  -- new_email counts too).
+  -- has attached real credentials (email is empty until confirmed, so the
+  -- pending address in email_change counts too — the API's `new_email` is
+  -- that same value; there is no such column on auth.users).
   if acct.created_at is null or acct.created_at < timestamptz '2026-09-18 00:00:00+00' then
     return null;
   end if;
-  if coalesce(acct.email, '') = '' and coalesce(acct.new_email, '') = '' then
+  if coalesce(acct.email, '') = '' and coalesce(acct.email_change, '') = '' then
     return null;
   end if;
 
