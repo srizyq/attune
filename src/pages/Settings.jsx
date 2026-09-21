@@ -172,7 +172,7 @@ export default function Settings() {
                   {pendingConfirmation ? 'Confirming email' : 'Member'}
                 </span>
                 {(pendingConfirmation ? user?.new_email : user?.email) && (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{pendingConfirmation ? user.new_email : user.email}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '13px', minWidth: 0, overflowWrap: 'anywhere' }}>{pendingConfirmation ? user.new_email : user.email}</span>
                 )}
               </div>
             </div>

@@ -282,8 +282,8 @@ export default function Profile() {
                 }}>
                   {pendingConfirmation ? 'Confirming email' : 'Member'}
                 </span>
-                {!pendingConfirmation && user?.email && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.email}</span>}
-                {pendingConfirmation && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{user.new_email}</span>}
+                {!pendingConfirmation && user?.email && <span style={{ color: 'var(--text-muted)', fontSize: '13px', minWidth: 0, overflowWrap: 'anywhere' }}>{user.email}</span>}
+                {pendingConfirmation && <span style={{ color: 'var(--text-muted)', fontSize: '13px', minWidth: 0, overflowWrap: 'anywhere' }}>{user.new_email}</span>}
               </div>
             </div>
           </Card>

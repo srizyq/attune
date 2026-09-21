@@ -122,7 +122,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 340, padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Log weight</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}>×</button>
+          <button className="hit-slop" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}>×</button>
         </div>
 
         {recent.length >= 2 && (
@@ -531,7 +531,7 @@ function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWork
                 <i className={`ti ${type.icon}`} style={{ fontSize: 15, color: 'var(--accent)', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-secondary)' }}>{type.label} · {w.durationMinutes} min</div>
                 <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, flexShrink: 0 }}>{Math.round(w.caloriesBurned)} kcal</div>
-                <button onClick={() => onDeleteWorkout(w.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, padding: 0, flexShrink: 0 }}>×</button>
+                <button className="hit-slop" aria-label="Close" onClick={() => onDeleteWorkout(w.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, padding: 0, flexShrink: 0 }}>×</button>
               </div>
             );
           })}
@@ -664,7 +664,7 @@ function ConfirmEmailBanner({ email }) {
           {resendState === 'sent' ? (
             <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>Sent!</span>
           ) : (
-            <button onClick={resend} disabled={resendState === 'sending'} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: resendState === 'sending' ? 'default' : 'pointer', marginLeft: '4px', padding: 0, textDecoration: 'underline' }}>
+            <button onClick={resend} disabled={resendState === 'sending'} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: resendState === 'sending' ? 'default' : 'pointer', marginLeft: '4px', padding: '6px 2px', textDecoration: 'underline' }}>
               {resendState === 'sending' ? 'Sending…' : 'Resend email'}
             </button>
           )}
@@ -673,7 +673,7 @@ function ConfirmEmailBanner({ email }) {
           )}
         </span>
       </div>
-      <button onClick={() => setVisible(false)} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>×</button>
+      <button onClick={() => setVisible(false)} className="hit-slop" aria-label="Dismiss" style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>×</button>
     </div>
   );
 }

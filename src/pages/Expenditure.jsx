@@ -164,7 +164,7 @@ function LogWeightButton({ unit, onLog }) {
       <button onClick={submit} disabled={!value || saving} style={{ background: !value || saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: !value || saving ? 'var(--text-muted)' : '#0f0f0f', cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         {saving ? 'Saving…' : 'Save'}
       </button>
-      <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Cancel</button>
+      <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', fontSize: 12, padding: '8px 10px', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Cancel</button>
     </div>
   );
 }

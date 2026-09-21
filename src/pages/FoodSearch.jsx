@@ -942,7 +942,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
     <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth: 460, maxHeight: "calc(var(--vvh, 100vh) * 0.85)", overflowY: "auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
         <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"}</span>
-        <button onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
+        <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
       </div>
       <div style={{ padding: 20 }}>
       {error && !addingProduct && (
@@ -1129,7 +1129,7 @@ function ModalShell({ title, onClose, children, maxWidth = 460 }) {
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth, maxHeight: "calc(var(--vvh, 100vh) * 0.85)", overflowY: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{title}</span>
-          <button onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
+          <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>{children}</div>
       </div>
@@ -1302,7 +1302,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
                     <span style={{ color: "var(--accent)" }}>{Math.round(it.cal)} kcal</span>
                   </div>
                 </div>
-                <button onClick={() => onRemove(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
+                <button className="hit-slop" aria-label="Close" onClick={() => onRemove(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
               </div>
             ))}
           </div>
@@ -2148,7 +2148,7 @@ export default function FoodSearch() {
               </button>
             )}
             {liveLoading && !transcribing && <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid var(--text-hint)", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />}
-            {query && !liveLoading && !transcribing && <button onClick={() => { setQuery(""); setGenericResults([]); setPackagedLive([]); setLiveError(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>✕</button>}
+            {query && !liveLoading && !transcribing && <button className="hit-slop" aria-label="Close" onClick={() => { setQuery(""); setGenericResults([]); setPackagedLive([]); setLiveError(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>✕</button>}
           </div>
           {voiceError && <div style={{ color: "var(--danger)", fontSize: 12, marginTop: -4, marginBottom: 10 }}>{voiceError}</div>}
 

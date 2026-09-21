@@ -2,6 +2,20 @@ import { Buffer } from 'node:buffer';
 import { USER_ID, buildFoodLogs, buildProfile, buildWeightLogs, buildWorkouts, buildCheckins, CUSTOM_FOODS, FAVOURITES, SAVED_MEALS } from './fixtures.js';
 
 const SUPABASE = 'https://fake.supabase.test';
+
+// What each RPC returns for an ordinary account. Set-returning functions give
+// arrays; `get_my_team` returns a single jsonb value (null = not on a team) —
+// an empty array there once crashed the Team card. Any RPC missing from this
+// list (and not overridden per test) is reported as "unmocked", so a new one
+// has to be modelled here rather than silently answering with something the
+// real function never would.
+const DEFAULT_RPC = {
+  get_my_team: null,
+  get_my_coach_links: [], get_pending_clients: [], get_client_summaries: [], get_client_coaches: [],
+  client_last_log_dates: [],
+  search_ausnut_foods_fuzzy: [], search_ausnut_foods_ranked: [], search_common_dishes_fuzzy: [],
+  start_free_trial: null,
+};
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
 export function fakeSession(userOverrides = {}) {
@@ -41,7 +55,7 @@ function matches(row, key, spec) {
  * Anything the app asks for that has no fixture is recorded in `unmocked`
  * so a new endpoint can't silently go untested.
  */
-export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {} } = {}) {
+export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true } = {}) {
   const data = {
     profiles: [buildProfile(profile)],
     food_logs: buildFoodLogs(),
@@ -57,7 +71,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
   };
   const unmocked = [];
   const sess = fakeSession(session);
-  await context.addInitScript(([key, value]) => { try { localStorage.setItem(key, value); } catch { /* ignore */ } }, ['sb-fake-auth-token', JSON.stringify(sess)]);
+  if (signedIn) await context.addInitScript(([key, value]) => { try { localStorage.setItem(key, value); } catch { /* ignore */ } }, ['sb-fake-auth-token', JSON.stringify(sess)]);
 
   await context.route(`${SUPABASE}/**`, async (route) => {
     const req = route.request();
@@ -74,8 +88,10 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
 
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
       const fn = url.pathname.split('/').pop();
-      if (fn in rpc) return json(typeof rpc[fn] === 'function' ? rpc[fn](req) : rpc[fn]);
-      return json([]);
+      const table = { ...DEFAULT_RPC, ...rpc };
+      if (fn in table) return json(typeof table[fn] === 'function' ? table[fn](req) : table[fn]);
+      unmocked.push(`rpc ${fn}`);
+      return json(null);
     }
 
     if (url.pathname.startsWith('/rest/v1/')) {

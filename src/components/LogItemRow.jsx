@@ -163,7 +163,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {!readOnly && <button onClick={(e) => { e.stopPropagation(); onDelete(); }} style={{ background: 'none', border: 'none', color: 'var(--border-default)', cursor: 'pointer', fontSize: 15, padding: '2px 4px' }}>×</button>}
+          {!readOnly && <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="hit-slop" aria-label={`Delete ${item.name}`} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 15, padding: '2px 4px' }}>×</button>}
           <span style={{ color: 'var(--border-default)', fontSize: 12, display: 'inline-block', transition: 'transform 220ms cubic-bezier(0.77, 0, 0.175, 1)', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
             <button
               type="button"
               onClick={() => setRecalcOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 8, padding: 0 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, padding: '6px 0' }}
             >
               <i className="ti ti-camera" style={{ fontSize: 13 }} /> Recalculate with a new photo
             </button>

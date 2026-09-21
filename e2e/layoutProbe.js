@@ -28,9 +28,27 @@ export function probe({ ignore = [], scrolledToEnd = false } = {}) {
     }
     return null;
   };
+  // True when an ancestor's overflow clips this element down to nothing (a
+  // collapsed accordion panel, a closed drawer) — it has a box but can't be seen.
+  const clippedAway = (el) => {
+    const r = el.getBoundingClientRect();
+    for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+      const cs = style(p);
+      if (cs.overflowY === 'visible' && cs.overflowX === 'visible') continue;
+      const pr = p.getBoundingClientRect();
+      const h = Math.min(r.bottom, pr.bottom) - Math.max(r.top, pr.top);
+      const w = Math.min(r.right, pr.right) - Math.max(r.left, pr.left);
+      if (h <= 0.5 || w <= 0.5) return true;
+    }
+    return false;
+  };
   const stickyLayer = (el) => {
     for (let p = el; p && p !== document.body; p = p.parentElement) if (style(p).position === 'sticky') return true;
     return false;
+  };
+  const fixedAncestor = (el) => {
+    for (let p = el; p && p !== document.body; p = p.parentElement) if (style(p).position === 'fixed') return p;
+    return null;
   };
   const inFixedLayer = (el) => {
     for (let p = el; p && p !== document.body; p = p.parentElement) if (style(p).position === 'fixed') return true;
@@ -113,7 +131,11 @@ export function probe({ ignore = [], scrolledToEnd = false } = {}) {
     if (el.contains(top_) || top_.contains(el)) continue;
     // Content sliding under fixed/sticky chrome while scrolling is normal —
     // the separate `trapped` check below covers content that can't escape it.
-    if (inFixedLayer(top_) || stickyLayer(top_) || inFixedLayer(el)) continue;
+    // Two things in the same modal/sheet overlapping is a real bug; content
+    // under a different fixed layer (nav, backdrop) is not.
+    const fa = fixedAncestor(el), fb = fixedAncestor(top_);
+    if (fa !== fb) continue;
+    if (stickyLayer(top_) && !fa) continue;
     if (el.tagName === 'INPUT' && top_.closest('label') === el.closest('label') && el.closest('label')) continue;
     issues.push({ kind: 'covered', where: label(el), detail: `covered by ${label(top_)} at (${Math.round(cx)}, ${Math.round(cy)})` });
   }
@@ -147,12 +169,12 @@ export function probe({ ignore = [], scrolledToEnd = false } = {}) {
   //    sit above any fixed bottom bar (nav / add button) — otherwise the user
   //    can never scroll it into reach.
   if (scrolledToEnd) {
-    const bars = all.filter((el) => visible(el) && style(el).position === 'fixed' && el.getBoundingClientRect().bottom >= vh - 2 && el.getBoundingClientRect().height >= 30 && el.getBoundingClientRect().width >= 40);
+    const bars = all.filter((el) => visible(el) && style(el).position === 'fixed' && el.getBoundingClientRect().bottom >= vh - 2 && el.getBoundingClientRect().height >= 30 && el.getBoundingClientRect().height <= 200 && el.getBoundingClientRect().width >= 40);
     if (bars.length) {
       const barTop = Math.min(...bars.map((b) => b.getBoundingClientRect().top));
       let lowest = null;
       for (const el of all) {
-        if (!visible(el) || inFixedLayer(el) || el.children.length > 0 && !el.matches('button, a, input, select, textarea, [role=button]')) continue;
+        if (!visible(el) || inFixedLayer(el) || clippedAway(el) || el.children.length > 0 && !el.matches('button, a, input, select, textarea, [role=button]')) continue;
         const r = el.getBoundingClientRect();
         if (r.top >= vh) continue; // not on screen
         if (!lowest || r.bottom > lowest.rect.bottom) lowest = { el, rect: r };
@@ -168,14 +190,16 @@ export function probe({ ignore = [], scrolledToEnd = false } = {}) {
 // Scrolls the biggest scrollable area of the page to its end (returns false if
 // nothing scrolls) so the "covered" check also sees content behind a bottom nav.
 export function scrollToBottom() {
-  let best = null;
+  // Every vertically scrollable element, not just the biggest: a page can have
+  // its main column plus an inner list, and "the end of the page" means all of
+  // them scrolled to their ends.
+  let any = false;
   for (const el of document.querySelectorAll('*')) {
     const cs = getComputedStyle(el);
     if (!['auto', 'scroll'].includes(cs.overflowY)) continue;
     if (el.scrollHeight <= el.clientHeight + 4) continue;
-    if (!best || el.scrollHeight - el.clientHeight > best.scrollHeight - best.clientHeight) best = el;
+    el.scrollTop = el.scrollHeight;
+    any = true;
   }
-  if (!best) return false;
-  best.scrollTop = best.scrollHeight;
-  return true;
+  return any;
 }

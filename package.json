@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "verify": "eslint . && vitest run && vite build",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify:full": "npm run verify && playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

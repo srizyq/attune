@@ -62,7 +62,7 @@ export default function OnboardingLayout({ children, step, totalSteps = 4, showS
                 color: 'var(--text-muted)',
                 fontSize: '13px',
                 cursor: 'pointer',
-                padding: '4px 0',
+                padding: '10px 4px',
                 transition: 'color 0.2s',
               }}
               onMouseEnter={e => e.target.style.color = 'var(--accent)'}

@@ -34,7 +34,7 @@ export default function LegalPageLayout({ title, updated, children }) {
     // scrolled fine in desktop testing.
     <div data-theme={theme} style={{ height: 'var(--app-h)', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
-        <button onClick={goBack} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, display: 'flex' }} aria-label="Back">
+        <button onClick={goBack} className="app-icon-btn" aria-label="Back">
           <i className="ti ti-arrow-left" />
         </button>
         <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--accent)', letterSpacing: '-0.5px' }}>attune</span>

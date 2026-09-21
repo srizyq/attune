@@ -36,12 +36,12 @@ export default function TrialBanner({ profile, userId }) {
         <span style={{ color: 'var(--accent)', fontSize: '14px' }}>{showEnded ? '⏳' : '✨'}</span>
         <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
           {showEnded ? 'Your free Pro trial has ended.' : `${daysLeft} day${daysLeft === 1 ? '' : 's'} left in your free Pro trial.`}
-          <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: 'pointer', marginLeft: '4px', padding: 0, textDecoration: 'underline' }}>
+          <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: 'pointer', marginLeft: '4px', padding: '6px 2px', textDecoration: 'underline' }}>
             {showEnded ? 'Upgrade to keep Pro →' : 'Upgrade now →'}
           </button>
         </span>
       </div>
-      <button onClick={dismiss} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>×</button>
+      <button onClick={dismiss} className="hit-slop" aria-label="Dismiss" style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>×</button>
     </div>
   );
 }
