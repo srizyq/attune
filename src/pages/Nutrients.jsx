@@ -8,6 +8,8 @@ import MicroCard from '../components/MicroCard';
 import { MICRO_NUTRIENTS, extendedCoverage, extendedNote, extendedSummary, formatMicro } from '../lib/microNutrients';
 import { MICRO_GROUPS } from '../components/coach/constants';
 import { targetsForDate } from '../lib/dayTargets';
+import PageHeader from '../components/PageHeader';
+import DateStepper from '../components/DateStepper';
 
 const DEFAULT_TARGETS = Object.fromEntries(MICRO_NUTRIENTS.map(m => [m.key, m.defaultTarget]));
 
@@ -114,28 +116,14 @@ export default function Nutrients() {
       <AppNav initials={initials} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <div className="page-pad-top" style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 14, paddingBottom: 14, borderBottom: '1px solid var(--border-default)', position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
-          <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'flex' }}>
-            <i className="ti ti-arrow-left" />
-          </button>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>Nutrients</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 4, background: isToday ? 'transparent' : '#1a1508', border: isToday ? 'none' : '1px solid #4a3a1a', borderRadius: 7, padding: isToday ? 0 : '3px 4px' }}>
-            <button onClick={() => shiftDate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, display: 'flex', padding: 3 }} aria-label="Previous day">
-              <i className="ti ti-chevron-left" />
-            </button>
-            <span style={{ fontSize: 12, color: isToday ? 'var(--text-muted)' : 'var(--gold)', minWidth: 74, textAlign: 'center' }}>
-              {isToday ? 'Today' : new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
-            </span>
-            <button onClick={() => shiftDate(1)} disabled={isToday} style={{ background: 'none', border: 'none', color: isToday ? 'var(--border-default)' : 'var(--text-muted)', cursor: isToday ? 'default' : 'pointer', fontSize: 15, display: 'flex', padding: 3 }} aria-label="Next day">
-              <i className="ti ti-chevron-right" />
-            </button>
-          </div>
-        </div>
+        <PageHeader title="Nutrients" onBack={() => navigate('/dashboard')} backLabel="Back to Dashboard">
+          <DateStepper selectedDate={selectedDate} isToday={isToday} onShift={shiftDate} />
+        </PageHeader>
 
         <div className="page-pad" style={{ maxWidth: 700 }}>
           {loading ? null : (
             <>
-              <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{isToday ? "Today's calories" : 'Calories'}</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
                   {Math.round(totals.cal).toLocaleString()}

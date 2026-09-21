@@ -94,7 +94,7 @@ export default function TeamCard() {
       <ul style={{ listStyle: 'none', margin: '0 0 16px', padding: 0 }}>
         {t.members.map((m) => (
           <li key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border-default)' }}>
-            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: 'var(--accent)', fontFamily: "'Syne', sans-serif", flexShrink: 0 }}>{initials(m.name)}</div>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: 'var(--accent)', fontFamily: "'Syne', sans-serif", flexShrink: 0 }}>{initials(m.name)}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                 {m.name}{m.user_id === user?.id ? ' (you)' : ''}

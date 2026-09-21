@@ -11,6 +11,7 @@ import TeamCard from '../components/coach/TeamCard';
 import ClientDetail from '../components/coach/ClientDetail';
 import { needsAttention } from '../lib/clientInsights';
 import { todayLocalDate } from '../lib/patterns';
+import PageHeader from '../components/PageHeader';
 
 function timeOfDayGreeting() {
   const h = new Date().getHours();
@@ -66,19 +67,10 @@ export default function Coach() {
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <AppNav active="coach" initials={initials} />
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <div className="page-pad-top" style={{
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px 16px',
-          paddingTop: 20, paddingBottom: 20, borderBottom: '1px solid var(--border-default)',
-          position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <LogoMark size={24} />
-            <div>
-              <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                {isTrainer && trainerTab === 'clients' ? 'Coach Mode' : 'Coach'}
-              </h2>
-              <p style={{ color: 'var(--text-hint)', fontSize: 13, margin: '2px 0 0' }}>
-                {!isTrainer || trainerTab === 'my-coach' ? "Your trainer, notes, and coaching tools" : selectedClient ? (selectedClient.name || 'Client') : (
+        <PageHeader
+          leading={<LogoMark size={24} />}
+          title={isTrainer && trainerTab === 'clients' ? 'Coach Mode' : 'Coach'}
+          subtitle={!isTrainer || trainerTab === 'my-coach' ? "Your trainer, notes, and coaching tools" : selectedClient ? (selectedClient.name || 'Client') : (
                   clients.length === 0
                     ? `${timeOfDayGreeting()} — invite your first client below`
                     : summariesSupported
@@ -93,9 +85,7 @@ export default function Coach() {
                     ? `${timeOfDayGreeting()} — everyone's logged today`
                     : `${timeOfDayGreeting()} — ${loggedTodayCount}/${clients.length} clients logged today`
                 )}
-              </p>
-            </div>
-          </div>
+        >
           {isTrainer && trainerTab === 'clients' && selectedClient ? (
             <button
               onClick={() => setSelectedClient(null)}
@@ -123,7 +113,7 @@ export default function Coach() {
               ))}
             </div>
           ) : null}
-        </div>
+        </PageHeader>
 
         <div className="page-pad">
           {!isTrainer ? (

@@ -35,7 +35,7 @@ export default function DaySelector({ selectedDate, onSelect }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      <button onClick={() => shiftWeek(-1)} aria-label="Previous week" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, display: 'flex', padding: 4, flexShrink: 0 }}>
+      <button onClick={() => shiftWeek(-1)} className="hit-slop" aria-label="Previous week" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, display: 'flex', padding: 4, flexShrink: 0 }}>
         <i className="ti ti-chevron-left" />
       </button>
       <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', gap: 4, minWidth: 0 }}>
@@ -62,7 +62,7 @@ export default function DaySelector({ selectedDate, onSelect }) {
           );
         })}
       </div>
-      <button onClick={() => shiftWeek(1)} disabled={!canGoNext} aria-label="Next week" style={{ background: 'none', border: 'none', color: canGoNext ? 'var(--text-muted)' : 'var(--border-strong)', cursor: canGoNext ? 'pointer' : 'default', fontSize: 16, display: 'flex', padding: 4, flexShrink: 0 }}>
+      <button onClick={() => shiftWeek(1)} disabled={!canGoNext} className="hit-slop" aria-label="Next week" style={{ background: 'none', border: 'none', color: canGoNext ? 'var(--text-muted)' : 'var(--border-strong)', cursor: canGoNext ? 'pointer' : 'default', fontSize: 16, display: 'flex', padding: 4, flexShrink: 0 }}>
         <i className="ti ti-chevron-right" />
       </button>
     </div>

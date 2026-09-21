@@ -37,7 +37,7 @@ function ActionTile({ action, onNavigate }) {
         background: 'none', border: 'none', padding: '10px 2px', cursor: 'pointer', fontFamily: 'inherit',
       }}
     >
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-card)', border: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-card)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <i className={`ti ${action.icon}`} style={{ fontSize: 19, color: 'var(--accent)' }} />
       </div>
       <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 500, textAlign: 'center', lineHeight: 1.25 }}>{action.label}</span>

@@ -5,7 +5,7 @@
 export function Card({ children, style }) {
   return (
     <div style={{
-      background: 'var(--bg-subtle)',
+      background: 'var(--bg-card)',
       border: '1px solid var(--card-border)',
       borderRadius: '16px',
       padding: '24px',
@@ -146,7 +146,7 @@ export function SettingsModal({ title, onClose, closing, children }) {
         // on this exact pattern). Notifications/Coach/Account all have
         // focusable inputs inside this shell, so a bare vh cap here left
         // this one out of the fix commit b432033 made everywhere else.
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, width: '100%', maxWidth: 480, maxHeight: 'calc(var(--vvh, 100vh) * 0.85)', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 480, maxHeight: 'calc(var(--vvh, 100vh) * 0.85)', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--border-default)', position: 'sticky', top: 0, background: 'var(--bg-subtle)', zIndex: 1 }}>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{title}</span>

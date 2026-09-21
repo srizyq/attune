@@ -55,11 +55,11 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
           {!compact && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Each day fills up the more you log toward your calorie target</div>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={onPrevMonth} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, display: 'flex' }} aria-label="Previous month">
+          <button onClick={onPrevMonth} className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, display: 'flex' }} aria-label="Previous month">
             <i className="ti ti-chevron-left" />
           </button>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)', minWidth: 110, textAlign: 'center' }}>{monthLabel}</div>
-          <button onClick={onNextMonth} disabled={!canGoNext} style={{ background: 'none', border: 'none', color: canGoNext ? 'var(--text-muted)' : 'var(--text-faint, #2a2a2a)', cursor: canGoNext ? 'pointer' : 'default', fontSize: 16, display: 'flex' }} aria-label="Next month">
+          <button onClick={onNextMonth} disabled={!canGoNext} className="hit-slop" style={{ background: 'none', border: 'none', color: canGoNext ? 'var(--text-muted)' : 'var(--text-faint, #2a2a2a)', cursor: canGoNext ? 'pointer' : 'default', fontSize: 16, display: 'flex' }} aria-label="Next month">
             <i className="ti ti-chevron-right" />
           </button>
         </div>

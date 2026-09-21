@@ -170,7 +170,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
       {showUpsell && <CoachPassUpsell profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />}
 
       {arrivalError && (
-        <div role="alert" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: 'var(--danger)', fontSize: 13 }}>
+        <div role="alert" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: 'var(--danger)', fontSize: 13 }}>
           {arrivalError}
         </div>
       )}
@@ -199,7 +199,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
         />
       ))}
 
-      <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>
         {trainersLoading ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
@@ -209,7 +209,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
               {trainer.coach_logo_url ? (
                 <img src={trainer.coach_logo_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--accent)', fontFamily: "'Syne', sans-serif" }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--accent)', fontFamily: "'Syne', sans-serif" }}>
                   {(trainer.name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
               )}
@@ -259,7 +259,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
           <MealPlanCard />
 
           {hasTargets && (
-            <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your current targets</div>
               <div className="grid-4">
                 <TargetStat label="Calories" value={targets.calories ? `${targets.calories}` : '—'} />

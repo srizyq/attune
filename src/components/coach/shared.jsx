@@ -3,7 +3,7 @@ import { ACCENT } from './constants';
 export function Card({ children, style }) {
   return (
     <div style={{
-      background: 'var(--bg-subtle)',
+      background: 'var(--bg-card)',
       border: '1px solid var(--card-border)',
       boxShadow: 'var(--card-shadow)',
       borderRadius: '16px',

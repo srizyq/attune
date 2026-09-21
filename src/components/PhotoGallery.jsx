@@ -11,7 +11,7 @@ function Modal({ label, onClose, children, wide }) {
   }, [onClose]);
   return (
     <div onClick={onClose} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
-      <div role="dialog" aria-modal="true" aria-label={label} onClick={e => e.stopPropagation()} className="modal-panel" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, padding: 16, width: '100%', maxWidth: wide ? 900 : 520, maxHeight: '92vh', overflowY: 'auto' }}>
+      <div role="dialog" aria-modal="true" aria-label={label} onClick={e => e.stopPropagation()} className="modal-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, padding: 16, width: '100%', maxWidth: wide ? 900 : 520, maxHeight: '92vh', overflowY: 'auto' }}>
         {children}
       </div>
     </div>

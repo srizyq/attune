@@ -9,6 +9,7 @@ import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTimeFromDate } f
 import AppNav from '../components/AppNav';
 import Toast from '../components/Toast';
 import { Card, SectionLabel } from '../components/settings/primitives';
+import PageHeader from '../components/PageHeader';
 
 // Mirrors FoodSearch.jsx's own local MEALS list — not shared/exported
 // from there, and small enough that duplicating it here is simpler than
@@ -195,20 +196,19 @@ export default function Recipes() {
       <AppNav active="food" />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <div className="page-pad-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 14, paddingBottom: 14, borderBottom: '1px solid var(--border-default)', position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={goBack} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'flex' }}>
-              <i className="ti ti-arrow-left" />
-            </button>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>Recipes</span>
-          </div>
-          <button
+        <PageHeader
+          title="Recipes"
+          onBack={goBack}
+          backLabel="Back"
+          right={
+            <button
             onClick={() => navigate('/food', { state: { openMealBuilder: true } })}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, color: '#0f0f0f', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             <i className="ti ti-plus" /> New recipe
           </button>
-        </div>
+          }
+        />
 
         <div className="page-pad" style={{ maxWidth: 700 }}>
           {savedMeals.rows.length > 0 && (

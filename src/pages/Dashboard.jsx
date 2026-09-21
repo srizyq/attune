@@ -119,7 +119,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
 
   return (
     <div onClick={onClose} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, width: '100%', maxWidth: 340, padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 340, padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Log weight</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}>×</button>
@@ -461,6 +461,7 @@ function SwipePager({ pages }) {
           {pages.map((_, i) => (
             <button
               key={i}
+              className="hit-slop hit-slop-wide"
               onClick={() => { setAnimate(true); setPage(i); }}
               aria-label={`Page ${i + 1} of ${pages.length}`}
               style={{
@@ -501,7 +502,7 @@ function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWork
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>ACTIVITY</span>
-        <button onClick={onLogWorkout} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+        <button onClick={onLogWorkout} className="hit-slop" style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
           <i className="ti ti-plus" style={{ fontSize: 13 }} /> Log workout
         </button>
       </div>
@@ -563,7 +564,7 @@ function MoodCheckin({ mood, setMood, energy, setEnergy }) {
         <div style={{ color: 'var(--text-hint)', fontSize: '11px', marginBottom: '6px' }}>Energy level</div>
         <div style={{ display: 'flex', gap: '4px' }}>
           {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-            <button key={n} onClick={() => setEnergy(n)} style={{ flex: 1, height: '6px', borderRadius: '99px', border: 'none', background: n <= energy ? 'var(--accent)' : 'var(--border-default)', cursor: 'pointer', transition: 'background 0.15s', padding: 0 }} />
+            <button key={n} onClick={() => setEnergy(n)} style={{ flex: 1, height: '28px', padding: '11px 0', backgroundClip: 'content-box', borderRadius: '99px', border: 'none', background: n <= energy ? 'var(--accent)' : 'var(--border-default)', cursor: 'pointer', transition: 'background 0.15s' }} aria-label={`Energy ${n} of 10`} />
           ))}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
@@ -589,7 +590,7 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
         const fat = round1(items.reduce((s, i) => s + i.fat, 0));
         const isOpen = open[key];
         return (
-          <div key={key} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: '12px', overflow: 'hidden' }}>
+          <div key={key} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '12px', overflow: 'hidden' }}>
             <button onClick={() => setOpen(o => ({ ...o, [key]: !o[key] }))} style={{ width: '100%', background: 'none', border: 'none', padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: '14px', color: 'var(--text-secondary)' }}>{label}</div>
@@ -741,6 +742,7 @@ function StreakStrip({ byDate, onSelectDay }) {
         return (
           <button
             key={dateStr}
+            className="hit-slop hit-slop-tight"
             disabled={isFuture}
             onClick={() => onSelectDay(dateStr)}
             title={isFuture ? undefined : (logged ? 'Logged — view this day' : 'Not logged — view this day')}

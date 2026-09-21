@@ -17,6 +17,7 @@ import Toast from '../components/Toast';
 import { round1 } from '../lib/format';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
+import PageHeader from '../components/PageHeader';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
 
@@ -97,14 +98,13 @@ export default function DailyLog() {
       <AppNav initials={initials} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <div className="page-pad-top" style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 14, paddingBottom: 14, borderBottom: '1px solid var(--border-default)', position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
-          <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'flex', flexShrink: 0 }}>
-            <i className="ti ti-arrow-left" />
-          </button>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, flexShrink: 0 }}>Daily log</span>
-          <div style={{ flex: 1 }} />
-          <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
-            <button onClick={() => setShowCopyMenu(v => !v)} title="Copy meals" aria-label="Copy meals" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 17, display: 'flex', padding: 4 }}>
+        <PageHeader
+          title="Daily log"
+          onBack={() => navigate('/dashboard')}
+          backLabel="Back to Dashboard"
+          right={
+            <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
+            <button onClick={() => setShowCopyMenu(v => !v)} title="Copy meals" aria-label="Copy meals" className="app-icon-btn">
               <i className="ti ti-copy" />
             </button>
             {showCopyMenu && (
@@ -117,14 +117,16 @@ export default function DailyLog() {
               </>
             )}
           </div>
+          }
+        >
           {isPremium ? (
-            <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />
+            <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} fill />
           ) : (
             <div title="Hourly timeline — a Pro feature" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 20, padding: '5px 12px', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
               <i className="ti ti-lock" style={{ fontSize: 12 }} /> <span className="hide-on-narrow">Hourly timeline (Pro)</span>
             </div>
           )}
-        </div>
+        </PageHeader>
 
         <div className="page-pad" style={{ maxWidth: 700 }}>
           <div style={{ marginBottom: 20 }}>
@@ -157,7 +159,7 @@ export default function DailyLog() {
                 const mealFat = round1(items.reduce((s, i) => s + i.fat, 0));
                 const isOpen = open[mealKey];
                 return (
-                  <div key={mealKey} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, overflow: 'hidden' }}>
+                  <div key={mealKey} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, overflow: 'hidden' }}>
                     <button onClick={() => setOpen(o => ({ ...o, [mealKey]: !o[mealKey] }))} style={{ width: '100%', background: 'none', border: 'none', padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ textAlign: 'left' }}>
                         <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>{MEAL_LABELS[mealKey]}</div>

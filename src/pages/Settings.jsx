@@ -6,6 +6,7 @@ import AppNav from '../components/AppNav';
 import NotificationsModal from '../components/settings/NotificationsModal';
 import CoachModal from '../components/settings/CoachModal';
 import PrivacyModal from '../components/settings/PrivacyModal';
+import PageHeader from '../components/PageHeader';
 
 // Which "page" each section opens as — short sections (a couple of field
 // rows) are quick to check and dismiss, so they open as a popup right
@@ -131,18 +132,7 @@ export default function Settings() {
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         {/* Top bar */}
-        <div className="page-pad-top" style={{
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px 16px',
-          paddingTop: 20, paddingBottom: 20, borderBottom: '1px solid var(--border-default)',
-          position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10,
-        }}>
-          <div>
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Settings
-            </h2>
-            <p style={{ color: 'var(--text-hint)', fontSize: '13px', margin: '2px 0 0' }}>Manage your goals, profile and preferences</p>
-          </div>
-        </div>
+        <PageHeader title="Settings" subtitle="Manage your goals, profile and preferences" />
 
         <div className="page-pad">
           {/* Profile preview — stays at the top, tap through to the full
@@ -154,7 +144,7 @@ export default function Settings() {
             onClick={() => navigate('/profile')}
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: '20px',
-              padding: '24px', background: 'var(--bg-subtle)', border: '1px solid var(--card-border)',
+              padding: '24px', background: 'var(--bg-card)', border: '1px solid var(--card-border)',
               borderRadius: '16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
               boxShadow: 'var(--card-shadow)', marginBottom: 20,
             }}
@@ -199,7 +189,7 @@ export default function Settings() {
               placeholder="Search settings…"
               style={{
                 width: '100%', boxSizing: 'border-box', padding: '13px 14px 13px 40px',
-                background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12,
+                background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 12,
                 color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit', outline: 'none',
               }}
             />
@@ -237,15 +227,17 @@ export default function Settings() {
           ) : (
             /* Grouped list — every section title visible at once, no tabs
                to switch between and lose track of what else exists. */
-            <div>
-              {SECTIONS.map(s => (
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, boxShadow: 'var(--card-shadow)', overflow: 'hidden' }}>
+              {SECTIONS.map((s, idx) => (
                 <button
                   key={s.id}
                   onClick={() => openSection(s.id)}
+                  className="app-row-btn"
                   style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px',
-                    background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', borderRadius: 14,
-                    boxShadow: 'var(--card-shadow)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', marginBottom: 10,
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', minHeight: 64,
+                    background: 'transparent', border: 'none', borderRadius: 0,
+                    borderBottom: idx < SECTIONS.length - 1 ? '1px solid var(--border-default)' : 'none',
+                    cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   }}
                 >
                   <div style={{

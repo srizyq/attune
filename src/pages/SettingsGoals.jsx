@@ -12,6 +12,7 @@ import Slider from '../components/Slider';
 import MacroPreviewBar from '../components/MacroPreviewBar';
 import { Card, SectionLabel, FieldRow, Select, Segmented } from '../components/settings/primitives';
 import { authedPost } from '../lib/billing';
+import PageHeader from '../components/PageHeader';
 
 // Shows the adaptive-target estimate, or an honest explanation of what's
 // still needed — mirrors the pattern engine's "log N more days" gating
@@ -310,12 +311,7 @@ export default function SettingsGoals() {
       <AppNav initials={initials} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <div className="page-pad-top" style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 14, paddingBottom: 14, borderBottom: '1px solid var(--border-default)', position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
-          <button onClick={() => navigate('/settings')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'flex' }}>
-            <i className="ti ti-arrow-left" />
-          </button>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>Goals & Targets</span>
-        </div>
+        <PageHeader title="Goals & Targets" onBack={() => navigate('/settings')} backLabel="Back to Settings" />
 
         <div className="page-pad">
           <Card>

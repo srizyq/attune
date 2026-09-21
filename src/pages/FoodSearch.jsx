@@ -25,6 +25,8 @@ import MarqueeText from '../components/MarqueeText';
 import Toast from '../components/Toast';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { getCategoryStyle } from '../lib/foodCategories';
+import PageHeader from '../components/PageHeader';
+import DateStepper from '../components/DateStepper';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -1434,7 +1436,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   }
 
   return (
-    <div style={{ background: "var(--bg-card)", border: `1px solid ${isExpanded ? "var(--accent-dark)" : "var(--card-border)"}`, borderRadius: 10, marginBottom: 8, overflow: "hidden", boxShadow: "var(--card-shadow)", transition: "border-color 0.15s", cursor: "pointer" }}>
+    <div style={{ background: "var(--bg-card)", border: `1px solid ${isExpanded ? "var(--accent-dark)" : "var(--border-default)"}`, borderRadius: 10, marginBottom: 8, overflow: "hidden", boxShadow: "var(--card-shadow)", transition: "border-color 0.15s", cursor: "pointer" }}>
       <div onClick={onToggle} style={{ display: "flex", alignItems: "center", padding: "11px 14px", gap: 12 }}>
         <div style={{ width: 40, height: 40, background: catStyle.color + "22", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, color: catStyle.color }}><i className={`ti ${catStyle.icon}`} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -1464,7 +1466,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
           <i className={`ti ${justAdded ? "ti-check" : "ti-plus"}`} />
         </button>
         {onToggleFavourite && (
-          <button onClick={(e) => { e.stopPropagation(); onToggleFavourite(); }} title={isFavourite ? "Remove favourite" : "Add favourite"} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0, color: isFavourite ? "var(--gold)" : "var(--text-hint)", fontSize: 16, display: "flex" }}>
+          <button onClick={(e) => { e.stopPropagation(); onToggleFavourite(); }} className="hit-slop" title={isFavourite ? "Remove favourite" : "Add favourite"} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0, color: isFavourite ? "var(--gold)" : "var(--text-hint)", fontSize: 16, display: "flex" }}>
             <i className={isFavourite ? "ti ti-star-filled" : "ti ti-star"} />
           </button>
         )}
@@ -2087,20 +2089,17 @@ export default function FoodSearch() {
       <div className="app-content-pad" style={{ flex: 1, overflow: "auto", minWidth: 0 }}>
 
         {/* Top bar */}
-        <div className="page-pad-top" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px 12px", paddingTop: 14, paddingBottom: 14, borderBottom: "1px solid var(--border-default)", background: "var(--bg-primary)", position: "sticky", top: 0, zIndex: 20 }}>
+        <PageHeader
+          title="Food search"
+          right={
+            <>
+              <button type="button" className="app-icon-btn" onClick={() => setCreateFoodOpen(true)} title="Create a custom food" aria-label="Create a custom food"><i className="ti ti-plus" /></button>
+              <button type="button" className="app-icon-btn" onClick={() => navigate('/recipes')} title="Recipes" aria-label="Recipes"><i className="ti ti-bookmark" /></button>
+            </>
+          }
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "var(--text-primary)" }}>Food search</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, background: isToday ? "transparent" : "#1a1508", border: isToday ? "none" : "1px solid #4a3a1a", borderRadius: 7, padding: isToday ? 0 : "3px 4px" }}>
-              <button onClick={() => shiftDate(-1)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, display: "flex", padding: 3 }} aria-label="Previous day">
-                <i className="ti ti-chevron-left" />
-              </button>
-              <span style={{ fontSize: 12, color: isToday ? "var(--text-muted)" : "var(--gold)", minWidth: 74, textAlign: "center" }}>
-                {isToday ? "Today" : new Date(selectedDate + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}
-              </span>
-              <button onClick={() => shiftDate(1)} disabled={isToday} style={{ background: "none", border: "none", color: isToday ? "var(--border-default)" : "var(--text-muted)", cursor: isToday ? "default" : "pointer", fontSize: 15, display: "flex", padding: 3 }} aria-label="Next day">
-                <i className="ti ti-chevron-right" />
-              </button>
-            </div>
+            <DateStepper selectedDate={selectedDate} isToday={isToday} onShift={shiftDate} />
             {logByTime ? (
               <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "4px 10px" }}>
                 <span style={{ fontSize: 12, color: "var(--accent)" }}>Logging at</span>
@@ -2122,11 +2121,7 @@ export default function FoodSearch() {
               </div>
             )}
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div onClick={() => setCreateFoodOpen(true)} title="Create a custom food" style={{ width: 32, height: 32, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 15, color: "var(--text-muted)" }}><i className="ti ti-plus" /></div>
-            <div onClick={() => navigate('/recipes')} title="Recipes" style={{ width: 32, height: 32, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 15, color: "var(--text-muted)" }}><i className="ti ti-bookmark" /></div>
-          </div>
-        </div>
+        </PageHeader>
 
         {/* Page body */}
         <div className="page-pad">
@@ -2148,7 +2143,7 @@ export default function FoodSearch() {
               </button>
             )}
             {!transcribing && !recording && !query && (
-              <button onClick={startVoiceSearch} title="Search by voice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0, display: "flex" }}>
+              <button onClick={startVoiceSearch} className="hit-slop" title="Search by voice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0, display: "flex" }}>
                 <i className="ti ti-microphone" />
               </button>
             )}

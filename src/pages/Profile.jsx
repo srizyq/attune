@@ -9,6 +9,7 @@ import { authedPost } from '../lib/billing';
 import { isTrialActive, trialDaysLeft } from '../lib/trial';
 import AppNav from '../components/AppNav';
 import { Card, SectionLabel, FieldRow } from '../components/settings/primitives';
+import PageHeader from '../components/PageHeader';
 
 // ─── Reusable bits ──────────────────────────────────────────────────────────────
 function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) {
@@ -231,42 +232,28 @@ export default function Profile() {
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         {/* Top bar */}
-        <div className="page-pad-top" style={{
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px 16px',
-          paddingTop: 20, paddingBottom: 20, borderBottom: '1px solid var(--border-default)',
-          position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <PageHeader
+          title="Profile"
+          subtitle="Your personal details and body stats"
+          onBack={() => navigate('/settings')}
+          backLabel="Back to Settings"
+          right={
             <button
-              onClick={() => navigate('/settings')}
-              aria-label="Back to Settings"
-              title="Back to Settings"
-              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'flex', flexShrink: 0 }}
+              onClick={handleSave}
+              style={{
+                padding: '9px 16px',
+                background: saved ? 'var(--accent-bg)' : 'var(--accent)',
+                border: `1px solid ${saved ? 'var(--border-active)' : 'var(--accent)'}`,
+                borderRadius: '10px',
+                color: saved ? 'var(--accent)' : '#0f0f0f',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
+              }}
             >
-              <i className="ti ti-arrow-left" />
+              {saved ? '✓ Saved' : 'Save'}
             </button>
-            <div>
-              <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                Profile
-              </h2>
-              <p style={{ color: 'var(--text-hint)', fontSize: '13px', margin: '2px 0 0' }}>Your personal details and body stats</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSave}
-            style={{
-              padding: '10px 20px',
-              background: saved ? 'var(--accent-bg)' : 'var(--accent)',
-              border: `1px solid ${saved ? 'var(--border-active)' : 'var(--accent)'}`,
-              borderRadius: '10px',
-              color: saved ? 'var(--accent)' : '#0f0f0f',
-              fontSize: '14px', fontWeight: 600, cursor: 'pointer',
-              fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
-            }}
-          >
-            {saved ? '✓ Saved' : 'Save changes'}
-          </button>
-        </div>
+          }
+        />
 
         {/* Content */}
         <div className="page-pad">
@@ -412,7 +399,7 @@ export default function Profile() {
 
       {showLogoutConfirm && (
         <div onClick={closeLogoutConfirm} className={`modal-backdrop${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 210, padding: 24 }}>
-          <div onClick={e => e.stopPropagation()} className={`modal-panel${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
+          <div onClick={e => e.stopPropagation()} className={`modal-panel${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
             <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
               Log out before confirming your email?
             </div>

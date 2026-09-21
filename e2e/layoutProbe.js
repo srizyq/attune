@@ -118,11 +118,21 @@ export function probe({ ignore = [], scrolledToEnd = false } = {}) {
     issues.push({ kind: 'covered', where: label(el), detail: `covered by ${label(top_)} at (${Math.round(cx)}, ${Math.round(cy)})` });
   }
 
-  // 4. Small tap targets (informational — the phone project treats <32px as a note).
+  // 4. Tap-target size. Effective size counts a `.hit-slop`-style ::after
+  //    (an absolutely-positioned pseudo-element that belongs to the button), so a
+  //    small glyph with a bigger hit area is fine. Under 24px (WCAG 2.2 minimum)
+  //    fails; under 32px is reported as a note. Inline text links and range
+  //    sliders/text fields are exempt (their hit area isn't their glyph box).
   for (const el of interactive) {
+    if (el.tagName === 'A' || (el.tagName === 'INPUT' && el.type !== 'checkbox' && el.type !== 'radio')) continue;
     const r = el.getBoundingClientRect();
-    if (r.width < 32 || r.height < 32) notes.push({ kind: 'small-target', where: label(el), detail: `${Math.round(r.width)}×${Math.round(r.height)}` });
+    let w = r.width, h = r.height;
+    const pcs = getComputedStyle(el, '::after');
+    if (pcs.content !== 'none' && pcs.position === 'absolute') { w = Math.max(w, parseFloat(pcs.width) || 0); h = Math.max(h, parseFloat(pcs.height) || 0); }
+    if (w < 24 || h < 24) issues.push({ kind: 'tiny-tap-target', where: label(el), detail: `${Math.round(w)}×${Math.round(h)}px (minimum 24×24)` });
+    else if (w < 32 || h < 32) notes.push({ kind: 'small-target', where: label(el), detail: `${Math.round(w)}×${Math.round(h)}` });
   }
+
   // 6. The document itself must never scroll — every screen scrolls inside its
   //    own container. If the body is taller than the screen (typically the
   //    top inset stacked on a 100vh page) the bottom of the layout is off-screen.

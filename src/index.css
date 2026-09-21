@@ -44,18 +44,17 @@
   --pill-track: #1c1c1a;
   --pill-bg: #f5f5f2;
   --pill-text: #0a0a0a;
-  /* Dashboard's cards use --border-strong for real definition against the
-     background; every other page's Card-style container used the much
-     fainter --border-default instead, which is why light mode looked
-     "plain" outside Dashboard while dark mode (where the two values are
-     both dark and closer together) mostly hid the gap. --card-border is
-     the single token both should share going forward. Dark mode's value
-     restates --border-default exactly, so dark mode is unchanged; only
-     light mode's cards pick up the stronger outline. --card-shadow is a
-     genuinely new addition, not a restatement — dark mode never had a
-     shadow system, and a black-tinted shadow reads as mud on a dark
-     background anyway, so it stays 'none' there. */
-  --card-border: var(--border-default);
+  /* One outline for every card in the app. Dashboard's cards always used
+     --border-strong for real definition against the background; every other
+     page used the much fainter --border-default, which is why the rest of
+     the app read as flat next to it. --card-border is the shared token — in
+     dark it is the same bright outline Dashboard has, and in light it is the
+     stronger outline it already was. Reserve --border-default for the
+     hairlines *inside* a card (dividers, inputs, small repeated tiles), the
+     way Dashboard does. --card-shadow is separate: dark mode has no shadow
+     system (a black shadow reads as mud on a dark background), so it stays
+     'none' there. */
+  --card-border: var(--border-strong);
   --card-shadow: none;
 }
 
@@ -99,7 +98,7 @@
   --pill-track: #1c1c1a;
   --pill-bg: #f5f5f2;
   --pill-text: #0a0a0a;
-  --card-border: var(--border-default);
+  --card-border: var(--border-strong);
   --card-shadow: none;
 }
 [data-theme='light'] {

@@ -67,7 +67,7 @@ export default function BodyProgressCard() {
   const latest = latestByKind(measurements.rows);
 
   return (
-    <div style={{ background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
       <div style={{ ...heading, marginBottom: 4 }}>Body &amp; photos</div>
       <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 16px', lineHeight: 1.5 }}>
         Only you{profile ? ' — and your coach, if you’re connected to one —' : ''} can see these.

@@ -32,7 +32,7 @@ export default function CoachChatModal({ trainerId, trainerName, trainerLogoUrl,
       <div
         onClick={e => e.stopPropagation()}
         className={`modal-panel${closing ? ' is-closing' : ''}`}
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 16, width: '100%', maxWidth: 420, height: 520, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 420, height: 520, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

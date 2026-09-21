@@ -4,6 +4,7 @@ import { useCheckins } from "../hooks/useCheckins";
 import { useHistory } from "../hooks/useHistory";
 import AppNav from "../components/AppNav";
 import { todayLocalDate, dateNDaysAgo, generateInsights, generateMoodResponse, computeStreak } from "../lib/patterns";
+import PageHeader from '../components/PageHeader';
 
 // ── skeleton card ────────────────────────────────────────────────────────────
 function SkeletonCard() {
@@ -162,25 +163,25 @@ export default function AIInsights() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
         {/* top bar — matches Progress exactly */}
-        <div className="page-pad-top" style={{
-          minHeight: 52, background: "var(--bg-primary)", borderBottom: "1px solid var(--border-default)",
-          display: "flex", flexWrap: "wrap", alignItems: "center", paddingTop: 8, paddingBottom: 8, gap: 16, flexShrink: 0,
-        }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 600 }}>Patterns</span>
-          <div style={{ flex: 1 }} />
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 20, padding: "4px 10px", display: "flex", alignItems: "center", gap: 6 }}>
+        <PageHeader
+          title="Patterns"
+          right={
+            <>
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--card-border)", borderRadius: 20, padding: "4px 10px", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 12 }}>🔥</span>
             <span style={{ color: "var(--text-primary)", fontSize: 12, fontWeight: 600 }}>{streak}</span>
             <span style={{ color: "var(--text-muted)", fontSize: 11 }}>day streak</span>
           </div>
           <div style={{ ...sbIconBase, cursor: "pointer" }} title="Notifications"><i className="ti ti-bell" /></div>
-        </div>
+            </>
+          }
+        />
 
         {/* scrollable content */}
         <div className="page-pad app-content-pad" style={{ flex: 1, overflowY: "auto" }}>
 
           {/* ── pattern insight cards ── */}
-          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>
                 Your patterns
@@ -202,7 +203,7 @@ export default function AIInsights() {
           </div>
 
           {/* ── mood check-in ── */}
-          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 16 }}>
               How are you feeling today?
             </div>
@@ -233,13 +234,13 @@ export default function AIInsights() {
                 {/* energy level */}
                 <div style={{ marginBottom: 18 }}>
                   <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>Energy level</div>
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div className="energy-scale">
                     {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
                       <button
                         key={n}
                         onClick={() => setSelectedEnergy(n)}
                         style={{
-                          flex: 1, height: 32, borderRadius: 6,
+                          minHeight: 36, borderRadius: 8,
                           border: `1px solid ${selectedEnergy >= n ? "var(--border-active)" : "var(--border-default)"}`,
                           background: selectedEnergy >= n ? "#8fbc8f22" : "transparent",
                           color: selectedEnergy >= n ? "var(--accent)" : "var(--text-hint)",
@@ -326,7 +327,7 @@ export default function AIInsights() {
           </div>
 
           {/* ── weekly mood history grid ── */}
-          <div style={{ background: "var(--bg-subtle)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--card-border)", boxShadow: "var(--card-shadow)", borderRadius: 12, padding: 20, marginBottom: 16 }}>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 2 }}>
               Last 7 days
             </div>
