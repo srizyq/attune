@@ -13,6 +13,14 @@ export default defineConfig({
   test: {
     testTimeout: 30000,
     hookTimeout: 120000,
+    // Unit tests never talk to a real Supabase project, and a fresh checkout
+    // (or CI) has no .env.local — without these, any test that imports
+    // src/lib/supabase.js dies with "supabaseUrl is required". Test env wins
+    // over .env.local, so a developer's real keys aren't picked up either.
+    env: {
+      VITE_SUPABASE_URL: 'https://unit-tests.supabase.test',
+      VITE_SUPABASE_ANON_KEY: 'unit-test-anon-key',
+    },
   },
   plugins: [
     react(),
