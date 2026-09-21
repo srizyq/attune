@@ -205,7 +205,7 @@ html, body {
    the mobile bottom-nav switches on at (appshell.css) — desktop's left
    sidebar nav lives in this exact strip of the screen and uses a mouse,
    not a touch gesture, so this must never be active there. The strip
-   stops short of the bottom nav's own height (74px, matching
+   stops short of the bottom nav's own height (--bottom-nav-h, matching
    `.app-content-pad`'s padding for it) so it can never sit on top of —
    and swallow taps on — the bottom-left nav icon. */
 @media (max-width: 860px) {
@@ -215,7 +215,7 @@ html, body {
     top: 0;
     left: 0;
     width: 14px;
-    height: calc(100vh - 74px);
+    height: calc(100vh - var(--bottom-nav-h, 74px));
     z-index: 9999;
     touch-action: pan-y;
   }
@@ -231,7 +231,7 @@ body {
      behind it. No page has its own top bar handle this individually, so
      it's pushed down here once, globally, matching how the bottom nav
      already pads itself for the home-indicator area. */
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--safe-top, 0px);
   /* Suppresses three classic "this is a webpage" tells: the gray/blue
      flash on every tap, the native copy/share callout on long-press, and
      accidental text selection when dragging across UI chrome. Real

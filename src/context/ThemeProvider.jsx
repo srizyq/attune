@@ -66,7 +66,7 @@ export function ThemeProvider({ children }) {
 
   return (
     <ThemeContext.Provider value={value}>
-      <div data-theme={theme} style={{ minHeight: '100vh' }}>
+      <div data-theme={theme} style={{ minHeight: 'var(--app-h)' }}>
         {children}
       </div>
     </ThemeContext.Provider>

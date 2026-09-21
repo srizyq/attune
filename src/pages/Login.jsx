@@ -91,7 +91,7 @@ export default function Login() {
 
   return (
     <div data-theme={theme} style={{
-      minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex',
+      minHeight: 'var(--app-h)', background: 'var(--bg-primary)', display: 'flex',
       flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>
       <div style={{ padding: '20px 32px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

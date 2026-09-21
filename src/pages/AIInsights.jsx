@@ -148,7 +148,7 @@ export default function AIInsights() {
 
   // ── render ──────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", height: "100vh", background: "var(--bg-primary)", fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: 'var(--app-h)', background: "var(--bg-primary)", fontFamily: "'Plus Jakarta Sans', sans-serif", color: "var(--text-primary)", overflow: "hidden" }}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
         * { box-sizing: border-box; }

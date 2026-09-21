@@ -1,3 +1,21 @@
+/* Device insets, read once. Everything in the app shell that has to clear the
+   notch or home indicator uses these instead of env() directly, so there is
+   one place to change (and one place the layout tests override to simulate a
+   notched phone — headless Chrome always reports 0). */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Height of the fixed mobile bottom nav: 58px of icons + 1px border + the
+     home-indicator inset it pads itself by. Page content reserves this much
+     (plus breathing room) so nothing can end up trapped beneath it. */
+  --bottom-nav-h: calc(59px + var(--safe-bottom));
+  /* One screen, minus the top inset body pads itself by. Full-screen page
+     roots use this instead of 100vh: with the inset added on top of a
+     100vh root the page is taller than the screen, so its bottom edge (and
+     the last stretch of every scroll area) sits off-screen. */
+  --app-h: calc(100vh - var(--safe-top));
+}
+
 /* Shared responsive app-shell layout: desktop sidebar <-> mobile/tablet
    bottom nav, plus grid utilities that actually cap column width (bare
    `1fr` tracks don't shrink below their content's intrinsic size, which
@@ -105,7 +123,7 @@
     background: var(--bg-primary, #0f0f0f);
     border-top: 1px solid var(--border-default, #1e1e1e);
     z-index: 100;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: var(--safe-bottom);
   }
 
   .app-bottom-icon {
@@ -156,7 +174,7 @@
   }
 
   .app-content-pad {
-    padding-bottom: 74px;
+    padding-bottom: calc(var(--bottom-nav-h) + 16px);
   }
 }
 
@@ -233,6 +251,15 @@
   padding: 0 28px;
 }
 
+/* .page-pad's `padding` shorthand is declared after .app-content-pad, so on an
+   element carrying both (Insights, Dashboard) it would silently wipe out the
+   bottom-nav clearance. Two classes beat one regardless of source order. */
+@media (max-width: 860px) {
+  .page-pad.app-content-pad {
+    padding-bottom: calc(var(--bottom-nav-h) + 16px);
+  }
+}
+
 @media (max-width: 600px) {
   .page-pad {
     padding: 16px;
@@ -268,7 +295,7 @@
 
 @media (max-width: 860px) {
   .meal-builder-bar {
-    bottom: calc(58px + env(safe-area-inset-bottom) + 12px);
+    bottom: calc(58px + var(--safe-bottom) + 12px);
   }
 }
 

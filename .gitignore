@@ -27,3 +27,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright layout checks
+e2e/screens/
+test-results/
+playwright-report/

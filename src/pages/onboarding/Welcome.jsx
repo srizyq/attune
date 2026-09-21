@@ -12,7 +12,7 @@ export default function Welcome() {
 
   return (
     <div data-theme={theme} style={{
-      minHeight: '100vh',
+      minHeight: 'var(--app-h)',
       background: 'var(--bg-primary)',
       display: 'flex',
       flexDirection: 'column',

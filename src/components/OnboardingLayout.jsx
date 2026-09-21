@@ -10,7 +10,7 @@ export default function OnboardingLayout({ children, step, totalSteps = 4, showS
 
   return (
     <div data-theme={theme} style={{
-      minHeight: '100vh',
+      minHeight: 'var(--app-h)',
       background: 'var(--bg-primary)',
       display: 'flex',
       flexDirection: 'column',

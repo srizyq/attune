@@ -2079,7 +2079,7 @@ export default function FoodSearch() {
   }
 
   return (
-    <div style={{ height: "100vh", overflow: "hidden", background: "var(--bg-primary)", color: "var(--text-primary)", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex" }}>
+    <div style={{ height: 'var(--app-h)', overflow: "hidden", background: "var(--bg-primary)", color: "var(--text-primary)", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex" }}>
 
       <AppNav active="food" />
 
