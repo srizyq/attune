@@ -311,7 +311,7 @@ function DashboardHero({ consumed, target, baseCalorieTarget, chartDays, chartRa
               raised segment (see targetLineSegments). */}
           {targetLineSegments(chartDays, baseCalorieTarget).map(seg => {
             const y = baseline - (seg.value / max) * plotHeight;
-            return <line key={`target-${seg.start}`} x1={bars[seg.start].x} y1={y} x2={bars[seg.end].x + barWidth} y2={y} stroke="var(--text-hint)" strokeWidth="1.5" strokeLinecap="round" />;
+            return <line key={`target-${seg.start}`} x1={bars[seg.start].x} y1={y} x2={bars[seg.end].x + barWidth} y2={y} stroke="var(--text-hint)" strokeWidth="2" strokeLinecap="round" strokeDasharray="0 5" />;
           })}
           {bars.map((b, i) => (
             <rect
