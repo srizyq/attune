@@ -46,16 +46,16 @@ export async function settle(page) {
  * Probes the current screen at the top and scrolled to the bottom, screenshots
  * both, and fails the test with a readable list if anything is off.
  */
-export async function assertLayout(page, testInfo, name, { unmocked = [], consoleErrors = [], scroll = true } = {}) {
+export async function assertLayout(page, testInfo, name, { unmocked = [], consoleErrors = [], scroll = true, allowDocumentScroll = false } = {}) {
   const dir = `e2e/screens/${testInfo.project.name}`;
   mkdirSync(dir, { recursive: true });
   await page.screenshot({ path: `${dir}/${name}-top.png` });
-  const top = await page.evaluate(probe, {});
+  const top = await page.evaluate(probe, { allowDocumentScroll });
   let bottom = { issues: [], notes: [] };
   if (scroll && (await page.evaluate(scrollToBottom))) {
     await page.waitForTimeout(250);
     await page.screenshot({ path: `${dir}/${name}-bottom.png` });
-    bottom = await page.evaluate(probe, { scrolledToEnd: true });
+    bottom = await page.evaluate(probe, { scrolledToEnd: true, allowDocumentScroll });
   }
   const seen = new Set();
   const issues = [...top.issues, ...bottom.issues].filter((i) => { const k = `${i.kind}|${i.where}`; if (seen.has(k)) return false; seen.add(k); return true; });

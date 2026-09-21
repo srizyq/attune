@@ -124,7 +124,7 @@ function ResendConfirmation({ email }) {
   return (
     <div>
       <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.5 }}>
-        Check <span style={{ color: 'var(--text-secondary)' }}>{email}</span> for a confirmation link — everything you've already logged stays right where it is.
+        Check <span style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>{email}</span> for a confirmation link — everything you've already logged stays right where it is.
       </p>
       {state === 'sent' ? (
         <span style={{ color: 'var(--accent)', fontSize: '13px' }}>Confirmation email sent.</span>
@@ -270,7 +270,7 @@ export default function Profile() {
               {initials}
             </div>
             <div>
-              <div style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+              <div style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, fontFamily: "'Syne', sans-serif", overflowWrap: 'anywhere' }}>
                 {form.name || 'Your name'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
@@ -403,7 +403,7 @@ export default function Profile() {
             <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
               Log out before confirming your email?
             </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px', overflowWrap: 'anywhere' }}>
               You haven't confirmed {user?.new_email || 'your email'} yet — signing in again with your password won't work until you do. Make sure you can still get to that confirmation email before logging out.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>

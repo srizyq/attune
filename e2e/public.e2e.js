@@ -19,7 +19,8 @@ for (const scheme of ['dark', 'light']) {
       await page.goto(p.path);
       await settle(page);
       expect(new URL(page.url()).pathname, 'should not have been redirected away').toBe(p.path);
-      await assertLayout(page, testInfo, `public-${p.name}-${scheme}`, ctx);
+      // Onboarding and legal pages are ordinary scrolling documents, unlike the app's fixed-height screens.
+      await assertLayout(page, testInfo, `public-${p.name}-${scheme}`, { ...ctx, allowDocumentScroll: true });
     });
   }
 }

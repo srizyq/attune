@@ -1,6 +1,6 @@
 // Runs INSIDE the page (via page.evaluate) — must be fully self-contained.
 // Returns { issues, notes }: issues fail the test, notes are informational.
-export function probe({ ignore = [], scrolledToEnd = false } = {}) {
+export function probe({ ignore = [], scrolledToEnd = false, allowDocumentScroll = false } = {}) {
   const vw = document.documentElement.clientWidth;
   const vh = window.innerHeight;
   const issues = [];
@@ -135,7 +135,7 @@ export function probe({ ignore = [], scrolledToEnd = false } = {}) {
     // under a different fixed layer (nav, backdrop) is not.
     const fa = fixedAncestor(el), fb = fixedAncestor(top_);
     if (fa !== fb) continue;
-    if (stickyLayer(top_) && !fa) continue;
+    if (stickyLayer(top_)) continue; // content scrolling under a sticky header (page or modal) is normal
     if (el.tagName === 'INPUT' && top_.closest('label') === el.closest('label') && el.closest('label')) continue;
     issues.push({ kind: 'covered', where: label(el), detail: `covered by ${label(top_)} at (${Math.round(cx)}, ${Math.round(cy)})` });
   }
@@ -160,7 +160,7 @@ export function probe({ ignore = [], scrolledToEnd = false } = {}) {
   //    top inset stacked on a 100vh page) the bottom of the layout is off-screen.
   {
     const de = document.documentElement;
-    if (de.scrollHeight > de.clientHeight + 1) {
+    if (!allowDocumentScroll && de.scrollHeight > de.clientHeight + 1) {
       issues.push({ kind: 'page-taller-than-screen', where: '<html>', detail: `document is ${de.scrollHeight}px tall in a ${de.clientHeight}px screen` });
     }
   }
@@ -194,6 +194,8 @@ export function scrollToBottom() {
   // its main column plus an inner list, and "the end of the page" means all of
   // them scrolled to their ends.
   let any = false;
+  const de = document.documentElement;
+  if (de.scrollHeight > de.clientHeight + 4) { window.scrollTo(0, de.scrollHeight); any = true; }
   for (const el of document.querySelectorAll('*')) {
     const cs = getComputedStyle(el);
     if (!['auto', 'scroll'].includes(cs.overflowY)) continue;
