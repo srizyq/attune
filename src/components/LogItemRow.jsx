@@ -216,13 +216,15 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
               )}
             </div>
             {!hasKnownWeight && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>No serving weight on record for this item — edit calories directly and protein/carbs/fat scale with it. Delete and re-add it via search for gram-accurate editing.</div>}
-            <button
-              type="button"
-              onClick={() => setRecalcOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, padding: '6px 0' }}
-            >
-              <i className="ti ti-camera" style={{ fontSize: 13 }} /> Recalculate with a new photo
-            </button>
+            {item.source === 'photo' && (
+              <button
+                type="button"
+                onClick={() => setRecalcOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, padding: '6px 0' }}
+              >
+                <i className="ti ti-camera" style={{ fontSize: 13 }} /> Recalculate with a new photo
+              </button>
+            )}
           </div>
           <div style={{ marginBottom: 16 }}>
             {isPremium ? (
@@ -245,20 +247,27 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
             <MacroReadout value={round1(preview.carbs)} unit="g" label="Carbs" color={C.blue} />
             <MacroReadout value={round1(preview.fat)} unit="g" label="Fat" color={C.purple} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              onClick={handleSave}
-              disabled={saving || !servings}
-              style={{ background: saving || !servings ? 'var(--border-default)' : C.green, border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, color: saving || !servings ? 'var(--text-muted)' : '#0f0f0f', cursor: saving || !servings ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
-            >
-              {saving ? 'Saving…' : 'Save changes'}
-            </button>
-            {error && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{error}</span>}
-          </div>
         </div>
         )}
         </div>
       </div>
+      {isExpanded && !readOnly && (
+        // Fixed, not inline — the edit form (amount, meal/time, macro
+        // preview) can run past the bottom of the screen, and a save button
+        // sitting after all of that meant scrolling down just to find it
+        // every time. Same floating-bar pattern as FoodSearch's recipe
+        // builder bar, so it clears the bottom nav the same way.
+        <div className="meal-builder-bar" style={{ background: 'var(--bg-subtle)', border: `1px solid ${C.green}`, borderRadius: 12, padding: '8px 8px 8px 16px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+            {error && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{error}</span>}
+            <button
+              onClick={handleSave}
+              disabled={saving || !servings}
+              style={{ background: saving || !servings ? 'var(--border-default)' : C.green, border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: saving || !servings ? 'var(--text-muted)' : '#0f0f0f', cursor: saving || !servings ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+      )}
       {recalcOpen && (
         <RecalculatePhotoModal
           itemName={item.name}

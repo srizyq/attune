@@ -9,6 +9,7 @@ import { dayTargetsToInputs, parseDayTargetInputs } from '../lib/dayTargets';
 import RestDayTargetsCard from '../components/settings/RestDayTargetsCard';
 import AppNav from '../components/AppNav';
 import Slider from '../components/Slider';
+import EditableNumber from '../components/EditableNumber';
 import MacroPreviewBar from '../components/MacroPreviewBar';
 import { Card, SectionLabel, FieldRow, Select, Segmented } from '../components/settings/primitives';
 import { authedPost } from '../lib/billing';
@@ -377,9 +378,20 @@ export default function SettingsGoals() {
             </div>
 
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '40px', fontWeight: 700, color: 'var(--accent)' }}>
-                {calories.toLocaleString()}
-              </span>
+              {calMode === 'custom' ? (
+                <EditableNumber
+                  value={customCal}
+                  min={1200}
+                  max={4000}
+                  onChange={setCustomCal}
+                  ariaLabel="Calorie target"
+                  style={{ fontFamily: "'Syne', sans-serif", fontSize: '40px', fontWeight: 700, color: 'var(--accent)', width: '5.5ch' }}
+                />
+              ) : (
+                <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '40px', fontWeight: 700, color: 'var(--accent)' }}>
+                  {calories.toLocaleString()}
+                </span>
+              )}
               <span style={{ color: 'var(--text-muted)', fontSize: '14px', marginLeft: '6px' }}>kcal / day</span>
             </div>
 
@@ -405,7 +417,15 @@ export default function SettingsGoals() {
             <div style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500 }}>Protein</span>
-                <span style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 600 }}>{proteinPct}%</span>
+                <EditableNumber
+                  value={proteinPct}
+                  min={10}
+                  max={60}
+                  suffix="%"
+                  onChange={v => setProteinPct(Math.min(v, 100 - fatPct))}
+                  ariaLabel="Protein percent of calories"
+                  style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 600, width: '3.5ch' }}
+                />
               </div>
               <Slider value={proteinPct} min={10} max={60} onChange={v => setProteinPct(Math.min(v, 100 - fatPct))} color="var(--accent)" />
             </div>
@@ -413,7 +433,15 @@ export default function SettingsGoals() {
             <div style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500 }}>Fat</span>
-                <span style={{ color: 'var(--ai-purple)', fontSize: '13px', fontWeight: 600 }}>{fatPct}%</span>
+                <EditableNumber
+                  value={fatPct}
+                  min={10}
+                  max={50}
+                  suffix="%"
+                  onChange={v => setFatPct(Math.min(v, 100 - proteinPct))}
+                  ariaLabel="Fat percent of calories"
+                  style={{ color: 'var(--ai-purple)', fontSize: '13px', fontWeight: 600, width: '3.5ch' }}
+                />
               </div>
               <Slider value={fatPct} min={10} max={50} onChange={v => setFatPct(Math.min(v, 100 - proteinPct))} color="var(--ai-purple)" />
             </div>

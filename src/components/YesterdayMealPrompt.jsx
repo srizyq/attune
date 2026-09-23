@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
 
-const HANDLE = 44;
-const PAD = 4;
-const COMMIT_AT = 0.65;
+const ICON = 26;
+const ROW_H = 40;
+const COMMIT_AT = 0.55;
 
-// Slide-to-log control shown on an empty meal card: drag the handle right
-// (or tap / press Enter) to log yesterday's version of this meal again.
-// Yesterday's foods and calories are listed so it's clear what you're about
-// to add.
+// Slim row shown on an empty meal card, styled like a plain list row (a
+// small square icon tile + one line of text) rather than a pill or a
+// button — swipe it right (or tap / press Enter) to log yesterday's
+// version of this meal again. Deliberately quiet: it's a shortcut sitting
+// among other rows, not a call to action competing with "+ Add food".
 export default function YesterdayMealPrompt({ mealLabel, names, kcal, onCommit, disabled }) {
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -22,7 +23,7 @@ export default function YesterdayMealPrompt({ mealLabel, names, kcal, onCommit, 
     if (disabled) return;
     start.current = e.clientX;
     moved.current = false;
-    setMaxDx(Math.max(1, (track.current?.offsetWidth || 300) - HANDLE - PAD * 2));
+    setMaxDx(Math.max(1, (track.current?.offsetWidth || 300) - ICON - 20));
     e.currentTarget.setPointerCapture?.(e.pointerId);
   }
   function onMove(e) {
@@ -38,11 +39,10 @@ export default function YesterdayMealPrompt({ mealLabel, names, kcal, onCommit, 
     if (commit) onCommit();
   }
 
-  const progress = disabled ? 1 : Math.min(1, dx / maxDx);
   const label = mealLabel.toLowerCase();
 
   return (
-    <div style={{ padding: '2px 12px 12px' }}>
+    <div style={{ padding: '0 12px 8px' }}>
       <div
         ref={track}
         onPointerDown={onDown}
@@ -54,47 +54,32 @@ export default function YesterdayMealPrompt({ mealLabel, names, kcal, onCommit, 
         aria-label={`Log yesterday's ${label} again`}
         onKeyDown={e => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onCommit(); } }}
         style={{
-          position: 'relative', overflow: 'hidden', height: HANDLE + PAD * 2, borderRadius: (HANDLE + PAD * 2) / 2,
-          background: 'var(--accent-bg)', border: '1px solid var(--accent-border)',
+          position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 10,
+          height: ROW_H, padding: '0 10px', borderRadius: 10,
+          background: dragging ? 'var(--accent-bg)' : 'var(--bg-primary)',
+          border: `1px solid ${dragging ? 'var(--accent-border)' : 'var(--border-default)'}`,
           cursor: disabled ? 'default' : 'pointer', touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none',
         }}
       >
         <div
-          style={{
-            position: 'absolute', left: 0, top: 0, bottom: 0,
-            width: disabled ? '100%' : dx + HANDLE + PAD * 2, borderRadius: (HANDLE + PAD * 2) / 2,
-            background: 'var(--accent)', opacity: 0.16 + progress * 0.14,
-            transition: dragging ? 'none' : 'width 0.25s ease, opacity 0.25s ease',
-          }}
-        />
-        <div
           className={!dragging && !disabled ? 'slide-hint' : undefined}
           style={{
-            position: 'absolute', top: PAD, left: PAD, width: HANDLE, height: HANDLE, borderRadius: '50%',
-            background: 'var(--accent)', color: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-            transform: disabled ? undefined : `translateX(${dx}px)`,
-            ...(disabled ? { left: `calc(100% - ${HANDLE + PAD}px)` } : {}),
-            transition: dragging ? 'none' : 'transform 0.25s ease, left 0.25s ease',
+            flexShrink: 0, width: ICON, height: ICON, borderRadius: 8,
+            background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', color: 'var(--accent)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transform: `translateX(${dx}px)`,
+            transition: dragging ? 'none' : 'transform 0.25s ease',
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={disabled ? { animation: 'spin 0.8s linear infinite' } : undefined}>
-            {disabled ? <path d="M12 3a9 9 0 1 0 9 9" /> : <><path d="M7 6l6 6-6 6" /><path d="M13 6l6 6-6 6" /></>}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={disabled ? { animation: 'spin 0.8s linear infinite' } : undefined}>
+            {disabled ? <path d="M12 3a9 9 0 1 0 9 9" /> : <path d="M9 6l6 6-6 6" />}
           </svg>
         </div>
-        <div
-          style={{
-            position: 'absolute', left: HANDLE + PAD * 2 + 12, right: 16, top: 0, bottom: 0,
-            display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0,
-            opacity: disabled ? 0.9 : 1 - progress * 0.7, transition: dragging ? 'none' : 'opacity 0.2s ease',
-          }}
-        >
-          <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
             {disabled ? 'Logging…' : `Log yesterday's ${label}`}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {names}{kcal ? ` · ${kcal} kcal` : ''}
-          </div>
+          </span>
+          {!disabled && <span style={{ color: 'var(--text-muted)' }}> — {names}{kcal ? ` · ${kcal} kcal` : ''}</span>}
         </div>
       </div>
     </div>

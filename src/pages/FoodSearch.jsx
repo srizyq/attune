@@ -171,8 +171,22 @@ function parseServingWeight(serving) {
   if (metricAmount && (metricUnit === "g" || metricUnit === "ml")) {
     return { grams: metricAmount, unit: metricUnit };
   }
-  const match = (serving.serving_description || "").match(/([\d.]+)\s*(g|ml)\b/i);
-  return match ? { grams: parseFloat(match[1]), unit: match[2].toLowerCase() } : { grams: 100, unit: "g" };
+  // A drink's real serving unit is litres often enough (bottles in
+  // particular) that only ever matching "g"/"ml" silently fell through to
+  // the 100g default for any of them — same class of bug as the metric
+  // fields above, just for the unit this app doesn't otherwise represent.
+  // Normalized to ml (1 L = 1000 mL) rather than adding a whole extra unit,
+  // since UNITS/editing already treat ml as the one liquid measure.
+  if (metricAmount && metricUnit === "l") {
+    return { grams: metricAmount * 1000, unit: "ml" };
+  }
+  const match = (serving.serving_description || "").match(/([\d.]+)\s*(g|ml|l)\b/i);
+  if (match) {
+    const unit = match[2].toLowerCase();
+    const amount = parseFloat(match[1]);
+    return unit === "l" ? { grams: amount * 1000, unit: "ml" } : { grams: amount, unit };
+  }
+  return { grams: 100, unit: "g" };
 }
 
 // FatSecret reports these already in the units food_logs stores them in
@@ -426,12 +440,25 @@ function parseOffServingWeight(p) {
   if (structuredAmount && (structuredUnit === "g" || structuredUnit === "ml")) {
     return { grams: structuredAmount, unit: structuredUnit };
   }
+  // OFF commonly tags a bottle's serving_quantity_unit as "l" (litres),
+  // not "ml" — only matching "ml" silently dropped every one of those to
+  // the 100g default (same bug as parseServingWeight above, OFF's own
+  // shape of it). Normalized to ml (1 L = 1000 mL) since that's the one
+  // liquid unit UNITS/editing already understand.
+  if (structuredAmount && structuredUnit === "l") {
+    return { grams: structuredAmount * 1000, unit: "ml" };
+  }
   // Only trust a number that's actually attached to a weight/volume unit
-  // (g/ml) — a bare number with no unit (e.g. "1 serving", "2 pieces") is a
-  // count, not a weight, and grabbing it the same way caused this exact
+  // (g/ml/l) — a bare number with no unit (e.g. "1 serving", "2 pieces") is
+  // a count, not a weight, and grabbing it the same way caused this exact
   // bug: "1 bottle (425 g)" has to match on the "425 g", not the leading "1".
-  const match = (p.serving_size || "").match(/([\d.]+)\s*(g|ml)\b/i);
-  return match ? { grams: parseFloat(match[1]), unit: match[2].toLowerCase() } : { grams: 100, unit: "g" };
+  const match = (p.serving_size || "").match(/([\d.]+)\s*(g|ml|l)\b/i);
+  if (match) {
+    const unit = match[2].toLowerCase();
+    const amount = parseFloat(match[1]);
+    return unit === "l" ? { grams: amount * 1000, unit: "ml" } : { grams: amount, unit };
+  }
+  return { grams: 100, unit: "g" };
 }
 
 async function lookupOpenFoodFactsBarcode(barcode) {
@@ -2251,20 +2278,23 @@ export default function FoodSearch() {
             </div>
           )}
 
-          {/* Browsing (no search) — your own data: favourites, frequently
-              logged, and recently logged, as tabs rather than a stacked
-              scroll — all three are one tap away instead of needing a
-              scroll past everything to reach the bottom two. No curated/
-              hardcoded content — a search now finds real food via
-              FatSecret, so a fake "Popular foods" list would only get in
-              the way. */}
-          {browsing && (
-            <>
+          {/* Your own data: favourites, frequently logged, recently logged,
+              and created, as tabs rather than a stacked scroll — all four
+              are one tap away instead of needing a scroll past everything
+              to reach the bottom ones. Stays visible while typing too (not
+              just when the search box is empty) — a shortcut to something
+              you log all the time shouldn't disappear the moment you start
+              typing its name, it should sit right alongside the live
+              results below. No curated/hardcoded content — a search now
+              finds real food via FatSecret, so a fake "Popular foods" list
+              would only get in the way. */}
+          <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
                 {[
                   { id: "frequent", label: "Frequently logged" },
                   { id: "recent", label: "Recently logged" },
                   { id: "favourites", label: "Favourites" },
+                  { id: "created", label: "Created" },
                 ].map(tab => {
                   const isActive = browseTab === tab.id;
                   return (
@@ -2356,8 +2386,32 @@ export default function FoodSearch() {
                   ))
                 )
               )}
+
+              {browseTab === "created" && (
+                customFoods.loading ? null : customAsFoods.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "20px", color: "var(--text-hint)", fontSize: 13, background: "var(--bg-subtle)", border: "1px dashed var(--border-default)", borderRadius: 10 }}>
+                    Foods you create (the "+" above, or "Can't find it?" while searching) show up here
+                  </div>
+                ) : (
+                  customAsFoods.map(food => (
+                    <FoodCard
+                      key={food.id}
+                      food={food}
+                      isExpanded={expandedId === food.id}
+                      onToggle={() => handleToggle(food.id)}
+                      defaultMeal={activeMeal} selectedDate={selectedDate}
+                      defaultTime={activeTime}
+                      logByTime={logByTime}
+                      onAdd={handleAdd}
+                      addLabel={builderMode ? "+ Add to recipe" : undefined}
+                      onDelete={() => handleDeleteCustom(food)}
+                      isFavourite={favourites.isFavourite(food.name)}
+                      onToggleFavourite={() => favourites.toggle(food)}
+                    />
+                  ))
+                )
+              )}
             </>
-          )}
 
           {/* Search results */}
           {!browsing && (

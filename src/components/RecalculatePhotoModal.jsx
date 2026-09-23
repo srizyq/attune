@@ -25,13 +25,14 @@ function resizeImage(file, maxDim = 1024, quality = 0.82) {
   });
 }
 
-// Re-estimates an already-logged food from a brand new photo — for when
-// the first estimate (however it was originally logged: search, scan, a
-// different photo) was off and a fresh, clearer shot would do better than
-// hand-editing numbers. Deliberately narrow: no meal/time picker (the
-// entry's existing meal/time is untouched, only its nutrition changes),
-// no correction/custom-food flow — those already exist on the original
-// scan modals. This is purely "try again with a better photo."
+// Re-estimates an already-logged food from a brand new photo — for when a
+// photo-scanned item's first estimate was off and a fresh, clearer shot
+// would do better than hand-editing numbers. LogItemRow only offers this
+// for item.source === 'photo' — a searched/barcode-scanned food has real
+// database nutrition behind it, so "try a different photo" doesn't apply.
+// Deliberately narrow otherwise: no meal/time picker (the entry's existing
+// meal/time is untouched, only its nutrition changes), no correction/
+// custom-food flow — those already exist on the original scan modal.
 export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
   const [preview, setPreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
