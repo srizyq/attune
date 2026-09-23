@@ -2034,6 +2034,35 @@ export default function FoodSearch() {
     idPrefix: "freq_", meta: recentRowMeta(row, "Logged often"),
   })), [frequent.rows]);
 
+  // Recent + frequent, merged and deduped by name — what you're shown while
+  // actually typing (below) doesn't care which bucket a food happened to
+  // land in, only whether you've logged it before at all. Recency wins on
+  // a duplicate (recentFoods first) since "logged again recently" is the
+  // more useful signal moment-to-moment than a stale-but-frequent count.
+  const historyFoods = useMemo(() => {
+    const seen = new Set();
+    const merged = [];
+    for (const f of [...recentFoods, ...frequentFoods]) {
+      const key = f.name.trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(f);
+    }
+    return merged;
+  }, [recentFoods, frequentFoods]);
+
+  // As you type, foods you've logged before that match — recent or
+  // frequent, doesn't matter which — surface immediately instead of
+  // waiting on FatSecret/Open Food Facts, and instead of disappearing the
+  // moment you start typing (the bug in an earlier attempt at this: it
+  // showed the *whole*, unfiltered recent/frequent lists rather than
+  // matching them against what's actually being typed).
+  const historyMatches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return historyFoods.filter(f => f.name.toLowerCase().includes(q)).slice(0, 6);
+  }, [historyFoods, query]);
+
   // Favourites the user has starred, snapshotted at favourite time. Not
   // sourced from food_logs directly, so "last used amount" comes from the
   // separate lastLogged lookup rather than the row itself.
@@ -2281,14 +2310,11 @@ export default function FoodSearch() {
           {/* Your own data: favourites, frequently logged, recently logged,
               and created, as tabs rather than a stacked scroll — all four
               are one tap away instead of needing a scroll past everything
-              to reach the bottom ones. Stays visible while typing too (not
-              just when the search box is empty) — a shortcut to something
-              you log all the time shouldn't disappear the moment you start
-              typing its name, it should sit right alongside the live
-              results below. No curated/hardcoded content — a search now
-              finds real food via FatSecret, so a fake "Popular foods" list
-              would only get in the way. */}
-          <>
+              to reach the bottom ones. No curated/hardcoded content — a
+              search now finds real food via FatSecret, so a fake "Popular
+              foods" list would only get in the way. */}
+          {browsing && (
+            <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
                 {[
                   { id: "frequent", label: "Frequently logged" },
@@ -2412,6 +2438,7 @@ export default function FoodSearch() {
                 )
               )}
             </>
+          )}
 
           {/* Search results */}
           {!browsing && (
@@ -2421,6 +2448,34 @@ export default function FoodSearch() {
                   {liveLoading ? "Searching…" : `${allResults.length} result${allResults.length !== 1 ? "s" : ""}`}
                 </span>
               </div>
+
+              {/* You've logged this before — recent or frequent, merged and
+                  matched against what's actually being typed (historyMatches
+                  above), not the live database. Shown first since it's the
+                  fastest, most personally-relevant answer to "have I had
+                  this before" and doesn't need to wait on a network call. */}
+              {historyMatches.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+                    Logged before
+                  </div>
+                  {historyMatches.map(food => (
+                    <FoodCard
+                      key={food.id}
+                      food={food}
+                      isExpanded={expandedId === food.id}
+                      onToggle={() => handleToggle(food.id)}
+                      defaultMeal={activeMeal} selectedDate={selectedDate}
+                      defaultTime={activeTime}
+                      logByTime={logByTime}
+                      onAdd={handleAdd}
+                      addLabel={builderMode ? "+ Add to recipe" : undefined}
+                      isFavourite={favourites.isFavourite(food.name)}
+                      onToggleFavourite={() => favourites.toggle(food)}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Foods — custom foods + FatSecret generic results
                   (raw/cooked/every-cut variants across every food category,
