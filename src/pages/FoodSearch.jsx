@@ -59,11 +59,27 @@ function foodMatchRank(name, queryLower, queryWords) {
 
 
 // ─── Live search ─────────────────────────────────────────────────────────
+// The user's own device locale (e.g. "en-US" -> "US", "hi-IN" -> "IN") —
+// used to steer FatSecret's per-country food database toward wherever
+// they actually are, instead of a single hardcoded country. No stored
+// profile field for this yet, so the browser's own locale is the only
+// signal available; 'US' is the fallback for a locale with no country
+// subtag (rare) since FatSecret's US database is its broadest.
+function detectRegion() {
+  const lang = (typeof navigator !== 'undefined' && (navigator.language || navigator.languages?.[0])) || '';
+  const match = lang.match(/-([A-Za-z]{2})$/);
+  return match ? match[1].toUpperCase() : 'US';
+}
+
 // Open Food Facts — no API key required, strong branded/packaged coverage
-// (this is what finds things like Weet-Bix, Vegemite, etc.). Uses the
-// Australia subdomain so results are products actually sold here
-// (Capilano, Sanitarium, Woolworths own brand, etc.) instead of being
-// dominated by UK/US supermarket SKUs.
+// (this is what finds things like Weet-Bix, Vegemite, etc.). Confirmed
+// live that the old country-subdomain approach (au.openfoodfacts.org)
+// actually filters to products *tagged* as sold in that one country —
+// a real search ("Reese's Peanut Butter Cups") returned 7 matches on the
+// au subdomain vs. 345 on world, nearly all of them not Australia-tagged
+// at all. That's fine for an AU-only audience but actively breaks search
+// for anyone elsewhere — world.openfoodfacts.org searches the full global
+// catalog instead, so every country gets full coverage, AU included.
 // Open Food Facts reports everything per-100g in grams (even things like
 // cholesterol/calcium/iron that are more naturally read in mg, and vitamin D
 // which is more naturally read in micrograms) — convert each to the unit
@@ -82,7 +98,7 @@ function extraMicrosFromOFF(per100, factor) {
 }
 
 async function searchOpenFoodFacts(q) {
-  const url = `https://au.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&sort_by=unique_scans_n&fields=product_name,generic_name,brands,nutriments,code`;
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&sort_by=unique_scans_n&fields=product_name,generic_name,brands,nutriments,code`;
   // Open Food Facts' shared search backend has occasional one-off blips
   // (a request fails, the very next one succeeds) — one retry absorbs
   // that without surfacing a false "unavailable" error to the user.
@@ -183,8 +199,8 @@ function extraMicrosFromFatSecretServing(serving) {
   };
 }
 
-async function searchFatSecret(q) {
-  const url = `/api/fatsecret-search?q=${encodeURIComponent(q)}`;
+async function searchFatSecret(q, region) {
+  const url = `/api/fatsecret-search?q=${encodeURIComponent(q)}&region=${encodeURIComponent(region)}`;
   let res = await fetch(url);
   if (!res.ok) res = await fetch(url);
   if (!res.ok) throw new Error(`FatSecret search failed: ${res.status}`);
@@ -419,7 +435,11 @@ function parseOffServingWeight(p) {
 }
 
 async function lookupOpenFoodFactsBarcode(barcode) {
-  const res = await fetch(`https://au.openfoodfacts.org/api/v0/product/${barcode}.json`);
+  // Unlike search, a direct barcode-by-ID lookup isn't filtered by
+  // country tag — confirmed live, au. and world. return identical results
+  // for the same barcode either way — but world. is used here too so
+  // there's no AU-specific reference left in an otherwise universal file.
+  const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
   const data = await res.json();
   if (data.status !== 1 || !data.product) return null;
   const p = data.product; const per100 = p.nutriments || {};
@@ -1865,7 +1885,7 @@ export default function FoodSearch() {
     // rather than the sum of all four.
     const [offResult, fatSecretResult, ausnutResult, commonDishResult] = await Promise.allSettled([
       searchOpenFoodFacts(searchQuery),
-      searchFatSecret(searchQuery),
+      searchFatSecret(searchQuery, detectRegion()),
       searchAusnut(searchQuery),
       searchCommonDish(searchQuery),
     ]);
