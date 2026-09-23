@@ -1,0 +1,63 @@
+name: Verify
+
+# Runs on every push/PR so the checks that guard against regressions (lint,
+# unit tests, build, and the layout/placement checks in e2e/) can't be
+# skipped by forgetting to run them locally. See playwright.config.js and
+# e2e/harness.js for what the layout checks actually cover — they use a
+# fake Supabase (fake URL + intercepted requests), so this workflow never
+# touches the real project or needs any secrets.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Lint, unit tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: Layout checks (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [phone, small-phone, tablet, desktop]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      # `channel: 'chrome'` in playwright.config.js needs real Google Chrome
+      # (not the bundled Chromium) plus its OS-level dependencies.
+      - run: npx playwright install --with-deps chrome
+      - run: npx playwright test --project="${{ matrix.project }}"
+      - name: Upload screenshots + report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.project }}
+          path: |
+            e2e/screens/
+            playwright-report/
+            test-results/
+          retention-days: 14
