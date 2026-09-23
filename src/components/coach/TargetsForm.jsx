@@ -1,15 +1,42 @@
 import { useState } from 'react';
 import MacroPreviewBar from '../MacroPreviewBar';
+import Slider from '../Slider';
 import { fieldStyle, labelStyle } from './constants';
+import { buildTargets, splitFromGrams, goalMacroSplits } from '../../lib/calorieTargets';
 import { TARGET_FIELDS, WEEKDAYS, dayTargetsToInputs, parseDayTargetInputs } from '../../lib/dayTargets';
+
+// A percentage split, clamped the same way the sliders below are (protein
+// 10-60%, fat 10-50%, carbs whatever's left) — so a slider's displayed
+// position always matches the value React thinks it holds, even for a split
+// no one built with these sliders (an old client, or one set some other way).
+function clampSplit(split) {
+  const protein = Math.min(60, Math.max(10, Math.round((split.protein || 0) * 100)));
+  const fat = Math.min(50, Math.max(10, Math.round((split.fat || 0) * 100)));
+  return { proteinPct: protein, fatPct: fat };
+}
 
 // Trainer-editable calorie/macro targets, plus (once the database has the
 // rest-day columns) optional different targets for the client's rest days.
+//
+// The coach only ever types one number — calories — and then, if they want to
+// steer it, drags a protein/fat split; carbs fill whatever's left, exactly the
+// model the client's own Settings > Goals uses (lib/calorieTargets.js). Grams
+// are always *derived* from calories × split, never typed directly, so they
+// can't quietly disagree with each other the way free-typed grams used to.
+// Opening an existing client's targets snaps their stored grams to the
+// nearest whole-percent split to seed the sliders — re-saving without
+// touching anything can shift a gram target by a gram or two as a result;
+// that's the same rounding Settings > Goals already accepts for the client's
+// own targets, not a new inconsistency.
 export default function TargetsForm({ client, onSave, onCancel }) {
   const [calorieTarget, setCalorieTarget] = useState(client.calorie_target ?? '');
-  const [proteinG, setProteinG] = useState(client.protein_g ?? '');
-  const [carbsG, setCarbsG] = useState(client.carbs_g ?? '');
-  const [fatG, setFatG] = useState(client.fat_g ?? '');
+  const initialSplit = (client.protein_g || client.carbs_g || client.fat_g)
+    ? splitFromGrams(client.protein_g || 0, client.carbs_g || 0, client.fat_g || 0)
+    : (goalMacroSplits[client.goal] || goalMacroSplits.maintain);
+  const initialPcts = clampSplit(initialSplit);
+  const [proteinPct, setProteinPct] = useState(initialPcts.proteinPct);
+  const [fatPct, setFatPct] = useState(initialPcts.fatPct);
+  const carbPct = Math.max(0, 100 - proteinPct - fatPct);
   // Rest-day targets exist only once the SQL update has been run; until then
   // the client object simply has no such field and this section stays hidden.
   const supportsDay = 'rest_day_targets' in client;
@@ -18,17 +45,10 @@ export default function TargetsForm({ client, onSave, onCancel }) {
   const [trainingDays, setTrainingDays] = useState(initialDay.trainingDays);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const baseValues = { calories: calorieTarget, protein_g: proteinG, carbs_g: carbsG, fat_g: fatG };
 
-  // Live preview as the trainer types — protein/carbs at 4 kcal/g, fat at
-  // 9 kcal/g, each bar's share relative to the macros' own calorie total
-  // (not the separately-typed calorie target, which the trainer may not
-  // have reconciled to the gram values yet).
-  const proteinCal = Math.round((Number(proteinG) || 0) * 4);
-  const carbsCal = Math.round((Number(carbsG) || 0) * 4);
-  const fatCal = Math.round((Number(fatG) || 0) * 9);
-  const macroCalTotal = proteinCal + carbsCal + fatCal;
-  const hasMacros = macroCalTotal > 0;
+  const split = { protein: proteinPct / 100, carbs: carbPct / 100, fat: fatPct / 100 };
+  const computed = buildTargets(Number(calorieTarget) || 0, split);
+  const baseValues = { calories: calorieTarget, protein_g: computed.protein.g, carbs_g: computed.carbs.g, fat_g: computed.fat.g };
 
   const handleSave = async () => {
     setError(null);
@@ -44,11 +64,14 @@ export default function TargetsForm({ client, onSave, onCancel }) {
     }
     setSaving(true);
     try {
+      // No calorie target means no macro targets either — grams only ever
+      // mean something as a share of a calorie number.
+      const hasCalories = calorieTarget !== '';
       await onSave({
-        calorie_target: calorieTarget === '' ? null : Number(calorieTarget),
-        protein_g: proteinG === '' ? null : Number(proteinG),
-        carbs_g: carbsG === '' ? null : Number(carbsG),
-        fat_g: fatG === '' ? null : Number(fatG),
+        calorie_target: hasCalories ? Number(calorieTarget) : null,
+        protein_g: hasCalories ? computed.protein.g : null,
+        carbs_g: hasCalories ? computed.carbs.g : null,
+        fat_g: hasCalories ? computed.fat.g : null,
       }, day);
     } catch (err) {
       setError(err.message || "Couldn't save — try again.");
@@ -59,37 +82,32 @@ export default function TargetsForm({ client, onSave, onCancel }) {
 
   return (
     <div>
-      <div style={{ marginBottom: 12 }}>
-        <label style={labelStyle}>Calorie target (kcal)</label>
-        <input type="number" min="0" value={calorieTarget} onChange={e => setCalorieTarget(e.target.value)} style={fieldStyle} />
+      <div style={{ marginBottom: 16 }}>
+        <label htmlFor="target-calories" style={labelStyle}>Calorie target (kcal)</label>
+        <input id="target-calories" type="number" min="0" value={calorieTarget} onChange={e => setCalorieTarget(e.target.value)} style={fieldStyle} />
       </div>
-      <div className="grid-3-fixed" style={{ marginBottom: 14 }}>
-        <div>
-          <label style={labelStyle}>Protein (g)</label>
-          <input type="number" min="0" value={proteinG} onChange={e => setProteinG(e.target.value)} style={fieldStyle} />
+
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={labelStyle}>Protein</span>
+          <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 600 }}>{proteinPct}%</span>
         </div>
-        <div>
-          <label style={labelStyle}>Carbs (g)</label>
-          <input type="number" min="0" value={carbsG} onChange={e => setCarbsG(e.target.value)} style={fieldStyle} />
-        </div>
-        <div>
-          <label style={labelStyle}>Fat (g)</label>
-          <input type="number" min="0" value={fatG} onChange={e => setFatG(e.target.value)} style={fieldStyle} />
-        </div>
+        <Slider aria-label="Protein share of calories" value={proteinPct} min={10} max={60} onChange={v => setProteinPct(Math.min(v, 100 - fatPct))} color="var(--accent)" />
       </div>
-      {hasMacros && (
-        <div style={{ marginBottom: 6 }}>
-          <MacroPreviewBar label="Protein" grams={Number(proteinG) || 0} calories={proteinCal} pct={proteinCal / macroCalTotal} color="var(--accent)" />
-          <MacroPreviewBar label="Carbs" grams={Number(carbsG) || 0} calories={carbsCal} pct={carbsCal / macroCalTotal} color="var(--water-blue)" />
-          <MacroPreviewBar label="Fat" grams={Number(fatG) || 0} calories={fatCal} pct={fatCal / macroCalTotal} color="var(--ai-purple)" />
-          <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '2px 0 0' }}>
-            Adds up to {macroCalTotal.toLocaleString()} kcal from macros
-            {calorieTarget !== '' && Math.abs(macroCalTotal - Number(calorieTarget)) > Number(calorieTarget) * 0.05
-              ? ` — doesn't quite match the ${Number(calorieTarget).toLocaleString()} kcal target above`
-              : ''}
-          </p>
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={labelStyle}>Fat</span>
+          <span style={{ color: 'var(--ai-purple)', fontSize: 12, fontWeight: 600 }}>{fatPct}%</span>
         </div>
-      )}
+        <Slider aria-label="Fat share of calories" value={fatPct} min={10} max={50} onChange={v => setFatPct(Math.min(v, 100 - proteinPct))} color="var(--ai-purple)" />
+      </div>
+
+      <div style={{ marginBottom: 6 }}>
+        <MacroPreviewBar label="Protein" grams={computed.protein.g} calories={computed.protein.cal} pct={split.protein} color="var(--accent)" />
+        <MacroPreviewBar label="Carbs" grams={computed.carbs.g} calories={computed.carbs.cal} pct={split.carbs} color="var(--water-blue)" />
+        <MacroPreviewBar label="Fat" grams={computed.fat.g} calories={computed.fat.cal} pct={split.fat} color="var(--ai-purple)" />
+        <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '2px 0 0' }}>Carbs ({carbPct}%) fill whatever protein and fat leave.</p>
+      </div>
       {supportsDay && (
         <div style={{ margin: '16px 0 14px', paddingTop: 14, borderTop: '1px solid var(--border-default)' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Rest days (optional)</div>
