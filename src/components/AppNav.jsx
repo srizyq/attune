@@ -24,6 +24,22 @@ const MOBILE_ITEMS_RIGHT = [
   { id: 'coach', label: 'Coach', icon: 'ti-users', path: '/coach' },
 ];
 
+// One shared shape for every bottom-nav tab (not just the two MOBILE_ITEMS
+// arrays — Settings below is the same button, just with no array entry of
+// its own) so the active-tab dot can't drift out of sync between them.
+function MobileNavButton({ isActive, label, icon, onClick }) {
+  return (
+    <button
+      className={`app-bottom-icon${isActive ? ' is-active' : ''}`}
+      title={label}
+      onClick={onClick}
+    >
+      <i className={`ti ${icon}`} />
+      <span className="app-bottom-icon-dot" />
+    </button>
+  );
+}
+
 // Desktop: left sidebar. Mobile/tablet (<=860px): bottom nav — CSS media
 // queries control which one renders, not JS, so it responds to real
 // viewport width without a resize listener.
@@ -57,14 +73,13 @@ export default function AppNav({ active, initials }) {
 
       <nav className="app-bottom-nav">
         {MOBILE_ITEMS.map(item => (
-          <button
+          <MobileNavButton
             key={item.id}
-            className={`app-bottom-icon${active === item.id ? ' is-active' : ''}`}
-            title={item.label}
+            isActive={active === item.id}
+            label={item.label}
+            icon={item.icon}
             onClick={() => navigate(item.path)}
-          >
-            <i className={`ti ${item.icon}`} />
-          </button>
+          />
         ))}
         <button
           className="app-bottom-add"
@@ -75,22 +90,20 @@ export default function AppNav({ active, initials }) {
           <i className="ti ti-plus" />
         </button>
         {MOBILE_ITEMS_RIGHT.map(item => (
-          <button
+          <MobileNavButton
             key={item.id}
-            className={`app-bottom-icon${active === item.id ? ' is-active' : ''}`}
-            title={item.label}
+            isActive={active === item.id}
+            label={item.label}
+            icon={item.icon}
             onClick={() => navigate(item.path)}
-          >
-            <i className={`ti ${item.icon}`} />
-          </button>
+          />
         ))}
-        <button
-          className={`app-bottom-icon${active === 'settings' || active === 'profile' ? ' is-active' : ''}`}
-          title="Settings"
+        <MobileNavButton
+          isActive={active === 'settings' || active === 'profile'}
+          label="Settings"
+          icon="ti-settings"
           onClick={() => navigate('/settings')}
-        >
-          <i className="ti ti-settings" />
-        </button>
+        />
       </nav>
 
       {sheetOpen && <QuickActionSheet onClose={() => setSheetOpen(false)} />}

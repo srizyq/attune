@@ -129,6 +129,7 @@ function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, log
 export default function Recipes() {
   const navigate = useNavigate();
   const { profile } = useProfile();
+  const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const savedMeals = useSavedMeals();
   const today = todayLocalDate();
   const { addFood, refetch: refetchLogs } = useFoodLogs(today);
@@ -193,7 +194,7 @@ export default function Recipes() {
 
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
-      <AppNav active="food" />
+      <AppNav active="food" initials={initials} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         <PageHeader

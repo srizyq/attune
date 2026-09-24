@@ -134,13 +134,20 @@
   .app-bottom-icon {
     flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 3px;
     background: none;
     border: none;
     color: var(--text-muted, #666);
     cursor: pointer;
     min-width: 0;
+    /* Own tailored bounce below instead of the generic global button-press
+       animation (index.css) — that one scales the whole flex:1 tap area,
+       which is invisible, so it barely reads; this scales the visible
+       icon glyph itself. */
+    animation: none !important;
   }
 
   /* The pill lives on the icon glyph, not the flex:1 button itself — the
@@ -153,13 +160,35 @@
     padding: 9px 16px;
     border-radius: 14px;
     border: 1px solid transparent;
-    transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+    transition: color 150ms ease, background 150ms ease, border-color 150ms ease,
+      transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .app-bottom-icon:active i {
+    transform: scale(0.82);
   }
 
   .app-bottom-icon.is-active i {
     color: var(--accent, #8fbc8f);
     background: var(--accent-bg, #0f1a0f);
     border-color: var(--accent-border, #1e3a1e);
+  }
+
+  /* Small dot under the active tab — a second, always-in-the-same-place
+     signal alongside the icon's own highlight, readable at a glance
+     without having to compare icon colours against each other. Reserves
+     its 4px + gap on every tab (not just the active one) so nothing
+     shifts vertically when the active tab changes. */
+  .app-bottom-icon-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: transparent;
+    transition: background 150ms ease;
+  }
+
+  .app-bottom-icon.is-active .app-bottom-icon-dot {
+    background: var(--accent, #8fbc8f);
   }
 
   .app-bottom-add {
@@ -176,6 +205,12 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    transition: transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: none !important;
+  }
+
+  .app-bottom-add:active {
+    transform: scale(0.9);
   }
 
   .app-content-pad {

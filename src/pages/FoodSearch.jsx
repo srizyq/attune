@@ -1602,6 +1602,7 @@ export default function FoodSearch() {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const isPremium = !!profile?.is_premium;
+  const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   // Whether logging a food should ask for a time (Pro's hourly timeline)
   // or a meal (everyone else, and Pro users who've switched their daily
   // log to the meal-grouped view — see DailyLogViewToggle). Matches
@@ -2159,7 +2160,7 @@ export default function FoodSearch() {
   return (
     <div style={{ height: 'var(--app-h)', overflow: "hidden", background: "var(--bg-primary)", color: "var(--text-primary)", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex" }}>
 
-      <AppNav active="food" />
+      <AppNav active="food" initials={initials} />
 
       {/* ── Main content ── */}
       <div className="app-content-pad" style={{ flex: 1, overflow: "auto", minWidth: 0 }}>
