@@ -5,10 +5,15 @@
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  /* Height of the fixed mobile bottom nav: 58px of icons + 1px border + the
-     home-indicator inset it pads itself by. Page content reserves this much
-     (plus breathing room) so nothing can end up trapped beneath it. */
-  --bottom-nav-h: calc(59px + var(--safe-bottom));
+  /* The bottom nav floats as a pill, inset from the screen edges by this much
+     on every side (including above the home indicator) rather than sitting
+     flush against them. */
+  --bottom-nav-gap: 14px;
+  /* Height of the floating mobile bottom nav's own footprint: 58px of icons,
+     plus the gap it floats above the bottom edge/home-indicator inset by.
+     Page content (and anything else fixed above the nav) reserves this much
+     so nothing can end up trapped beneath it. */
+  --bottom-nav-h: calc(58px + var(--bottom-nav-gap) + var(--safe-bottom));
   /* One screen, minus the top inset body pads itself by. Full-screen page
      roots use this instead of 100vh: with the inset added on top of a
      100vh root the page is taller than the screen, so its bottom edge (and
@@ -108,22 +113,22 @@
   .app-bottom-nav {
     display: flex;
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    /* Floats clear of every edge — including above the home indicator, not
+       padded above it like an edge-attached bar would be — instead of
+       spanning flush corner-to-corner. */
+    left: var(--bottom-nav-gap);
+    right: var(--bottom-nav-gap);
+    bottom: calc(var(--safe-bottom) + var(--bottom-nav-gap));
     height: 58px;
-    /* Overrides the global border-box reset for this element specifically
-       — with border-box, padding-bottom below would carve into the fixed
-       58px height instead of adding to it, squishing the actual icon row
-       down to ~24px on a phone with a home indicator (the safe-area inset
-       is ~34px) and turning the stretch-to-fill "+" button into a wide
-       oval instead of a rounded square. content-box keeps 58px as pure
-       content height regardless of the safe-area inset. */
     box-sizing: content-box;
-    background: var(--bg-primary, #0f0f0f);
-    border-top: 1px solid var(--border-default, #1e1e1e);
+    background: var(--bg-card, #181818);
+    border: 1px solid var(--border-default, #2a2a2a);
+    border-radius: 999px;
+    /* Definition against whatever's scrolled underneath — an edge-attached
+       bar only needed a top border since the screen edge did the rest; a
+       floating one needs a real shadow to read as raised above the page. */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     z-index: 100;
-    padding-bottom: var(--safe-bottom);
   }
 
   .app-bottom-icon {
@@ -159,10 +164,10 @@
 
   .app-bottom-add {
     flex: 0 0 auto;
-    width: 64px;
+    width: 56px;
     align-self: stretch;
-    margin: 0 4px;
-    border-radius: 18px;
+    margin: 5px 4px;
+    border-radius: 999px;
     background: var(--accent, #8fbc8f);
     border: none;
     color: #0f0f0f;
@@ -278,12 +283,12 @@
 
 /* Meal builder's floating "Building meal" bar (FoodSearch.jsx) — fixed to
    the bottom of the viewport. On phones the app-bottom-nav is ALSO fixed
-   to the bottom (0-58px + safe area, z-index 100), so a flat `bottom: 16px`
+   to the bottom (floating pill, z-index 100), so a flat `bottom: 16px`
    put this bar mostly underneath the nav: its text and buttons were
    clipped by/behind the tab bar with no way to reach Cancel. Clearing the
-   nav's height on mobile, capping the width so it can't run past the
-   screen edges, and outranking the nav's z-index keeps the whole bar
-   (including Cancel) reachable. */
+   nav's full floating footprint (--bottom-nav-h) on mobile, capping the
+   width so it can't run past the screen edges, and outranking the nav's
+   z-index keeps the whole bar (including Cancel) reachable. */
 .meal-builder-bar {
   position: fixed;
   bottom: 16px;
@@ -295,7 +300,7 @@
 
 @media (max-width: 860px) {
   .meal-builder-bar {
-    bottom: calc(58px + var(--safe-bottom) + 12px);
+    bottom: calc(var(--bottom-nav-h) + 12px);
   }
 }
 
@@ -434,7 +439,7 @@
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   @media (max-width: 860px) {
     .app-bottom-nav {
-      background: color-mix(in srgb, var(--bg-primary) 84%, transparent);
+      background: color-mix(in srgb, var(--bg-card) 84%, transparent);
       -webkit-backdrop-filter: blur(18px) saturate(150%);
       backdrop-filter: blur(18px) saturate(150%);
     }
