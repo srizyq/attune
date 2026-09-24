@@ -26,16 +26,22 @@ const MOBILE_ITEMS_RIGHT = [
 
 // One shared shape for every bottom-nav tab (not just the two MOBILE_ITEMS
 // arrays — Settings below is the same button, just with no array entry of
-// its own) so the active-tab dot can't drift out of sync between them.
+// its own) so the active state can't drift out of sync between them. The
+// outer button stays the full flex:1 tap target (unstyled); the inner
+// -content span is what actually gets the filled pill when active, sized
+// to just the icon+label rather than the whole tap slot — same reasoning
+// as why the old icon-only highlight lived on the glyph, not the button.
 function MobileNavButton({ isActive, label, icon, onClick }) {
   return (
     <button
-      className={`app-bottom-icon${isActive ? ' is-active' : ''}`}
+      className="app-bottom-icon"
       title={label}
       onClick={onClick}
     >
-      <i className={`ti ${icon}`} />
-      <span className="app-bottom-icon-dot" />
+      <span className={`app-bottom-icon-content${isActive ? ' is-active' : ''}`}>
+        <i className={`ti ${icon}`} />
+        <span className="app-bottom-icon-label">{label}</span>
+      </span>
     </button>
   );
 }

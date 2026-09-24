@@ -7,13 +7,14 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   /* The bottom nav floats as a pill, inset from the screen edges by this much
      on every side (including above the home indicator) rather than sitting
-     flush against them. */
-  --bottom-nav-gap: 14px;
-  /* Height of the floating mobile bottom nav's own footprint: 58px of icons,
-     plus the gap it floats above the bottom edge/home-indicator inset by.
-     Page content (and anything else fixed above the nav) reserves this much
-     so nothing can end up trapped beneath it. */
-  --bottom-nav-h: calc(58px + var(--bottom-nav-gap) + var(--safe-bottom));
+     flush against them. Kept small — just clear of the very bottom, not
+     visibly elevated — per explicit feedback on an earlier, larger value. */
+  --bottom-nav-gap: 8px;
+  /* Height of the floating mobile bottom nav's own footprint: 62px for
+     icon+label tabs, plus the gap it floats above the bottom edge/home-
+     indicator inset by. Page content (and anything else fixed above the
+     nav) reserves this much so nothing can end up trapped beneath it. */
+  --bottom-nav-h: calc(62px + var(--bottom-nav-gap) + var(--safe-bottom));
   /* One screen, minus the top inset body pads itself by. Full-screen page
      roots use this instead of 100vh: with the inset added on top of a
      100vh root the page is taller than the screen, so its bottom edge (and
@@ -119,7 +120,7 @@
     left: var(--bottom-nav-gap);
     right: var(--bottom-nav-gap);
     bottom: calc(var(--safe-bottom) + var(--bottom-nav-gap));
-    height: 58px;
+    height: 62px;
     box-sizing: content-box;
     background: var(--bg-card, #181818);
     border: 1px solid var(--border-default, #2a2a2a);
@@ -131,63 +132,68 @@
     z-index: 100;
   }
 
+  /* Outer tap target — full slot width/height, unstyled. The filled pill on
+     the active tab lives on .app-bottom-icon-content (below), sized to just
+     the icon+label, not the whole slot — a background that size would read
+     as a big rectangle rather than a capsule. */
   .app-bottom-icon {
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    min-width: 0;
+    padding: 0;
+    /* Own tailored bounce below instead of the generic global button-press
+       animation (index.css) — that one scales the whole flex:1 tap area,
+       which is invisible, so it barely reads; this scales the visible
+       pill/icon instead. */
+    animation: none !important;
+  }
+
+  .app-bottom-icon-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    background: none;
-    border: none;
+    gap: 2px;
+    max-width: 100%;
+    padding: 7px 5px;
+    border-radius: 16px;
     color: var(--text-muted, #666);
-    cursor: pointer;
-    min-width: 0;
-    /* Own tailored bounce below instead of the generic global button-press
-       animation (index.css) — that one scales the whole flex:1 tap area,
-       which is invisible, so it barely reads; this scales the visible
-       icon glyph itself. */
-    animation: none !important;
-  }
-
-  /* The pill lives on the icon glyph, not the flex:1 button itself — the
-     button spans the whole slot for a full-width tap target, but a
-     background that size would read as a big rectangle rather than a
-     pill. Sizing it to just the icon (with its own padding) is what
-     desktop's .app-nav-icon.is-active already does; this matches it. */
-  .app-bottom-icon i {
-    font-size: 24px;
-    padding: 9px 16px;
-    border-radius: 14px;
-    border: 1px solid transparent;
-    transition: color 150ms ease, background 150ms ease, border-color 150ms ease,
+    transition: color 150ms ease, background 150ms ease,
       transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .app-bottom-icon:active i {
-    transform: scale(0.82);
+  .app-bottom-icon:active .app-bottom-icon-content {
+    transform: scale(0.9);
   }
 
-  .app-bottom-icon.is-active i {
-    color: var(--accent, #8fbc8f);
-    background: var(--accent-bg, #0f1a0f);
-    border-color: var(--accent-border, #1e3a1e);
+  .app-bottom-icon-content i {
+    font-size: 20px;
+    line-height: 1;
   }
 
-  /* Small dot under the active tab — a second, always-in-the-same-place
-     signal alongside the icon's own highlight, readable at a glance
-     without having to compare icon colours against each other. Reserves
-     its 4px + gap on every tab (not just the active one) so nothing
-     shifts vertically when the active tab changes. */
-  .app-bottom-icon-dot {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: transparent;
-    transition: background 150ms ease;
+  .app-bottom-icon-label {
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .app-bottom-icon.is-active .app-bottom-icon-dot {
+  /* Active tab: a solid filled capsule around icon+label together — not
+     just a tinted background on the icon — so it reads as a clear, single
+     "you are here" pill rather than a subtle colour change. Dark text/icon
+     on the accent fill for contrast, the same pairing the "+" button and
+     Settings' desktop avatar already use on the same accent colour. */
+  .app-bottom-icon-content.is-active {
+    color: #0f0f0f;
     background: var(--accent, #8fbc8f);
   }
 

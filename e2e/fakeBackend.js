@@ -132,5 +132,16 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
   // this the SPA fallback would answer with index.html and break JSON parsing.
   await context.route('**/api/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
 
+  // FoodSearch.jsx calls Open Food Facts directly from the browser (it's
+  // not behind /api/*, unlike FatSecret) — found live: a search-typing test
+  // was silently making a REAL request to world.openfoodfacts.org, which a
+  // sandboxed test browser blocks on CORS, logging a console error that
+  // failed the test nondeterministically (only when that error landed
+  // inside the test's own observation window). `{}` is a safe empty
+  // response for every shape this app reads from OFF: searchOpenFoodFacts
+  // reads `data.products || []` (undefined -> []), and the barcode lookup
+  // checks `data.status !== 1` (undefined -> true -> treated as not found).
+  await context.route('https://world.openfoodfacts.org/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+
   return { unmocked };
 }

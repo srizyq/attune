@@ -4,11 +4,12 @@ import { SCREENS } from './screenList.js';
 
 // Regression guard: DailyLog/SettingsGoals/Expenditure/Nutrients each once
 // passed no `active` prop to <AppNav> at all, silently leaving every bottom-
-// nav tab unhighlighted (and dot-less, once the active-tab dot existed) on
-// those pages — found by eye, not by any check, while working on the nav's
-// visual redesign. Checks the floating pill nav (phone/tablet) specifically;
-// the desktop sidebar has a deliberately smaller item set (no "Daily log"
-// tab at all, for one), so it needs its own comparison, not this one.
+// nav tab unhighlighted on those pages — found by eye, not by any check,
+// while working on the nav's visual redesign. Checks the floating pill nav
+// (phone/tablet) specifically; the desktop sidebar has a deliberately
+// smaller item set (no "Daily log" tab at all, for one), so it needs its
+// own comparison, not this one. `.is-active` lives on the inner
+// -content span (the filled pill), not the outer tap-target button.
 //
 // Mobile trims to 5 slots (dashboard/log/+/coach/settings — see AppNav.jsx's
 // own comment), so food-search/recipes and insights are intentionally
@@ -21,7 +22,7 @@ for (const screen of SCREENS) {
     await openApp({ page, context }, testInfo);
     await page.goto(screen.path);
     await settle(page);
-    const activeCount = await page.locator('.app-bottom-icon.is-active').count();
+    const activeCount = await page.locator('.app-bottom-icon-content.is-active').count();
     const expected = NO_MOBILE_TAB.has(screen.name) ? 0 : 1;
     expect(activeCount, `${screen.name}: expected ${expected} active bottom-nav tab(s)`).toBe(expected);
   });
