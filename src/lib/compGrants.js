@@ -17,7 +17,7 @@ export const COMP_GRANTS = {
   'csrreddy9@gmail.com': { is_premium: true, coach_pass: true },
   'sriramreddy1m@gmail.com': { is_premium: true, coach_pass: true },
   'nalywas@gmail.com': { is_premium: true },
-  'tarunbalaji0901@gmail.com': { is_premium: true },
+  'tarunbalajis@gmail.com': { is_premium: true, coach_pass: true },
   'erenhdeniz@gmail.com': { is_premium: true, coach_pass: true },
 };
 
