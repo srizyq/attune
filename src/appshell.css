@@ -11,9 +11,11 @@
   /* Vertical clearance above the bottom edge, ON TOP OF the home-indicator
      inset (--safe-bottom) rather than stacked with the full side gap — the
      side gap alone was landing ~42px above the physical bottom on notched
-     phones (34px inset + 8px gap) and read as "floating too high" per
-     explicit feedback. This stays a few px regardless of device. */
-  --bottom-nav-gap-v: 4px;
+     phones (34px inset + 8px gap) and still read as "floating too high"
+     even after trimming to 4px, per repeated explicit feedback. Zero: the
+     safe-area inset alone is already the minimum needed to clear the home
+     indicator, nothing floats on top of that. */
+  --bottom-nav-gap-v: 0px;
   /* Height of the floating mobile bottom nav's own footprint: 62px for
      icon+label tabs, plus the gap it floats above the bottom edge/home-
      indicator inset by. Page content (and anything else fixed above the
