@@ -5,16 +5,20 @@
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  /* The bottom nav floats as a pill, inset from the screen edges by this much
-     on every side (including above the home indicator) rather than sitting
-     flush against them. Kept small — just clear of the very bottom, not
-     visibly elevated — per explicit feedback on an earlier, larger value. */
+  /* The bottom nav floats as a pill, inset from the screen's side edges by
+     this much rather than sitting flush against them. */
   --bottom-nav-gap: 8px;
+  /* Vertical clearance above the bottom edge, ON TOP OF the home-indicator
+     inset (--safe-bottom) rather than stacked with the full side gap — the
+     side gap alone was landing ~42px above the physical bottom on notched
+     phones (34px inset + 8px gap) and read as "floating too high" per
+     explicit feedback. This stays a few px regardless of device. */
+  --bottom-nav-gap-v: 4px;
   /* Height of the floating mobile bottom nav's own footprint: 62px for
      icon+label tabs, plus the gap it floats above the bottom edge/home-
      indicator inset by. Page content (and anything else fixed above the
      nav) reserves this much so nothing can end up trapped beneath it. */
-  --bottom-nav-h: calc(62px + var(--bottom-nav-gap) + var(--safe-bottom));
+  --bottom-nav-h: calc(62px + var(--bottom-nav-gap-v) + var(--safe-bottom));
   /* One screen, minus the top inset body pads itself by. Full-screen page
      roots use this instead of 100vh: with the inset added on top of a
      100vh root the page is taller than the screen, so its bottom edge (and
@@ -119,7 +123,7 @@
        spanning flush corner-to-corner. */
     left: var(--bottom-nav-gap);
     right: var(--bottom-nav-gap);
-    bottom: calc(var(--safe-bottom) + var(--bottom-nav-gap));
+    bottom: calc(var(--safe-bottom) + var(--bottom-nav-gap-v));
     height: 62px;
     box-sizing: content-box;
     background: var(--bg-card, #181818);
@@ -475,14 +479,16 @@
   background: var(--bg-primary) !important;
 }
 
-/* Bottom nav: same translucent blur as the page header, so scrolling content
-   slides under it instead of being cut off by a solid slab. */
+/* Bottom nav: more translucent than the page header (65% vs. 84%) — it
+   floats over content rather than sitting at the top of it, so it should
+   read as glass, not a near-solid bar; explicit feedback called the first
+   pass "not as translucent as I asked". */
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   @media (max-width: 860px) {
     .app-bottom-nav {
-      background: color-mix(in srgb, var(--bg-card) 84%, transparent);
-      -webkit-backdrop-filter: blur(18px) saturate(150%);
-      backdrop-filter: blur(18px) saturate(150%);
+      background: color-mix(in srgb, var(--bg-card) 65%, transparent);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      backdrop-filter: blur(20px) saturate(160%);
     }
   }
 }
