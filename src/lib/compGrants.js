@@ -19,6 +19,7 @@ export const COMP_GRANTS = {
   'nalywas@gmail.com': { is_premium: true },
   'tarunbalajis@gmail.com': { is_premium: true, coach_pass: true },
   'erenhdeniz@gmail.com': { is_premium: true, coach_pass: true },
+  'simontallfig@gmail.com': { is_premium: true, coach_pass: true },
 };
 
 export function withCompGrants(data, email) {

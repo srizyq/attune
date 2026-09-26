@@ -47,7 +47,7 @@ as $$
       or exists (
         select 1 from auth.users u
         where u.id = p_uid
-          and lower(u.email) in ('csrreddy9@gmail.com', 'sriramreddy1m@gmail.com', 'erenhdeniz@gmail.com')
+          and lower(u.email) in ('csrreddy9@gmail.com', 'sriramreddy1m@gmail.com', 'erenhdeniz@gmail.com', 'tarunbalajis@gmail.com', 'simontallfig@gmail.com')
       );
 $$;
 revoke all on function public.has_coach_pass(uuid) from public, anon;
