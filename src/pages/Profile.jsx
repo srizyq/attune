@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../hooks/useTheme';
 import { useClosingTransition } from '../hooks/useClosingTransition';
-import { supabase, emailRedirectTo } from '../lib/supabase';
+import { useResendConfirmation } from '../hooks/useResendConfirmation';
 import { authedPost } from '../lib/billing';
 import { isTrialActive, trialDaysLeft } from '../lib/trial';
 import AppNav from '../components/AppNav';
@@ -124,36 +124,29 @@ function ProBillingButton({ profile, pendingConfirmation }) {
 // "already registered"). All that's left to do is confirm the email
 // that's already on file, or resend it if it didn't arrive.
 function ResendConfirmation({ email }) {
-  const [state, setState] = useState(null);
-
-  async function resend() {
-    setState('sending');
-    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
-    setState(error ? (error.message || 'Could not resend — try again.') : 'sent');
-  }
+  const { status, errorMessage, secondsLeft, canResend, resend } = useResendConfirmation(email);
 
   return (
     <div>
       <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.5 }}>
         Check <span style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>{email}</span> for a confirmation link — everything you've already logged stays right where it is.
       </p>
-      {state === 'sent' ? (
-        <span style={{ color: 'var(--accent)', fontSize: '13px' }}>Confirmation email sent.</span>
-      ) : (
-        <button
-          onClick={resend}
-          disabled={state === 'sending'}
-          style={{
-            padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
-            borderRadius: '8px', color: 'var(--accent)', fontSize: '13px', fontWeight: 600,
-            cursor: state === 'sending' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-          }}
-        >
-          {state === 'sending' ? 'Sending…' : 'Resend confirmation email'}
-        </button>
+      <button
+        onClick={resend}
+        disabled={!canResend}
+        style={{
+          padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
+          borderRadius: '8px', color: 'var(--accent)', fontSize: '13px', fontWeight: 600,
+          cursor: canResend ? 'pointer' : 'default', fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: canResend ? 1 : 0.6,
+        }}
+      >
+        {status === 'sending' ? 'Sending…' : secondsLeft > 0 ? `Resend in ${secondsLeft}s` : 'Resend confirmation email'}
+      </button>
+      {status === 'sent' && (
+        <div style={{ color: 'var(--accent)', fontSize: '13px', marginTop: '8px' }}>Confirmation email sent.</div>
       )}
-      {state && state !== 'sending' && state !== 'sent' && (
-        <div style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '8px' }}>{state}</div>
+      {status === 'error' && (
+        <div style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '8px' }}>{errorMessage}</div>
       )}
     </div>
   );
