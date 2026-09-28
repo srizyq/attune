@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { setClientTargets, setClientMicroTargets, setClientDayTargets } from '../../lib/db';
 import { adherenceScore, adherenceTone } from '../../lib/clientInsights';
 import { useClientDashboard } from './useClientDashboard';
-import { ClientAvatar } from './shared';
+import { ClientAvatar, RowActions } from './shared';
 import { GOAL_LABELS, TABS } from './constants';
 import OverviewTab from './OverviewTab';
 import DiaryTab from './DiaryTab';
@@ -16,7 +16,7 @@ const TONE_COLOR = { good: 'var(--accent)', fair: 'var(--gold)', low: 'var(--dan
 // One client, split into six tabs so each stays short: the long single page
 // this replaced mixed reading (charts, diary), writing (messages, notes) and
 // output (reports) in one scroll.
-export default function ClientDetail({ client, summary }) {
+export default function ClientDetail({ client, summary, row, onSetGroup, onRevoke }) {
   // A mutable local copy of the client's goal/target fields — resyncs from the
   // prop whenever a different client is selected, but otherwise holds whatever
   // the trainer just saved so the page reflects it without refetching the list.
@@ -81,6 +81,11 @@ export default function ClientDetail({ client, summary }) {
           <div title="Logging consistency and target hits over the last 7 days" style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: TONE_COLOR[tone], lineHeight: 1 }}>{score}</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>7-day adherence</div>
+          </div>
+        )}
+        {row && onSetGroup && onRevoke && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <RowActions row={row} onSetGroup={onSetGroup} onRevoke={onRevoke} />
           </div>
         )}
       </div>

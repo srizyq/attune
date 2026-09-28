@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useProfile } from '../hooks/useProfile';
 import { useCoachInvites } from '../hooks/useCoach';
 import { inviteLink, inviteState, daysLeft } from '../lib/coachInvite';
+import FormRow from './FormRow';
 
 const INVITE_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // legacy fallback only
 
@@ -146,7 +147,7 @@ export default function CoachInvitePanel({ hasClients }) {
         Each invite works once and expires after 7 days. Your client sees exactly what you'll have access to and has to accept before anything is shared.
       </p>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+      <FormRow>
         <input
           value={label}
           onChange={e => setLabel(e.target.value)}
@@ -154,12 +155,12 @@ export default function CoachInvitePanel({ hasClients }) {
           maxLength={60}
           placeholder="Who's it for? (optional)"
           aria-label="Invite label"
-          style={{ flex: 1, minWidth: 0, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+          style={{ width: '100%', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
         />
-        <button onClick={handleCreate} disabled={creating} className="btn-press" style={{ ...btn(true), flexShrink: 0 }}>
+        <FormRow.Button icon="ti-send-2" primary onClick={handleCreate} disabled={creating}>
           {creating ? 'Creating…' : 'Create invite'}
-        </button>
-      </div>
+        </FormRow.Button>
+      </FormRow>
       {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '8px 0 0' }}>{error}</p>}
 
       {openInvites.length > 0 && (

@@ -21,7 +21,7 @@ const patchy = mk('patchy', 'Pat', { days_logged_7d: 2, days_on_target_7d: 2, da
 const rows = [row('ok', 'Olive'), row('quiet', 'Quinn'), row('patchy', 'Pat')];
 
 function setup(props = {}) {
-  const handlers = { onSelect: vi.fn(), onRevoke: vi.fn(), onSetGroup: vi.fn().mockResolvedValue(undefined), onStatus: vi.fn() };
+  const handlers = { onSelect: vi.fn(), onStatus: vi.fn() };
   render(<ClientList clients={rows} loading={false} summaries={[ok, quiet, patchy]} summariesSupported today={TODAY} loggedTodayCount={0} resolvedCount={0} allLoggedToday={false} {...handlers} {...props} />);
   return handlers;
 }
@@ -92,22 +92,9 @@ describe('ClientList (with summaries)', () => {
     expect(h.onSelect).toHaveBeenCalledWith({ id: 'ok', name: 'Olive' });
   });
 
-  it('asks before disconnecting a client', async () => {
-    const h = setup({ summaries: [ok], clients: [row('ok', 'Olive')] });
-    await userEvent.click(screen.getByRole('button', { name: 'Disconnect client' }));
-    expect(window.confirm).toHaveBeenCalled();
-    expect(h.onRevoke).not.toHaveBeenCalled();
-    window.confirm.mockReturnValue(true);
-    await userEvent.click(screen.getByRole('button', { name: 'Disconnect client' }));
-    expect(h.onRevoke).toHaveBeenCalledWith('l-ok');
-  });
-
-  it('edits a group label inline', async () => {
-    const h = setup({ summaries: [ok], clients: [row('ok', 'Olive')] });
-    await userEvent.click(screen.getByRole('button', { name: 'Set group' }));
-    await userEvent.type(screen.getByLabelText('Group name'), 'Cut{Enter}');
-    expect(h.onSetGroup).toHaveBeenCalledWith('l-ok', 'Cut');
-  });
+  // Disconnect/group-label editing moved to ClientDetail's header (see
+  // ClientDetail.test.jsx) now that a row is a single tap target into that
+  // view, rather than inline actions living in the row itself.
 
   it('shows the invite prompt when there are no clients yet', () => {
     setup({ clients: [], summaries: [] });
