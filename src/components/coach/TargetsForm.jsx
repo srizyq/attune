@@ -156,7 +156,7 @@ export default function TargetsForm({ client, onSave, onCancel }) {
           onClick={handleSave}
           disabled={saving}
           className="btn-press"
-          style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           {saving ? 'Saving…' : 'Save targets'}
         </button>

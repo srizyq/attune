@@ -107,7 +107,7 @@ export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
         <button
           onClick={close}
           aria-label="Close"
-          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(25,29,27,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(20,17,16,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           ✕
         </button>
@@ -156,7 +156,7 @@ export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
             <button
               onClick={handleApply}
               disabled={applying}
-              style={{ flex: 2, background: applying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: applying ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: applying ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ flex: 2, background: applying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: applying ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: applying ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               {applying ? 'Saving…' : 'Use this estimate'}
             </button>

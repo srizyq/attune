@@ -159,7 +159,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
             disabled={!value || saving}
             style={{
               padding: '11px 18px', background: !value || saving ? 'var(--border-default)' : 'var(--accent)',
-              border: 'none', borderRadius: 10, color: !value || saving ? 'var(--text-muted)' : 'var(--bg-primary)',
+              border: 'none', borderRadius: 10, color: !value || saving ? 'var(--text-muted)' : 'var(--accent-contrast)',
               fontSize: 14, fontWeight: 600, cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
@@ -752,7 +752,7 @@ function StreakStrip({ byDate, onSelectDay }) {
               fontSize: 10, fontWeight: 700,
               background: logged ? 'var(--accent)' : 'transparent',
               border: `1px solid ${logged ? 'var(--accent)' : isToday ? 'var(--border-strong)' : 'var(--border-default)'}`,
-              color: logged ? 'var(--bg-primary)' : 'var(--text-hint)',
+              color: logged ? 'var(--accent-contrast)' : 'var(--text-hint)',
               opacity: isFuture ? 0.4 : 1,
               cursor: isFuture ? 'default' : 'pointer',
             }}

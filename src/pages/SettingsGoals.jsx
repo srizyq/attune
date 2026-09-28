@@ -560,7 +560,7 @@ export default function SettingsGoals() {
             disabled={saving}
             style={{
               padding: '9px 18px', background: saving ? 'var(--border-default)' : 'var(--accent)',
-              border: 'none', borderRadius: 8, color: saving ? 'var(--text-muted)' : 'var(--bg-primary)',
+              border: 'none', borderRadius: 8, color: saving ? 'var(--text-muted)' : 'var(--accent-contrast)',
               fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >

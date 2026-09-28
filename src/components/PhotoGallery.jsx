@@ -63,7 +63,7 @@ export default function PhotoGallery({ photos, urls, onDelete, emptyText = 'No p
             {selecting ? 'Cancel compare' : 'Compare two'}
           </button>
           {selecting && (
-            <button onClick={() => setComparing(true)} disabled={selected.length !== 2} className="btn-press" style={{ ...ghost, background: 'var(--accent)', border: '1px solid var(--accent)', color: 'var(--bg-primary)', opacity: selected.length === 2 ? 1 : 0.5 }}>
+            <button onClick={() => setComparing(true)} disabled={selected.length !== 2} className="btn-press" style={{ ...ghost, background: 'var(--accent)', border: '1px solid var(--accent)', color: 'var(--accent-contrast)', opacity: selected.length === 2 ? 1 : 0.5 }}>
               Compare ({selected.length}/2)
             </button>
           )}

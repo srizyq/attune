@@ -106,7 +106,7 @@ function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, log
             <button
               onClick={handleLog}
               disabled={logging || !Number(servingsToLog)}
-              style={{ flex: 1, background: logging || !Number(servingsToLog) ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '9px', fontSize: 13, fontWeight: 600, color: logging || !Number(servingsToLog) ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: logging || !Number(servingsToLog) ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ flex: 1, background: logging || !Number(servingsToLog) ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '9px', fontSize: 13, fontWeight: 600, color: logging || !Number(servingsToLog) ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: logging || !Number(servingsToLog) ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               {logging ? 'Adding…' : 'Log'}
             </button>
@@ -204,7 +204,7 @@ export default function Recipes() {
           right={
             <button
             onClick={() => navigate('/food', { state: { openMealBuilder: true } })}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, color: 'var(--bg-primary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, color: 'var(--accent-contrast)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             <i className="ti ti-plus" /> New recipe
           </button>

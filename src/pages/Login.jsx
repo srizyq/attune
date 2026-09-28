@@ -184,7 +184,7 @@ export default function Login() {
               background: email && password ? 'var(--accent)' : 'var(--bg-card)',
               border: `1px solid ${email && password ? 'var(--accent)' : 'var(--border-default)'}`,
               borderRadius: '10px',
-              color: email && password ? 'var(--bg-primary)' : 'var(--text-hint)',
+              color: email && password ? 'var(--accent-contrast)' : 'var(--text-hint)',
               fontSize: '15px', fontWeight: 600,
               cursor: email && password && !loading ? 'pointer' : 'not-allowed',
               fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',

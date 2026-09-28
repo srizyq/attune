@@ -114,7 +114,7 @@ export default function CopyDayModal({ destDate, onClose, onCopied }) {
           <button
             onClick={handleCopy}
             disabled={!rows.length || copying}
-            style={{ width: '100%', background: !rows.length || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !rows.length || copying ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: !rows.length || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            style={{ width: '100%', background: !rows.length || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !rows.length || copying ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: !rows.length || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
           >
             {copying ? 'Copying…' : rows.length ? `Copy ${rows.length} item${rows.length === 1 ? '' : 's'} · ${Math.round(totalCal)} kcal` : 'Copy'}
           </button>

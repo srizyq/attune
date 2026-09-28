@@ -272,7 +272,7 @@ export default function Step3() {
               background: 'var(--accent)',
               border: '1px solid var(--accent)',
               borderRadius: '10px',
-              color: 'var(--bg-primary)',
+              color: 'var(--accent-contrast)',
               fontSize: '15px',
               fontWeight: 600,
               cursor: 'pointer',

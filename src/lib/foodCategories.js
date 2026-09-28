@@ -16,7 +16,7 @@
 // bucket.
 export const CATEGORY_STYLES = {
   burger:    { icon: "ti-burger",    color: "#c17a4a" },
-  meat:      { icon: "ti-meat",      color: "#6e8b74" },
+  meat:      { icon: "ti-meat",      color: "#e87a48" },
   seafood:   { icon: "ti-fish",      color: "#6aabcf" },
   egg:       { icon: "ti-egg",       color: "#e8c468" },
   cheese:    { icon: "ti-cheese",    color: "#e8b84a" },
@@ -25,8 +25,8 @@ export const CATEGORY_STYLES = {
   vegetable: { icon: "ti-carrot",    color: "#7fae5f" },
   nuts:      { icon: "ti-nut",       color: "#a67c52" },
   pizza:     { icon: "ti-pizza",     color: "#c07070" },
-  grain:     { icon: "ti-bread",     color: "#8c7b6b" },
-  soup:      { icon: "ti-soup",      color: "#8c7b6b" },
+  grain:     { icon: "ti-bread",     color: "#6c7054" },
+  soup:      { icon: "ti-soup",      color: "#6c7054" },
   sweet:     { icon: "ti-cookie",    color: "#d98fb0" },
   dessert:   { icon: "ti-ice-cream", color: "#d98fb0" },
   beverage:  { icon: "ti-cup",       color: "#6aabcf" },

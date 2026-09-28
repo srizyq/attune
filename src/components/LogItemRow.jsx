@@ -262,7 +262,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
             <button
               onClick={handleSave}
               disabled={saving || !servings}
-              style={{ background: saving || !servings ? 'var(--border-default)' : C.green, border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: saving || !servings ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: saving || !servings ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+              style={{ background: saving || !servings ? 'var(--border-default)' : C.green, border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: saving || !servings ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: saving || !servings ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
             >
               {saving ? 'Saving…' : 'Save'}
             </button>

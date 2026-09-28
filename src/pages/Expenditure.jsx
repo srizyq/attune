@@ -49,7 +49,7 @@ const WEIGHT_RANGES = [
 ];
 
 // Theme-invariant accents — identical hex in both themes by design.
-const ACCENT = '#6e8b74';
+const ACCENT = '#e87a48';
 const WATER_BLUE = '#6aabcf';
 const AI_PURPLE = '#9f97e8';
 
@@ -161,7 +161,7 @@ function LogWeightButton({ unit, onLog }) {
         placeholder={`Weight (${unit})`}
         style={{ width: 110, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '6px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
       />
-      <button onClick={submit} disabled={!value || saving} style={{ background: !value || saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: !value || saving ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <button onClick={submit} disabled={!value || saving} style={{ background: !value || saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: !value || saving ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         {saving ? 'Saving…' : 'Save'}
       </button>
       <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', fontSize: 12, padding: '8px 10px', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Cancel</button>
@@ -335,7 +335,7 @@ export default function Expenditure() {
   // properties — it needs a literal color string at render time.
   const isLight = theme === 'light';
   const chartTextMuted = isLight ? '#6b6b6b' : '#666666';
-  const chartGrid = isLight ? '#e7e7e5' : '#333a35';
+  const chartGrid = isLight ? '#e6dacb' : '#332c27';
 
   const trendPoints = useMemo(() => computeTrendWeight(chartWeightLogs), [chartWeightLogs]);
   const trendByDate = useMemo(() => new Map(trendPoints.map(p => [p.date, p.trend])), [trendPoints]);
@@ -408,7 +408,7 @@ export default function Expenditure() {
                 style={{
                   background: 'var(--accent)', border: 'none', borderRadius: 8,
                   padding: '10px 22px', fontSize: 14, fontWeight: 600,
-                  color: 'var(--bg-primary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  color: 'var(--accent-contrast)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
                   whiteSpace: 'nowrap', flexShrink: 0,
                 }}
               >

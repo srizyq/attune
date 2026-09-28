@@ -16,7 +16,7 @@ export default function DailyLogViewToggle({ value, onChange, fill = false }) {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: fill ? '9px 12px' : '6px 12px', borderRadius: 18, border: 'none', ...(fill ? { flex: 1 } : null),
             background: value === opt.id ? 'var(--accent)' : 'transparent',
-            color: value === opt.id ? 'var(--bg-primary)' : 'var(--text-muted)',
+            color: value === opt.id ? 'var(--accent-contrast)' : 'var(--text-muted)',
             fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
           }}
         >

@@ -941,7 +941,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           onClick={close}
           aria-label="Close camera"
           title="Close"
-          style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: 16, width: 38, height: 38, borderRadius: "50%", background: "rgba(25,29,27,0.6)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: 16, width: 38, height: 38, borderRadius: "50%", background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
         >
           ✕
         </button>
@@ -954,9 +954,9 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             style={{
               position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: 16,
               width: 38, height: 38, borderRadius: "50%",
-              background: torchOn ? "#e8c468" : "rgba(25,29,27,0.6)",
+              background: torchOn ? "#e8c468" : "rgba(20,17,16,0.6)",
               border: `1px solid ${torchOn ? "#e8c468" : "rgba(255,255,255,0.25)"}`,
-              color: torchOn ? "var(--bg-primary)" : "#fff", fontSize: 17,
+              color: torchOn ? "#181412" : "#fff", fontSize: 17,
               display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
             }}
           >
@@ -989,12 +989,12 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
                 <input
                   type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
                   value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
-                  style={{ flex: 1, minWidth: 0, background: "rgba(25,29,27,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
+                  style={{ flex: 1, minWidth: 0, background: "rgba(20,17,16,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
                 />
                 <button
                   type="submit"
                   disabled={!manualBarcode.replace(/\D/g, "")}
-                  style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--bg-primary)", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+                  style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
                 >
                   Look up
                 </button>
@@ -1002,7 +1002,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             ) : (
               <button
                 onClick={() => setManualEntryOpen(true)}
-                style={{ background: "rgba(25,29,27,0.6)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20, padding: "8px 16px", fontSize: 13, color: "#ccc", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20, padding: "8px 16px", fontSize: 13, color: "#ccc", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <i className="ti ti-keyboard" style={{ fontSize: 14 }} /> Enter barcode manually
               </button>
@@ -1061,7 +1061,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               <button
                 type="submit"
                 disabled={!manualBarcode.replace(/\D/g, "")}
-                style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--bg-primary)", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+                style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
               >
                 Look up
               </button>
@@ -1132,7 +1132,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
                   style={{
                     width: 36, flexShrink: 0, borderRadius: 8, fontSize: 12, fontFamily: "inherit", cursor: "pointer",
                     background: newProduct.servingUnit === u ? "var(--accent)" : "var(--bg-card)",
-                    color: newProduct.servingUnit === u ? "var(--bg-primary)" : "var(--text-secondary)",
+                    color: newProduct.servingUnit === u ? "var(--accent-contrast)" : "var(--text-secondary)",
                     border: `1px solid ${newProduct.servingUnit === u ? "var(--accent)" : "var(--border-default)"}`,
                   }}
                 >
@@ -1151,7 +1151,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               style={{
                 flex: 2, background: !newProduct.name.trim() || savingProduct ? "var(--border-default)" : "var(--accent)",
                 border: "none", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 600,
-                color: !newProduct.name.trim() || savingProduct ? "var(--text-muted)" : "var(--bg-primary)",
+                color: !newProduct.name.trim() || savingProduct ? "var(--text-muted)" : "var(--accent-contrast)",
                 cursor: !newProduct.name.trim() || savingProduct ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}>
               {savingProduct ? "Saving…" : "Save & continue"}
@@ -1309,7 +1309,7 @@ function CreateFoodModal({ onClose, onCreate, initialName, initialFood }) {
           <div><label style={labelStyle}>Sugar (g)</label><input style={fieldStyle} type="number" min="0" value={sugar} onChange={e => setSugar(e.target.value)} /></div>
         </div>
         {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)" }}>{error}</div>}
-        <button onClick={submit} disabled={!valid || saving} style={{ background: !valid || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !valid || saving ? "var(--text-muted)" : "var(--bg-primary)", cursor: !valid || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <button onClick={submit} disabled={!valid || saving} style={{ background: !valid || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !valid || saving ? "var(--text-muted)" : "var(--accent-contrast)", cursor: !valid || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {saving ? "Saving…" : "Save custom food"}
         </button>
       </div>
@@ -1422,7 +1422,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
             )
           )}
           {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 12 }}>{error}</div>}
-          <button onClick={submit} disabled={!name.trim() || saving} style={{ width: "100%", background: !name.trim() || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !name.trim() || saving ? "var(--text-muted)" : "var(--bg-primary)", cursor: !name.trim() || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <button onClick={submit} disabled={!name.trim() || saving} style={{ width: "100%", background: !name.trim() || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !name.trim() || saving ? "var(--text-muted)" : "var(--accent-contrast)", cursor: !name.trim() || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             {saving ? "Saving…" : !logNow ? (isEditing ? "Save changes" : "Save recipe") : logByTime ? `Save & log at ${formatTime12h(time)}` : `Save & log to ${meal}`}
           </button>
         </>
@@ -1542,7 +1542,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
           style={{
             width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
             background: justAdded ? "var(--accent-bg)" : "var(--accent)", border: justAdded ? "1px solid var(--accent-dark)" : "none",
-            color: justAdded ? "var(--accent)" : "var(--bg-primary)", fontSize: 15, lineHeight: 1,
+            color: justAdded ? "var(--accent)" : "var(--accent-contrast)", fontSize: 15, lineHeight: 1,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: justAdded ? "default" : "pointer", fontFamily: "inherit",
           }}
@@ -1624,7 +1624,7 @@ function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, se
       <button
         onClick={onAdd}
         disabled={disabled}
-        style={{ background: disabled ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 600, color: disabled ? "var(--text-muted)" : "var(--bg-primary)", cursor: disabled ? "not-allowed" : "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }}
+        style={{ background: disabled ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 600, color: disabled ? "var(--text-muted)" : "var(--accent-contrast)", cursor: disabled ? "not-allowed" : "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }}
       >
         {addLabel ? addLabel : logByTime ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
       </button>
@@ -2608,7 +2608,7 @@ export default function FoodSearch() {
         <div className="meal-builder-bar" style={{ background: "var(--bg-subtle)", border: "1px solid var(--accent-dark)", borderRadius: 12, padding: "10px 12px 10px 18px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
           <span style={{ fontSize: 13, color: "var(--accent)", whiteSpace: "nowrap" }}>Building recipe · {builderItems.length} item{builderItems.length !== 1 ? "s" : ""}</span>
           <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-            <button onClick={() => setBuilderReviewOpen(true)} style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "var(--bg-primary)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Review & save</button>
+            <button onClick={() => setBuilderReviewOpen(true)} style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Review & save</button>
             <button onClick={cancelBuilder} style={{ background: "none", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Cancel</button>
           </div>
         </div>

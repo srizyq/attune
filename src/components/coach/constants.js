@@ -2,10 +2,8 @@
 // are the same hex in both themes by design. ACCENT is a literal (not
 // var(--accent)) because it's fed into Chart.js canvas contexts and
 // string-concatenated with a hex alpha suffix elsewhere (ACCENT + '22'),
-// neither of which can resolve a CSS custom property — it uses the
-// secondary sage tone, which (like water-blue/ai-purple) is deliberately
-// identical across both themes.
-export const ACCENT = '#6e8b74';
+// neither of which can resolve a CSS custom property.
+export const ACCENT = '#e87a48';
 export const WATER_BLUE = '#6aabcf';
 export const AI_PURPLE = '#9f97e8';
 export const RANGES = [{ id: 7, label: '7 days' }, { id: 30, label: '30 days' }, { id: 90, label: '90 days' }];

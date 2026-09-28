@@ -66,7 +66,7 @@ function CoachPassUpsell({ profile, pendingConfirmation, onGoToProfile }) {
           onClick={handleSubscribe}
           disabled={loading}
           className="btn-press"
-          style={{ padding: '10px 20px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
+          style={{ padding: '10px 20px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
         >
           {loading ? 'Loading…' : coachPassButtonLabel(profile)}
         </button>

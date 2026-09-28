@@ -375,7 +375,7 @@ export default function Step2() {
               background: isComplete ? 'var(--accent)' : 'var(--bg-card)',
               border: `1px solid ${isComplete ? 'var(--accent)' : 'var(--border-default)'}`,
               borderRadius: '10px',
-              color: isComplete ? 'var(--bg-primary)' : 'var(--text-hint)',
+              color: isComplete ? 'var(--accent-contrast)' : 'var(--text-hint)',
               fontSize: '15px',
               fontWeight: 600,
               cursor: isComplete ? 'pointer' : 'not-allowed',

@@ -123,7 +123,7 @@ export default function CheckinFormEditor({ clientData, admin }) {
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <button onClick={() => edit(qs => [...qs, newQuestion(qs)])} disabled={questions.length >= MAX_QUESTIONS} className="btn-press" style={{ ...ghost, opacity: questions.length >= MAX_QUESTIONS ? 0.5 : 1 }}>+ Add question</button>
-        <button onClick={handleSave} disabled={saving} className="btn-press" style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <button onClick={handleSave} disabled={saving} className="btn-press" style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {saving ? 'Saving…' : form ? 'Save changes' : 'Save check-in'}
         </button>
         {form && <button onClick={handleDelete} className="btn-press" style={{ ...ghost, border: 'none', color: 'var(--text-muted)' }}>Remove</button>}

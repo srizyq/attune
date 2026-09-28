@@ -157,7 +157,7 @@ export default function GroupedListVariant() {
                   <button key={opt.id} onClick={() => setTheme(opt.id)} style={{
                     display: 'flex', alignItems: 'center', padding: '7px 12px', borderRadius: 18, border: 'none',
                     background: theme === opt.id ? 'var(--accent)' : 'transparent',
-                    color: theme === opt.id ? 'var(--bg-primary)' : 'var(--text-muted)', cursor: 'pointer',
+                    color: theme === opt.id ? 'var(--accent-contrast)' : 'var(--text-muted)', cursor: 'pointer',
                   }}>
                     <i className={`ti ${opt.icon}`} style={{ fontSize: 14 }} />
                   </button>

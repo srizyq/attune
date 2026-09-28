@@ -125,7 +125,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
               style={{
                 position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16,
                 width: 38, height: 38, borderRadius: '50%',
-                background: 'rgba(25,29,27,0.6)', border: '1px solid rgba(255,255,255,0.25)',
+                background: 'rgba(20,17,16,0.6)', border: '1px solid rgba(255,255,255,0.25)',
                 color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               }}
             >
@@ -141,9 +141,9 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
               style={{
                 position: 'absolute', top: fullScreen ? 'calc(16px + env(safe-area-inset-top))' : 10, right: fullScreen ? 16 : 10,
                 width: fullScreen ? 38 : 32, height: fullScreen ? 38 : 32, borderRadius: '50%',
-                background: torchOn ? '#e8c468' : 'rgba(25,29,27,0.6)',
+                background: torchOn ? '#e8c468' : 'rgba(20,17,16,0.6)',
                 border: `1px solid ${torchOn ? '#e8c468' : 'rgba(255,255,255,0.25)'}`,
-                color: torchOn ? 'var(--bg-primary)' : '#fff', fontSize: fullScreen ? 17 : 14,
+                color: torchOn ? '#181412' : '#fff', fontSize: fullScreen ? 17 : 14,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               }}
             >
@@ -171,7 +171,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
                 title="Choose from library"
                 style={{
                   position: 'absolute', left: fullScreen ? 32 : 18, width: fullScreen ? 48 : 40, height: fullScreen ? 48 : 40, borderRadius: '50%',
-                  background: 'rgba(25,29,27,0.7)', border: '1px solid rgba(255,255,255,0.25)',
+                  background: 'rgba(20,17,16,0.7)', border: '1px solid rgba(255,255,255,0.25)',
                   color: '#e8e8e8', fontSize: fullScreen ? 20 : 17, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                 }}
               >

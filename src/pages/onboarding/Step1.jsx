@@ -171,7 +171,7 @@ export default function Step1() {
               background: selected ? 'var(--accent)' : 'var(--bg-card)',
               border: `1px solid ${selected ? 'var(--accent)' : 'var(--border-default)'}`,
               borderRadius: '10px',
-              color: selected ? 'var(--bg-primary)' : 'var(--text-hint)',
+              color: selected ? 'var(--accent-contrast)' : 'var(--text-hint)',
               fontSize: '15px',
               fontWeight: 600,
               cursor: selected ? 'pointer' : 'not-allowed',

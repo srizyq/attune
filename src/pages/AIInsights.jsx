@@ -273,7 +273,7 @@ export default function AIInsights() {
                     background: selectedMood && selectedEnergy ? "var(--accent)" : "var(--bg-card)",
                     border: "none", borderRadius: 8, padding: "10px 22px",
                     fontSize: 13, fontWeight: 600,
-                    color: selectedMood && selectedEnergy ? "var(--bg-primary)" : "var(--text-hint)",
+                    color: selectedMood && selectedEnergy ? "var(--accent-contrast)" : "var(--text-hint)",
                     cursor: selectedMood && selectedEnergy && !loadingMood ? "pointer" : "not-allowed",
                     transition: "background 0.2s, color 0.2s", fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}

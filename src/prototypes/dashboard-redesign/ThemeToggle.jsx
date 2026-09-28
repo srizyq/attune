@@ -18,7 +18,7 @@ export default function ThemeToggle({ theme, onToggle, style, activeColor, track
         style={{
           position: 'absolute', top: 2, left: isDark ? 2 : 18, width: 20, height: 20,
           borderRadius: '50%', background: activeColor, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 11, color: 'var(--bg-primary)',
+          justifyContent: 'center', fontSize: 11, color: 'var(--accent-contrast)',
           transition: 'left 200ms cubic-bezier(0.23, 1, 0.32, 1)',
         }}
       >

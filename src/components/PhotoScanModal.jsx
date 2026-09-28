@@ -237,7 +237,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           onClick={close}
           aria-label="Close"
           title="Close"
-          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(25,29,27,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(20,17,16,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           ✕
         </button>
@@ -332,7 +332,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                 style={{
                   background: readingLabel ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7,
                   padding: '7px 14px', fontSize: 12, fontWeight: 600,
-                  color: readingLabel ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: readingLabel ? 'not-allowed' : 'pointer',
+                  color: readingLabel ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: readingLabel ? 'not-allowed' : 'pointer',
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
@@ -393,7 +393,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           <button
             onClick={handleAdd}
             disabled={adding}
-            style={{ width: '100%', background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ width: '100%', background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {adding ? 'Adding…' : logByTime ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
           </button>

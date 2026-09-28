@@ -16,7 +16,7 @@ const btn = (primary) => ({
   fontFamily: "'Plus Jakarta Sans', sans-serif",
   background: primary ? 'var(--accent)' : 'transparent',
   border: `1px solid ${primary ? 'var(--accent)' : 'var(--border-default)'}`,
-  color: primary ? 'var(--bg-primary)' : 'var(--accent)',
+  color: primary ? 'var(--accent-contrast)' : 'var(--accent)',
 });
 
 function SectionLabel({ icon, children }) {
