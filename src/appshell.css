@@ -35,8 +35,8 @@
 
 .app-sidebar {
   width: 52px;
-  background: var(--bg-primary, #0f0f0f);
-  border-right: 1px solid var(--border-default, #1e1e1e);
+  background: var(--bg-primary, #1e2220);
+  border-right: 1px solid var(--border-default, #333a35);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -69,22 +69,22 @@
 }
 
 .app-nav-icon.is-active {
-  color: var(--accent, #8fbc8f);
-  background: var(--accent-bg, #0f1a0f);
-  border-color: var(--accent-border, #1e3a1e);
+  color: var(--accent, #6e8b74);
+  background: var(--accent-bg, #1a211d);
+  border-color: var(--accent-border, #34433a);
 }
 
 .app-nav-avatar {
   width: 32px;
   height: 32px;
-  background: var(--bg-card, #181818);
-  border: 1px solid var(--border-default, #2a2a2a);
+  background: var(--bg-card, #262b28);
+  border: 1px solid var(--border-default, #333a35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  color: var(--accent, #8fbc8f);
+  color: var(--accent, #6e8b74);
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -92,8 +92,8 @@
 }
 
 .app-nav-avatar.is-active {
-  background: var(--accent-bg, #0f1a0f);
-  border-color: var(--accent-dark, #4a7a4a);
+  background: var(--accent-bg, #1a211d);
+  border-color: var(--accent-dark, #5a7863);
 }
 
 .app-bottom-nav {
@@ -128,8 +128,8 @@
     bottom: calc(var(--safe-bottom) + var(--bottom-nav-gap-v));
     height: 62px;
     box-sizing: content-box;
-    background: var(--bg-card, #181818);
-    border: 1px solid var(--border-default, #2a2a2a);
+    background: var(--bg-card, #262b28);
+    border: 1px solid var(--border-default, #333a35);
     border-radius: 999px;
     /* Definition against whatever's scrolled underneath — an edge-attached
        bar only needed a top border since the screen edge did the rest; a
@@ -199,8 +199,8 @@
      on the accent fill for contrast, the same pairing the "+" button and
      Settings' desktop avatar already use on the same accent colour. */
   .app-bottom-icon-content.is-active {
-    color: #0f0f0f;
-    background: var(--accent, #8fbc8f);
+    color: var(--bg-primary);
+    background: var(--accent, #6e8b74);
   }
 
   .app-bottom-add {
@@ -209,9 +209,9 @@
     align-self: stretch;
     margin: 5px 4px;
     border-radius: 999px;
-    background: var(--accent, #8fbc8f);
+    background: var(--accent, #6e8b74);
     border: none;
-    color: #0f0f0f;
+    color: var(--bg-primary);
     font-size: 28px;
     display: flex;
     align-items: center;

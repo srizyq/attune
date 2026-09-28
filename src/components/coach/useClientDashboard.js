@@ -22,7 +22,7 @@ export function useClientDashboard(client, clientData) {
 
   const isLight = theme === 'light';
   const chartTextMuted = isLight ? '#6b6b6b' : '#666666';
-  const chartGrid = isLight ? '#e7e7e5' : '#2a2a2a';
+  const chartGrid = isLight ? '#e7e7e5' : '#333a35';
 
   const { dailyData, loading: historyLoading } = useHistory(dateNDaysAgo(range - 1), today, client.id);
   const { dailyData: badgeData } = useHistory(dateNDaysAgo(59), today, client.id);

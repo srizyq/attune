@@ -64,7 +64,7 @@ export default function CoachConsentCard({ link, variant = 'invite', busy = fals
           onClick={onAccept}
           disabled={busy}
           className="btn-press"
-          style={{ padding: '10px 20px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: busy ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          style={{ padding: '10px 20px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: busy ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           {busy ? 'Saving…' : isInvite ? 'Accept and connect' : 'Got it'}
         </button>

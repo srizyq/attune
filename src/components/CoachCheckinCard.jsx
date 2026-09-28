@@ -63,7 +63,7 @@ function FormCard({ form, onSubmit }) {
               {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
                 <button key={n} onClick={() => set(item.id, n)} aria-pressed={answers[item.id] === n} className="btn-press"
                   style={{ width: 34, height: 34, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    background: answers[item.id] === n ? 'var(--accent)' : 'var(--bg-primary)', border: `1px solid ${answers[item.id] === n ? 'var(--accent)' : 'var(--border-default)'}`, color: answers[item.id] === n ? '#0f0f0f' : 'var(--text-secondary)' }}>{n}</button>
+                    background: answers[item.id] === n ? 'var(--accent)' : 'var(--bg-primary)', border: `1px solid ${answers[item.id] === n ? 'var(--accent)' : 'var(--border-default)'}`, color: answers[item.id] === n ? 'var(--bg-primary)' : 'var(--text-secondary)' }}>{n}</button>
               ))}
             </div>
           )}
@@ -72,7 +72,7 @@ function FormCard({ form, onSubmit }) {
               {[['Yes', true], ['No', false]].map(([label, value]) => (
                 <button key={label} onClick={() => set(item.id, value)} aria-pressed={answers[item.id] === value} className="btn-press"
                   style={{ padding: '8px 22px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    background: answers[item.id] === value ? 'var(--accent)' : 'var(--bg-primary)', border: `1px solid ${answers[item.id] === value ? 'var(--accent)' : 'var(--border-default)'}`, color: answers[item.id] === value ? '#0f0f0f' : 'var(--text-secondary)' }}>{label}</button>
+                    background: answers[item.id] === value ? 'var(--accent)' : 'var(--bg-primary)', border: `1px solid ${answers[item.id] === value ? 'var(--accent)' : 'var(--border-default)'}`, color: answers[item.id] === value ? 'var(--bg-primary)' : 'var(--text-secondary)' }}>{label}</button>
               ))}
             </div>
           )}
@@ -84,7 +84,7 @@ function FormCard({ form, onSubmit }) {
       ))}
 
       {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 12px' }}>{error}</p>}
-      <button onClick={submit} disabled={busy} className="btn-press" style={{ padding: '10px 20px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: busy ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <button onClick={submit} disabled={busy} className="btn-press" style={{ padding: '10px 20px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: busy ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         {busy ? 'Sending…' : 'Send to coach'}
       </button>
     </div>

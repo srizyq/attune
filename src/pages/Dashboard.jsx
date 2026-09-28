@@ -34,7 +34,7 @@ import { round1 } from '../lib/format';
 import { hourToHHMM } from '../lib/mealTime';
 
 // Accent/water-blue/ai-purple are the same hex in both themes by design.
-const ACCENT = '#8fbc8f';
+const ACCENT = 'var(--accent)';
 const WATER_BLUE = '#6aabcf';
 const AI_PURPLE = '#9f97e8';
 
@@ -127,7 +127,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
 
         {recent.length >= 2 && (
           <div style={{ marginBottom: 16 }}>
-            <WeightSparkline points={recent} color="#8fbc8f" />
+            <WeightSparkline points={recent} color="var(--accent)" />
           </div>
         )}
 
@@ -159,7 +159,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
             disabled={!value || saving}
             style={{
               padding: '11px 18px', background: !value || saving ? 'var(--border-default)' : 'var(--accent)',
-              border: 'none', borderRadius: 10, color: !value || saving ? 'var(--text-muted)' : '#0f0f0f',
+              border: 'none', borderRadius: 10, color: !value || saving ? 'var(--text-muted)' : 'var(--bg-primary)',
               fontSize: 14, fontWeight: 600, cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
@@ -752,7 +752,7 @@ function StreakStrip({ byDate, onSelectDay }) {
               fontSize: 10, fontWeight: 700,
               background: logged ? 'var(--accent)' : 'transparent',
               border: `1px solid ${logged ? 'var(--accent)' : isToday ? 'var(--border-strong)' : 'var(--border-default)'}`,
-              color: logged ? '#0f0f0f' : 'var(--text-hint)',
+              color: logged ? 'var(--bg-primary)' : 'var(--text-hint)',
               opacity: isFuture ? 0.4 : 1,
               cursor: isFuture ? 'default' : 'pointer',
             }}

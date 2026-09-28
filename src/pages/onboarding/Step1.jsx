@@ -16,7 +16,7 @@ const goals = [
     label: 'Stay balanced',
     desc: 'Maintain weight and build healthy habits',
     icon: '◎',
-    color: '#8fbc8f',
+    color: 'var(--accent)',
   },
   {
     id: 'build',
@@ -93,7 +93,7 @@ export default function Step1() {
                   width: '48px',
                   height: '48px',
                   borderRadius: '10px',
-                  background: isSelected ? `${g.color}18` : 'var(--bg-card)',
+                  background: isSelected ? `color-mix(in srgb, ${g.color} 9%, transparent)` : 'var(--bg-card)',
                   border: `1px solid ${isSelected ? g.color : 'var(--border-default)'}`,
                   display: 'flex',
                   alignItems: 'center',
@@ -136,7 +136,7 @@ export default function Step1() {
                   transition: 'all 0.2s ease',
                 }}>
                   {isSelected && (
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0f0f0f' }} />
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--bg-primary)' }} />
                   )}
                 </div>
               </button>
@@ -171,7 +171,7 @@ export default function Step1() {
               background: selected ? 'var(--accent)' : 'var(--bg-card)',
               border: `1px solid ${selected ? 'var(--accent)' : 'var(--border-default)'}`,
               borderRadius: '10px',
-              color: selected ? '#0f0f0f' : 'var(--text-hint)',
+              color: selected ? 'var(--bg-primary)' : 'var(--text-hint)',
               fontSize: '15px',
               fontWeight: 600,
               cursor: selected ? 'pointer' : 'not-allowed',

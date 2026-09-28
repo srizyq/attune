@@ -19,7 +19,7 @@ const MEAL_OPTIONS = [
 // own conversion. It's low-impact there since this only renders when a
 // row is actually expanded, not on page load.
 const C = {
-  green: '#8fbc8f', blue: '#6aabcf', purple: '#9f97e8',
+  green: 'var(--accent)', blue: '#6aabcf', purple: '#9f97e8',
 };
 
 const fieldStyle = { width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '7px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
@@ -262,7 +262,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
             <button
               onClick={handleSave}
               disabled={saving || !servings}
-              style={{ background: saving || !servings ? 'var(--border-default)' : C.green, border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: saving || !servings ? 'var(--text-muted)' : '#0f0f0f', cursor: saving || !servings ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+              style={{ background: saving || !servings ? 'var(--border-default)' : C.green, border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: saving || !servings ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: saving || !servings ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
             >
               {saving ? 'Saving…' : 'Save'}
             </button>

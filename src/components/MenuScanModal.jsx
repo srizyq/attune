@@ -63,7 +63,7 @@ function TabToggle({ value, onChange }) {
           style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 10px', borderRadius: 18, border: 'none',
             background: value === opt.id ? 'var(--accent)' : 'transparent',
-            color: value === opt.id ? '#0f0f0f' : 'var(--text-muted)',
+            color: value === opt.id ? 'var(--bg-primary)' : 'var(--text-muted)',
             fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
           }}
         >
@@ -254,13 +254,13 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
           onClick={close}
           aria-label="Close"
           title="Close"
-          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(25,29,27,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           ✕
         </button>
         {analyzing && (
           <div style={{ position: 'absolute', bottom: 'calc(40px + env(safe-area-inset-bottom))', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#fff', fontSize: 13, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#8fbc8f', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite' }} />
             Reading the whole menu…
           </div>
         )}
@@ -322,7 +322,7 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
                     style={{ textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: 14, cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: '#0f0f0f', background: i === 0 ? 'var(--accent)' : 'var(--border-strong)', borderRadius: 5, padding: '2px 6px' }}>#{i + 1}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--bg-primary)', background: i === 0 ? 'var(--accent)' : 'var(--border-strong)', borderRadius: 5, padding: '2px 6px' }}>#{i + 1}</span>
                       <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600 }}>{pick.name}</span>
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: hasModification(pick.modifications) ? 2 : 10, lineHeight: 1.4 }}>{pick.items}</div>
@@ -435,7 +435,7 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
             <button
               onClick={handleLog}
               disabled={adding}
-              style={{ flex: 2, background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : '#0f0f0f', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ flex: 2, background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : 'var(--bg-primary)', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               {adding ? 'Adding…' : 'Confirm & log'}
             </button>

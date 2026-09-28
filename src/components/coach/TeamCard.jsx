@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { clientCountLabel, inviteExpiry, validateTeamName } from '../../lib/coachTeam';
 import { normalizeInviteCode } from '../../lib/coachInvite';
 
-const primary = { padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" };
+const primary = { padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" };
 const ghost = { padding: '8px 14px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" };
 const quiet = { ...ghost, border: 'none', color: 'var(--text-muted)', padding: '6px 8px' };
 

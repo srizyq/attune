@@ -86,7 +86,7 @@ export default function MicroTargetsCard({ clientData, onSave }) {
           ))}
           {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 12px' }}>{error}</p>}
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={save} disabled={saving} className="btn-press" style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <button onClick={save} disabled={saving} className="btn-press" style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {saving ? 'Saving…' : 'Save nutrient targets'}
             </button>
             <button onClick={() => setEditing(false)} className="btn-press" style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>

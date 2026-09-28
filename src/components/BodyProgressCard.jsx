@@ -90,7 +90,7 @@ export default function BodyProgressCard() {
               <label htmlFor="body-date" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Date</label>
               <input id="body-date" type="date" value={date} max={today} onChange={e => setDate(e.target.value || today)} style={input} />
             </div>
-            <button onClick={saveMeasurement} disabled={!valid || saving} className="btn-press" style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: !valid || saving ? 0.5 : 1 }}>
+            <button onClick={saveMeasurement} disabled={!valid || saving} className="btn-press" style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: !valid || saving ? 0.5 : 1 }}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>

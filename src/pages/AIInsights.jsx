@@ -242,7 +242,7 @@ export default function AIInsights() {
                         style={{
                           minHeight: 36, borderRadius: 8,
                           border: `1px solid ${selectedEnergy >= n ? "var(--border-active)" : "var(--border-default)"}`,
-                          background: selectedEnergy >= n ? "#8fbc8f22" : "transparent",
+                          background: selectedEnergy >= n ? "color-mix(in srgb, var(--accent) 13%, transparent)" : "transparent",
                           color: selectedEnergy >= n ? "var(--accent)" : "var(--text-hint)",
                           fontSize: 11, fontWeight: 600, cursor: "pointer",
                           transition: "all 0.1s", fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -273,7 +273,7 @@ export default function AIInsights() {
                     background: selectedMood && selectedEnergy ? "var(--accent)" : "var(--bg-card)",
                     border: "none", borderRadius: 8, padding: "10px 22px",
                     fontSize: 13, fontWeight: 600,
-                    color: selectedMood && selectedEnergy ? "#0f0f0f" : "var(--text-hint)",
+                    color: selectedMood && selectedEnergy ? "var(--bg-primary)" : "var(--text-hint)",
                     cursor: selectedMood && selectedEnergy && !loadingMood ? "pointer" : "not-allowed",
                     transition: "background 0.2s, color 0.2s", fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
@@ -301,7 +301,7 @@ export default function AIInsights() {
                   minHeight: 64, display: "flex", alignItems: "center", gap: 12,
                 }}>
                   <div style={{
-                    width: 28, height: 28, background: "#4a7a4a22",
+                    width: 28, height: 28, background: "color-mix(in srgb, var(--accent-dark) 13%, transparent)",
                     border: "1px solid var(--border-active)", borderRadius: 6,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,

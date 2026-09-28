@@ -112,7 +112,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
           <video ref={videoRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', display: ready ? 'block' : 'none' }} />
           {!ready && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#555' }}>
-              <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #333', borderTopColor: '#8fbc8f', animation: 'spin 0.8s linear infinite' }} />
+              <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #333', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite' }} />
               <div style={{ fontSize: 12 }}>Opening camera…</div>
             </div>
           )}
@@ -125,7 +125,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
               style={{
                 position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16,
                 width: 38, height: 38, borderRadius: '50%',
-                background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.25)',
+                background: 'rgba(25,29,27,0.6)', border: '1px solid rgba(255,255,255,0.25)',
                 color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               }}
             >
@@ -141,9 +141,9 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
               style={{
                 position: 'absolute', top: fullScreen ? 'calc(16px + env(safe-area-inset-top))' : 10, right: fullScreen ? 16 : 10,
                 width: fullScreen ? 38 : 32, height: fullScreen ? 38 : 32, borderRadius: '50%',
-                background: torchOn ? '#e8c468' : 'rgba(20,20,20,0.6)',
+                background: torchOn ? '#e8c468' : 'rgba(25,29,27,0.6)',
                 border: `1px solid ${torchOn ? '#e8c468' : 'rgba(255,255,255,0.25)'}`,
-                color: torchOn ? '#0f0f0f' : '#fff', fontSize: fullScreen ? 17 : 14,
+                color: torchOn ? 'var(--bg-primary)' : '#fff', fontSize: fullScreen ? 17 : 14,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               }}
             >
@@ -171,7 +171,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
                 title="Choose from library"
                 style={{
                   position: 'absolute', left: fullScreen ? 32 : 18, width: fullScreen ? 48 : 40, height: fullScreen ? 48 : 40, borderRadius: '50%',
-                  background: 'rgba(20,20,20,0.7)', border: '1px solid rgba(255,255,255,0.25)',
+                  background: 'rgba(25,29,27,0.7)', border: '1px solid rgba(255,255,255,0.25)',
                   color: '#e8e8e8', fontSize: fullScreen ? 20 : 17, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                 }}
               >
@@ -192,7 +192,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
       ) : (
         <div style={fullScreen
           ? { position: 'fixed', inset: 0, background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 32px', textAlign: 'center' }
-          : { height: 180, border: '1px dashed #2a2a2a', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 20px', textAlign: 'center' }}>
+          : { height: 180, border: '1px dashed var(--border-default)', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 20px', textAlign: 'center' }}>
           {fullScreen && onClose && (
             <button
               onClick={onClose}
@@ -206,7 +206,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
           <div style={{ fontSize: 12, color: '#777' }}>{error}</div>
           <button
             onClick={() => fileInputRef.current?.click()}
-            style={{ marginTop: 4, background: 'var(--accent-bg, #0f1a0f)', border: '1px solid var(--border-active, #3a5a3a)', borderRadius: 8, padding: '8px 16px', fontSize: 13, color: 'var(--accent, #8fbc8f)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ marginTop: 4, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             Choose a photo
           </button>

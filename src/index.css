@@ -16,21 +16,23 @@
 }
 
 :root {
-  --bg-primary: #0f0f0f;
-  --bg-card: #181818;
-  --bg-subtle: #141414;
-  --border-default: #2a2a2a;
-  --border-active: #3a5a3a;
+  --bg-primary: #1e2220;
+  --bg-card: #262b28;
+  --bg-subtle: #191d1b;
+  --border-default: #333a35;
+  --border-active: #5a7863;
   --border-strong: #f5f5f2;
-  --accent: #8fbc8f;
-  --accent-dark: #4a7a4a;
-  --accent-bg: #0f1a0f;
-  --accent-border: #1e3a1e;
+  --accent: #6e8b74;
+  --accent-dark: #5a7863;
+  --accent-secondary: #6e8b74;
+  --accent-tertiary: #8c7b6b;
+  --accent-bg: #1a211d;
+  --accent-border: #34433a;
   --accent-strong: var(--accent);
   --danger-strong: var(--danger);
   --water-blue: #6aabcf;
   --ai-purple: #9f97e8;
-  --warning: #b48250;
+  --warning: #8c7b6b;
   --danger: #c07070;
   --gold: #e8c468;
   --text-primary: #e8e8e8;
@@ -41,7 +43,7 @@
      decoration. Lightened to ~5.2:1 / ~4.5:1 without touching font-size. */
   --text-muted: #858585;
   --text-hint: #7b7b7b;
-  --pill-track: #1c1c1a;
+  --pill-track: #1c211d;
   --pill-bg: #f5f5f2;
   --pill-text: #0a0a0a;
   /* One outline for every card in the app. Dashboard's cards always used
@@ -65,26 +67,32 @@
    have. [data-theme="dark"] restates the same values as :root above
    (so app dark mode == today's app, unchanged) rather than relying on
    inheritance, so both states are explicit and neither is an implicit
-   fallback. Colors that are genuinely theme-invariant (accent, ai-purple,
-   water-blue, warning, danger) are deliberately IDENTICAL in both blocks
-   — same hex both ways, since keeping the existing color scheme was the
-   explicit ask; only backgrounds, borders, and text flip. */
+   fallback. Colors that are genuinely theme-invariant (ai-purple,
+   water-blue, warning, danger, accent-secondary, accent-tertiary) are
+   deliberately IDENTICAL in both blocks — same hex both ways, since those
+   hues don't need to shift for contrast. --accent and --accent-dark swap
+   which brand shade (secondary vs primary sage) they point to per theme —
+   dark mode needs the lighter sage to read against a near-black surface,
+   light mode needs the deeper sage against white — everything else that
+   flips is backgrounds, borders, and text. */
 [data-theme='dark'] {
-  --bg-primary: #0f0f0f;
-  --bg-card: #181818;
-  --bg-subtle: #141414;
-  --border-default: #2a2a2a;
-  --border-active: #3a5a3a;
+  --bg-primary: #1e2220;
+  --bg-card: #262b28;
+  --bg-subtle: #191d1b;
+  --border-default: #333a35;
+  --border-active: #5a7863;
   --border-strong: #f5f5f2;
-  --accent: #8fbc8f;
-  --accent-dark: #4a7a4a;
-  --accent-bg: #0f1a0f;
-  --accent-border: #1e3a1e;
+  --accent: #6e8b74;
+  --accent-dark: #5a7863;
+  --accent-secondary: #6e8b74;
+  --accent-tertiary: #8c7b6b;
+  --accent-bg: #1a211d;
+  --accent-border: #34433a;
   --accent-strong: var(--accent);
   --danger-strong: var(--danger);
   --water-blue: #6aabcf;
   --ai-purple: #9f97e8;
-  --warning: #b48250;
+  --warning: #8c7b6b;
   --danger: #c07070;
   --gold: #e8c468;
   --text-primary: #e8e8e8;
@@ -95,7 +103,7 @@
      decoration. Lightened to ~5.2:1 / ~4.5:1 without touching font-size. */
   --text-muted: #858585;
   --text-hint: #7b7b7b;
-  --pill-track: #1c1c1a;
+  --pill-track: #1c211d;
   --pill-bg: #f5f5f2;
   --pill-text: #0a0a0a;
   --card-border: var(--border-strong);
@@ -113,24 +121,29 @@
   --bg-card: #f2f4ee;
   --bg-subtle: #f9faf7;
   --border-default: #e3e6dc;
-  --border-active: #8fbc8f;
+  --border-active: #5a7863;
   --border-strong: #0a0a0a;
-  --accent: #8fbc8f;
-  --accent-dark: #4a7a4a;
-  --accent-bg: #eef5ee;
-  --accent-border: #d3e8d3;
-  /* accent/danger are deliberately identical hex in both themes (see the
-     comment on the dark block above) since the sage/coral hues are the
-     product's real palette, not just a dark-mode choice — but that same
-     pastel-on-black-friendly softness reads as washed out on white for
-     an actual data mark (a filled chart bar, not a button or icon). These
-     restate the base color unchanged in dark and step to a deeper, more
-     saturated shade of the same hue only in light, for exactly that use. */
+  --accent: #5a7863;
+  --accent-dark: #46604f;
+  --accent-secondary: #6e8b74;
+  --accent-tertiary: #8c7b6b;
+  --accent-bg: #eef2ee;
+  --accent-border: #d6e0d3;
+  /* danger is deliberately identical hex in both themes (see the comment
+     on the dark block above) since that coral hue is the product's real
+     palette, not just a dark-mode choice — but that same pastel-on-black
+     softness reads as washed out on white for an actual data mark (a
+     filled chart bar, not a button or icon). --danger-strong restates the
+     base color unchanged in dark and steps to a deeper, more saturated
+     shade only in light, for exactly that use. --accent works the other
+     way: dark mode already points --accent at the lighter secondary sage,
+     so light mode's --accent-strong just steps to the deeper --accent-dark
+     shade for the same "needs to read as a data mark" cases. */
   --accent-strong: var(--accent-dark);
   --danger-strong: #a84747;
   --water-blue: #6aabcf;
   --ai-purple: #9f97e8;
-  --warning: #b48250;
+  --warning: #8c7b6b;
   --danger: #c07070;
   --gold: #e8c468;
   --text-primary: #0a0a0a;

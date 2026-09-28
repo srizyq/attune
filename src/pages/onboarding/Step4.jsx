@@ -302,7 +302,7 @@ export default function Step4() {
             background: email && password.length >= 8 && agreed ? 'var(--accent)' : 'var(--bg-card)',
             border: `1px solid ${email && password.length >= 8 && agreed ? 'var(--accent)' : 'var(--border-default)'}`,
             borderRadius: '10px',
-            color: email && password.length >= 8 && agreed ? '#0f0f0f' : 'var(--text-hint)',
+            color: email && password.length >= 8 && agreed ? 'var(--bg-primary)' : 'var(--text-hint)',
             fontSize: '15px',
             fontWeight: 600,
             cursor: email && password.length >= 8 && agreed && !loading ? 'pointer' : 'not-allowed',

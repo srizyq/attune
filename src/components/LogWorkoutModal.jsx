@@ -72,7 +72,7 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
               style={{
                 flex: 1, padding: '8px 0', borderRadius: 18, border: 'none',
                 background: intensity === i.id ? 'var(--accent)' : 'transparent',
-                color: intensity === i.id ? '#0f0f0f' : 'var(--text-muted)',
+                color: intensity === i.id ? 'var(--bg-primary)' : 'var(--text-muted)',
                 fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
@@ -106,7 +106,7 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
           disabled={saving}
           style={{
             width: '100%', background: saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8,
-            padding: '12px', fontSize: 14, fontWeight: 600, color: saving ? 'var(--text-muted)' : '#0f0f0f',
+            padding: '12px', fontSize: 14, fontWeight: 600, color: saving ? 'var(--text-muted)' : 'var(--bg-primary)',
             cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
           }}
         >

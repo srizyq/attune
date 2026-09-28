@@ -132,7 +132,7 @@ const CANDIDATES = [
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.proteinBeforeNoon_g >= 30,
-    icon: '⚡', title: 'Protein timing', accentColor: '#8fbc8f',
+    icon: '⚡', title: 'Protein timing', accentColor: '#6e8b74',
     body: (c) =>
       `You average ${c.withAvg.toFixed(1)}/10 energy on days you log 30g+ protein before noon, vs ${c.withoutAvg.toFixed(1)}/10 otherwise — a ${Math.abs(c.delta).toFixed(1)}-point ${c.delta >= 0 ? 'lift' : 'drop'} across ${c.withCount + c.withoutCount} logged days.`,
   },
@@ -146,7 +146,7 @@ const CANDIDATES = [
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.carbs_g > 0 && d.protein_g > 0 && d.carbs_g / Math.max(d.protein_g, 1) > 2.5,
-    icon: '🍚', title: 'Carb-heavy days', accentColor: '#b48250',
+    icon: '🍚', title: 'Carb-heavy days', accentColor: '#8c7b6b',
     body: (c) =>
       `On carb-heavy days (carbs more than 2.5x your protein), energy averages ${c.withAvg.toFixed(1)}/10 vs ${c.withoutAvg.toFixed(1)}/10 on more balanced days.`,
   },
@@ -227,7 +227,7 @@ export function generateInsights(dailyData, max = 3) {
     const daysCheckedIn = dailyData.filter(d => d.mood != null).length;
     const needed = Math.max(0, MIN_SAMPLE * 2 - Math.min(daysLogged, daysCheckedIn));
     results.push({
-      icon: '🌱', title: 'Building your patterns', accentColor: '#8fbc8f',
+      icon: '🌱', title: 'Building your patterns', accentColor: '#6e8b74',
       body: needed > 0
         ? `Log food and check in on mood for about ${needed} more day${needed === 1 ? '' : 's'} and I'll start surfacing real patterns — not generic tips, actual correlations from your own data.`
         : `Nothing statistically meaningful yet across your logged days — keep going and patterns will surface as your data builds up.`,

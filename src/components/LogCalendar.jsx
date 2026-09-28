@@ -1,14 +1,5 @@
 import { todayLocalDate } from '../lib/patterns';
 
-// Accent is deliberately a literal hex, not var(--accent) — it's used
-// below with a string-concatenated alpha suffix (C.green + '50'), which
-// only works with an actual hex value, not a CSS custom property
-// reference. It's fine because accent is the same hex in both themes by
-// design (see index.css) — only bg/border/text below need var()s.
-const C = {
-  green: '#8fbc8f',
-};
-
 // How "full" a day looks in the calendar — calories logged as a share of
 // the calorie target (capped at 100%, since the point is showing progress
 // toward the goal, not how far over it someone went). With no target set,
@@ -59,7 +50,7 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
             <i className="ti ti-chevron-left" />
           </button>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)', minWidth: 110, textAlign: 'center' }}>{monthLabel}</div>
-          <button onClick={onNextMonth} disabled={!canGoNext} className="hit-slop" style={{ background: 'none', border: 'none', color: canGoNext ? 'var(--text-muted)' : 'var(--text-faint, #2a2a2a)', cursor: canGoNext ? 'pointer' : 'default', fontSize: 16, display: 'flex' }} aria-label="Next month">
+          <button onClick={onNextMonth} disabled={!canGoNext} className="hit-slop" style={{ background: 'none', border: 'none', color: canGoNext ? 'var(--text-muted)' : 'var(--text-faint, var(--border-default))', cursor: canGoNext ? 'pointer' : 'default', fontSize: 16, display: 'flex' }} aria-label="Next month">
             <i className="ti ti-chevron-right" />
           </button>
         </div>
@@ -83,11 +74,11 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
                 title={day?.calories ? `${Math.round(day.calories)} kcal logged` : 'Nothing logged'}
                 style={{
                   position: 'relative', aspectRatio: '1', borderRadius: 6, overflow: 'hidden',
-                  background: 'var(--bg-subtle)', border: `1px solid ${isToday ? C.green : 'var(--border-default)'}`,
+                  background: 'var(--bg-subtle)', border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border-default)'}`,
                   cursor: isFuture ? 'default' : 'pointer', opacity: isFuture ? 0.35 : 1,
                 }}
               >
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: C.green + '50', transition: 'height 0.4s ease' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: 'color-mix(in srgb, var(--accent) 31%, transparent)', transition: 'height 0.4s ease' }} />
                 <div style={{ position: 'relative', fontSize: 10, color: pct > 55 ? 'var(--text-primary)' : 'var(--text-muted)', padding: compact ? 2 : 3 }}>{Number(dateStr.slice(-2))}</div>
               </div>
             );

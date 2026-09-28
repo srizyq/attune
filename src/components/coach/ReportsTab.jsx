@@ -125,7 +125,7 @@ export default function ReportsTab({ client, clientData }) {
         onClick={generate}
         disabled={!!problem || status === 'loading'}
         className="btn-press"
-        style={{ padding: '10px 20px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: problem ? 'not-allowed' : 'pointer', opacity: problem ? 0.5 : 1, fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        style={{ padding: '10px 20px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: problem ? 'not-allowed' : 'pointer', opacity: problem ? 0.5 : 1, fontFamily: "'Plus Jakarta Sans', sans-serif" }}
       >
         {status === 'loading' ? 'Building…' : 'Generate report'}
       </button>

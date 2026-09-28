@@ -65,7 +65,7 @@ function CoachPassButton({ profile, pendingConfirmation, onGoToProfile }) {
           padding: '9px 16px',
           background: profile?.coach_pass ? 'transparent' : 'var(--accent)',
           border: `1px solid ${profile?.coach_pass ? 'var(--border-default)' : 'var(--accent)'}`,
-          borderRadius: 8, color: profile?.coach_pass ? 'var(--text-secondary)' : '#0f0f0f',
+          borderRadius: 8, color: profile?.coach_pass ? 'var(--text-secondary)' : 'var(--bg-primary)',
           fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
@@ -188,7 +188,7 @@ export default function CoachModal({ onClose, closing }) {
             <FieldRow key={row.id} label={`${row.trainer?.name || 'A coach'} invited you`} hint="Nothing is shared until you accept">
               <button
                 onClick={() => { onClose(); navigate('/coach'); }}
-                style={{ padding: '7px 12px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 7, color: '#0f0f0f', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                style={{ padding: '7px 12px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 7, color: 'var(--bg-primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Review
               </button>

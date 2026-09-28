@@ -95,7 +95,7 @@ function ProBillingButton({ profile, pendingConfirmation }) {
           padding: '9px 16px',
           background: hasRealSubscription ? 'transparent' : 'var(--accent)',
           border: `1px solid ${hasRealSubscription ? 'var(--border-default)' : 'var(--accent)'}`,
-          borderRadius: 8, color: hasRealSubscription ? 'var(--text-secondary)' : '#0f0f0f',
+          borderRadius: 8, color: hasRealSubscription ? 'var(--text-secondary)' : 'var(--bg-primary)',
           fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
@@ -245,7 +245,7 @@ export default function Profile() {
                 background: saved ? 'var(--accent-bg)' : 'var(--accent)',
                 border: `1px solid ${saved ? 'var(--border-active)' : 'var(--accent)'}`,
                 borderRadius: '10px',
-                color: saved ? 'var(--accent)' : '#0f0f0f',
+                color: saved ? 'var(--accent)' : 'var(--bg-primary)',
                 fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
                 fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
               }}
@@ -329,7 +329,7 @@ export default function Profile() {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 18, border: 'none',
                       background: theme === opt.id ? 'var(--accent)' : 'transparent',
-                      color: theme === opt.id ? '#0f0f0f' : 'var(--text-muted)',
+                      color: theme === opt.id ? 'var(--bg-primary)' : 'var(--text-muted)',
                       fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
                     }}
                   >

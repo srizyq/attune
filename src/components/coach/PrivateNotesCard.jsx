@@ -59,7 +59,7 @@ export default function PrivateNotesCard({ client, clientData }) {
               onClick={handleAdd}
               disabled={!body.trim() || saving}
               className="btn-press"
-              style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: !body.trim() || saving ? 0.6 : 1 }}
+              style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--bg-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: !body.trim() || saving ? 0.6 : 1 }}
             >
               {saving ? 'Saving…' : 'Save note'}
             </button>
@@ -86,7 +86,7 @@ export default function PrivateNotesCard({ client, clientData }) {
                         style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', marginBottom: 8 }}
                       />
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={saveEdit} className="btn-press" style={{ padding: '6px 12px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 7, color: '#0f0f0f', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Save</button>
+                        <button onClick={saveEdit} className="btn-press" style={{ padding: '6px 12px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 7, color: 'var(--bg-primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Save</button>
                         <button onClick={() => setEditingId(null)} className="btn-press" style={{ padding: '6px 12px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 7, color: 'var(--text-secondary)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Cancel</button>
                       </div>
                     </>
