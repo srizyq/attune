@@ -169,7 +169,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
 
         <button
           onClick={onViewTrend}
-          style={{ width: '100%', background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '4px 0', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          style={{ width: '100%', minHeight: 24, background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '6px 0', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           View trend →
         </button>

@@ -64,7 +64,7 @@ const SCENARIOS = [
 
 for (const sc of SCENARIOS) {
   test(sc.name, async ({ page, context }, testInfo) => {
-    test.skip(sc.mobileOnly && !testInfo.project.use.isMobile, 'bottom-nav "+" only exists on phones/tablets');
+    test.skip(sc.mobileOnly && testInfo.project.use.viewport.width > 860, 'bottom-nav "+" only exists on phones/tablets (<=860px, AppNav.jsx\'s breakpoint)');
     const ctx = await openApp({ page, context }, testInfo, sc.backend);
     await page.goto(sc.path);
     await settle(page);

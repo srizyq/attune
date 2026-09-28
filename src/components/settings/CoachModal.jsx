@@ -212,7 +212,7 @@ export default function CoachModal({ onClose, closing }) {
             onChange={e => { setInviteCodeInput(e.target.value); setInviteStatus(null); }}
             onKeyDown={e => { if (e.key === 'Enter') handleRedeemCode(); }}
             placeholder="Invite link or code"
-            style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+            style={{ flex: 1, minWidth: 0, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
           />
           <button
             onClick={handleRedeemCode}
