@@ -10,13 +10,14 @@ import { useLastLoggedAmounts } from '../hooks/useLastLoggedAmounts';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
-import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes } from '../lib/db';
+import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems } from '../lib/db';
 import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
 import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit } from '../lib/foodMath';
 import { ausnutExtraMicros } from '../lib/ausnutFood';
+import { mapRestaurantItemRow } from '../lib/restaurantFood';
 import { loggedRowToFood, favouriteRowToFood } from '../lib/foodRows';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
@@ -332,6 +333,15 @@ async function searchCommonDish(q) {
     servingGrams: row.serving_grams || 100,
     source: "common-dish",
   }));
+}
+
+// Manually-sourced fast-food/restaurant chain menu items, verified against
+// each chain's own published nutrition information — see scripts/import-
+// restaurant-chains/. Per-serving like common_dishes, not per-100g. See
+// mapRestaurantItemRow for the row-mapping (and why it's factored out).
+async function searchRestaurant(q) {
+  const rows = await searchRestaurantItems(q, 15);
+  return rows.map(mapRestaurantItemRow);
 }
 
 // ─── Barcode Scanner ──────────────────────────────────────────────────────────
@@ -1738,6 +1748,7 @@ export default function FoodSearch() {
   const [packagedLive, setPackagedLive] = useState([]);
   const [ausnutResults, setAusnutResults] = useState([]);
   const [commonDishResults, setCommonDishResults] = useState([]);
+  const [restaurantResults, setRestaurantResults] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
   const searchTimer = useRef(null);
@@ -1908,16 +1919,17 @@ export default function FoodSearch() {
     // databases under that name — search the expanded form instead
     // ("mcdonalds", "halal snack pack") when the query is recognised.
     const searchQuery = expandFoodSlang(q) || q;
-    // Four independent sources — run them together instead of one after
-    // another, so a search takes as long as the slowest of the four
-    // rather than the sum of all four.
-    const [offResult, fatSecretResult, ausnutResult, commonDishResult] = await Promise.allSettled([
+    // Five independent sources — run them together instead of one after
+    // another, so a search takes as long as the slowest of the five
+    // rather than the sum of all five.
+    const [offResult, fatSecretResult, ausnutResult, commonDishResult, restaurantResult] = await Promise.allSettled([
       searchOpenFoodFacts(searchQuery),
       searchFatSecret(searchQuery, detectRegion()),
       searchAusnut(searchQuery),
       searchCommonDish(searchQuery),
+      searchRestaurant(searchQuery),
     ]);
-    let off = [], fatSecretResults = [], ausnut = [], commonDishes = [];
+    let off = [], fatSecretResults = [], ausnut = [], commonDishes = [], restaurant = [];
     if (offResult.status === "fulfilled") {
       off = offResult.value;
     } else {
@@ -1939,10 +1951,16 @@ export default function FoodSearch() {
     } else {
       console.error("Common dishes search error:", commonDishResult.reason);
     }
+    if (restaurantResult.status === "fulfilled") {
+      restaurant = restaurantResult.value;
+    } else {
+      console.error("Restaurant chains search error:", restaurantResult.reason);
+    }
     setGenericResults(fatSecretResults);
     setPackagedLive(off);
     setAusnutResults(ausnut);
     setCommonDishResults(commonDishes);
+    setRestaurantResults(restaurant);
     setLiveLoading(false);
   }, []);
 
@@ -1956,7 +1974,7 @@ export default function FoodSearch() {
     setAiEstimateResult(null);
     setAiEstimateError(null);
     setAiLimitReached(false);
-    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAusnutResults([]); setCommonDishResults([]); setLiveLoading(false); setLiveError(null); return; }
+    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAusnutResults([]); setCommonDishResults([]); setRestaurantResults([]); setLiveLoading(false); setLiveError(null); return; }
     setLiveLoading(true);
     searchTimer.current = setTimeout(() => runLiveSearch(query.trim()), 500);
     return () => clearTimeout(searchTimer.current);
@@ -1968,14 +1986,15 @@ export default function FoodSearch() {
     const queryLower = trimmed.toLowerCase();
     const queryWords = queryLower.split(/\s+/).filter(Boolean);
     // Custom foods (the user's own data) first among equally-relevant
-    // results, then AUSNUT (Australian government data), then FatSecret's
-    // broader generic coverage — but relevance to what was actually typed
-    // wins over which source a result came from. See foodMatchRank.
-    // Within the same relevance tier, the shortest name wins the tie
-    // instead of whichever source happened to load first — surfaces a
-    // clean "Chicken Thigh" over AUSNUT's verbose "Chicken, thigh, lean,
+    // results, then AUSNUT (Australian government data) and restaurant
+    // chains (both manually-verified against an official source), then
+    // FatSecret's broader generic coverage — but relevance to what was
+    // actually typed wins over which source a result came from. See
+    // foodMatchRank. Within the same relevance tier, the shortest name wins
+    // the tie instead of whichever source happened to load first — surfaces
+    // a clean "Chicken Thigh" over AUSNUT's verbose "Chicken, thigh, lean,
     // raw" when both are equally valid matches for the words typed.
-    const combined = [...customFiltered, ...commonDishResults, ...ausnutResults, ...genericResults]
+    const combined = [...customFiltered, ...commonDishResults, ...ausnutResults, ...restaurantResults, ...genericResults]
       .map((f, i) => ({ f, i, rank: foodMatchRank(f.name, queryLower, queryWords) }))
       .sort((a, b) => a.rank - b.rank || a.f.name.length - b.f.name.length || a.i - b.i)
       .map(x => x.f);
@@ -1986,7 +2005,7 @@ export default function FoodSearch() {
       seen.add(key);
       return true;
     });
-  }, [customFiltered, commonDishResults, ausnutResults, genericResults, query]);
+  }, [customFiltered, commonDishResults, ausnutResults, restaurantResults, genericResults, query]);
 
   // Whether the single best database match is only a loose/partial one
   // (foodMatchRank's bottom tier — some but not all of the typed words

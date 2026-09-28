@@ -19,6 +19,7 @@
 --    9. Training-day / rest-day targets
 --   10. Coach teams
 --   11. Favourite foods: all nutrients
+--   12. Restaurant chains
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block).
@@ -1745,3 +1746,216 @@ alter table public.favourite_foods add column if not exists omega6_g numeric;
 alter table public.favourite_foods add column if not exists ala_g numeric;
 alter table public.favourite_foods add column if not exists caffeine_mg numeric;
 alter table public.favourite_foods add column if not exists alcohol_g numeric;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Restaurant chains (schema update — new tables, run once). Tests:
+-- src/lib/restaurantFood.test.js (the search-result mapping helper)
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Manually-sourced nutrition data for real fast-food/restaurant chains,
+-- official-source-verified (see scripts/import-restaurant-chains/). Two
+-- shapes, because chains publish nutrition data two different ways:
+--  • Fixed-menu chains (McDonald's, Domino's, Boost Juice, ...) publish
+--    nutrition per named, ready-to-order item (at each size, where sizes
+--    exist) — restaurant_items, one row per item+size.
+--  • Build-your-own chains (Subway, Guzman y Gomez, Zambrero, Mad Mex,
+--    Grill'd, ...) publish nutrition per component ingredient (each bread,
+--    protein, sauce, topping) because the number of possible combinations a
+--    customer could order isn't a finite published list — restaurant_
+--    components, one row per component; the app sums whichever components a
+--    user picks at logging time rather than storing every combination.
+-- Same full nutrient column set as ausnut_foods/food_logs, for the same
+-- reason: a source that publishes deep micronutrients later (or a future
+-- non-fast-food restaurant source that does) shouldn't need a schema change
+-- to use it. In practice most chains only publish the 8ish nutrients required
+-- for menu-board kilojoule labelling (energy, protein, fat, saturated fat,
+-- carbs, sugars, sodium, fibre) plus sometimes caffeine — everything else
+-- stays NULL (never fabricated to fill a column), same "NULL means unknown,
+-- not zero" convention as the extended AUSNUT micronutrients above.
+-- Read-only reference data, admin-populated only — no insert/update/delete
+-- policy, same posture as ausnut_foods/common_dishes.
+create table if not exists public.restaurant_chains (
+  id text primary key,
+  name text not null,
+  country text not null,
+  category text,
+  website_url text,
+  created_at timestamptz default now()
+);
+
+alter table public.restaurant_chains enable row level security;
+
+drop policy if exists "restaurant_chains: select any signed-in user" on public.restaurant_chains;
+create policy "restaurant_chains: select any signed-in user" on public.restaurant_chains
+  for select using (auth.uid() is not null);
+
+create table if not exists public.restaurant_items (
+  id text primary key,
+  chain_id text not null references public.restaurant_chains (id) on delete cascade,
+  -- Denormalized copy of restaurant_chains.name — every other search source
+  -- in this app (food_logs, common_dishes, ausnut_foods) is a flattened,
+  -- join-free row, and the search RPCs below return `setof
+  -- restaurant_items` directly, so this avoids needing a join just to show
+  -- "Big Mac · McDonald's" in a result. The import script keeps it in sync
+  -- with the chain's own name at commit time.
+  chain_name text not null,
+  name text not null,
+  category text,
+  -- e.g. 'Small' / 'Medium' / 'Large', null for single-size items. Kept
+  -- distinct from `name` so a size selector can group rows by base item.
+  size_label text,
+  serving_label text not null default '1 serving',
+  serving_grams numeric,
+  calories numeric not null default 0,
+  protein_g numeric default 0,
+  carbs_g numeric default 0,
+  fat_g numeric default 0,
+  fibre_g numeric default 0,
+  sodium_mg numeric default 0,
+  sugar_g numeric default 0,
+  saturated_fat_g numeric default 0,
+  trans_fat_g numeric default 0,
+  cholesterol_mg numeric default 0,
+  potassium_mg numeric default 0,
+  added_sugar_g numeric default 0,
+  vitamin_d_mcg numeric default 0,
+  calcium_mg numeric default 0,
+  iron_mg numeric default 0,
+  vitamin_a_mcg numeric default 0,
+  vitamin_c_mg numeric default 0,
+  polyunsaturated_fat_g numeric default 0,
+  monounsaturated_fat_g numeric default 0,
+  magnesium_mg numeric default 0,
+  zinc_mg numeric default 0,
+  vitamin_b12_mcg numeric default 0,
+  folate_mcg numeric default 0,
+  -- Extended set: NULL means "this chain's disclosure didn't cover it",
+  -- never 0 — same convention as ausnut_foods/food_logs.
+  thiamin_mg numeric,
+  riboflavin_mg numeric,
+  niacin_mg numeric,
+  vitamin_b6_mg numeric,
+  vitamin_e_mg numeric,
+  phosphorus_mg numeric,
+  selenium_mcg numeric,
+  iodine_mcg numeric,
+  omega3_mg numeric,
+  omega6_g numeric,
+  ala_g numeric,
+  caffeine_mg numeric,
+  alcohol_g numeric,
+  -- Provenance: exactly which page this item's numbers came from, and when
+  -- — menus and recipes change, so a stale entry needs to be findable.
+  source_url text,
+  verified_date date,
+  created_at timestamptz default now()
+);
+
+create unique index if not exists restaurant_items_chain_name_size_unique_idx
+  on public.restaurant_items (chain_id, lower(name), coalesce(lower(size_label), ''));
+
+alter table public.restaurant_items enable row level security;
+
+drop policy if exists "restaurant_items: select any signed-in user" on public.restaurant_items;
+create policy "restaurant_items: select any signed-in user" on public.restaurant_items
+  for select using (auth.uid() is not null);
+
+-- Fuzzy + ranked search, mirroring search_ausnut_foods_fuzzy/_ranked exactly.
+create index if not exists restaurant_items_name_trgm_idx
+  on public.restaurant_items using gin (name gin_trgm_ops);
+
+create or replace function public.search_restaurant_items_fuzzy(search_query text, match_limit int default 15)
+returns setof public.restaurant_items
+language sql
+stable
+as $$
+  select *
+  from public.restaurant_items
+  where similarity(name, search_query) > 0.2
+  order by similarity(name, search_query) desc
+  limit match_limit;
+$$;
+
+create or replace function public.search_restaurant_items_ranked(patterns text[], match_limit int default 20)
+returns setof public.restaurant_items
+language sql
+stable
+as $$
+  select *
+  from public.restaurant_items
+  where name ~* all(patterns)
+  order by length(name) asc
+  limit match_limit;
+$$;
+
+grant execute on function public.search_restaurant_items_ranked(text[], int) to authenticated;
+grant execute on function public.search_restaurant_items_fuzzy(text, int) to authenticated;
+
+-- Build-your-own components (Subway, Guzman y Gomez, Zambrero, Mad Mex,
+-- Grill'd, ...). Not searched from the main food-search bar like
+-- restaurant_items — picked from a per-chain component list in a dedicated
+-- "build your own" UI instead, so no fuzzy/ranked search functions here, just
+-- a plain lookup index.
+create table if not exists public.restaurant_components (
+  id text primary key,
+  chain_id text not null references public.restaurant_chains (id) on delete cascade,
+  name text not null,
+  -- e.g. 'bread', 'protein', 'cheese', 'sauce', 'topping', 'size' — how the
+  -- build-your-own UI groups components into pick-one/pick-many steps.
+  component_type text not null,
+  -- The unit these values are per (e.g. "1 serving", "6-inch", "1 scoop",
+  -- "1 slice") — components aren't all the same size, unlike restaurant_
+  -- items' serving_label default.
+  unit_label text not null,
+  calories numeric not null default 0,
+  protein_g numeric default 0,
+  carbs_g numeric default 0,
+  fat_g numeric default 0,
+  fibre_g numeric default 0,
+  sodium_mg numeric default 0,
+  sugar_g numeric default 0,
+  saturated_fat_g numeric default 0,
+  trans_fat_g numeric default 0,
+  cholesterol_mg numeric default 0,
+  potassium_mg numeric default 0,
+  added_sugar_g numeric default 0,
+  vitamin_d_mcg numeric default 0,
+  calcium_mg numeric default 0,
+  iron_mg numeric default 0,
+  vitamin_a_mcg numeric default 0,
+  vitamin_c_mg numeric default 0,
+  polyunsaturated_fat_g numeric default 0,
+  monounsaturated_fat_g numeric default 0,
+  magnesium_mg numeric default 0,
+  zinc_mg numeric default 0,
+  vitamin_b12_mcg numeric default 0,
+  folate_mcg numeric default 0,
+  thiamin_mg numeric,
+  riboflavin_mg numeric,
+  niacin_mg numeric,
+  vitamin_b6_mg numeric,
+  vitamin_e_mg numeric,
+  phosphorus_mg numeric,
+  selenium_mcg numeric,
+  iodine_mcg numeric,
+  omega3_mg numeric,
+  omega6_g numeric,
+  ala_g numeric,
+  caffeine_mg numeric,
+  alcohol_g numeric,
+  source_url text,
+  verified_date date,
+  created_at timestamptz default now()
+);
+
+create unique index if not exists restaurant_components_chain_name_unique_idx
+  on public.restaurant_components (chain_id, lower(name));
+
+create index if not exists restaurant_components_chain_type_idx
+  on public.restaurant_components (chain_id, component_type);
+
+alter table public.restaurant_components enable row level security;
+
+drop policy if exists "restaurant_components: select any signed-in user" on public.restaurant_components;
+create policy "restaurant_components: select any signed-in user" on public.restaurant_components
+  for select using (auth.uid() is not null);

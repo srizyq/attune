@@ -546,6 +546,47 @@ export async function searchCommonDishes(query, limit = 8) {
   return fuzzyData;
 }
 
+// ─── restaurant_items (manually-sourced fast-food/restaurant chain menu
+// items — see scripts/import-restaurant-chains/) ──────────────────────────
+// Same word-boundary-ANDed / fuzzy-fallback shape as searchAusnutFoods above.
+export async function searchRestaurantItems(query, limit = 15) {
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const { data, error } = await supabase.rpc('search_restaurant_items_ranked', {
+    patterns: words.map(wordBoundaryPattern),
+    match_limit: limit,
+  });
+  if (error) throw error;
+  if (data.length > 0) return data;
+  const { data: fuzzyData, error: fuzzyError } = await supabase
+    .rpc('search_restaurant_items_fuzzy', { search_query: query.trim(), match_limit: limit });
+  if (fuzzyError) throw fuzzyError;
+  return fuzzyData;
+}
+
+// Build-your-own component list for one chain (Subway, Guzman y Gomez, ...),
+// grouped by component_type for a "build your own" picker — not searched
+// from the main food-search bar, so no fuzzy fallback needed here.
+export async function getRestaurantComponents(chainId) {
+  const { data, error } = await supabase
+    .from('restaurant_components')
+    .select('*')
+    .eq('chain_id', chainId)
+    .order('component_type', { ascending: true })
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function getRestaurantChains() {
+  const { data, error } = await supabase
+    .from('restaurant_chains')
+    .select('*')
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
 // ─── trainer_clients ────────────────────────────────────────────────────────
 
 export async function getMyClients(trainerId) {
