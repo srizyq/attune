@@ -8,10 +8,19 @@
 // Generalizes DailyLogViewToggle's `fill` prop, which proved this exact
 // mechanic (bg-primary track, accent/accent-contrast active pill) already —
 // DailyLogViewToggle now wraps this instead of duplicating it.
-export default function SegmentedControl({ options, value, onChange, fill = true, style }) {
+//
+// Plain buttons (aria-pressed) by default — most call sites (a view toggle,
+// a theme/units switch, a date-range picker) are not tabs, and giving every
+// one role="tab" broke every test/query that found them as ordinary buttons.
+// Pass `asTabs` only where the options genuinely swap between separate
+// panels (e.g. MessagesTab's "Messages to client" / "Private notes"), which
+// is the one call site that had real role="tablist"/"tab" semantics before
+// this component existed.
+export default function SegmentedControl({ options, value, onChange, fill = true, style, asTabs = false, ariaLabel }) {
   return (
     <div
-      role="tablist"
+      role={asTabs ? 'tablist' : undefined}
+      aria-label={asTabs ? ariaLabel : undefined}
       style={{
         display: 'flex', gap: 4, background: 'var(--bg-primary)',
         border: '1px solid var(--border-default)', borderRadius: 20, padding: 2,
@@ -24,8 +33,9 @@ export default function SegmentedControl({ options, value, onChange, fill = true
         return (
           <button
             key={opt.id}
-            role="tab"
-            aria-selected={active}
+            role={asTabs ? 'tab' : undefined}
+            aria-selected={asTabs ? active : undefined}
+            aria-pressed={asTabs ? undefined : active}
             onClick={() => { if (!opt.disabled) onChange(opt.id); }}
             className="btn-press"
             style={{
@@ -39,7 +49,7 @@ export default function SegmentedControl({ options, value, onChange, fill = true
               fontFamily: 'inherit', whiteSpace: 'nowrap',
             }}
           >
-            {opt.icon && <i className={`ti ${opt.icon}`} style={{ fontSize: 13 }} />}
+            {opt.icon && <i aria-hidden="true" className={`ti ${opt.icon}`} style={{ fontSize: 13 }} />}
             {opt.label}
           </button>
         );

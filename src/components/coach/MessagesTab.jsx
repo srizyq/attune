@@ -34,7 +34,7 @@ export default function MessagesTab({ client, clientData, d }) {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <SegmentedControl options={VIEWS} value={view} onChange={setView} fill />
+        <SegmentedControl options={VIEWS} value={view} onChange={setView} fill asTabs ariaLabel="Messages view" />
       </div>
 
       {view === 'thread' ? (

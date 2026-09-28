@@ -42,7 +42,7 @@ FormRow.Button = function FormRowButton({ icon, primary = false, danger = false,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
     >
-      {icon && <i className={`ti ${icon}`} style={{ fontSize: 14 }} />}
+      {icon && <i aria-hidden="true" className={`ti ${icon}`} style={{ fontSize: 14 }} />}
       {children}
     </button>
   );

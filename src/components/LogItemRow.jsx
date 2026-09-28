@@ -207,7 +207,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
                       onClick={() => setRecalcOpen(true)}
                       style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, padding: '6px 0' }}
                     >
-                      <i className="ti ti-camera" style={{ fontSize: 13 }} /> Recalculate with a new photo
+                      <i aria-hidden="true" className="ti ti-camera" style={{ fontSize: 13 }} /> Recalculate with a new photo
                     </button>
                   )}
                 </div>

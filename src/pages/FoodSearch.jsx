@@ -1201,7 +1201,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             disabled={!servings}
           />
           <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <i className="ti ti-scan" style={{ fontSize: 13 }} /> Scan next
+            <i aria-hidden="true" className="ti ti-scan" style={{ fontSize: 13 }} /> Scan next
           </button>
         </div>
       )}

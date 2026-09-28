@@ -65,14 +65,14 @@ ListRow.SquareAvatar = function SquareAvatar({ name, initials, icon, pct, size =
         }} />
       )}
       <div style={{ position: 'relative', fontSize: icon ? size * 0.45 : size * 0.32, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Syne', sans-serif" }}>
-        {icon ? <i className={`ti ${icon}`} /> : computedInitials}
+        {icon ? <i aria-hidden="true" className={`ti ${icon}`} /> : computedInitials}
       </div>
     </div>
   );
 };
 
 ListRow.Chevron = function Chevron() {
-  return <i className="ti ti-chevron-right" style={{ fontSize: 18, color: 'var(--text-hint)', flexShrink: 0 }} />;
+  return <i aria-hidden="true" className="ti ti-chevron-right" style={{ fontSize: 18, color: 'var(--text-hint)', flexShrink: 0 }} />;
 };
 
 // Numeric/text badge (e.g. an adherence score) with an optional trailing

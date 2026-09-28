@@ -43,11 +43,14 @@ FilterChipRow.Chip = function Chip({ active = false, onClick, onClear, children 
     >
       {children}
       {onClear && (
-        <i
-          className="ti ti-x"
+        <button
+          type="button"
+          aria-label="Clear filter"
           onClick={(e) => { e.stopPropagation(); onClear(); }}
-          style={{ fontSize: 12, cursor: 'pointer' }}
-        />
+          style={{ display: 'flex', background: 'none', border: 'none', padding: 0, margin: 0, color: 'inherit', cursor: 'pointer' }}
+        >
+          <i aria-hidden="true" className="ti ti-x" style={{ fontSize: 12 }} />
+        </button>
       )}
     </span>
   );
