@@ -27,6 +27,7 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { getCategoryStyle } from '../lib/foodCategories';
 import PageHeader from '../components/PageHeader';
 import DateStepper from '../components/DateStepper';
+import FormRow from '../components/FormRow';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -985,19 +986,17 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         {!scanning && (
           <div style={{ position: "absolute", bottom: "calc(32px + env(safe-area-inset-bottom))", left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "0 24px" }}>
             {manualEntryOpen ? (
-              <form onSubmit={submitManualBarcode} style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320 }}>
-                <input
-                  type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
-                  value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
-                  style={{ flex: 1, minWidth: 0, background: "rgba(20,17,16,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
-                />
-                <button
-                  type="submit"
-                  disabled={!manualBarcode.replace(/\D/g, "")}
-                  style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
-                >
-                  Look up
-                </button>
+              <form onSubmit={submitManualBarcode} style={{ width: "100%", maxWidth: 320 }}>
+                <FormRow>
+                  <input
+                    type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
+                    value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
+                    style={{ width: "100%", boxSizing: "border-box", background: "rgba(20,17,16,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
+                  />
+                  <FormRow.Button icon="ti-search" primary type="submit" disabled={!manualBarcode.replace(/\D/g, "")}>
+                    Look up
+                  </FormRow.Button>
+                </FormRow>
               </form>
             ) : (
               <button
@@ -1600,7 +1599,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
 
 function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, setMeal, time, setTime, logByTime, onAdd, disabled, addLabel }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <FormRow>
       <div style={{ display: "flex", gap: 8 }}>
         <input
           type="number" min="0" step="any" value={amount}
@@ -1610,25 +1609,21 @@ function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, se
         <select value={unit} onChange={e => setUnit(e.target.value)} style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
           {units.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
         </select>
-        {logByTime ? (
-          <input
-            type="time" value={time} onChange={e => setTime(e.target.value)}
-            style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
-          />
-        ) : (
-          <select value={meal} onChange={e => setMeal(e.target.value)} style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
-            {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-        )}
       </div>
-      <button
-        onClick={onAdd}
-        disabled={disabled}
-        style={{ background: disabled ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 600, color: disabled ? "var(--text-muted)" : "var(--accent-contrast)", cursor: disabled ? "not-allowed" : "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }}
-      >
-        {addLabel ? addLabel : logByTime ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
-      </button>
-    </div>
+      {logByTime ? (
+        <input
+          type="time" value={time} onChange={e => setTime(e.target.value)}
+          style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
+        />
+      ) : (
+        <select value={meal} onChange={e => setMeal(e.target.value)} style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+          {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+      )}
+      <FormRow.Button icon="ti-plus" primary onClick={onAdd} disabled={disabled}>
+        {(addLabel ? addLabel : logByTime ? `Add at ${formatTime12h(time)}` : `Add to ${meal}`).replace(/^\+\s*/, '')}
+      </FormRow.Button>
+    </FormRow>
   );
 }
 

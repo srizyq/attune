@@ -9,6 +9,7 @@ import CoachChatModal from './CoachChatModal';
 import CoachConsentCard from './CoachConsentCard';
 import CoachCheckinCard from './CoachCheckinCard';
 import MealPlanCard from './MealPlanCard';
+import FormRow from './FormRow';
 import { coachPassButtonLabel } from '../lib/coachPass';
 import { targetsForDate, dayTargetsActive, describeTrainingDays } from '../lib/dayTargets';
 import { todayLocalDate } from '../lib/patterns';
@@ -232,22 +233,18 @@ export default function ClientCoachHub({ showUpsell = true }) {
         ) : (
           <>
             <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 14px' }}>Not connected to a trainer yet — paste the invite link or code they gave you.</p>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <FormRow>
               <input
                 value={inviteCodeInput}
                 onChange={e => { setInviteCodeInput(e.target.value); setInviteStatus(null); }}
                 onKeyDown={e => { if (e.key === 'Enter') handleRedeem(); }}
                 placeholder="Invite link or code"
-                style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
               />
-              <button
-                onClick={handleRedeem}
-                disabled={!inviteCodeInput.trim() || inviteStatus === 'loading'}
-                style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
-              >
+              <FormRow.Button icon="ti-login-2" onClick={handleRedeem} disabled={!inviteCodeInput.trim() || inviteStatus === 'loading'}>
                 {inviteStatus === 'loading' ? 'Connecting…' : 'Connect'}
-              </button>
-            </div>
+              </FormRow.Button>
+            </FormRow>
             {inviteStatus && inviteStatus !== 'loading' && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '8px 0 0' }}>{inviteStatus}</p>}
           </>
         )}

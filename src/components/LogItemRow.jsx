@@ -3,7 +3,9 @@ import { round1 } from '../lib/format';
 import { scaleFood, formatAmountUnit, initialEditState, editUnitsFor, editServings } from '../lib/foodMath';
 import { dateToHHMM, timeStringToDate } from '../lib/mealTime';
 import RecalculatePhotoModal from './RecalculatePhotoModal';
-import MarqueeText from './MarqueeText';
+import SegmentedControl from './SegmentedControl';
+import ListRow from './ListRow';
+import FormRow from './FormRow';
 
 const MEAL_OPTIONS = [
   { value: 'breakfast', label: 'Breakfast' },
@@ -60,7 +62,6 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   // without being true — so weight-based units are only offered when we
   // actually know what this item weighs.
   const hasKnownWeight = !!item.servingGrams;
-  const [nameOverflowing, setNameOverflowing] = useState(false);
 
   const [amount, setAmount] = useState(() => initialEditState(item).amount);
   const [unit, setUnit] = useState(() => initialEditState(item).unit);
@@ -153,120 +154,97 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   }
 
   return (
-    <div style={{ borderBottom: '1px solid var(--border-default)' }}>
-      <div onClick={onToggle} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 18px', cursor: 'pointer', gap: 10 }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <MarqueeText text={item.name} style={{ color: 'var(--text-secondary)', fontSize: 14 }} onOverflowChange={px => setNameOverflowing(px > 0)} />
-          <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>
-            <span style={{ color: C.green, fontWeight: 500 }}>{Math.round(item.cal)} cal</span>
-            {' · '}P {round1(item.protein)}g · C {round1(item.carbs)}g · F {round1(item.fat)}g
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {!readOnly && <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="hit-slop" aria-label={`Delete ${item.name}`} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 15, padding: '2px 4px' }}>×</button>}
-          <span style={{ color: 'var(--border-default)', fontSize: 12, display: 'inline-block', transition: 'transform 220ms cubic-bezier(0.77, 0, 0.175, 1)', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
-        </div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateRows: isExpanded ? '1fr' : '0fr', transition: 'grid-template-rows 220ms cubic-bezier(0.77, 0, 0.175, 1)' }}>
-        <div style={{ overflow: 'hidden' }}>
-        {/* The collapsed row only ever shows a single clipped/scrolling
-            line (see the marquee above) — this is the one place the full
-            name, however long, is always shown in full, wrapping onto as
-            many lines as it needs since there's no row-height constraint
-            here. */}
-        {nameOverflowing && (
-          <div style={{ padding: '2px 18px 10px', background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 15, fontWeight: 600, lineHeight: 1.35 }}>
-            {item.name}
-          </div>
-        )}
-        {readOnly ? (
-          <div style={{ padding: '4px 18px 16px', background: 'var(--bg-subtle)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10 }}>
-              <MacroReadout value={Math.round(item.cal)} unit="" label="Calories" color={C.green} />
-              <MacroReadout value={round1(item.protein)} unit="g" label="Protein" color={C.green} />
-              <MacroReadout value={round1(item.carbs)} unit="g" label="Carbs" color={C.blue} />
-              <MacroReadout value={round1(item.fat)} unit="g" label="Fat" color={C.purple} />
+    <>
+      <ListRow
+        avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
+        title={item.name}
+        subtitleParts={[`${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`]}
+        trailing={<ListRow.Chevron />}
+        onClick={onToggle}
+      />
+      {isExpanded && (
+        // A bottom sheet rather than the old inline accordion — the edit
+        // form (amount, meal/time, macro preview) is real content now, not
+        // a quick inline tweak, so it gets its own focused surface instead
+        // of pushing every row below it down the page while open.
+        <div onClick={onToggle} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 300 }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={item.name}
+            className="modal-panel"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '16px 16px 0 0', padding: 20, width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+              <button onClick={onToggle} aria-label="Close" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}>✕</button>
             </div>
-          </div>
-        ) : (
-        <div style={{ padding: '4px 18px 16px', background: 'var(--bg-subtle)' }}>
-          <div style={{ marginBottom: 12 }}>
-            <label style={labelStyle}>{hasKnownWeight
-              ? `Amount (currently ${item.loggedUnit && item.loggedAmount != null ? formatAmountUnit(item.loggedAmount, item.loggedUnit) : `${item.servingGrams}g`})`
-              : `Calories (currently ${item.cal})`}</label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <input style={{ ...fieldStyle, width: 90 }} type="number" min="0" step="any" value={amount} onChange={e => setAmount(e.target.value)} />
-              {hasKnownWeight && (
-                <div style={{ display: 'flex', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2 }}>
-                  {availableUnits.map(u => (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => setUnit(u.id)}
-                      style={{
-                        background: unit === u.id ? 'var(--accent-bg)' : 'transparent', border: 'none', borderRadius: 18,
-                        padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                        color: unit === u.id ? C.green : 'var(--text-muted)', transition: 'background 0.15s, color 0.15s',
-                      }}
-                    >
-                      {u.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {!hasKnownWeight && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>No serving weight on record for this item — edit calories directly and protein/carbs/fat scale with it. Delete and re-add it via search for gram-accurate editing.</div>}
-            {item.source === 'photo' && (
-              <button
-                type="button"
-                onClick={() => setRecalcOpen(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, padding: '6px 0' }}
-              >
-                <i className="ti ti-camera" style={{ fontSize: 13 }} /> Recalculate with a new photo
-              </button>
-            )}
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            {isPremium ? (
-              <>
-                <label style={labelStyle}>Logged at</label>
-                <input style={{ ...fieldStyle, width: 130 }} type="time" value={time} onChange={e => setTime(e.target.value)} />
-              </>
+
+            {readOnly ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <MacroReadout value={Math.round(item.cal)} unit="" label="Calories" color={C.green} />
+                <MacroReadout value={round1(item.protein)} unit="g" label="Protein" color={C.green} />
+                <MacroReadout value={round1(item.carbs)} unit="g" label="Carbs" color={C.blue} />
+                <MacroReadout value={round1(item.fat)} unit="g" label="Fat" color={C.purple} />
+              </div>
             ) : (
               <>
-                <label style={labelStyle}>Meal</label>
-                <select style={{ ...fieldStyle, width: 160, cursor: 'pointer' }} value={meal} onChange={e => setMeal(e.target.value)}>
-                  {MEAL_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                </select>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={labelStyle}>{hasKnownWeight
+                    ? `Amount (currently ${item.loggedUnit && item.loggedAmount != null ? formatAmountUnit(item.loggedAmount, item.loggedUnit) : `${item.servingGrams}g`})`
+                    : `Calories (currently ${item.cal})`}</label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input style={{ ...fieldStyle, width: 90 }} type="number" min="0" step="any" value={amount} onChange={e => setAmount(e.target.value)} />
+                    {hasKnownWeight && (
+                      <SegmentedControl options={availableUnits} value={unit} onChange={setUnit} fill={false} />
+                    )}
+                  </div>
+                  {!hasKnownWeight && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>No serving weight on record for this item — edit calories directly and protein/carbs/fat scale with it. Delete and re-add it via search for gram-accurate editing.</div>}
+                  {item.source === 'photo' && (
+                    <button
+                      type="button"
+                      onClick={() => setRecalcOpen(true)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, padding: '6px 0' }}
+                    >
+                      <i className="ti ti-camera" style={{ fontSize: 13 }} /> Recalculate with a new photo
+                    </button>
+                  )}
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  {isPremium ? (
+                    <>
+                      <label style={labelStyle}>Logged at</label>
+                      <input style={{ ...fieldStyle, width: 130 }} type="time" value={time} onChange={e => setTime(e.target.value)} />
+                    </>
+                  ) : (
+                    <>
+                      <label style={labelStyle}>Meal</label>
+                      <select style={{ ...fieldStyle, width: 160, cursor: 'pointer' }} value={meal} onChange={e => setMeal(e.target.value)}>
+                        {MEAL_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                      </select>
+                    </>
+                  )}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--border-default)' }}>
+                  <MacroReadout value={preview.cal} unit="" label="Calories" color={C.green} />
+                  <MacroReadout value={round1(preview.protein)} unit="g" label="Protein" color={C.green} />
+                  <MacroReadout value={round1(preview.carbs)} unit="g" label="Carbs" color={C.blue} />
+                  <MacroReadout value={round1(preview.fat)} unit="g" label="Fat" color={C.purple} />
+                </div>
+                {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 12px' }}>{error}</p>}
+                <FormRow gap={8}>
+                  <FormRow.Button icon="ti-device-floppy" primary onClick={handleSave} disabled={saving || !servings}>
+                    {saving ? 'Saving…' : 'Save'}
+                  </FormRow.Button>
+                  <FormRow.Button icon="ti-trash" danger onClick={onDelete}>
+                    Delete
+                  </FormRow.Button>
+                </FormRow>
               </>
             )}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--border-default)' }}>
-            <MacroReadout value={preview.cal} unit="" label="Calories" color={C.green} />
-            <MacroReadout value={round1(preview.protein)} unit="g" label="Protein" color={C.green} />
-            <MacroReadout value={round1(preview.carbs)} unit="g" label="Carbs" color={C.blue} />
-            <MacroReadout value={round1(preview.fat)} unit="g" label="Fat" color={C.purple} />
-          </div>
         </div>
-        )}
-        </div>
-      </div>
-      {isExpanded && !readOnly && (
-        // Fixed, not inline — the edit form (amount, meal/time, macro
-        // preview) can run past the bottom of the screen, and a save button
-        // sitting after all of that meant scrolling down just to find it
-        // every time. Same floating-bar pattern as FoodSearch's recipe
-        // builder bar, so it clears the bottom nav the same way.
-        <div className="meal-builder-bar" style={{ background: 'var(--bg-subtle)', border: `1px solid ${C.green}`, borderRadius: 12, padding: '8px 8px 8px 16px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-            {error && <span style={{ color: 'var(--danger)', fontSize: 12 }}>{error}</span>}
-            <button
-              onClick={handleSave}
-              disabled={saving || !servings}
-              style={{ background: saving || !servings ? 'var(--border-default)' : C.green, border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, color: saving || !servings ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: saving || !servings ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-          </div>
       )}
       {recalcOpen && (
         <RecalculatePhotoModal
@@ -275,6 +253,6 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
           onApply={handleRecalculate}
         />
       )}
-    </div>
+    </>
   );
 }

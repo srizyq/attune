@@ -35,6 +35,7 @@ function TeamMemberDetail({ member, isSelf, isOwnerView, teamName, onRemove, bus
         {isOwnerView && !isSelf && (
           <FormRow.Button
             icon="ti-user-x"
+            danger
             disabled={busy}
             onClick={() => { if (window.confirm(`Remove ${member.name} from ${teamName}? Their clients aren't affected.`)) onRemove(); }}
           >

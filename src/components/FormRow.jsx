@@ -20,7 +20,12 @@ export default function FormRow({ children, gap = 8 }) {
 // components (padding, radius, weight, font) — centered icon+label, full
 // width, instead of a content-width button that only made sense sitting
 // next to an input.
-FormRow.Button = function FormRowButton({ icon, primary = false, disabled = false, children, onClick, type = 'button' }) {
+// `danger` marks a destructive action (delete/remove/disconnect) — red
+// text/border instead of the accent color, same signal those actions
+// carried before they moved off inline icon buttons into a modal/detail
+// view's button row.
+FormRow.Button = function FormRowButton({ icon, primary = false, danger = false, disabled = false, children, onClick, type = 'button' }) {
+  const color = disabled ? 'var(--text-muted)' : primary ? 'var(--accent-contrast)' : danger ? 'var(--danger)' : 'var(--accent)';
   return (
     <button
       type={type}
@@ -32,8 +37,8 @@ FormRow.Button = function FormRowButton({ icon, primary = false, disabled = fals
         padding: '11px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         background: disabled ? 'var(--border-default)' : primary ? 'var(--accent)' : 'transparent',
-        border: `1px solid ${disabled ? 'var(--border-default)' : primary ? 'var(--accent)' : 'var(--border-default)'}`,
-        color: disabled ? 'var(--text-muted)' : primary ? 'var(--accent-contrast)' : 'var(--accent)',
+        border: `1px solid ${disabled ? 'var(--border-default)' : primary ? 'var(--accent)' : danger ? 'var(--danger)' : 'var(--border-default)'}`,
+        color,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
     >

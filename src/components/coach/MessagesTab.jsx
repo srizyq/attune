@@ -3,6 +3,8 @@ import { useTrainerComments } from '../../hooks/useCoach';
 import { Card, SectionLabel } from './shared';
 import { COMMENT_CATEGORIES } from './constants';
 import PrivateNotesCard from './PrivateNotesCard';
+import FormRow from '../FormRow';
+import SegmentedControl from '../SegmentedControl';
 
 const VIEWS = [
   { id: 'thread', label: 'Messages to client', icon: 'ti-message-circle' },
@@ -31,25 +33,8 @@ export default function MessagesTab({ client, clientData, d }) {
 
   return (
     <div>
-      <div role="tablist" aria-label="Messages view" style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {VIEWS.map(v => (
-          <button
-            key={v.id}
-            role="tab"
-            aria-selected={view === v.id}
-            onClick={() => setView(v.id)}
-            className="btn-press"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              background: view === v.id ? 'var(--accent-bg)' : 'var(--bg-card)',
-              border: `1px solid ${view === v.id ? 'var(--accent-dark)' : 'var(--border-strong)'}`,
-              color: view === v.id ? 'var(--accent)' : 'var(--text-muted)', fontFamily: "'Plus Jakarta Sans', sans-serif",
-            }}
-          >
-            <i className={`ti ${v.icon}`} style={{ fontSize: 14 }} />
-            {v.label}
-          </button>
-        ))}
+      <div style={{ marginBottom: 16 }}>
+        <SegmentedControl options={VIEWS} value={view} onChange={setView} fill />
       </div>
 
       {view === 'thread' ? (
@@ -77,22 +62,19 @@ export default function MessagesTab({ client, clientData, d }) {
                 );
               })}
             </div>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              <input
-                value={commentBody}
-                onChange={e => setCommentBody(e.target.value)}
-                placeholder={`Leave a note for ${clientData.name || 'this client'}…`}
-                onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }}
-                style={{ flex: 1, minWidth: 0, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
-              />
-              <button
-                onClick={handleAddComment}
-                disabled={!commentBody.trim()}
-                className="btn-press"
-                style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
-              >
-                Post
-              </button>
+            <div style={{ marginBottom: 16 }}>
+              <FormRow>
+                <input
+                  value={commentBody}
+                  onChange={e => setCommentBody(e.target.value)}
+                  placeholder={`Leave a note for ${clientData.name || 'this client'}…`}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+                />
+                <FormRow.Button icon="ti-send-2" primary onClick={handleAddComment} disabled={!commentBody.trim()}>
+                  Post
+                </FormRow.Button>
+              </FormRow>
             </div>
             {commentsInTab.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>

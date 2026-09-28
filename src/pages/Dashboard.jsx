@@ -24,6 +24,7 @@ import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
 import HourlyTimeline from '../components/HourlyTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
+import SegmentedControl from '../components/SegmentedControl';
 import Toast from '../components/Toast';
 import { targetLineSegments } from '../lib/chartTarget';
 import { targetsForDate } from '../lib/dayTargets';
@@ -32,6 +33,8 @@ import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import TrialBanner from '../components/TrialBanner';
 import { round1 } from '../lib/format';
 import { hourToHHMM } from '../lib/mealTime';
+import FormRow from '../components/FormRow';
+import ListRow from '../components/ListRow';
 
 // Accent/water-blue/ai-purple are the same hex in both themes by design.
 const ACCENT = 'var(--accent)';
@@ -41,7 +44,7 @@ const AI_PURPLE = '#9f97e8';
 // ─── Calorie hero — real weekly/monthly/quarterly trend, no decorative
 // elements without real data behind them (no fake "uncertainty band" —
 // this is a chart of actual logged calories, not an estimate). ──────────
-const CHART_RANGES = [{ id: '1W', days: 7 }, { id: '1M', days: 30 }, { id: '3M', days: 90 }];
+const CHART_RANGE_OPTIONS = [{ id: '1W', label: '1W' }, { id: '1M', label: '1M' }, { id: '3M', label: '3M' }];
 
 // One tap adds 250ml (one "glass" in the underlying water_glasses count —
 // no schema change, this is purely a display/interaction relabel). Holding
@@ -140,31 +143,25 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <input
-            type="number"
-            inputMode="decimal"
-            autoFocus
-            value={value}
-            onChange={e => setValue(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') submit(); }}
-            placeholder={`Weight (${unit})`}
-            style={{
-              flex: 1, padding: '11px 14px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)',
-              borderRadius: 10, color: 'var(--text-primary)', fontSize: 15, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none',
-            }}
-          />
-          <button
-            onClick={submit}
-            disabled={!value || saving}
-            style={{
-              padding: '11px 18px', background: !value || saving ? 'var(--border-default)' : 'var(--accent)',
-              border: 'none', borderRadius: 10, color: !value || saving ? 'var(--text-muted)' : 'var(--accent-contrast)',
-              fontSize: 14, fontWeight: 600, cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-            }}
-          >
-            {saving ? '…' : 'Save'}
-          </button>
+        <div style={{ marginBottom: 16 }}>
+          <FormRow>
+            <input
+              type="number"
+              inputMode="decimal"
+              autoFocus
+              value={value}
+              onChange={e => setValue(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') submit(); }}
+              placeholder={`Weight (${unit})`}
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '11px 14px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)',
+                borderRadius: 10, color: 'var(--text-primary)', fontSize: 15, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none',
+              }}
+            />
+            <FormRow.Button icon="ti-device-floppy" primary onClick={submit} disabled={!value || saving}>
+              {saving ? '…' : 'Save'}
+            </FormRow.Button>
+          </FormRow>
         </div>
 
         <button
@@ -336,22 +333,13 @@ function DashboardHero({ consumed, target, baseCalorieTarget, chartDays, chartRa
           ))}
         </div>
 
-        <div onClick={e => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{ display: 'inline-flex', gap: 2, background: 'var(--pill-track)', borderRadius: 99, padding: 3 }}>
-            {CHART_RANGES.map(r => (
-              <button
-                key={r.id}
-                onClick={() => setChartRange(r.id)}
-                style={{
-                  padding: '6px 14px', borderRadius: 99, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                  background: chartRange === r.id ? 'var(--pill-bg)' : 'transparent',
-                  color: chartRange === r.id ? 'var(--pill-text)' : 'var(--text-muted)',
-                }}
-              >
-                {r.id}
-              </button>
-            ))}
-          </div>
+        <div onClick={e => e.stopPropagation()}>
+          <SegmentedControl
+            options={CHART_RANGE_OPTIONS}
+            value={chartRange}
+            onChange={setChartRange}
+            fill
+          />
         </div>
       </div>
     </div>
@@ -523,22 +511,48 @@ function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWork
         </div>
       </div>
       {workouts.length > 0 && (
-        <div style={{ marginTop: 10 }}>
+        <div style={{ marginTop: 10, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '0 12px' }}>
           {workouts.map(w => {
             const type = getWorkoutType(w.type);
             return (
-              <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, marginBottom: 6 }}>
-                <i className={`ti ${type.icon}`} style={{ fontSize: 15, color: 'var(--accent)', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-secondary)' }}>{type.label} · {w.durationMinutes} min</div>
-                <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, flexShrink: 0 }}>{Math.round(w.caloriesBurned)} kcal</div>
-                <button className="hit-slop" aria-label="Close" onClick={() => onDeleteWorkout(w.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, padding: 0, flexShrink: 0 }}>×</button>
-              </div>
+              <WorkoutRow key={w.id} workout={w} type={type} onDelete={() => onDeleteWorkout(w.id)} />
             );
           })}
         </div>
       )}
       <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 8 }}>Steps will sync from Apple Health / Google Fit once the native app ships.</div>
     </div>
+  );
+}
+
+// A single logged workout — tapping opens a small detail sheet with the
+// delete action, instead of the row carrying its own inline "×" button.
+function WorkoutRow({ workout: w, type, onDelete }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <ListRow
+        avatar={<ListRow.SquareAvatar icon={type.icon} />}
+        title={type.label}
+        subtitleParts={[`${w.durationMinutes} min`, `${Math.round(w.caloriesBurned)} kcal`]}
+        trailing={<ListRow.Chevron />}
+        onClick={() => setOpen(true)}
+      />
+      {open && (
+        <div onClick={() => setOpen(false)} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={type.label} className="modal-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, padding: 20, width: '100%', maxWidth: 380 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <ListRow.SquareAvatar icon={type.icon} size={48} />
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{type.label}</div>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
+              {w.durationMinutes} min · {Math.round(w.caloriesBurned)} kcal burned
+            </p>
+            <FormRow.Button icon="ti-trash" danger onClick={() => { onDelete(); setOpen(false); }}>Delete</FormRow.Button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

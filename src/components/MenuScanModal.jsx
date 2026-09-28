@@ -5,6 +5,12 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
 import DragSheet from './DragSheet';
+import SegmentedControl from './SegmentedControl';
+
+const SCAN_TABS = [
+  { id: 'goal', label: 'For your goal', icon: 'ti-sparkles' },
+  { id: 'all', label: 'All items', icon: 'ti-list' },
+];
 
 // Downscale + re-encode before upload — same reasoning as PhotoScanModal's
 // resizeImage: keeps the request under serverless body-size limits and
@@ -43,34 +49,6 @@ function MacroGrid({ pick }) {
       <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{pick.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
       <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--water-blue)' }}>{pick.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
       <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ai-purple)' }}>{pick.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
-    </div>
-  );
-}
-
-// Same pill-segmented look as DailyLogViewToggle (Dashboard's Hourly/Meals
-// switch) — reused inline here rather than as a shared component since the
-// two live in unrelated parts of the app with different option sets.
-function TabToggle({ value, onChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 4, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2, marginBottom: 14 }}>
-      {[
-        { id: 'goal', label: 'For your goal', icon: 'ti-sparkles' },
-        { id: 'all', label: 'All items', icon: 'ti-list' },
-      ].map(opt => (
-        <button
-          key={opt.id}
-          onClick={() => onChange(opt.id)}
-          style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 10px', borderRadius: 18, border: 'none',
-            background: value === opt.id ? 'var(--accent)' : 'transparent',
-            color: value === opt.id ? 'var(--accent-contrast)' : 'var(--text-muted)',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-          }}
-        >
-          <i className={`ti ${opt.icon}`} style={{ fontSize: 13 }} />
-          {opt.label}
-        </button>
-      ))}
     </div>
   );
 }
@@ -308,7 +286,7 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
           review before logging. */}
       {hasResults && !picked && !error && (
         <div style={{ marginTop: 14 }}>
-          <TabToggle value={activeTab} onChange={setActiveTab} />
+          <SegmentedControl options={SCAN_TABS} value={activeTab} onChange={setActiveTab} fill style={{ marginBottom: 14 }} />
 
           {activeTab === 'goal' && (
             recommendations.length === 0 ? (

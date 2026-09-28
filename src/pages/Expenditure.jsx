@@ -21,6 +21,8 @@ import DayHeatmapStrip from '../components/DayHeatmapStrip';
 import MacroSplitBar from '../components/MacroSplitBar';
 import { targetsForDate, dayTargetsActive } from '../lib/dayTargets';
 import PageHeader from '../components/PageHeader';
+import SegmentedControl from '../components/SegmentedControl';
+import FormRow from '../components/FormRow';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
@@ -154,18 +156,22 @@ function LogWeightButton({ unit, onLog }) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+    <FormRow>
       <input
         type="number" autoFocus value={value} onChange={e => setValue(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') setOpen(false); }}
         placeholder={`Weight (${unit})`}
-        style={{ width: 110, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '6px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+        style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '6px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
       />
-      <button onClick={submit} disabled={!value || saving} style={{ background: !value || saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: !value || saving ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: !value || saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        {saving ? 'Saving…' : 'Save'}
-      </button>
-      <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', fontSize: 12, padding: '8px 10px', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Cancel</button>
-    </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <FormRow.Button icon="ti-device-floppy" primary onClick={submit} disabled={!value || saving}>
+          {saving ? 'Saving…' : 'Save'}
+        </FormRow.Button>
+        <FormRow.Button icon="ti-x" onClick={() => setOpen(false)}>
+          Cancel
+        </FormRow.Button>
+      </div>
+    </FormRow>
   );
 }
 
@@ -418,28 +424,17 @@ export default function Expenditure() {
           )}
 
           {/* range toggle */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
-            {RANGES.map(r => {
-              const locked = r.pro && !isPremium;
-              const active = rangeId === r.id;
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => locked ? navigate('/settings') : setRangeId(r.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 5,
-                    padding: '8px 16px', borderRadius: 20,
-                    border: `1px solid ${active ? 'var(--border-active)' : 'var(--border-default)'}`,
-                    background: active ? 'var(--accent-bg)' : 'var(--bg-subtle)',
-                    color: active ? 'var(--accent)' : locked ? 'var(--text-hint)' : 'var(--text-muted)',
-                    fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                  }}
-                >
-                  {r.label}
-                  {locked && <i className="ti ti-lock" style={{ fontSize: 11 }} />}
-                </button>
-              );
-            })}
+          <div style={{ marginBottom: 24 }}>
+            <SegmentedControl
+              options={RANGES.map(r => ({ id: r.id, label: r.label, icon: (r.pro && !isPremium) ? 'ti-lock' : undefined }))}
+              value={rangeId}
+              onChange={id => {
+                const r = RANGES.find(x => x.id === id);
+                if (r.pro && !isPremium) navigate('/settings');
+                else setRangeId(id);
+              }}
+              fill
+            />
           </div>
 
           {/* average / difference + expenditure trend */}

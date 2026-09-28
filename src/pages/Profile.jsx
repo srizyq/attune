@@ -10,6 +10,17 @@ import { isTrialActive, trialDaysLeft } from '../lib/trial';
 import AppNav from '../components/AppNav';
 import { Card, SectionLabel, FieldRow } from '../components/settings/primitives';
 import PageHeader from '../components/PageHeader';
+import SegmentedControl from '../components/SegmentedControl';
+
+const THEME_OPTIONS = [
+  { id: 'dark', label: 'Dark', icon: 'ti-moon' },
+  { id: 'light', label: 'Light', icon: 'ti-sun' },
+];
+
+const UNIT_OPTIONS = [
+  { id: 'metric', label: 'Metric (kg/cm)' },
+  { id: 'imperial', label: 'Imperial (lb/in)' },
+];
 
 // ─── Reusable bits ──────────────────────────────────────────────────────────────
 function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) {
@@ -321,23 +332,7 @@ export default function Profile() {
           <Card>
             <SectionLabel>Appearance</SectionLabel>
             <FieldRow label="Theme" hint={theme === 'light' ? 'Light — matches most of the day' : 'Dark — easier on the eyes at night'}>
-              <div style={{ display: 'flex', gap: 6, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2 }}>
-                {[{ id: 'dark', label: 'Dark', icon: 'ti-moon' }, { id: 'light', label: 'Light', icon: 'ti-sun' }].map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setTheme(opt.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 18, border: 'none',
-                      background: theme === opt.id ? 'var(--accent)' : 'transparent',
-                      color: theme === opt.id ? 'var(--accent-contrast)' : 'var(--text-muted)',
-                      fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    }}
-                  >
-                    <i className={`ti ${opt.icon}`} style={{ fontSize: 14 }} />
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl options={THEME_OPTIONS} value={theme} onChange={setTheme} fill={false} />
             </FieldRow>
           </Card>
 
@@ -349,31 +344,7 @@ export default function Profile() {
                 <TextInput value={form.name} onChange={v => set('name', v)} width="180px" />
               </FieldRow>
               <FieldRow label="Units">
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[
-                    { value: 'metric',   label: 'Metric (kg/cm)' },
-                    { value: 'imperial', label: 'Imperial (lb/in)' },
-                  ].map(u => {
-                    const sel = form.unit === u.value;
-                    return (
-                      <button
-                        key={u.value}
-                        onClick={() => set('unit', u.value)}
-                        style={{
-                          padding: '8px 12px',
-                          background: sel ? 'var(--accent-bg)' : 'var(--bg-primary)',
-                          border: `1px solid ${sel ? 'var(--border-active)' : 'var(--border-default)'}`,
-                          borderRadius: '8px',
-                          color: sel ? 'var(--accent)' : 'var(--text-muted)',
-                          fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                          fontFamily: "'Plus Jakarta Sans', sans-serif",
-                        }}
-                      >
-                        {u.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <SegmentedControl options={UNIT_OPTIONS} value={form.unit} onChange={v => set('unit', v)} fill={false} />
               </FieldRow>
             </Card>
 

@@ -10,6 +10,8 @@ import AppNav from '../components/AppNav';
 import Toast from '../components/Toast';
 import { Card, SectionLabel } from '../components/settings/primitives';
 import PageHeader from '../components/PageHeader';
+import FormRow from '../components/FormRow';
+import ListRow from '../components/ListRow';
 
 // Mirrors FoodSearch.jsx's own local MEALS list — not shared/exported
 // from there, and small enough that duplicating it here is simpler than
@@ -51,78 +53,80 @@ function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, log
   }
 
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 10, marginBottom: 10, overflow: 'hidden' }}>
-      <button
+    <>
+      <ListRow
+        avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
+        title={recipe.name}
+        subtitleParts={[`${items.length} ingredient${items.length !== 1 ? 's' : ''}`, `makes ${servings} serving${servings !== 1 ? 's' : ''}`, `${Math.round(perServing.cal)} kcal/serving`]}
+        trailing={<ListRow.Chevron />}
         onClick={onToggle}
-        style={{ width: '100%', background: 'none', border: 'none', padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', fontFamily: 'inherit' }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{recipe.name}</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-            {items.length} ingredient{items.length !== 1 ? 's' : ''} · makes {servings} serving{servings !== 1 ? 's' : ''} · {Math.round(perServing.cal)} kcal/serving
-          </div>
-        </div>
-        <i className={`ti ti-chevron-${isExpanded ? 'up' : 'down'}`} style={{ color: 'var(--text-hint)', fontSize: 16, flexShrink: 0 }} />
-      </button>
-
+      />
       {isExpanded && (
-        <div style={{ padding: '0 16px 16px' }}>
-          <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: 14, marginBottom: 14 }}>
-            {items.map((it, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '6px 0', fontSize: 13 }}>
-                <span style={{ color: 'var(--text-secondary)' }}>
-                  {it.loggedAmount != null && it.loggedUnit ? `${formatAmountUnit(it.loggedAmount, it.loggedUnit)} ` : ''}
-                  {it.name}
-                </span>
-                <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>{Math.round(it.cal)} kcal</span>
-              </div>
-            ))}
-          </div>
+        <div onClick={onToggle} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 300 }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={recipe.name}
+            className="modal-panel"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '16px 16px 0 0', padding: 20, width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{recipe.name}</div>
+              <button onClick={onToggle} aria-label="Close" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}>✕</button>
+            </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
-            <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{Math.round(perServing.cal)}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>kcal</div></div>
-            <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{perServing.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
-            <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--water-blue)' }}>{perServing.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
-            <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ai-purple)' }}>{perServing.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
-          </div>
-          <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '-10px 0 14px', textAlign: 'center' }}>per serving — {Math.round(totals.cal)} kcal total for the whole recipe</p>
+            <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: 14, marginBottom: 14 }}>
+              {items.map((it, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '6px 0', fontSize: 13 }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    {it.loggedAmount != null && it.loggedUnit ? `${formatAmountUnit(it.loggedAmount, it.loggedUnit)} ` : ''}
+                    {it.name}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>{Math.round(it.cal)} kcal</span>
+                </div>
+              ))}
+            </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <input
-              type="number" min="0" step="0.5" value={servingsToLog} onChange={e => setServingsToLog(e.target.value)}
-              style={{ ...inputStyle, width: 70 }}
-            />
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>serving{Number(servingsToLog) === 1 ? '' : 's'}</span>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>≈ {Math.round(scaledForLog.cal)} kcal</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            {logByTime ? (
-              <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
-            ) : (
-              <select value={meal} onChange={e => setMeal(e.target.value)} style={{ ...inputStyle, flex: 1, cursor: 'pointer' }}>
-                {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            )}
-            <button
-              onClick={handleLog}
-              disabled={logging || !Number(servingsToLog)}
-              style={{ flex: 1, background: logging || !Number(servingsToLog) ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '9px', fontSize: 13, fontWeight: 600, color: logging || !Number(servingsToLog) ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: logging || !Number(servingsToLog) ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              {logging ? 'Adding…' : 'Log'}
-            </button>
-          </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{Math.round(perServing.cal)}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>kcal</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{perServing.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--water-blue)' }}>{perServing.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ai-purple)' }}>{perServing.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '-10px 0 14px', textAlign: 'center' }}>per serving — {Math.round(totals.cal)} kcal total for the whole recipe</p>
 
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => onEdit(recipe)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 7, padding: '8px', fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              <i className="ti ti-edit" style={{ marginRight: 4 }} />Edit
-            </button>
-            <button onClick={() => onDelete(recipe)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 7, padding: '8px', fontSize: 12, color: 'var(--danger)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              <i className="ti ti-trash" style={{ marginRight: 4 }} />Delete
-            </button>
+            <div style={{ marginBottom: 12 }}>
+              <FormRow>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="number" min="0" step="0.5" value={servingsToLog} onChange={e => setServingsToLog(e.target.value)}
+                    style={{ ...inputStyle, width: 70 }}
+                  />
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>serving{Number(servingsToLog) === 1 ? '' : 's'}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>≈ {Math.round(scaledForLog.cal)} kcal</span>
+                </div>
+                {logByTime ? (
+                  <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                ) : (
+                  <select value={meal} onChange={e => setMeal(e.target.value)} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
+                    {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                )}
+                <FormRow.Button icon="ti-check" primary onClick={handleLog} disabled={logging || !Number(servingsToLog)}>
+                  {logging ? 'Adding…' : 'Log'}
+                </FormRow.Button>
+              </FormRow>
+            </div>
+
+            <FormRow>
+              <FormRow.Button icon="ti-edit" onClick={() => onEdit(recipe)}>Edit</FormRow.Button>
+              <FormRow.Button icon="ti-trash" danger onClick={() => onDelete(recipe)}>Delete</FormRow.Button>
+            </FormRow>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

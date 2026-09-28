@@ -26,7 +26,7 @@ export default function SegmentedControl({ options, value, onChange, fill = true
             key={opt.id}
             role="tab"
             aria-selected={active}
-            onClick={() => onChange(opt.id)}
+            onClick={() => { if (!opt.disabled) onChange(opt.id); }}
             className="btn-press"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -34,7 +34,9 @@ export default function SegmentedControl({ options, value, onChange, fill = true
               ...(fill ? { flex: 1 } : null),
               background: active ? 'var(--accent)' : 'transparent',
               color: active ? 'var(--accent-contrast)' : 'var(--text-muted)',
-              fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+              fontSize: 12, fontWeight: 600, cursor: opt.disabled ? 'not-allowed' : 'pointer',
+              opacity: opt.disabled ? 0.5 : 1,
+              fontFamily: 'inherit', whiteSpace: 'nowrap',
             }}
           >
             {opt.icon && <i className={`ti ${opt.icon}`} style={{ fontSize: 13 }} />}

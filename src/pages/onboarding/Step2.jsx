@@ -2,6 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from '../../components/OnboardingLayout';
+import SegmentedControl from '../../components/SegmentedControl';
+
+const UNIT_OPTIONS = [
+  { id: 'metric', label: 'kg / cm' },
+  { id: 'imperial', label: 'lbs / in' },
+];
 
 const activityLevels = [
   { id: 'sedentary', label: 'Mostly sitting', desc: 'Office job, little exercise', multiplier: 1.2 },
@@ -165,26 +171,8 @@ export default function Step2() {
         </div>
 
         {/* Unit toggle */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', justifyContent: 'flex-end' }}>
-          {['metric', 'imperial'].map(u => (
-            <button
-              key={u}
-              onClick={() => setUnit(u)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '6px',
-                border: `1px solid ${unit === u ? 'var(--border-active)' : 'var(--border-default)'}`,
-                background: unit === u ? 'var(--accent-bg)' : 'transparent',
-                color: unit === u ? 'var(--accent)' : 'var(--text-muted)',
-                fontSize: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              {u === 'metric' ? 'kg / cm' : 'lbs / in'}
-            </button>
-          ))}
+        <div style={{ marginBottom: '24px' }}>
+          <SegmentedControl options={UNIT_OPTIONS} value={unit} onChange={setUnit} fill />
         </div>
 
         {/* Date of birth + Sex */}

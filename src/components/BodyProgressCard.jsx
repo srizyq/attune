@@ -4,6 +4,7 @@ import { useBodyMeasurements, useProgressPhotos } from '../hooks/useBodyProgress
 import { KINDS, formatMeasurement, kindLabel, latestByKind, unitFor, validateImageFile } from '../lib/bodyProgress';
 import { todayLocalDate } from '../lib/patterns';
 import PhotoGallery from './PhotoGallery';
+import FormRow from './FormRow';
 
 const input = { padding: '8px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' };
 const heading = { fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' };
@@ -75,24 +76,26 @@ export default function BodyProgressCard() {
 
       {measurements.supported && (
         <>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 12 }}>
-            <div>
-              <label htmlFor="body-kind" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Measurement</label>
-              <select id="body-kind" value={kind} onChange={e => setKind(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
-                {KINDS.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="body-value" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Value ({unit === 'pct' ? '%' : unit})</label>
-              <input id="body-value" type="number" inputMode="decimal" min="0" step="0.1" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveMeasurement(); }} style={{ ...input, width: 100 }} />
-            </div>
-            <div>
-              <label htmlFor="body-date" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Date</label>
-              <input id="body-date" type="date" value={date} max={today} onChange={e => setDate(e.target.value || today)} style={input} />
-            </div>
-            <button onClick={saveMeasurement} disabled={!valid || saving} className="btn-press" style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: !valid || saving ? 0.5 : 1 }}>
-              {saving ? 'Saving…' : 'Save'}
-            </button>
+          <div style={{ marginBottom: 12 }}>
+            <FormRow>
+              <div>
+                <label htmlFor="body-kind" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Measurement</label>
+                <select id="body-kind" value={kind} onChange={e => setKind(e.target.value)} style={{ ...input, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
+                  {KINDS.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="body-value" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Value ({unit === 'pct' ? '%' : unit})</label>
+                <input id="body-value" type="number" inputMode="decimal" min="0" step="0.1" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveMeasurement(); }} style={{ ...input, width: '100%', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label htmlFor="body-date" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Date</label>
+                <input id="body-date" type="date" value={date} max={today} onChange={e => setDate(e.target.value || today)} style={{ ...input, width: '100%', boxSizing: 'border-box' }} />
+              </div>
+              <FormRow.Button icon="ti-device-floppy" primary onClick={saveMeasurement} disabled={!valid || saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </FormRow.Button>
+            </FormRow>
           </div>
           {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 12px' }}>{error}</p>}
 

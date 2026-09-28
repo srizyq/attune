@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGeneralThread } from '../hooks/useCoach';
 import { useClosingTransition } from '../hooks/useClosingTransition';
+import FormRow from './FormRow';
 
 // Opened by clicking the Dashboard's general CoachNote tab — a real
 // back-and-forth thread with the client's trainer, not just a one-way note.
@@ -69,23 +70,20 @@ export default function CoachChatModal({ trainerId, trainerName, trainerLogoUrl,
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, padding: '12px 14px', borderTop: '1px solid var(--border-default)', flexShrink: 0 }}>
-          <input
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
-            placeholder="Write a reply…"
-            autoFocus
-            style={{ flex: 1, minWidth: 0, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
-          />
-          <button
-            onClick={handleSend}
-            disabled={!body.trim() || sending}
-            className="btn-press"
-            style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
-          >
-            Send
-          </button>
+        <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border-default)', flexShrink: 0 }}>
+          <FormRow>
+            <input
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+              placeholder="Write a reply…"
+              autoFocus
+              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+            />
+            <FormRow.Button icon="ti-send-2" primary onClick={handleSend} disabled={!body.trim() || sending}>
+              Send
+            </FormRow.Button>
+          </FormRow>
         </div>
       </div>
     </div>

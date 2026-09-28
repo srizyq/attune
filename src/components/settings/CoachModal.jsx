@@ -7,6 +7,7 @@ import { uploadCoachLogo } from '../../lib/db';
 import { authedPost } from '../../lib/billing';
 import { coachPassHint, eligibleForCoachTrial, COACH_TRIAL_DAYS } from '../../lib/coachPass';
 import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
+import FormRow from '../FormRow';
 
 function CoachPassButton({ profile, pendingConfirmation, onGoToProfile }) {
   const [loading, setLoading] = useState(false);
@@ -206,21 +207,19 @@ export default function CoachModal({ onClose, closing }) {
             </FieldRow>
           ))
         )}
-        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-          <input
-            value={inviteCodeInput}
-            onChange={e => { setInviteCodeInput(e.target.value); setInviteStatus(null); }}
-            onKeyDown={e => { if (e.key === 'Enter') handleRedeemCode(); }}
-            placeholder="Invite link or code"
-            style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
-          />
-          <button
-            onClick={handleRedeemCode}
-            disabled={!inviteCodeInput.trim() || inviteStatus === 'loading'}
-            style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
-          >
-            {inviteStatus === 'loading' ? 'Connecting…' : 'Connect'}
-          </button>
+        <div style={{ marginTop: 14 }}>
+          <FormRow>
+            <input
+              value={inviteCodeInput}
+              onChange={e => { setInviteCodeInput(e.target.value); setInviteStatus(null); }}
+              onKeyDown={e => { if (e.key === 'Enter') handleRedeemCode(); }}
+              placeholder="Invite link or code"
+              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+            />
+            <FormRow.Button icon="ti-login-2" onClick={handleRedeemCode} disabled={!inviteCodeInput.trim() || inviteStatus === 'loading'}>
+              {inviteStatus === 'loading' ? 'Connecting…' : 'Connect'}
+            </FormRow.Button>
+          </FormRow>
         </div>
         {inviteStatus && inviteStatus !== 'loading' && (
           <p style={{ color: 'var(--danger)', fontSize: 12, margin: '8px 0 0' }}>{inviteStatus}</p>

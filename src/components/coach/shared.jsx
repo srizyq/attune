@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ACCENT } from './constants';
+import SegmentedControl from '../SegmentedControl';
 
 // The group-tag + disconnect controls for a client — previously lived at
 // the end of every client-list row; now lives in ClientDetail's header
@@ -144,26 +145,17 @@ export function EmptyChartBox({ icon, message }) {
 }
 
 // 7 / 30 / 90 day picker used across the client tabs.
+// Thin wrapper around SegmentedControl — kept as its own component (rather
+// than inlining SegmentedControl at each call site) so OverviewTab and
+// ProgressTab don't need to change at all.
 export function RangeToggle({ value, onChange, options }) {
   return (
-    <div style={{ display: 'flex', gap: 8 }} role="group" aria-label="Date range">
-      {options.map(r => (
-        <button
-          key={r.id}
-          onClick={() => onChange(r.id)}
-          aria-pressed={value === r.id}
-          className="btn-press"
-          style={{
-            background: value === r.id ? 'var(--accent-bg)' : 'var(--bg-card)',
-            border: `1px solid ${value === r.id ? 'var(--accent-dark)' : 'var(--border-strong)'}`,
-            borderRadius: 8, padding: '7px 18px', fontSize: 13,
-            color: value === r.id ? 'var(--accent)' : 'var(--text-muted)', cursor: 'pointer',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-          }}
-        >
-          {r.label}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      value={value}
+      onChange={onChange}
+      options={options}
+      fill
+      style={{ maxWidth: 320 }}
+    />
   );
 }
