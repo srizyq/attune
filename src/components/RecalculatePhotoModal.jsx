@@ -3,6 +3,7 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
 import DragSheet from './DragSheet';
+import MacroBreakdown from './MacroBreakdown';
 
 // Downscale + re-encode before upload — same reasoning as PhotoScanModal's
 // resizeImage.
@@ -142,12 +143,7 @@ export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
             <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
             {result.portion && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{result.portion}</div>}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{result.cal}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>kcal</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{result.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--water-blue)' }}>{result.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ai-purple)' }}>{result.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
-            </div>
+            <MacroBreakdown values={{ cal: result.cal, protein: result.protein, carbs: result.carbs, fat: result.fat }} />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={retake} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '11px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>

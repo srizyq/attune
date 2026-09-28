@@ -5,6 +5,7 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
 import DragSheet from './DragSheet';
+import MacroBreakdown from './MacroBreakdown';
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
 
@@ -292,12 +293,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
             <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
             {result.portion && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{result.portion}</div>}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{result.cal}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>kcal</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{result.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--water-blue)' }}>{result.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ai-purple)' }}>{result.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
-            </div>
+            <MacroBreakdown values={{ cal: result.cal, protein: result.protein, carbs: result.carbs, fat: result.fat }} />
             <button
               onClick={() => setShowMicros(s => !s)}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', marginTop: 12, padding: '6px 0 0' }}

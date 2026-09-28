@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
 import DragSheet from './DragSheet';
 import SegmentedControl from './SegmentedControl';
+import MacroBreakdown from './MacroBreakdown';
 
 const SCAN_TABS = [
   { id: 'goal', label: 'For your goal', icon: 'ti-sparkles' },
@@ -43,14 +44,7 @@ function hasModification(text) {
 }
 
 function MacroGrid({ pick }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{pick.cal}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>kcal</div></div>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{pick.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--water-blue)' }}>{pick.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
-      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ai-purple)' }}>{pick.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
-    </div>
-  );
+  return <MacroBreakdown values={{ cal: pick.cal, protein: pick.protein, carbs: pick.carbs, fat: pick.fat }} />;
 }
 
 export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchManually }) {

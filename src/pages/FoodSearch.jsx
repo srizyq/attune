@@ -28,6 +28,11 @@ import { getCategoryStyle } from '../lib/foodCategories';
 import PageHeader from '../components/PageHeader';
 import DateStepper from '../components/DateStepper';
 import FormRow from '../components/FormRow';
+import DragSheet from '../components/DragSheet';
+import ServingStepper from '../components/ServingStepper';
+import MacroBreakdown from '../components/MacroBreakdown';
+import DayBudgetImpact from '../components/DayBudgetImpact';
+import { targetsForDate } from '../lib/dayTargets';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -576,6 +581,14 @@ const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', 
 //    on internal state. ─────────────────────────────────────────────────
 function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, logByTime, onCreateCustom, onSearchManually }) {
   const { user } = useAuth();
+  const { profile } = useProfile();
+  // Read-only here — logs for today's day-budget-impact preview, not
+  // wired to onAddFood (that already goes through the parent's own
+  // useFoodLogs via onAddFood/addFood).
+  const { logs: todaysLogs } = useFoodLogs(selectedDate);
+  const dailyTarget = targetsForDate(profile, selectedDate);
+  const consumedToday = todaysLogs.reduce((s, l) => s + (l.cal || 0), 0);
+  const favourites = useFavouriteFoods();
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
   // Guards against the decode callback firing more than once for the same
@@ -1013,21 +1026,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   }
 
   return (
-    <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 24 }}>
-    {/* maxHeight uses --vvh, not a bare vh unit, for the same reason
-        .modal-backdrop does (see its comment in index.css): tapping the
-        amount field below opens the keyboard, which shrinks the *visual*
-        viewport but not `vh` itself on iOS Safari. A bare 85vh cap here
-        stayed sized for the full (pre-keyboard) height while the backdrop
-        correctly shrank around it, so the centered panel overflowed both
-        edges of its own backdrop — the header scrolled off above the
-        screen and the food list behind the modal became visible below it. */}
-    <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth: 460, maxHeight: "calc(var(--vvh, 100vh) * 0.85)", overflowY: "auto" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
-        <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"}</span>
-        <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
-      </div>
-      <div style={{ padding: 20 }}>
+    <DragSheet title={addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"} onClose={close} closing={closing}>
       {error && !addingProduct && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
@@ -1162,23 +1161,35 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         <div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Product found</div>
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-active)", borderRadius: 10, padding: "14px", marginBottom: 12 }}>
-            <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
-            {result.brand && <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{result.brand} · {result.serving}</div>}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
-              <div style={{ textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)" }}>{scaled.protein}g</div><div style={{ fontSize: 10, color: "var(--text-muted)" }}>Protein</div></div>
-              <div style={{ textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 600, color: "var(--water-blue)" }}>{scaled.carbs}g</div><div style={{ fontSize: 10, color: "var(--text-muted)" }}>Carbs</div></div>
-              <div style={{ textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 600, color: "var(--warning)" }}>{scaled.fat}g</div><div style={{ fontSize: 10, color: "var(--text-muted)" }}>Fat</div></div>
-              <div style={{ textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 600, color: "var(--ai-purple)" }}>{scaled.fibre}g</div><div style={{ fontSize: 10, color: "var(--text-muted)" }}>Fibre</div></div>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 2 }}>
+              <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600 }}>{result.name}</div>
+              <button
+                onClick={() => favourites.toggle({ ...result, cal: scaled.cal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat })}
+                className="hit-slop" aria-label={favourites.isFavourite(result.name) ? "Remove favourite" : "Add favourite"}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0, color: favourites.isFavourite(result.name) ? "var(--gold)" : "var(--text-hint)", fontSize: 16, display: "flex" }}
+              >
+                <i className={favourites.isFavourite(result.name) ? "ti ti-star-filled" : "ti ti-star"} />
+              </button>
             </div>
-            <div style={{ display: "flex", gap: 16, paddingTop: 10, borderTop: "1px solid var(--border-default)" }}>
+            {result.brand && <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{result.brand} · {result.serving}</div>}
+            <MacroBreakdown
+              values={{ cal: scaled.cal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat }}
+              dailyTarget={dailyTarget.calories ? { cal: dailyTarget.calories, protein: dailyTarget.protein_g, carbs: dailyTarget.carbs_g, fat: dailyTarget.fat_g } : null}
+            />
+            <div style={{ display: "flex", gap: 16, paddingTop: 10, marginTop: 10, borderTop: "1px solid var(--border-default)" }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Fibre <span style={{ color: "var(--text-secondary)" }}>{scaled.fibre}g</span></div>
               <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sodium <span style={{ color: "var(--text-secondary)" }}>{scaled.sodium}mg</span></div>
               <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sugar <span style={{ color: "var(--text-secondary)" }}>{scaled.sugar}g</span></div>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: "var(--accent)" }}>{scaled.cal}</span>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}> kcal{unit !== servingUnit && ` · ≈${gramsEquivalent}${servingUnit}`} — label serving: {result.serving}</span>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
+            {unit !== servingUnit && `≈${gramsEquivalent}${servingUnit} · `}label serving: {result.serving}
           </div>
+          {dailyTarget.calories > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={scaled.cal} itemName={result.name} />
+            </div>
+          )}
           <AddControls
             amount={amount} setAmount={setAmount}
             unit={unit} setUnit={setUnit}
@@ -1189,12 +1200,12 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             onAdd={() => { onAddFood(scaled, logByTime ? null : meal, logByTime ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null); onClose(); }}
             disabled={!servings}
           />
-          <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Scan again</button>
+          <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <i className="ti ti-scan" style={{ fontSize: 13 }} /> Scan next
+          </button>
         </div>
       )}
-      </div>
-    </div>
-    </div>
+    </DragSheet>
   );
 }
 
@@ -1600,16 +1611,13 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
 function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, setMeal, time, setTime, logByTime, onAdd, disabled, addLabel }) {
   return (
     <FormRow>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          type="number" min="0" step="any" value={amount}
-          onChange={e => setAmount(e.target.value)}
-          style={{ width: 70, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
-        />
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <ServingStepper amount={amount} setAmount={setAmount} step={unit === 'serving' ? 0.5 : 1} />
         <select value={unit} onChange={e => setUnit(e.target.value)} style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
           {units.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
         </select>
       </div>
+      {unit === 'serving' && <ServingStepper.Multipliers amount={amount} setAmount={setAmount} />}
       {logByTime ? (
         <input
           type="time" value={time} onChange={e => setTime(e.target.value)}
