@@ -42,7 +42,7 @@ function MicroStat({ value, unit, label }) {
   );
 }
 
-export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaultTime, selectedDate, logByTime, onCreateCustom, onSearchManually }) {
+export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaultTime, selectedDate, showSlots, onCreateCustom, onSearchManually }) {
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -208,7 +208,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
         // a generic "Logged before" once it's on the row.
         servingLabel: result.portion || null,
       };
-      await onAddFood(food, logByTime ? null : meal, logByTime ? timeStringToDate(time, new Date(selectedDate + 'T00:00:00')) : null);
+      await onAddFood(food, showSlots ? null : meal, showSlots ? timeStringToDate(time, new Date(selectedDate + 'T00:00:00')) : null);
       onClose();
     } catch (err) {
       console.error(err);
@@ -377,7 +377,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            {logByTime ? (
+            {showSlots ? (
               <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '7px 10px', color: 'var(--text-secondary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
             ) : (
               <select value={meal} onChange={e => setMeal(e.target.value)} style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '7px 10px', color: 'var(--text-secondary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
@@ -391,7 +391,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
             disabled={adding}
             style={{ width: '100%', background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            {adding ? 'Adding…' : logByTime ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
+            {adding ? 'Adding…' : showSlots ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
           </button>
           {onCreateCustom && (
             <button onClick={() => onCreateCustom(result)} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>

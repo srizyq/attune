@@ -37,9 +37,8 @@ export function mapSlotRow(row) {
 // day. Items whose slotId doesn't match any of today's slots — a slot that
 // got deleted (on delete set null), or a row from before Slots mode was ever
 // used — land in a trailing 'unsorted' segment instead of silently
-// disappearing, mirroring buildDayTimeline's gap segments for the hourly
-// view (always returned, even when empty, so the UI doesn't need a separate
-// no-slots-yet check beyond `segments.length === 0`).
+// disappearing (always returned, even when empty, so the UI doesn't need a
+// separate no-slots-yet check beyond `segments.length === 0`).
 export function buildSlotTimeline(slots, items) {
   const sorted = [...(slots || [])].sort((a, b) => hhmm(a.slotTime).localeCompare(hhmm(b.slotTime)) || a.sortOrder - b.sortOrder);
   const byId = new Map(sorted.map((s) => [s.id, { type: 'slot', ...s, items: [] }]));

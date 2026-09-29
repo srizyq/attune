@@ -113,8 +113,8 @@ export async function addFoodLog(userId, entry) {
 // loop here would be N round-trips for one "copy" tap.
 // id/created_at are dropped so Postgres generates fresh ones; logged_at is
 // re-dated onto destDate but keeps its local time-of-day (see
-// shiftIsoDateKeepLocalTime) so a copied 8am item still shows at 8am on
-// Pro's hourly log, not at whatever moment the copy happened to run.
+// shiftIsoDateKeepLocalTime) so a copied 8am item still shows at 8am,
+// not at whatever moment the copy happened to run.
 export async function copyFoodLogs(userId, sourceRows, destDate) {
   if (!sourceRows.length) return [];
   const rows = sourceRows.map(row => {
@@ -205,8 +205,8 @@ export async function deleteDaySlot(id) {
 
 // Copies a whole day's slot structure AND its logged items onto destDate —
 // what "Copy day" runs while viewing Slots mode (the generic copyFoodLogs
-// above is what the same action runs in Hourly/Meals mode, and always
-// drops slot_id since it isn't slot-aware). Two inserts: the source day's
+// above is what the same action runs in Meals mode, and always drops
+// slot_id since it isn't slot-aware). Two inserts: the source day's
 // day_slots rows first (fresh ids, so destDate doesn't share slot rows with
 // sourceDate — editing one day's slot must never move the other's), then
 // their food_logs items re-pointed at the matching new slot id and re-dated

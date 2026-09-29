@@ -590,7 +590,7 @@ const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', 
 //    chrome (no separate ScanModal wrapper) since it needs to switch
 //    between a full-screen camera step and a normal modal card depending
 //    on internal state. ─────────────────────────────────────────────────
-function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, logByTime, onCreateCustom, onSearchManually }) {
+function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, showSlots, onCreateCustom, onSearchManually }) {
   const { user } = useAuth();
   const { profile } = useProfile();
   // Read-only here — logs for today's day-budget-impact preview, not
@@ -1207,8 +1207,8 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             units={unitsFor(servingUnit)}
             meal={meal} setMeal={setMeal}
             time={time} setTime={setTime}
-            logByTime={logByTime}
-            onAdd={() => { onAddFood(scaled, logByTime ? null : meal, logByTime ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null); onClose(); }}
+            showSlots={showSlots}
+            onAdd={() => { onAddFood(scaled, showSlots ? null : meal, showSlots ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null); onClose(); }}
             disabled={!servings}
           />
           <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
@@ -1349,7 +1349,7 @@ function CreateFoodModal({ onClose, onCreate, initialName, initialFood }) {
 
 const FREE_SAVED_MEALS_LIMIT = 10;
 
-function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, defaultTime, selectedDate, isPremium, logByTime, savedMealsCount, onUpgrade, isEditing, initialName, initialServings }) {
+function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, defaultTime, selectedDate, isPremium, showSlots, savedMealsCount, onUpgrade, isEditing, initialName, initialServings }) {
   const [name, setName] = useState(initialName || "");
   const [servings, setServings] = useState(String(initialServings || 1));
   const [logNow, setLogNow] = useState(!isEditing);
@@ -1370,7 +1370,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
     setSaving(true);
     setError(null);
     try {
-      await onSave(name.trim(), items, servingsNum, logNow && !logByTime ? meal : null, logNow && logByTime ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null);
+      await onSave(name.trim(), items, servingsNum, logNow && !showSlots ? meal : null, logNow && showSlots ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null);
       onClose();
     } catch (err) {
       console.error(err);
@@ -1434,7 +1434,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
             Also log 1 serving to today
           </label>
           {logNow && (
-            logByTime ? (
+            showSlots ? (
               <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...fieldStyle, marginBottom: 16, cursor: "pointer" }} />
             ) : (
               <select value={meal} onChange={e => setMeal(e.target.value)} style={{ ...fieldStyle, marginBottom: 16, cursor: "pointer" }}>
@@ -1444,7 +1444,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
           )}
           {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 12 }}>{error}</div>}
           <button onClick={submit} disabled={!name.trim() || saving} style={{ width: "100%", background: !name.trim() || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !name.trim() || saving ? "var(--text-muted)" : "var(--accent-contrast)", cursor: !name.trim() || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            {saving ? "Saving…" : !logNow ? (isEditing ? "Save changes" : "Save recipe") : logByTime ? `Save & log at ${formatTime12h(time)}` : `Save & log to ${meal}`}
+            {saving ? "Saving…" : !logNow ? (isEditing ? "Save changes" : "Save recipe") : showSlots ? `Save & log at ${formatTime12h(time)}` : `Save & log to ${meal}`}
           </button>
         </>
       )}
@@ -1481,7 +1481,7 @@ function MacroPill({ value, unit = "g", label, color }) {
   );
 }
 
-function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, selectedDate, logByTime, onAdd, addLabel, onDelete, isFavourite, onToggleFavourite }) {
+function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, selectedDate, showSlots, onAdd, addLabel, onDelete, isFavourite, onToggleFavourite }) {
   // Recent/Frequent/Favourites rows carry the amount+unit this exact food
   // was last logged with (see FoodSearch's lastAmount/lastUnit mapping) —
   // quick-add and the expanded editor both default to that instead of
@@ -1535,7 +1535,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   const quickAddLabel = formatAmountUnit(defaultAmount, defaultUnit);
   function handleQuickAdd(e) {
     e.stopPropagation();
-    onAdd(defaultScaled, logByTime ? null : defaultMeal, logByTime ? timeStringToDate(defaultTime, new Date(selectedDate + "T00:00:00")) : null);
+    onAdd(defaultScaled, showSlots ? null : defaultMeal, showSlots ? timeStringToDate(defaultTime, new Date(selectedDate + "T00:00:00")) : null);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1100);
   }
@@ -1603,8 +1603,8 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
             units={unitsFor(servingUnit)}
             meal={meal} setMeal={setMeal}
             time={time} setTime={setTime}
-            logByTime={logByTime}
-            onAdd={() => onAdd(scaled, logByTime ? null : meal, logByTime ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null)}
+            showSlots={showSlots}
+            onAdd={() => onAdd(scaled, showSlots ? null : meal, showSlots ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null)}
             disabled={!servings}
             addLabel={addLabel}
           />
@@ -1619,7 +1619,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   );
 }
 
-function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, setMeal, time, setTime, logByTime, onAdd, disabled, addLabel }) {
+function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, setMeal, time, setTime, showSlots, onAdd, disabled, addLabel }) {
   return (
     <FormRow>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1629,7 +1629,7 @@ function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, se
         </select>
       </div>
       {unit === 'serving' && <ServingStepper.Multipliers amount={amount} setAmount={setAmount} />}
-      {logByTime ? (
+      {showSlots ? (
         <input
           type="time" value={time} onChange={e => setTime(e.target.value)}
           style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
@@ -1640,7 +1640,7 @@ function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, se
         </select>
       )}
       <FormRow.Button icon="ti-plus" primary onClick={onAdd} disabled={disabled}>
-        {(addLabel ? addLabel : logByTime ? `Add at ${formatTime12h(time)}` : `Add to ${meal}`).replace(/^\+\s*/, '')}
+        {(addLabel ? addLabel : showSlots ? `Add at ${formatTime12h(time)}` : `Add to ${meal}`).replace(/^\+\s*/, '')}
       </FormRow.Button>
     </FormRow>
   );
@@ -1654,14 +1654,13 @@ export default function FoodSearch() {
   const { profile } = useProfile();
   const isPremium = !!profile?.is_premium;
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
-  // Whether logging a food should ask for a time (Pro's hourly timeline)
-  // or a meal (everyone else, and Pro users who've switched their daily
-  // log to the meal-grouped view — see DailyLogViewToggle). Matches
-  // DailyLog.jsx's own showHourly derivation so the two stay in sync:
-  // logging a food and viewing the log need to agree on which mode
-  // they're in, or switching to "Meals" would still prompt for a time.
-  const dailyLogView = profile?.daily_log_view || 'hourly';
-  const logByTime = isPremium && dailyLogView === 'hourly';
+  // Whether logging a food should ask for a time (Pro's custom slots) or a
+  // meal (everyone else) — matches DailyLog.jsx's own showSlots derivation
+  // so the two stay in sync: logging a food and viewing the log need to
+  // agree on which mode they're in, or switching to "Meals" would still
+  // prompt for a time. Also gates threading activeSlotId into the actual
+  // save call further down.
+  const dailyLogView = profile?.daily_log_view || 'meals';
   const showSlots = isPremium && dailyLogView === 'slots';
   const today = todayLocalDate();
   // DailyLog's per-day "+ Add food" links here with the date it was
@@ -1706,9 +1705,10 @@ export default function FoodSearch() {
     const auto = mealFromDate(new Date());
     return auto.charAt(0).toUpperCase() + auto.slice(1);
   });
-  // Pro users log against a real clock time instead of a meal category.
-  // The hourly timeline's per-hour "+" links here with { presetTime:
-  // "HH:00" } so logging lands at the hour you tapped instead of "now".
+  // Pro users in Slots mode log against a real clock time instead of a meal
+  // category. SlotTimeline's "APPEND TO <SLOT>"/"+ Log <slot>" links here
+  // with { presetTime: slot.slotTime } so logging defaults to that slot's
+  // own time instead of "now".
   const [activeTime, setActiveTime] = useState(() => location.state?.presetTime || currentTimeHHMM());
   // Slots mode's own analogue of activeMeal/activeTime — which day_slots
   // row this item logs into. SlotTimeline's "APPEND TO <SLOT>" and
@@ -2267,7 +2267,7 @@ export default function FoodSearch() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <DateStepper selectedDate={selectedDate} isToday={isToday} onShift={shiftDate} />
-            {logByTime ? (
+            {showSlots ? (
               <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "4px 10px" }}>
                 <span style={{ fontSize: 12, color: "var(--accent)" }}>Logging at</span>
                 <input
@@ -2389,7 +2389,7 @@ export default function FoodSearch() {
                 onToggle={() => handleToggle(aiEstimateResult.id)}
                 defaultMeal={activeMeal} selectedDate={selectedDate}
                 defaultTime={activeTime}
-                logByTime={logByTime}
+                showSlots={showSlots}
                 onAdd={handleAdd}
                 addLabel={builderMode ? "+ Add to recipe" : undefined}
                 isFavourite={favourites.isFavourite(aiEstimateResult.name)}
@@ -2446,7 +2446,7 @@ export default function FoodSearch() {
                       onToggle={() => handleToggle(food.id)}
                       defaultMeal={activeMeal} selectedDate={selectedDate}
                       defaultTime={activeTime}
-                      logByTime={logByTime}
+                      showSlots={showSlots}
                       onAdd={handleAdd}
                       addLabel={builderMode ? "+ Add to recipe" : undefined}
                       isFavourite={true}
@@ -2470,7 +2470,7 @@ export default function FoodSearch() {
                       onToggle={() => handleToggle(food.id)}
                       defaultMeal={activeMeal} selectedDate={selectedDate}
                       defaultTime={activeTime}
-                      logByTime={logByTime}
+                      showSlots={showSlots}
                       onAdd={handleAdd}
                       addLabel={builderMode ? "+ Add to recipe" : undefined}
                       isFavourite={favourites.isFavourite(food.name)}
@@ -2494,7 +2494,7 @@ export default function FoodSearch() {
                       onToggle={() => handleToggle(food.id)}
                       defaultMeal={activeMeal} selectedDate={selectedDate}
                       defaultTime={activeTime}
-                      logByTime={logByTime}
+                      showSlots={showSlots}
                       onAdd={handleAdd}
                       addLabel={builderMode ? "+ Add to recipe" : undefined}
                       isFavourite={favourites.isFavourite(food.name)}
@@ -2518,7 +2518,7 @@ export default function FoodSearch() {
                       onToggle={() => handleToggle(food.id)}
                       defaultMeal={activeMeal} selectedDate={selectedDate}
                       defaultTime={activeTime}
-                      logByTime={logByTime}
+                      showSlots={showSlots}
                       onAdd={handleAdd}
                       addLabel={builderMode ? "+ Add to recipe" : undefined}
                       onDelete={() => handleDeleteCustom(food)}
@@ -2558,7 +2558,7 @@ export default function FoodSearch() {
                       onToggle={() => handleToggle(food.id)}
                       defaultMeal={activeMeal} selectedDate={selectedDate}
                       defaultTime={activeTime}
-                      logByTime={logByTime}
+                      showSlots={showSlots}
                       onAdd={handleAdd}
                       addLabel={builderMode ? "+ Add to recipe" : undefined}
                       isFavourite={favourites.isFavourite(food.name)}
@@ -2590,7 +2590,7 @@ export default function FoodSearch() {
                     onToggle={() => handleToggle(food.id)}
                     defaultMeal={activeMeal} selectedDate={selectedDate}
                       defaultTime={activeTime}
-                      logByTime={logByTime}
+                      showSlots={showSlots}
                     onAdd={handleAdd}
                     addLabel={builderMode ? "+ Add to recipe" : undefined}
                     onDelete={food.source === "custom" ? () => handleDeleteCustom(food) : undefined}
@@ -2631,7 +2631,7 @@ export default function FoodSearch() {
                         onToggle={() => handleToggle(food.id)}
                         defaultMeal={activeMeal} selectedDate={selectedDate}
                       defaultTime={activeTime}
-                      logByTime={logByTime}
+                      showSlots={showSlots}
                         onAdd={handleAdd}
                         addLabel={builderMode ? "+ Add to recipe" : undefined}
                         isFavourite={favourites.isFavourite(food.name)}
@@ -2672,7 +2672,7 @@ export default function FoodSearch() {
           onClose={() => setScanOpen(false)}
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
-          logByTime={logByTime}
+          showSlots={showSlots}
           onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onCreateCustom={() => { setScanOpen(false); setCreateFoodPrefill(null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
@@ -2685,7 +2685,7 @@ export default function FoodSearch() {
           onClose={() => setPhotoScanOpen(false)}
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
-          logByTime={logByTime}
+          showSlots={showSlots}
           onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onCreateCustom={(prefill) => { setPhotoScanOpen(false); setCreateFoodPrefill(prefill || null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setPhotoScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
@@ -2696,7 +2696,7 @@ export default function FoodSearch() {
       {menuScanOpen && (
         <MenuScanModal
           onClose={() => setMenuScanOpen(false)}
-          logByTime={logByTime}
+          showSlots={showSlots}
           onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onSearchManually={() => { setMenuScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
@@ -2723,7 +2723,7 @@ export default function FoodSearch() {
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
           isPremium={isPremium}
-          logByTime={logByTime}
+          showSlots={showSlots}
           savedMealsCount={savedMeals.rows.length}
           onUpgrade={() => navigate('/settings')}
           onClose={() => setBuilderReviewOpen(false)}

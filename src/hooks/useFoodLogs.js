@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { addFoodLog, deleteFoodLog, updateFoodLog, getFoodLogsForDate, getDaySlots, createDaySlot, updateDaySlot, deleteDaySlot } from '../lib/db';
-import { mealFromDate, buildDayTimeline } from '../lib/mealTime';
+import { mealFromDate } from '../lib/mealTime';
 import { mapSlotRow, buildSlotTimeline } from '../lib/daySlots';
 import { extendedFromRow, EXTENDED_KEYS } from '../lib/microNutrients';
 
@@ -96,13 +96,8 @@ export function useFoodLogs(date) {
     return grouped;
   }, [items]);
 
-  // Pro users' daily log view — same items, but covering the full
-  // 12am–11pm day instead of by meal category, with empty stretches
-  // collapsed into expandable gap segments (see buildDayTimeline).
-  const dayTimeline = useMemo(() => buildDayTimeline(items), [items]);
-
-  // Pro's third daily_log_view option — custom-named slots instead of
-  // literal clock hours (see src/lib/daySlots.js).
+  // Pro's daily_log_view === 'slots' option — custom-named slots instead
+  // of the fixed meal enum (see src/lib/daySlots.js).
   const slotTimeline = useMemo(() => buildSlotTimeline(daySlots, items), [daySlots, items]);
 
   // mealName is optional — when omitted (Pro/time-based logging), the meal
@@ -188,5 +183,5 @@ export function useFoodLogs(date) {
     setSlotRows(prev => prev.filter(s => s.id !== id));
   }, []);
 
-  return { logs, meals, dayTimeline, daySlots, slotTimeline, loading, addFood, deleteFood, updateFood, addSlot, editSlot, removeSlot, refetch };
+  return { logs, meals, daySlots, slotTimeline, loading, addFood, deleteFood, updateFood, addSlot, editSlot, removeSlot, refetch };
 }

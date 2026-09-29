@@ -19,8 +19,8 @@ const SCENARIOS = [
   // and its icon glyph's CSS ::before content is folded into the computed
   // accessible name, so `exact: true` never matches literally "Meals"
   // either — .last() works because "Copy meals" sits earlier in the DOM
-  // than the view toggle. Switches to the Meals-grouped list so this
-  // exercises that layout, not Hourly (which shows the same item too).
+  // than the view toggle. Explicit click keeps this self-contained
+  // regardless of the fixture profile's own daily_log_view default.
   { name: 'daily-log-edit-item', path: '/log', act: async (p) => { await p.getByRole('button', { name: 'Meals' }).last().click(); await p.getByText('Grilled chicken').first().click(); } },
   { name: 'food-create-custom', path: '/food', act: (p) => p.getByTitle('Create a custom food').click() },
   { name: 'food-expand-result', path: '/food', act: async (p) => { await p.getByText('Almonds').first().click(); } },
@@ -49,9 +49,8 @@ const SCENARIOS = [
     },
   },
   {
-    // Meals view (not Hourly's default) — Hourly wraps each item in an
-    // extra hour-segment toggle whose preview text also reads "Grilled
-    // chicken…", so a single click there opens the segment, not the item.
+    // Explicit click into Meals view, same reasoning as daily-log-edit-item
+    // above.
     name: 'daily-log-edit-item-save-bar',
     path: '/log',
     act: async (p) => {

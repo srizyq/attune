@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
-import { hourToHHMM } from '../lib/mealTime';
 import { slotFromTime } from '../lib/daySlots';
 import { copyDaySlots } from '../lib/db';
 import AppNav from '../components/AppNav';
@@ -11,7 +10,6 @@ import CoachNote from '../components/CoachNote';
 import TodayPlanStrip from '../components/TodayPlanStrip';
 import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
-import HourlyTimeline from '../components/HourlyTimeline';
 import SlotTimeline from '../components/SlotTimeline';
 import QuickAddBar from '../components/QuickAddBar';
 import QuickMacroSheet from '../components/QuickMacroSheet';
@@ -32,11 +30,7 @@ export default function DailyLog() {
   const location = useLocation();
   const { profile, save: saveProfile } = useProfile();
   const isPremium = !!profile?.is_premium;
-  // Defaults to hourly (unset) — the only view that ever existed for Pro
-  // before this was a choice at all, so an existing Pro user's daily log
-  // doesn't change out from under them just because this shipped.
-  const dailyLogView = profile?.daily_log_view || 'hourly';
-  const showHourly = isPremium && dailyLogView === 'hourly';
+  const dailyLogView = profile?.daily_log_view || 'meals';
   const showSlots = isPremium && dailyLogView === 'slots';
   const [viewSaveError, setViewSaveError] = useState(null);
   async function handleViewChange(v) {
@@ -61,7 +55,7 @@ export default function DailyLog() {
   }, [location.state, today]);
   const isToday = selectedDate === today;
   const { note: nutritionCoachNote, dismiss: dismissNutritionCoachNote } = useCoachNote('nutrition', selectedDate);
-  const { meals, dayTimeline, daySlots, slotTimeline, loading, deleteFood, updateFood, addFood, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
+  const { meals, daySlots, slotTimeline, loading, deleteFood, updateFood, addFood, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
@@ -85,7 +79,7 @@ export default function DailyLog() {
   // no console hint. LogItemRow already catches and inline-surfaces its
   // own onSave failures (see its `error` state), so only delete needs
   // this; wrapping once here reaches every call site below (the
-  // meal-grouped view's LogItemRow rows and HourlyTimeline's own, which
+  // meal-grouped view's LogItemRow rows and SlotTimeline's own, which
   // renders LogItemRow internally) without changing either component,
   // same as FoodSearch.jsx's showToast pattern for its own write paths
   // (c8e1eed).
@@ -159,8 +153,8 @@ export default function DailyLog() {
           {isPremium ? (
             <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} fill />
           ) : (
-            <div title="Hourly timeline — a Pro feature" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 20, padding: '5px 12px', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
-              <i className="ti ti-lock" style={{ fontSize: 12 }} /> <span className="hide-on-narrow">Hourly timeline (Pro)</span>
+            <div title="Custom slots — a Pro feature" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 20, padding: '5px 12px', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
+              <i className="ti ti-lock" style={{ fontSize: 12 }} /> <span className="hide-on-narrow">Custom slots (Pro)</span>
             </div>
           )}
         </PageHeader>
@@ -197,14 +191,6 @@ export default function DailyLog() {
                 onOpenQuickMacro={() => setShowQuickMacro(true)}
               />
             </>
-          ) : showHourly ? (
-            <HourlyTimeline
-              segments={dayTimeline}
-              onDelete={handleDeleteItem}
-              onSave={updateFood}
-              onNavigateAdd={(hour) => navigate('/food', { state: { date: selectedDate, presetTime: hourToHHMM(hour) } })}
-              emptyMessage={isToday ? 'Nothing logged today yet.' : 'Nothing logged this day.'}
-            />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {Object.entries(meals).map(([mealKey, items]) => {
