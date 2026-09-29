@@ -1881,17 +1881,6 @@ export default function FoodSearch() {
   const recorderRef = useRef(null);
   const voiceAutoStartRef = useRef(false);
 
-  // QuickAddBar's mic button links here with { openVoice: true } instead of
-  // opening its own recorder UI, since this page already owns the whole
-  // voice-search experience — auto-starts it once per landing, the same
-  // one-shot guard editAppliedRef uses above for editMealBuilder.
-  useEffect(() => {
-    if (location.state?.openVoice && !voiceAutoStartRef.current) {
-      voiceAutoStartRef.current = true;
-      startVoiceSearch();
-    }
-  }, [location.state]);
-
   function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -1950,6 +1939,17 @@ export default function FoodSearch() {
       setVoiceError("Couldn't access your microphone — check your browser's permission settings.");
     }
   }
+
+  // QuickAddBar's mic button links here with { openVoice: true } instead of
+  // opening its own recorder UI, since this page already owns the whole
+  // voice-search experience — auto-starts it once per landing, the same
+  // one-shot guard editAppliedRef uses above for editMealBuilder.
+  useEffect(() => {
+    if (location.state?.openVoice && !voiceAutoStartRef.current) {
+      voiceAutoStartRef.current = true;
+      startVoiceSearch();
+    }
+  }, [location.state]);
 
   function stopVoiceSearch() {
     recorderRef.current?.stop();
