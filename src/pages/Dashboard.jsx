@@ -34,6 +34,8 @@ import TrialBanner from '../components/TrialBanner';
 import { round1 } from '../lib/format';
 import FormRow from '../components/FormRow';
 import ListRow from '../components/ListRow';
+import Card from '../components/Card';
+import StatBadge from '../components/StatBadge';
 
 // Accent/water-blue/ai-purple are the same hex in both themes by design.
 const ACCENT = 'var(--accent)';
@@ -53,20 +55,21 @@ const CHART_RANGE_OPTIONS = [{ id: '1W', label: '1W' }, { id: '1M', label: '1M' 
 const WATER_ML_PER_GLASS = 250;
 const WATER_LONG_PRESS_MS = 500;
 
-function WeightTile({ latest, onClick }) {
+function WeightCard({ latest, weightTrendKg, weightUnit, onClick }) {
+  const trendDisplay = weightTrendKg == null ? null : round1(fromKg(weightTrendKg, weightUnit));
   return (
-    <button
-      onClick={onClick}
-      style={{
-        flex: 1, width: '100%', textAlign: 'left', background: 'none', border: 'none',
-        borderBottom: '1px solid var(--border-default)', padding: '14px 12px', cursor: 'pointer',
-        display: 'flex', flexDirection: 'column', justifyContent: 'center', fontFamily: 'inherit',
-      }}
-    >
-      <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.04em', marginBottom: 6 }}>WEIGHT</div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>
-        {latest ? `${latest.weight}${latest.unit}` : '—'}
-      </div>
+    <button onClick={onClick} style={{ all: 'unset', display: 'flex', width: '100%', height: '100%', cursor: 'pointer' }}>
+      <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WEIGHT</span>
+          {weightTrendKg != null && (
+            <StatBadge>{trendDisplay >= 0 ? '+' : ''}{round1(trendDisplay)}</StatBadge>
+          )}
+        </div>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
+          {latest ? `${latest.weight}${latest.unit}` : '—'}
+        </div>
+      </Card>
     </button>
   );
 }
@@ -174,7 +177,9 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
   );
 }
 
-function WaterTile({ glasses, setGlasses }) {
+const WATER_SEGMENTS = 5;
+
+function WaterCard({ glasses, targetGlasses, setGlasses }) {
   const pressTimer = useRef(null);
   const longPressFired = useRef(false);
 
@@ -196,24 +201,39 @@ function WaterTile({ glasses, setGlasses }) {
     setGlasses(glasses + 1);
   }
 
+  const targetMl = targetGlasses * WATER_ML_PER_GLASS;
+  const filledSegments = Math.min(WATER_SEGMENTS, Math.round((glasses / Math.max(1, targetGlasses)) * WATER_SEGMENTS));
+
   return (
-    <button
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={clearPressTimer}
-      onPointerCancel={clearPressTimer}
-      style={{
-        flex: 1, width: '100%', textAlign: 'left', background: 'none', border: 'none',
-        padding: '14px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', fontFamily: 'inherit', touchAction: 'manipulation', userSelect: 'none',
-      }}
-      title="Tap to add 250ml — hold to undo the last tap"
-    >
-      <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.04em', marginBottom: 6 }}>WATER</div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--water-blue)' }}>
+    <Card style={{ padding: '16px 18px', marginBottom: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WATER</span>
+        <StatBadge>{glasses} / {round1(targetMl / 1000)}L</StatBadge>
+      </div>
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--water-blue)', marginBottom: 12 }}>
         {glasses * WATER_ML_PER_GLASS}ml
       </div>
-    </button>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+        {Array.from({ length: WATER_SEGMENTS }, (_, i) => (
+          <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < filledSegments ? 'var(--water-blue)' : 'var(--border-default)' }} />
+        ))}
+      </div>
+      <button
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={clearPressTimer}
+        onPointerCancel={clearPressTimer}
+        title="Tap to add 250ml — hold to undo the last tap"
+        style={{
+          width: '100%', padding: '10px 0', borderRadius: 20, border: '1px solid var(--border-default)',
+          background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600,
+          cursor: 'pointer', fontFamily: 'inherit', touchAction: 'manipulation', userSelect: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        }}
+      >
+        <i className="ti ti-plus" style={{ fontSize: 13 }} /> {WATER_ML_PER_GLASS}ml
+      </button>
+    </Card>
   );
 }
 
@@ -225,7 +245,7 @@ function WaterTile({ glasses, setGlasses }) {
 // horizontal one on every device where the two ratios don't line up.
 const CHART_HEIGHT = 110;
 
-function DashboardHero({ consumed, target, baseCalorieTarget, chartDays, chartRange, setChartRange, onChartClick, latestWeight, onWeightClick, glasses, setGlasses }) {
+function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange, setChartRange, onChartClick }) {
   // Measure the chart's actual rendered width so the SVG viewBox can match
   // it 1:1 in pixels, instead of guessing a fixed width and letting the
   // browser stretch it to fit (see CHART_HEIGHT note above).
@@ -278,69 +298,69 @@ function DashboardHero({ consumed, target, baseCalorieTarget, chartDays, chartRa
   labelIdxs.add(chartDays.length - 1);
 
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 16, overflow: 'hidden', display: 'flex' }}>
-      {/* Weight + water — compact glance tiles, replacing the old
-          standalone Weight card and Check-in water card. */}
-      <div style={{ width: 104, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border-default)' }}>
-        <WeightTile latest={latestWeight} onClick={onWeightClick} />
-        <WaterTile glasses={glasses} setGlasses={setGlasses} />
+    <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer' }} onClick={onChartClick}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>TODAY</span>
+        <StatBadge>{round1(Math.max(0, target - consumed))} left</StatBadge>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(consumed).toLocaleString()}</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>/ {target.toLocaleString()} kcal</span>
       </div>
 
-      <div style={{ flex: 1, minWidth: 0, padding: '18px 16px', cursor: 'pointer' }} onClick={onChartClick}>
-        {/* Stacked, not side-by-side — this panel is narrower now that
-            weight/water share the card, and TODAY's big number + REMAINING's
-            block no longer both fit on one row without wrapping badly. */}
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>TODAY</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(consumed).toLocaleString()}</span>
-            <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>/ {target.toLocaleString()} kcal</span>
-            <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 600, marginLeft: 'auto' }}>
-              {round1(Math.max(0, target - consumed))} left
-            </span>
-          </div>
-        </div>
-
-        <svg ref={chartRef} viewBox={`0 0 ${w} ${CHART_HEIGHT}`} style={{ width: '100%', height: CHART_HEIGHT, marginTop: 10, display: 'block' }}>
-          {/* The user's own target is one continuous line across the whole
-              chart; a day with burned calories breaks out of it as its own
-              raised segment (see targetLineSegments). */}
-          {targetLineSegments(chartDays, baseCalorieTarget).map(seg => {
-            const y = baseline - (seg.value / max) * plotHeight;
-            return <line key={`target-${seg.start}`} x1={bars[seg.start].x} y1={y} x2={bars[seg.end].x + barWidth} y2={y} stroke="var(--text-hint)" strokeWidth="2" strokeLinecap="round" strokeDasharray="0 5" />;
-          })}
-          {bars.map((b, i) => (
-            <rect
-              key={i}
-              x={b.x}
-              y={b.y}
-              width={barWidth}
-              height={Math.max(0, b.height)}
-              rx={Math.min(3, barWidth / 2)}
-              fill={b.over ? 'var(--danger-strong)' : 'var(--accent-strong)'}
-              opacity={b.over ? 0.85 : 1}
-            />
-          ))}
-        </svg>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }} onClick={e => e.stopPropagation()}>
-          {chartDays.map((d, i) => (
-            <span key={d.date} style={{ fontSize: 10, color: 'var(--text-hint)', visibility: labelIdxs.has(i) ? 'visible' : 'hidden' }}>
-              {chartRange === '1W'
-                ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short' })
-                : new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-            </span>
-          ))}
-        </div>
-
-        <div onClick={e => e.stopPropagation()}>
-          <SegmentedControl
-            options={CHART_RANGE_OPTIONS}
-            value={chartRange}
-            onChange={setChartRange}
-            fill
+      <svg ref={chartRef} viewBox={`0 0 ${w} ${CHART_HEIGHT}`} style={{ width: '100%', height: CHART_HEIGHT, marginTop: 10, display: 'block' }}>
+        {/* The user's own target is one continuous line across the whole
+            chart; a day with burned calories breaks out of it as its own
+            raised segment (see targetLineSegments). */}
+        {targetLineSegments(chartDays, baseCalorieTarget).map(seg => {
+          const y = baseline - (seg.value / max) * plotHeight;
+          return <line key={`target-${seg.start}`} x1={bars[seg.start].x} y1={y} x2={bars[seg.end].x + barWidth} y2={y} stroke="var(--text-hint)" strokeWidth="2" strokeLinecap="round" strokeDasharray="0 5" />;
+        })}
+        {bars.map((b, i) => (
+          <rect
+            key={i}
+            x={b.x}
+            y={b.y}
+            width={barWidth}
+            height={Math.max(0, b.height)}
+            rx={Math.min(3, barWidth / 2)}
+            fill={b.over ? 'var(--danger-strong)' : 'var(--accent-strong)'}
+            opacity={b.over ? 0.85 : 1}
           />
-        </div>
+        ))}
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }} onClick={e => e.stopPropagation()}>
+        {chartDays.map((d, i) => (
+          <span key={d.date} style={{ fontSize: 10, color: 'var(--text-hint)', visibility: labelIdxs.has(i) ? 'visible' : 'hidden' }}>
+            {chartRange === '1W'
+              ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short' })
+              : new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+          </span>
+        ))}
       </div>
+
+      <div onClick={e => e.stopPropagation()}>
+        <SegmentedControl
+          options={CHART_RANGE_OPTIONS}
+          value={chartRange}
+          onChange={setChartRange}
+          fill
+        />
+      </div>
+    </Card>
+  );
+}
+
+// Weight + Today side by side, Water full-width below — the bento-card
+// grid the Weight/Water rail used to squeeze into one card with the chart.
+function DashboardTopCards({ latestWeight, weightTrendKg, weightUnit, onWeightClick, glasses, targetGlasses, setGlasses, ...todayProps }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12, alignItems: 'stretch' }}>
+        <WeightCard latest={latestWeight} weightTrendKg={weightTrendKg} weightUnit={weightUnit} onClick={onWeightClick} />
+        <TodayCard {...todayProps} />
+      </div>
+      <WaterCard glasses={glasses} targetGlasses={targetGlasses} setGlasses={setGlasses} />
     </div>
   );
 }
@@ -463,14 +483,21 @@ function SwipePager({ pages }) {
   );
 }
 
-function MacroCell({ label, value, target, color }) {
+function MacroCell({ label, value, target, color, onClick }) {
+  const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
-    <div style={{ padding: '14px 10px' }}>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{label.toUpperCase()}</div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color, whiteSpace: 'nowrap' }}>
-        {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>g/{target}g</span>
+    <Card style={{ padding: '12px 10px', marginBottom: 0, cursor: 'pointer' }} onClick={onClick}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 8, gap: 4 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{label.toUpperCase()}</span>
+        <StatBadge style={{ padding: '2px 7px', fontSize: 11 }}>{pct}%</StatBadge>
       </div>
-    </div>
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color, whiteSpace: 'nowrap', marginBottom: 8 }}>
+        {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>/{target}g</span>
+      </div>
+      <div style={{ height: 4, borderRadius: 2, background: 'var(--border-default)', overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 2 }} />
+      </div>
+    </Card>
   );
 }
 
@@ -747,7 +774,7 @@ function StreakStrip({ byDate, onSelectDay }) {
   });
 
   return (
-    <div style={{ display: 'flex', gap: 4 }}>
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
       {days.map((dateStr, i) => {
         const isFuture = dateStr > today;
         const isToday = dateStr === today;
@@ -760,9 +787,9 @@ function StreakStrip({ byDate, onSelectDay }) {
             onClick={() => onSelectDay(dateStr)}
             title={isFuture ? undefined : (logged ? 'Logged — view this day' : 'Not logged — view this day')}
             style={{
-              width: 22, height: 22, borderRadius: '50%', padding: 0, fontFamily: 'inherit',
+              width: 40, height: 40, borderRadius: '50%', padding: 0, fontFamily: 'inherit',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 700,
+              fontSize: 14, fontWeight: 700,
               background: logged ? 'var(--accent)' : 'transparent',
               border: `1px solid ${logged ? 'var(--accent)' : isToday ? 'var(--border-strong)' : 'var(--border-default)'}`,
               color: logged ? 'var(--accent-contrast)' : 'var(--text-hint)',
@@ -1012,7 +1039,7 @@ export default function Dashboard() {
       <AppNav active="dashboard" initials={initials} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <div className="page-pad-top" style={{ minHeight: 52, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '8px 12px', paddingTop: 10, paddingBottom: 10, borderBottom: '1px solid var(--border-default)', position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
+        <div className="page-pad-top" style={{ minHeight: 40, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 12px', paddingTop: 10, paddingBottom: 4, position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
           <div>
             <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
               {isViewingToday ? `${greeting}, ${name} 👋` : `${name}'s log`}
@@ -1024,6 +1051,9 @@ export default function Dashboard() {
               </button>
             )}
           </div>
+        </div>
+
+        <div className="page-pad-top" style={{ paddingBottom: 12, borderBottom: '1px solid var(--border-default)' }}>
           <StreakStrip byDate={byDate} onSelectDay={(date) => navigate('/dashboard', { state: { date } })} />
         </div>
 
@@ -1046,7 +1076,7 @@ export default function Dashboard() {
           <div style={{ marginBottom: '16px' }}>
             <SwipePager
               pages={[
-                <DashboardHero
+                <DashboardTopCards
                   consumed={consumed}
                   target={effectiveCalorieTarget}
                   baseCalorieTarget={calorieTarget}
@@ -1055,8 +1085,11 @@ export default function Dashboard() {
                   setChartRange={setChartRange}
                   onChartClick={() => navigate('/expenditure')}
                   latestWeight={latestWeight}
+                  weightTrendKg={weightTrendKg}
+                  weightUnit={weightUnit}
                   onWeightClick={() => setShowWeightModal(true)}
                   glasses={glasses}
+                  targetGlasses={profile?.water_target || 8}
                   setGlasses={setGlasses}
                 />,
                 <LogCalendar
@@ -1075,10 +1108,10 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="grid-3-fixed" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 16, overflow: 'hidden', marginBottom: '20px', gap: 0, cursor: 'pointer' }}>
-            <div style={{ borderRight: '1px solid var(--border-default)' }}><MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={ACCENT} /></div>
-            <div style={{ borderRight: '1px solid var(--border-default)' }}><MacroCell label="Carbs" value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} /></div>
-            <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} />
+          <div className="grid-3-fixed" style={{ gap: 12, marginBottom: '20px' }}>
+            <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={ACCENT} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label="Carbs" value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
           </div>
 
           <ActivityRow

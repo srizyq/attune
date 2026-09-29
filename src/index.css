@@ -56,8 +56,11 @@
      hairlines *inside* a card (dividers, inputs, small repeated tiles), the
      way Dashboard does. --card-shadow is separate: dark mode has no shadow
      system (a black shadow reads as mud on a dark background), so it stays
-     'none' there. */
+     'none' there. --card-radius is the shared corner radius for the new
+     bento-card look (rounder than the app's older 12-16px cards) — layout
+     only, colors/shadow are unchanged from what dark mode already had. */
   --card-border: var(--border-strong);
+  --card-radius: 20px;
   --card-shadow: none;
 }
 
@@ -111,6 +114,7 @@
   --pill-bg: #f5f0e8;
   --pill-text: #181412;
   --card-border: var(--border-strong);
+  --card-radius: 20px;
   --card-shadow: none;
 }
 [data-theme='light'] {
@@ -170,6 +174,7 @@
      border, the kind of quiet depth flat borders alone can't give white
      backgrounds without looking either harsh or completely flat. */
   --card-border: var(--border-strong);
+  --card-radius: 20px;
   --card-shadow: 0 1px 2px rgba(24, 20, 18, 0.05), 0 6px 16px rgba(24, 20, 18, 0.06);
 }
 

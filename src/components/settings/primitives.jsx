@@ -2,21 +2,9 @@
 // Targets full page, and the Notifications/Coach/Account popups —
 // previously private to Settings.jsx, now needed in all of them since
 // the page split into multiple files.
-export function Card({ children, style }) {
-  return (
-    <div style={{
-      background: 'var(--bg-card)',
-      border: '1px solid var(--card-border)',
-      borderRadius: '16px',
-      padding: '24px',
-      marginBottom: '16px',
-      boxShadow: 'var(--card-shadow)',
-      ...style,
-    }}>
-      {children}
-    </div>
-  );
-}
+// Card itself moved to a top-level shared component (used app-wide, not
+// just Settings) — re-exported here so existing imports keep working.
+export { default as Card } from '../Card';
 
 export function SectionLabel({ children }) {
   return (
