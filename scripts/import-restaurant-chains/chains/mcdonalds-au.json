@@ -108,18 +108,18 @@
       "category": "Burgers",
       "size_label": null,
       "serving_label": "1 burger",
-      "serving_grams": 243,
-      "calories": 621,
-      "protein_g": 28.7,
-      "carbs_g": 46.5,
-      "fat_g": 34.4,
+      "serving_grams": 240,
+      "calories": 564,
+      "protein_g": 26.9,
+      "carbs_g": 41.8,
+      "fat_g": 31.3,
       "fibre_g": null,
-      "sodium_mg": 1119,
-      "sugar_g": 8.0,
-      "saturated_fat_g": 13.8,
+      "sodium_mg": 1020,
+      "sugar_g": 7.0,
+      "saturated_fat_g": 11.8,
       "trans_fat_g": 0,
-      "source_url": "https://www.mcdonalds.com/au/en-au/menu/beef/big-mac.html",
-      "verified_date": "2026-09-28"
+      "source_url": "https://www.calorieking.com/au/en/foods/f/calories-in-burgers-sandwiches-big-mac-burger/AKEuyENsQ4C48uM7bv1YZA",
+      "verified_date": "2026-09-29"
     },
     {
       "id": "mcdonalds-au_cheeseburger",
@@ -271,7 +271,8 @@
       "saturated_fat_g": 0.8,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/chicken-fish/3pc-chicken-mcnuggets.html",
-      "verified_date": "2026-09-28"
+      "verified_date": "2026-09-28",
+      "_unverified": true
     },
     {
       "id": "mcdonalds-au_6pc-chicken-mcnuggets",
@@ -385,7 +386,8 @@
       "saturated_fat_g": 3.3,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/chicken-fish/mccrispy.html",
-      "verified_date": "2026-09-28"
+      "verified_date": "2026-09-28",
+      "_unverified": true
     },
     {
       "id": "mcdonalds-au_coca-cola-medium",
@@ -470,17 +472,17 @@
       "size_label": "Medium",
       "serving_label": "1 medium cup",
       "serving_grams": 430,
-      "calories": 159,
-      "protein_g": 0.0,
-      "carbs_g": 40.9,
+      "calories": 192,
+      "protein_g": 3.7,
+      "carbs_g": 45.4,
       "fat_g": 0.0,
       "fibre_g": null,
-      "sodium_mg": 30,
-      "sugar_g": 34.8,
+      "sodium_mg": 22,
+      "sugar_g": 36.2,
       "saturated_fat_g": 0.0,
       "trans_fat_g": 0,
-      "source_url": "https://www.mcdonalds.com/au/en-au/menu/cold-and-frozen-drinks/orange-juice-medium.html",
-      "verified_date": "2026-09-28"
+      "source_url": "https://www.calorieking.com/au/en/foods/f/calories-in-drinks-cold-orange-juice-medium/HiyMCL9GSrWa7t4oR5Wbig",
+      "verified_date": "2026-09-29"
     },
     {
       "id": "mcdonalds-au_sprite-medium",
@@ -527,17 +529,17 @@
       "size_label": "Small",
       "serving_label": "1 small sundae",
       "serving_grams": 173,
-      "calories": 316,
-      "protein_g": 7.3,
-      "carbs_g": 49.3,
-      "fat_g": 9.6,
+      "calories": 356,
+      "protein_g": 6.2,
+      "carbs_g": 59.9,
+      "fat_g": 9.9,
       "fibre_g": null,
-      "sodium_mg": 163,
-      "sugar_g": 45.3,
+      "sodium_mg": 116,
+      "sugar_g": 49.2,
       "saturated_fat_g": 7.3,
       "trans_fat_g": 0,
-      "source_url": "https://www.mcdonalds.com/au/en-au/menu/desserts/hot-fudge-sundae-small.html",
-      "verified_date": "2026-09-28"
+      "source_url": "https://www.calorieking.com/au/en/foods/f/calories-in-desserts-hot-fudge-sundae-small/ATxD3jwQSa-Eq2xcHmRBBQ",
+      "verified_date": "2026-09-29"
     },
     {
       "id": "mcdonalds-au_oreo-cookie-mcflurry",
@@ -594,7 +596,8 @@
       "saturated_fat_g": 6.6,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/mccafe-drinks/cappuccino-large.html",
-      "verified_date": "2026-09-28"
+      "verified_date": "2026-09-28",
+      "_unverified": true
     },
     {
       "id": "mcdonalds-au_flat-white-medium",
@@ -632,7 +635,8 @@
       "saturated_fat_g": 4.6,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/mccafe-drinks/hot-chocolate-small.html",
-      "verified_date": "2026-09-28"
+      "verified_date": "2026-09-28",
+      "_unverified": true
     },
     {
       "id": "mcdonalds-au_latte-medium",
@@ -708,7 +712,8 @@
       "saturated_fat_g": 14.9,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/mccafe-food/apple-crumble-muffin.html",
-      "verified_date": "2026-09-28"
+      "verified_date": "2026-09-28",
+      "_unverified": true
     },
     {
       "id": "mcdonalds-au_small-fries",
