@@ -1,14 +1,15 @@
-// Pro-only choice between the hourly timeline and the meal-grouped view
-// (Breakfast/Lunch/Dinner/Snacks) — shared between Dashboard's daily log
-// and the full /log page so picking one on either page shows up on both,
-// since both read the same profile.daily_log_view field rather than
-// keeping page-local state.
+// Pro-only choice between the hourly timeline, the meal-grouped view
+// (Breakfast/Lunch/Dinner/Snacks), and custom-named slots — shared between
+// Dashboard's daily log and the full /log page so picking one on either
+// page shows up on both, since both read the same profile.daily_log_view
+// field rather than keeping page-local state.
 export default function DailyLogViewToggle({ value, onChange, fill = false }) {
   return (
     <div style={{ display: 'flex', gap: 4, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2, flexShrink: 0, ...(fill ? { width: '100%', maxWidth: 360 } : null) }}>
       {[
         { id: 'hourly', label: 'Hourly', icon: 'ti-clock' },
         { id: 'meals', label: 'Meals', icon: 'ti-list' },
+        { id: 'slots', label: 'Slots', icon: 'ti-adjustments' },
       ].map(opt => (
         <button
           key={opt.id}

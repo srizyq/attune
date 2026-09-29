@@ -4,12 +4,18 @@ import { useProfile } from '../hooks/useProfile';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
 import { hourToHHMM } from '../lib/mealTime';
+import { slotFromTime } from '../lib/daySlots';
+import { copyDaySlots } from '../lib/db';
 import AppNav from '../components/AppNav';
 import CoachNote from '../components/CoachNote';
 import TodayPlanStrip from '../components/TodayPlanStrip';
 import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import HourlyTimeline from '../components/HourlyTimeline';
+import SlotTimeline from '../components/SlotTimeline';
+import QuickAddBar from '../components/QuickAddBar';
+import QuickMacroSheet from '../components/QuickMacroSheet';
+import PasteSlotModal from '../components/PasteSlotModal';
 import DaySelector from '../components/DaySelector';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import CopyDayModal from '../components/CopyDayModal';
@@ -31,6 +37,7 @@ export default function DailyLog() {
   // doesn't change out from under them just because this shipped.
   const dailyLogView = profile?.daily_log_view || 'hourly';
   const showHourly = isPremium && dailyLogView === 'hourly';
+  const showSlots = isPremium && dailyLogView === 'slots';
   const [viewSaveError, setViewSaveError] = useState(null);
   async function handleViewChange(v) {
     setViewSaveError(null);
@@ -54,11 +61,14 @@ export default function DailyLog() {
   }, [location.state, today]);
   const isToday = selectedDate === today;
   const { note: nutritionCoachNote, dismiss: dismissNutritionCoachNote } = useCoachNote('nutrition', selectedDate);
-  const { meals, dayTimeline, loading, deleteFood, updateFood, refetch } = useFoodLogs(selectedDate);
+  const { meals, dayTimeline, daySlots, slotTimeline, loading, deleteFood, updateFood, addFood, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [showCopyMenu, setShowCopyMenu] = useState(false);
+  const [showPasteSlotModal, setShowPasteSlotModal] = useState(false);
+  const [showQuickMacro, setShowQuickMacro] = useState(false);
+  const [copyingYesterdaySlots, setCopyingYesterdaySlots] = useState(false);
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
   const [toastAction, setToastAction] = useState(null);
@@ -87,6 +97,30 @@ export default function DailyLog() {
     }
   }
 
+  // Slots mode's "Copy yesterday" — copyFromYesterday (above) only knows
+  // the meal enum, so this bypasses it and calls the slot-aware copy
+  // directly, same as CopyDayModal's mode="slots" does for "Copy from
+  // another day…" below.
+  async function handleCopyYesterdaySlots() {
+    if (copyingYesterdaySlots) return;
+    setCopyingYesterdaySlots(true);
+    try {
+      const yesterday = new Date(selectedDate + 'T00:00:00');
+      yesterday.setDate(yesterday.getDate() - 1);
+      const result = await copyDaySlots(profile.id, todayLocalDate(yesterday), selectedDate);
+      if (result.slots.length === 0) {
+        showToast('No slots set up yesterday', true);
+      } else {
+        await refetch();
+        showToast(`Copied ${result.slots.length} slot${result.slots.length === 1 ? '' : 's'} from yesterday`);
+      }
+    } catch {
+      showToast("Couldn't copy — try again", true);
+    } finally {
+      setCopyingYesterdaySlots(false);
+    }
+  }
+
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const totalCal = Object.values(meals).flat().reduce((s, i) => s + i.cal, 0);
   const dateStr = isToday
@@ -111,8 +145,11 @@ export default function DailyLog() {
               <>
                 <div onClick={() => setShowCopyMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 41, minWidth: 210, background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.35)', overflow: 'hidden' }}>
-                  <button onClick={() => { setShowCopyMenu(false); copyFromYesterday(); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy yesterday</button>
-                  <button onClick={() => { setShowCopyMenu(false); setShowCopyModal(true); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy from another day…</button>
+                  <button onClick={() => { setShowCopyMenu(false); showSlots ? handleCopyYesterdaySlots() : copyFromYesterday(); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy yesterday</button>
+                  <button onClick={() => { setShowCopyMenu(false); setShowCopyModal(true); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: showSlots ? '1px solid var(--border-default)' : 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy from another day…</button>
+                  {showSlots && (
+                    <button onClick={() => { setShowCopyMenu(false); setShowPasteSlotModal(true); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Paste slot…</button>
+                  )}
                 </div>
               </>
             )}
@@ -142,7 +179,25 @@ export default function DailyLog() {
 
           {nutritionCoachNote && <CoachNote note={nutritionCoachNote} onDismiss={dismissNutritionCoachNote} style={{ marginBottom: 20 }} />}
 
-          {loading ? null : showHourly ? (
+          {loading ? null : showSlots ? (
+            <>
+              <SlotTimeline
+                segments={slotTimeline}
+                onDelete={handleDeleteItem}
+                onSave={updateFood}
+                onNavigateAdd={(slot) => navigate('/food', { state: { date: selectedDate, presetSlotId: slot.id, presetTime: slot.slotTime } })}
+                onAddSlot={addSlot}
+                onEditSlot={editSlot}
+                onDeleteSlot={removeSlot}
+                emptyMessage={isToday ? 'Nothing set up for today yet — add your first slot below.' : 'Nothing set up this day.'}
+              />
+              <QuickAddBar
+                selectedDate={selectedDate}
+                currentSlotId={slotFromTime(daySlots)?.id ?? null}
+                onOpenQuickMacro={() => setShowQuickMacro(true)}
+              />
+            </>
+          ) : showHourly ? (
             <HourlyTimeline
               segments={dayTimeline}
               onDelete={handleDeleteItem}
@@ -213,6 +268,20 @@ export default function DailyLog() {
           destDate={selectedDate}
           onClose={() => setShowCopyModal(false)}
           onCopied={refetch}
+          mode={showSlots ? 'slots' : 'meals'}
+        />
+      )}
+      {showPasteSlotModal && (
+        <PasteSlotModal
+          destDate={selectedDate}
+          onClose={() => setShowPasteSlotModal(false)}
+          onPasted={refetch}
+        />
+      )}
+      {showQuickMacro && (
+        <QuickMacroSheet
+          onClose={() => setShowQuickMacro(false)}
+          onSubmit={(food) => addFood(food, undefined, new Date(), slotFromTime(daySlots)?.id ?? null)}
         />
       )}
       {toast && <Toast message={toast} error={toastError} action={toastAction} duration={toastAction ? 5000 : 2200} onDone={() => setToast(null)} />}

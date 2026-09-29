@@ -91,6 +91,7 @@ export async function addFoodLog(userId, entry) {
       logged_amount: entry.loggedAmount ?? null,
       logged_unit: entry.loggedUnit ?? null,
       serving_label: entry.servingLabel ?? null,
+      slot_id: entry.slotId ?? null,
   };
   // The extended nutrients (B vitamins, selenium, ...) only go in when the food
   // actually carries them. If the database hasn't had its update yet, retry
@@ -123,11 +124,184 @@ export async function copyFoodLogs(userId, sourceRows, destDate) {
     copy.user_id = userId;
     copy.logged_date = destDate;
     copy.logged_at = row.logged_at ? shiftIsoDateKeepLocalTime(row.logged_at, destDate) : null;
+    // day_slots rows are per-day (see copyDaySlots below) — a source item's
+    // slot_id belongs to sourceDate's slots, which don't exist on destDate,
+    // so carrying it over would point at either nothing or (worse) a
+    // same-id slot on a day it was never meant for. This generic whole-day
+    // copy (used by "Copy yesterday"/"Copy from another day" regardless of
+    // daily_log_view) always drops it; copyDaySlots is the slot-aware path
+    // that recreates slots too and re-points items at the new ones.
+    copy.slot_id = null;
     return copy;
   });
   const { data, error } = await supabase.from('food_logs').insert(rows).select();
   if (error) throw error;
   return data;
+}
+
+// ─── day_slots ─────────────────────────────────────────────────────────────
+// Pro's custom-named slot timeline (daily_log_view === 'slots') — see
+// supabase/schema.sql's day_slots table and src/lib/daySlots.js for the
+// shape these get mapped into.
+
+export async function getDaySlots(userId, date) {
+  const { data, error } = await supabase
+    .from('day_slots')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('logged_date', date)
+    .order('slot_time', { ascending: true })
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function createDaySlot(userId, date, fields) {
+  const { data, error } = await supabase
+    .from('day_slots')
+    .insert({
+      user_id: userId,
+      logged_date: date,
+      label: fields.label,
+      slot_time: fields.slotTime,
+      sort_order: fields.sortOrder ?? 0,
+      target_calories: fields.targetCalories ?? null,
+      target_protein_g: fields.targetProtein ?? null,
+      target_carbs_g: fields.targetCarbs ?? null,
+      target_fat_g: fields.targetFat ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// All fields optional — only touched when the caller actually included
+// them, same one-patch-function-does-everything convention as
+// updateFoodLog above (rename / retime / retarget / reorder are all just
+// this with a different field set).
+export async function updateDaySlot(id, fields) {
+  const patch = {};
+  if (fields.label !== undefined) patch.label = fields.label;
+  if (fields.slotTime !== undefined) patch.slot_time = fields.slotTime;
+  if (fields.sortOrder !== undefined) patch.sort_order = fields.sortOrder;
+  if (fields.targetCalories !== undefined) patch.target_calories = fields.targetCalories;
+  if (fields.targetProtein !== undefined) patch.target_protein_g = fields.targetProtein;
+  if (fields.targetCarbs !== undefined) patch.target_carbs_g = fields.targetCarbs;
+  if (fields.targetFat !== undefined) patch.target_fat_g = fields.targetFat;
+  const { data, error } = await supabase.from('day_slots').update(patch).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+// Deliberately doesn't touch the slot's food_logs rows — their slot_id goes
+// null via the FK's "on delete set null" (see schema.sql), so a deleted
+// slot's food isn't destroyed, it just falls into buildSlotTimeline's
+// trailing "Unsorted" segment instead of disappearing.
+export async function deleteDaySlot(id) {
+  const { error } = await supabase.from('day_slots').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Copies a whole day's slot structure AND its logged items onto destDate —
+// what "Copy day" runs while viewing Slots mode (the generic copyFoodLogs
+// above is what the same action runs in Hourly/Meals mode, and always
+// drops slot_id since it isn't slot-aware). Two inserts: the source day's
+// day_slots rows first (fresh ids, so destDate doesn't share slot rows with
+// sourceDate — editing one day's slot must never move the other's), then
+// their food_logs items re-pointed at the matching new slot id and re-dated
+// the same way copyFoodLogs does.
+export async function copyDaySlots(userId, sourceDate, destDate) {
+  const [sourceSlots, sourceItems] = await Promise.all([
+    getDaySlots(userId, sourceDate),
+    supabase.from('food_logs').select('*').eq('user_id', userId).eq('logged_date', sourceDate).then(({ data, error }) => {
+      if (error) throw error;
+      return data;
+    }),
+  ]);
+  if (sourceSlots.length === 0) return { slots: [], items: [] };
+
+  const slotRows = sourceSlots.map((s) => ({
+    user_id: userId,
+    logged_date: destDate,
+    label: s.label,
+    slot_time: s.slot_time,
+    sort_order: s.sort_order,
+    target_calories: s.target_calories,
+    target_protein_g: s.target_protein_g,
+    target_carbs_g: s.target_carbs_g,
+    target_fat_g: s.target_fat_g,
+  }));
+  const { data: newSlots, error: slotsError } = await supabase.from('day_slots').insert(slotRows).select();
+  if (slotsError) throw slotsError;
+
+  // sourceSlots and newSlots are the same length, inserted in the same
+  // order — pair them up by position rather than by id (the new rows have
+  // fresh ids) to build the old-id -> new-id remap.
+  const idMap = new Map(sourceSlots.map((s, i) => [s.id, newSlots[i].id]));
+
+  const itemRows = sourceItems
+    .filter((row) => row.slot_id && idMap.has(row.slot_id))
+    .map((row) => {
+      const copy = { ...row };
+      delete copy.id;
+      delete copy.created_at;
+      copy.user_id = userId;
+      copy.logged_date = destDate;
+      copy.logged_at = row.logged_at ? shiftIsoDateKeepLocalTime(row.logged_at, destDate) : null;
+      copy.slot_id = idMap.get(row.slot_id);
+      return copy;
+    });
+  const newItems = itemRows.length > 0
+    ? await supabase.from('food_logs').insert(itemRows).select().then(({ data, error }) => {
+      if (error) throw error;
+      return data;
+    })
+    : [];
+
+  return { slots: newSlots, items: newItems };
+}
+
+// "Paste slot" — takes one slot from another day (its label/time/targets,
+// via sourceSlotRow, plus its already-fetched food_logs rows via
+// sourceItemRows) and adds it as a new slot on destDate, appended after
+// whatever's already there. Unlike copyDaySlots this never touches
+// destDate's existing slots — it only ever adds one more.
+export async function pasteSlot(userId, sourceSlotRow, sourceItemRows, destDate) {
+  const existing = await getDaySlots(userId, destDate);
+  const nextSortOrder = existing.length > 0 ? Math.max(...existing.map((s) => s.sort_order)) + 1 : 0;
+
+  const { data: newSlot, error: slotError } = await supabase
+    .from('day_slots')
+    .insert({
+      user_id: userId,
+      logged_date: destDate,
+      label: sourceSlotRow.label,
+      slot_time: sourceSlotRow.slot_time,
+      sort_order: nextSortOrder,
+      target_calories: sourceSlotRow.target_calories,
+      target_protein_g: sourceSlotRow.target_protein_g,
+      target_carbs_g: sourceSlotRow.target_carbs_g,
+      target_fat_g: sourceSlotRow.target_fat_g,
+    })
+    .select()
+    .single();
+  if (slotError) throw slotError;
+
+  if (sourceItemRows.length === 0) return { slot: newSlot, items: [] };
+  const itemRows = sourceItemRows.map((row) => {
+    const copy = { ...row };
+    delete copy.id;
+    delete copy.created_at;
+    copy.user_id = userId;
+    copy.logged_date = destDate;
+    copy.logged_at = row.logged_at ? shiftIsoDateKeepLocalTime(row.logged_at, destDate) : null;
+    copy.slot_id = newSlot.id;
+    return copy;
+  });
+  const { data: newItems, error: itemsError } = await supabase.from('food_logs').insert(itemRows).select();
+  if (itemsError) throw itemsError;
+  return { slot: newSlot, items: newItems };
 }
 
 export async function deleteFoodLog(id) {
@@ -176,6 +350,7 @@ export async function updateFoodLog(id, entry) {
   // its macros and its displayed portion disagreeing from then on.
   if (entry.loggedAmount !== undefined) patch.logged_amount = entry.loggedAmount;
   if (entry.loggedUnit !== undefined) patch.logged_unit = entry.loggedUnit;
+  if (entry.slotId !== undefined) patch.slot_id = entry.slotId;
   // Extended nutrients: only touched when the entry has a value, so an edit can
   // never overwrite an unknown with a made-up zero (and never trips on a
   // database that hasn't had its update yet, unless real data needs saving).

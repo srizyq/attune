@@ -27,9 +27,9 @@ describe('supabase/pending-migrations.sql', () => {
   it('contains every block from the consent block onward, in order, and nothing older', () => {
     const titles = bundleBlocks(readSchema()).map((b) => b.title);
     expect(titles[0]).toBe('Coach consent + per-client invites');
-    expect(titles.at(-1)).toBe('Restaurant chains');
+    expect(titles.at(-1)).toBe('Custom-named daily log slots');
     expect(titles).toContain('Coach teams');
-    expect(titles).toHaveLength(12);
+    expect(titles).toHaveLength(13);
     titles.forEach((t, i) => expect(bundleOnDisk).toContain(`--   ${String(i + 1).padStart(2)}. ${t}`));
   });
 

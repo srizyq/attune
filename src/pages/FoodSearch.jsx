@@ -15,6 +15,7 @@ import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
+import { slotFromTime } from '../lib/daySlots';
 import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit } from '../lib/foodMath';
 import { ausnutExtraMicros } from '../lib/ausnutFood';
 import { mapRestaurantItemRow } from '../lib/restaurantFood';
@@ -1621,6 +1622,7 @@ export default function FoodSearch() {
   // they're in, or switching to "Meals" would still prompt for a time.
   const dailyLogView = profile?.daily_log_view || 'hourly';
   const logByTime = isPremium && dailyLogView === 'hourly';
+  const showSlots = isPremium && dailyLogView === 'slots';
   const today = todayLocalDate();
   // DailyLog's per-day "+ Add food" links here with the date it was
   // clicked from (e.g. { date: "2026-08-27" }), so forgetting to log
@@ -1640,7 +1642,7 @@ export default function FoodSearch() {
     setSelectedDate(next);
     setExpandedId(null);
   }
-  const { addFood: addFoodLog } = useFoodLogs(selectedDate);
+  const { addFood: addFoodLog, daySlots } = useFoodLogs(selectedDate);
   // 20, not 6 — now that Recently/Frequently logged each get their own
   // full tab instead of a short stacked preview, they can afford to
   // actually show enough history to find yesterday's food in.
@@ -1668,6 +1670,13 @@ export default function FoodSearch() {
   // The hourly timeline's per-hour "+" links here with { presetTime:
   // "HH:00" } so logging lands at the hour you tapped instead of "now".
   const [activeTime, setActiveTime] = useState(() => location.state?.presetTime || currentTimeHHMM());
+  // Slots mode's own analogue of activeMeal/activeTime — which day_slots
+  // row this item logs into. SlotTimeline's "APPEND TO <SLOT>" and
+  // QuickAddBar link here with presetSlotId; otherwise defaults to
+  // whichever slot is "current" once daySlots has loaded (empty on first
+  // render, same async gap activeMeal/activeTime don't have since they
+  // don't depend on a fetch).
+  const [activeSlotId, setActiveSlotId] = useState(() => location.state?.presetSlotId || null);
   const [expandedId, setExpandedId] = useState(null);
   const [mealDropdownOpen, setMealDropdownOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -1721,7 +1730,16 @@ export default function FoodSearch() {
     if (location.state?.openMenuScan) setMenuScanOpen(true);
     if (location.state?.openCreateFood) setCreateFoodOpen(true);
     if (location.state?.openMealBuilder) { setBuilderMode(true); setBuilderItems([]); setBuilderFromRecipes(true); }
+    if (location.state?.presetSlotId) setActiveSlotId(location.state.presetSlotId);
   }, [location.state]);
+  // No presetSlotId was given (a plain nav-bar "+" tap rather than a link
+  // from a specific slot) — falls back to whichever slot is "current" as
+  // soon as daySlots actually has rows, mirroring activeMeal's mealFromDate
+  // fallback above.
+  useEffect(() => {
+    if (!showSlots || activeSlotId || location.state?.presetSlotId || !daySlots.length) return;
+    setActiveSlotId(slotFromTime(daySlots)?.id ?? null);
+  }, [showSlots, activeSlotId, daySlots, location.state]);
   // editMealBuilder carries a recipe id, not a plain flag — waits for
   // savedMeals.rows to actually contain it (an async fetch, unlike the
   // flags above) before pre-filling the builder, and the ref stops this
@@ -1821,6 +1839,18 @@ export default function FoodSearch() {
   const [transcribing, setTranscribing] = useState(false);
   const [voiceError, setVoiceError] = useState(null);
   const recorderRef = useRef(null);
+  const voiceAutoStartRef = useRef(false);
+
+  // QuickAddBar's mic button links here with { openVoice: true } instead of
+  // opening its own recorder UI, since this page already owns the whole
+  // voice-search experience — auto-starts it once per landing, the same
+  // one-shot guard editAppliedRef uses above for editMealBuilder.
+  useEffect(() => {
+    if (location.state?.openVoice && !voiceAutoStartRef.current) {
+      voiceAutoStartRef.current = true;
+      startVoiceSearch();
+    }
+  }, [location.state]);
 
   function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
@@ -2096,7 +2126,7 @@ export default function FoodSearch() {
 
   async function logFood(food, meal, loggedAt) {
     try {
-      await addFoodLog(food, meal, loggedAt);
+      await addFoodLog(food, meal, loggedAt, showSlots ? activeSlotId : null);
       refetchRecent(); lastLogged.refetch();
       showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ""}`);
       setExpandedId(null);

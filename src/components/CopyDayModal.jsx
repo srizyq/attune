@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getFoodLogsForDate, copyFoodLogs } from '../lib/db';
+import { getFoodLogsForDate, copyFoodLogs, getDaySlots, copyDaySlots } from '../lib/db';
 import { mapRow } from '../hooks/useFoodLogs';
+import { mapSlotRow, formatSlotTime } from '../lib/daySlots';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { todayLocalDate } from '../lib/patterns';
 import DaySelector from './DaySelector';
@@ -20,11 +21,16 @@ function shiftDateStr(dateStr, days) {
 // see what's on it, tap once. copyFoodLogs re-inserts the raw rows as new
 // rows (fresh ids), so this never touches or moves the source day's own
 // entries.
-export default function CopyDayModal({ destDate, onClose, onCopied }) {
+//
+// mode="slots" (Slots view) previews and copies the source day's day_slots
+// instead of its meal groups, via copyDaySlots (which also recreates the
+// slot rows themselves, not just the items in them — see lib/db.js).
+export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meals' }) {
   const { user } = useAuth();
   const { closing, close } = useClosingTransition(onClose);
   const [sourceDate, setSourceDate] = useState(() => shiftDateStr(destDate, -1));
   const [rows, setRows] = useState([]);
+  const [slotRows, setSlotRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copying, setCopying] = useState(false);
   const [error, setError] = useState(null);
@@ -34,15 +40,14 @@ export default function CopyDayModal({ destDate, onClose, onCopied }) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    getFoodLogsForDate(user.id, sourceDate)
-      .then(data => {
-        if (cancelled) return;
-        setRows(data);
-      })
+    const fetch = mode === 'slots'
+      ? getDaySlots(user.id, sourceDate).then((data) => { setSlotRows(data); setRows([]); })
+      : getFoodLogsForDate(user.id, sourceDate).then((data) => { setRows(data); setSlotRows([]); });
+    fetch
       .catch(() => { if (!cancelled) setError("Couldn't load that day."); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [user, sourceDate]);
+  }, [user, sourceDate, mode]);
 
   const items = useMemo(() => rows.map(mapRow), [rows]);
   const grouped = useMemo(() => {
@@ -50,9 +55,25 @@ export default function CopyDayModal({ destDate, onClose, onCopied }) {
     for (const item of items) (g[item.meal] || g.snacks).push(item);
     return g;
   }, [items]);
+  const slots = useMemo(() => slotRows.map(mapSlotRow), [slotRows]);
 
   async function handleCopy() {
-    if (!rows.length || copying) return;
+    if (copying) return;
+    if (mode === 'slots') {
+      if (!slotRows.length) return;
+      setCopying(true);
+      setError(null);
+      try {
+        const result = await copyDaySlots(user.id, sourceDate, destDate);
+        onCopied(result);
+        close();
+      } catch {
+        setError("Couldn't copy — try again.");
+        setCopying(false);
+      }
+      return;
+    }
+    if (!rows.length) return;
     setCopying(true);
     setError(null);
     try {
@@ -65,7 +86,10 @@ export default function CopyDayModal({ destDate, onClose, onCopied }) {
     }
   }
 
-  const totalCal = items.reduce((sum, i) => sum + i.cal, 0);
+  const totalCal = mode === 'slots'
+    ? 0 // slot totals aren't relevant here — the preview shows per-slot kcal instead
+    : items.reduce((sum, i) => sum + i.cal, 0);
+  const hasSource = mode === 'slots' ? slotRows.length > 0 : rows.length > 0;
   const today = todayLocalDate();
   const destLabel = destDate === today
     ? 'today'
@@ -79,7 +103,7 @@ export default function CopyDayModal({ destDate, onClose, onCopied }) {
         style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: 'calc(var(--vvh, 100vh) * 0.85)', display: 'flex', flexDirection: 'column' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Copy meals to {destLabel}</span>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>{mode === 'slots' ? 'Copy slots' : 'Copy meals'} to {destLabel}</span>
           <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
         </div>
 
@@ -91,8 +115,17 @@ export default function CopyDayModal({ destDate, onClose, onCopied }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '10px 20px', WebkitOverflowScrolling: 'touch' }}>
           {loading ? (
             <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Loading…</p>
-          ) : items.length === 0 ? (
-            <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Nothing logged on this day.</p>
+          ) : !hasSource ? (
+            <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>{mode === 'slots' ? 'No slots set up on this day.' : 'Nothing logged on this day.'}</p>
+          ) : mode === 'slots' ? (
+            slots.map((slot) => (
+              <div key={slot.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 11, color: 'var(--text-secondary)', background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 99, padding: '3px 8px', flexShrink: 0 }}>
+                  {formatSlotTime(slot.slotTime)}
+                </span>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{slot.label}</div>
+              </div>
+            ))
           ) : (
             MEAL_ORDER.filter(m => grouped[m].length > 0).map(mealKey => (
               <div key={mealKey} style={{ marginBottom: 14 }}>
@@ -113,10 +146,14 @@ export default function CopyDayModal({ destDate, onClose, onCopied }) {
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-default)', flexShrink: 0 }}>
           <button
             onClick={handleCopy}
-            disabled={!rows.length || copying}
-            style={{ width: '100%', background: !rows.length || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !rows.length || copying ? 'var(--text-muted)' : '#0f0f0f', cursor: !rows.length || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            disabled={!hasSource || copying}
+            style={{ width: '100%', background: !hasSource || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !hasSource || copying ? 'var(--text-muted)' : '#0f0f0f', cursor: !hasSource || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
           >
-            {copying ? 'Copying…' : rows.length ? `Copy ${rows.length} item${rows.length === 1 ? '' : 's'} · ${Math.round(totalCal)} kcal` : 'Copy'}
+            {copying
+              ? 'Copying…'
+              : mode === 'slots'
+                ? (slotRows.length ? `Copy ${slotRows.length} slot${slotRows.length === 1 ? '' : 's'}` : 'Copy')
+                : (rows.length ? `Copy ${rows.length} item${rows.length === 1 ? '' : 's'} · ${Math.round(totalCal)} kcal` : 'Copy')}
           </button>
         </div>
       </div>
