@@ -11,7 +11,7 @@ function AddHourButton({ hour, label, onNavigateAdd }) {
       title={`Add food at ${label}`}
       style={{
         width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-        background: 'var(--accent)', border: 'none', color: '#0f0f0f',
+        background: 'var(--accent)', border: 'none', color: 'var(--accent-contrast)',
         fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer',
       }}

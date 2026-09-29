@@ -5,6 +5,7 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
 import DragSheet from './DragSheet';
+import MacroBreakdown from './MacroBreakdown';
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
 
@@ -237,13 +238,13 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           onClick={close}
           aria-label="Close"
           title="Close"
-          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(20,17,16,0.6)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
           ✕
         </button>
         {analyzing && (
           <div style={{ position: 'absolute', bottom: 'calc(40px + env(safe-area-inset-bottom))', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: '#fff', fontSize: 13, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#8fbc8f', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite' }} />
             Analyzing photo…
           </div>
         )}
@@ -292,12 +293,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
             <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
             {result.portion && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{result.portion}</div>}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{result.cal}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>kcal</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{result.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--water-blue)' }}>{result.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ai-purple)' }}>{result.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
-            </div>
+            <MacroBreakdown values={{ cal: result.cal, protein: result.protein, carbs: result.carbs, fat: result.fat }} />
             <button
               onClick={() => setShowMicros(s => !s)}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', marginTop: 12, padding: '6px 0 0' }}
@@ -332,7 +328,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
                 style={{
                   background: readingLabel ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7,
                   padding: '7px 14px', fontSize: 12, fontWeight: 600,
-                  color: readingLabel ? 'var(--text-muted)' : '#0f0f0f', cursor: readingLabel ? 'not-allowed' : 'pointer',
+                  color: readingLabel ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: readingLabel ? 'not-allowed' : 'pointer',
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
@@ -393,7 +389,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           <button
             onClick={handleAdd}
             disabled={adding}
-            style={{ width: '100%', background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : '#0f0f0f', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ width: '100%', background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {adding ? 'Adding…' : logByTime ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
           </button>

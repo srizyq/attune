@@ -29,6 +29,12 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { getCategoryStyle } from '../lib/foodCategories';
 import PageHeader from '../components/PageHeader';
 import DateStepper from '../components/DateStepper';
+import FormRow from '../components/FormRow';
+import DragSheet from '../components/DragSheet';
+import ServingStepper from '../components/ServingStepper';
+import MacroBreakdown from '../components/MacroBreakdown';
+import DayBudgetImpact from '../components/DayBudgetImpact';
+import { targetsForDate } from '../lib/dayTargets';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -63,14 +69,31 @@ function foodMatchRank(name, queryLower, queryWords) {
 // ─── Live search ─────────────────────────────────────────────────────────
 // The user's own device locale (e.g. "en-US" -> "US", "hi-IN" -> "IN") —
 // used to steer FatSecret's per-country food database toward wherever
-// they actually are, instead of a single hardcoded country. No stored
-// profile field for this yet, so the browser's own locale is the only
-// signal available; 'US' is the fallback for a locale with no country
-// subtag (rare) since FatSecret's US database is its broadest.
+// they actually are (see the region note on searchFatSecret — FatSecret
+// isn't actually honouring this yet) and to rank Open Food Facts results
+// (below), which does. No stored profile field for this yet, so the
+// browser's own locale is the only signal available; 'US' is the
+// fallback for a locale with no country subtag (rare).
 function detectRegion() {
   const lang = (typeof navigator !== 'undefined' && (navigator.language || navigator.languages?.[0])) || '';
   const match = lang.match(/-([A-Za-z]{2})$/);
   return match ? match[1].toUpperCase() : 'US';
+}
+
+// Turns a region code into Open Food Facts' own country-tag format
+// (lowercase, hyphenated English name, e.g. "IN" -> "en:india", "GB" ->
+// "en:united-kingdom") using the browser's built-in locale data instead
+// of a hand-maintained country list, so this covers every region code
+// detectRegion() can produce, not just a curated subset.
+function offCountryTag(region) {
+  try {
+    const name = new Intl.DisplayNames(['en'], { type: 'region' }).of(region);
+    if (!name) return null;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return slug ? `en:${slug}` : null;
+  } catch {
+    return null;
+  }
 }
 
 // Open Food Facts — no API key required, strong branded/packaged coverage
@@ -82,6 +105,14 @@ function detectRegion() {
 // at all. That's fine for an AU-only audience but actively breaks search
 // for anyone elsewhere — world.openfoodfacts.org searches the full global
 // catalog instead, so every country gets full coverage, AU included.
+// Results are then re-ranked (never filtered) so products actually sold
+// in the user's own country surface first — an Indian user searching
+// "milk" sees Indian brands before American ones, but a Reese's search
+// still finds Reese's even though it isn't sold in India, because
+// nothing India-tagged is competing for that name. This is real per-user
+// data (OFF tags each product with every country it's sold in), unlike
+// FatSecret's region param above which the account isn't authorised to
+// actually use.
 // Open Food Facts reports everything per-100g in grams (even things like
 // cholesterol/calcium/iron that are more naturally read in mg, and vitamin D
 // which is more naturally read in micrograms) — convert each to the unit
@@ -99,8 +130,8 @@ function extraMicrosFromOFF(per100, factor) {
   };
 }
 
-async function searchOpenFoodFacts(q) {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&sort_by=unique_scans_n&fields=product_name,generic_name,brands,nutriments,code`;
+async function searchOpenFoodFacts(q, region) {
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&sort_by=unique_scans_n&fields=product_name,generic_name,brands,nutriments,code,countries_tags`;
   // Open Food Facts' shared search backend has occasional one-off blips
   // (a request fails, the very next one succeeds) — one retry absorbs
   // that without surfacing a false "unavailable" error to the user.
@@ -113,7 +144,8 @@ async function searchOpenFoodFacts(q) {
   }
   if (!res.ok) throw new Error(`Open Food Facts search failed: ${res.status}`);
   const data = await res.json();
-  return (data.products || []).map(p => {
+  const countryTag = offCountryTag(region);
+  const items = (data.products || []).map(p => {
     const n = p.nutriments || {};
     const cal = Math.round(n["energy-kcal_100g"] || (n["energy_100g"] ? n["energy_100g"] / 4.184 : 0) || 0);
     const name = p.product_name || p.generic_name;
@@ -131,10 +163,21 @@ async function searchOpenFoodFacts(q) {
       sodium: Math.round((n.sodium_100g || 0) * 1000),
       sugar: Math.round((n.sugars_100g || 0) * 10) / 10,
       ...extraMicrosFromOFF(n, 1),
+      // Local to the searching user's own country — sorted first below,
+      // never used to exclude anything, then stripped before returning.
+      _localMatch: countryTag ? (p.countries_tags || []).includes(countryTag) : false,
       source: "off",
       servingGrams: 100,
     };
   }).filter(Boolean);
+  if (countryTag) {
+    // Array#sort is stable (ES2019+), so this only moves local matches
+    // ahead of everything else — it preserves OFF's own popularity order
+    // (sort_by=unique_scans_n above) within each of the two groups.
+    items.sort((a, b) => b._localMatch - a._localMatch);
+  }
+  items.forEach(item => { delete item._localMatch; });
+  return items;
 }
 
 // FatSecret Platform API — a purpose-built consumer food search database
@@ -549,6 +592,14 @@ const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', 
 //    on internal state. ─────────────────────────────────────────────────
 function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, logByTime, onCreateCustom, onSearchManually }) {
   const { user } = useAuth();
+  const { profile } = useProfile();
+  // Read-only here — logs for today's day-budget-impact preview, not
+  // wired to onAddFood (that already goes through the parent's own
+  // useFoodLogs via onAddFood/addFood).
+  const { logs: todaysLogs } = useFoodLogs(selectedDate);
+  const dailyTarget = targetsForDate(profile, selectedDate);
+  const consumedToday = todaysLogs.reduce((s, l) => s + (l.cal || 0), 0);
+  const favourites = useFavouriteFoods();
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
   // Guards against the decode callback firing more than once for the same
@@ -906,7 +957,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
         {!looking && (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, color: "#555" }}>
-            <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid #333", borderTopColor: "#8fbc8f", animation: "spin 0.8s linear infinite" }} />
+            <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid #333", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite" }} />
             <div style={{ fontSize: 12 }}>Opening camera…</div>
           </div>
         )}
@@ -915,7 +966,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           onClick={close}
           aria-label="Close camera"
           title="Close"
-          style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: 16, width: 38, height: 38, borderRadius: "50%", background: "rgba(20,20,20,0.6)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: 16, width: 38, height: 38, borderRadius: "50%", background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
         >
           ✕
         </button>
@@ -928,9 +979,9 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             style={{
               position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: 16,
               width: 38, height: 38, borderRadius: "50%",
-              background: torchOn ? "#e8c468" : "rgba(20,20,20,0.6)",
+              background: torchOn ? "#e8c468" : "rgba(20,17,16,0.6)",
               border: `1px solid ${torchOn ? "#e8c468" : "rgba(255,255,255,0.25)"}`,
-              color: torchOn ? "#0f0f0f" : "#fff", fontSize: 17,
+              color: torchOn ? "#181412" : "#fff", fontSize: 17,
               display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
             }}
           >
@@ -944,14 +995,14 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               Point your camera at a barcode
             </div>
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-              <div style={{ width: "70%", height: 2, background: "#8fbc8f", opacity: 0.7, boxShadow: "0 0 8px #8fbc8f", borderRadius: 2 }} />
+              <div style={{ width: "70%", height: 2, background: "var(--accent)", opacity: 0.7, boxShadow: "0 0 8px var(--accent)", borderRadius: 2 }} />
             </div>
           </>
         )}
 
         {scanning && (
           <div style={{ position: "absolute", bottom: "calc(40px + env(safe-area-inset-bottom))", left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "#ccc", fontSize: 13 }}>
-            <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #444", borderTopColor: "#8fbc8f", animation: "spin 0.8s linear infinite" }} />
+            <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #444", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite" }} />
             Looking up product…
           </div>
         )}
@@ -959,24 +1010,22 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         {!scanning && (
           <div style={{ position: "absolute", bottom: "calc(32px + env(safe-area-inset-bottom))", left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "0 24px" }}>
             {manualEntryOpen ? (
-              <form onSubmit={submitManualBarcode} style={{ display: "flex", gap: 8, width: "100%", maxWidth: 320 }}>
-                <input
-                  type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
-                  value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
-                  style={{ flex: 1, minWidth: 0, background: "rgba(20,20,20,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
-                />
-                <button
-                  type="submit"
-                  disabled={!manualBarcode.replace(/\D/g, "")}
-                  style={{ background: "#8fbc8f", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#0f0f0f", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
-                >
-                  Look up
-                </button>
+              <form onSubmit={submitManualBarcode} style={{ width: "100%", maxWidth: 320 }}>
+                <FormRow>
+                  <input
+                    type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
+                    value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
+                    style={{ width: "100%", boxSizing: "border-box", background: "rgba(20,17,16,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
+                  />
+                  <FormRow.Button icon="ti-search" primary type="submit" disabled={!manualBarcode.replace(/\D/g, "")}>
+                    Look up
+                  </FormRow.Button>
+                </FormRow>
               </form>
             ) : (
               <button
                 onClick={() => setManualEntryOpen(true)}
-                style={{ background: "rgba(20,20,20,0.6)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20, padding: "8px 16px", fontSize: 13, color: "#ccc", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20, padding: "8px 16px", fontSize: 13, color: "#ccc", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <i className="ti ti-keyboard" style={{ fontSize: 14 }} /> Enter barcode manually
               </button>
@@ -988,21 +1037,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   }
 
   return (
-    <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 24 }}>
-    {/* maxHeight uses --vvh, not a bare vh unit, for the same reason
-        .modal-backdrop does (see its comment in index.css): tapping the
-        amount field below opens the keyboard, which shrinks the *visual*
-        viewport but not `vh` itself on iOS Safari. A bare 85vh cap here
-        stayed sized for the full (pre-keyboard) height while the backdrop
-        correctly shrank around it, so the centered panel overflowed both
-        edges of its own backdrop — the header scrolled off above the
-        screen and the food list behind the modal became visible below it. */}
-    <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth: 460, maxHeight: "calc(var(--vvh, 100vh) * 0.85)", overflowY: "auto" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
-        <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"}</span>
-        <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
-      </div>
-      <div style={{ padding: 20 }}>
+    <DragSheet title={addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"} onClose={close} closing={closing}>
       {error && !addingProduct && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
@@ -1035,7 +1070,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               <button
                 type="submit"
                 disabled={!manualBarcode.replace(/\D/g, "")}
-                style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#0f0f0f", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
+                style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
               >
                 Look up
               </button>
@@ -1106,7 +1141,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
                   style={{
                     width: 36, flexShrink: 0, borderRadius: 8, fontSize: 12, fontFamily: "inherit", cursor: "pointer",
                     background: newProduct.servingUnit === u ? "var(--accent)" : "var(--bg-card)",
-                    color: newProduct.servingUnit === u ? "#0f0f0f" : "var(--text-secondary)",
+                    color: newProduct.servingUnit === u ? "var(--accent-contrast)" : "var(--text-secondary)",
                     border: `1px solid ${newProduct.servingUnit === u ? "var(--accent)" : "var(--border-default)"}`,
                   }}
                 >
@@ -1125,7 +1160,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               style={{
                 flex: 2, background: !newProduct.name.trim() || savingProduct ? "var(--border-default)" : "var(--accent)",
                 border: "none", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 600,
-                color: !newProduct.name.trim() || savingProduct ? "var(--text-muted)" : "#0f0f0f",
+                color: !newProduct.name.trim() || savingProduct ? "var(--text-muted)" : "var(--accent-contrast)",
                 cursor: !newProduct.name.trim() || savingProduct ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}>
               {savingProduct ? "Saving…" : "Save & continue"}
@@ -1137,23 +1172,35 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         <div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Product found</div>
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-active)", borderRadius: 10, padding: "14px", marginBottom: 12 }}>
-            <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
-            {result.brand && <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{result.brand} · {result.serving}</div>}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
-              <div style={{ textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)" }}>{scaled.protein}g</div><div style={{ fontSize: 10, color: "var(--text-muted)" }}>Protein</div></div>
-              <div style={{ textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 600, color: "var(--water-blue)" }}>{scaled.carbs}g</div><div style={{ fontSize: 10, color: "var(--text-muted)" }}>Carbs</div></div>
-              <div style={{ textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 600, color: "var(--warning)" }}>{scaled.fat}g</div><div style={{ fontSize: 10, color: "var(--text-muted)" }}>Fat</div></div>
-              <div style={{ textAlign: "center" }}><div style={{ fontSize: 14, fontWeight: 600, color: "var(--ai-purple)" }}>{scaled.fibre}g</div><div style={{ fontSize: 10, color: "var(--text-muted)" }}>Fibre</div></div>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 2 }}>
+              <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600 }}>{result.name}</div>
+              <button
+                onClick={() => favourites.toggle({ ...result, cal: scaled.cal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat })}
+                className="hit-slop" aria-label={favourites.isFavourite(result.name) ? "Remove favourite" : "Add favourite"}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0, color: favourites.isFavourite(result.name) ? "var(--gold)" : "var(--text-hint)", fontSize: 16, display: "flex" }}
+              >
+                <i className={favourites.isFavourite(result.name) ? "ti ti-star-filled" : "ti ti-star"} />
+              </button>
             </div>
-            <div style={{ display: "flex", gap: 16, paddingTop: 10, borderTop: "1px solid var(--border-default)" }}>
+            {result.brand && <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{result.brand} · {result.serving}</div>}
+            <MacroBreakdown
+              values={{ cal: scaled.cal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat }}
+              dailyTarget={dailyTarget.calories ? { cal: dailyTarget.calories, protein: dailyTarget.protein_g, carbs: dailyTarget.carbs_g, fat: dailyTarget.fat_g } : null}
+            />
+            <div style={{ display: "flex", gap: 16, paddingTop: 10, marginTop: 10, borderTop: "1px solid var(--border-default)" }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Fibre <span style={{ color: "var(--text-secondary)" }}>{scaled.fibre}g</span></div>
               <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sodium <span style={{ color: "var(--text-secondary)" }}>{scaled.sodium}mg</span></div>
               <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sugar <span style={{ color: "var(--text-secondary)" }}>{scaled.sugar}g</span></div>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: "var(--accent)" }}>{scaled.cal}</span>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}> kcal{unit !== servingUnit && ` · ≈${gramsEquivalent}${servingUnit}`} — label serving: {result.serving}</span>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
+            {unit !== servingUnit && `≈${gramsEquivalent}${servingUnit} · `}label serving: {result.serving}
           </div>
+          {dailyTarget.calories > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={scaled.cal} itemName={result.name} />
+            </div>
+          )}
           <AddControls
             amount={amount} setAmount={setAmount}
             unit={unit} setUnit={setUnit}
@@ -1164,12 +1211,12 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             onAdd={() => { onAddFood(scaled, logByTime ? null : meal, logByTime ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null); onClose(); }}
             disabled={!servings}
           />
-          <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Scan again</button>
+          <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <i aria-hidden="true" className="ti ti-scan" style={{ fontSize: 13 }} /> Scan next
+          </button>
         </div>
       )}
-      </div>
-    </div>
-    </div>
+    </DragSheet>
   );
 }
 
@@ -1283,7 +1330,7 @@ function CreateFoodModal({ onClose, onCreate, initialName, initialFood }) {
           <div><label style={labelStyle}>Sugar (g)</label><input style={fieldStyle} type="number" min="0" value={sugar} onChange={e => setSugar(e.target.value)} /></div>
         </div>
         {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)" }}>{error}</div>}
-        <button onClick={submit} disabled={!valid || saving} style={{ background: !valid || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !valid || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !valid || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <button onClick={submit} disabled={!valid || saving} style={{ background: !valid || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !valid || saving ? "var(--text-muted)" : "var(--accent-contrast)", cursor: !valid || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {saving ? "Saving…" : "Save custom food"}
         </button>
       </div>
@@ -1396,7 +1443,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
             )
           )}
           {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 12 }}>{error}</div>}
-          <button onClick={submit} disabled={!name.trim() || saving} style={{ width: "100%", background: !name.trim() || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !name.trim() || saving ? "var(--text-muted)" : "#0f0f0f", cursor: !name.trim() || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <button onClick={submit} disabled={!name.trim() || saving} style={{ width: "100%", background: !name.trim() || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !name.trim() || saving ? "var(--text-muted)" : "var(--accent-contrast)", cursor: !name.trim() || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             {saving ? "Saving…" : !logNow ? (isEditing ? "Save changes" : "Save recipe") : logByTime ? `Save & log at ${formatTime12h(time)}` : `Save & log to ${meal}`}
           </button>
         </>
@@ -1516,7 +1563,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
           style={{
             width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
             background: justAdded ? "var(--accent-bg)" : "var(--accent)", border: justAdded ? "1px solid var(--accent-dark)" : "none",
-            color: justAdded ? "var(--accent)" : "#0f0f0f", fontSize: 15, lineHeight: 1,
+            color: justAdded ? "var(--accent)" : "var(--accent-contrast)", fontSize: 15, lineHeight: 1,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: justAdded ? "default" : "pointer", fontFamily: "inherit",
           }}
@@ -1574,35 +1621,28 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
 
 function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, setMeal, time, setTime, logByTime, onAdd, disabled, addLabel }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          type="number" min="0" step="any" value={amount}
-          onChange={e => setAmount(e.target.value)}
-          style={{ width: 70, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
-        />
+    <FormRow>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <ServingStepper amount={amount} setAmount={setAmount} step={unit === 'serving' ? 0.5 : 1} />
         <select value={unit} onChange={e => setUnit(e.target.value)} style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
           {units.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
         </select>
-        {logByTime ? (
-          <input
-            type="time" value={time} onChange={e => setTime(e.target.value)}
-            style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
-          />
-        ) : (
-          <select value={meal} onChange={e => setMeal(e.target.value)} style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
-            {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-        )}
       </div>
-      <button
-        onClick={onAdd}
-        disabled={disabled}
-        style={{ background: disabled ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 600, color: disabled ? "var(--text-muted)" : "#0f0f0f", cursor: disabled ? "not-allowed" : "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }}
-      >
-        {addLabel ? addLabel : logByTime ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
-      </button>
-    </div>
+      {unit === 'serving' && <ServingStepper.Multipliers amount={amount} setAmount={setAmount} />}
+      {logByTime ? (
+        <input
+          type="time" value={time} onChange={e => setTime(e.target.value)}
+          style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
+        />
+      ) : (
+        <select value={meal} onChange={e => setMeal(e.target.value)} style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+          {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+      )}
+      <FormRow.Button icon="ti-plus" primary onClick={onAdd} disabled={disabled}>
+        {(addLabel ? addLabel : logByTime ? `Add at ${formatTime12h(time)}` : `Add to ${meal}`).replace(/^\+\s*/, '')}
+      </FormRow.Button>
+    </FormRow>
   );
 }
 
@@ -1949,12 +1989,13 @@ export default function FoodSearch() {
     // databases under that name — search the expanded form instead
     // ("mcdonalds", "halal snack pack") when the query is recognised.
     const searchQuery = expandFoodSlang(q) || q;
+    const region = detectRegion();
     // Five independent sources — run them together instead of one after
     // another, so a search takes as long as the slowest of the five
     // rather than the sum of all five.
     const [offResult, fatSecretResult, ausnutResult, commonDishResult, restaurantResult] = await Promise.allSettled([
-      searchOpenFoodFacts(searchQuery),
-      searchFatSecret(searchQuery, detectRegion()),
+      searchOpenFoodFacts(searchQuery, region),
+      searchFatSecret(searchQuery, region),
       searchAusnut(searchQuery),
       searchCommonDish(searchQuery),
       searchRestaurant(searchQuery),
@@ -2619,7 +2660,7 @@ export default function FoodSearch() {
         <div className="meal-builder-bar" style={{ background: "var(--bg-subtle)", border: "1px solid var(--accent-dark)", borderRadius: 12, padding: "10px 12px 10px 18px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
           <span style={{ fontSize: 13, color: "var(--accent)", whiteSpace: "nowrap" }}>Building recipe · {builderItems.length} item{builderItems.length !== 1 ? "s" : ""}</span>
           <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-            <button onClick={() => setBuilderReviewOpen(true)} style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "#0f0f0f", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Review & save</button>
+            <button onClick={() => setBuilderReviewOpen(true)} style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Review & save</button>
             <button onClick={cancelBuilder} style={{ background: "none", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Cancel</button>
           </div>
         </div>

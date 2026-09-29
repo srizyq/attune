@@ -46,7 +46,7 @@ export default function Welcome() {
           background: 'var(--accent)',
           border: 'none',
           borderRadius: '12px',
-          color: '#0f0f0f',
+          color: 'var(--accent-contrast)',
           fontSize: '16px',
           fontWeight: 600,
           cursor: 'pointer',

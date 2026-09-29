@@ -67,7 +67,7 @@ export default function CoCoachCard({ clientId, clientName }) {
               <option value="">Choose a teammate…</option>
               {options.map((m) => <option key={m.user_id} value={m.user_id}>{m.name}</option>)}
             </select>
-            <button onClick={send} disabled={!teammateId || busy} className="btn-press" style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: teammateId ? 'pointer' : 'default', opacity: teammateId ? 1 : 0.5, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <button onClick={send} disabled={!teammateId || busy} className="btn-press" style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: teammateId ? 'pointer' : 'default', opacity: teammateId ? 1 : 0.5, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {busy ? 'Sending…' : `Ask ${who === 'the client' ? 'them' : who} to accept`}
             </button>
           </div>

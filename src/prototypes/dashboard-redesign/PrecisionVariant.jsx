@@ -25,20 +25,20 @@ import AppNav from '../../components/AppNav';
 // were both "add color/boldness", which is the opposite of what
 // actually makes MacroFactor read as premium instead of plain.
 
-const accent = '#8fbc8f';
+const accent = 'var(--accent)';
 
 const THEMES = {
   light: {
     bg: '#ffffff', text: '#0a0a0a', textM: '#6b6b6b', textFaint: '#b0b0b0',
     borderStrong: '#0a0a0a', borderSoft: '#e7e7e5', pillTrack: '#f0f0ee',
     pillBg: '#0a0a0a', pillText: '#ffffff',
-    bandFill: accent + '22',
+    bandFill: `color-mix(in srgb, ${accent} 13%, transparent)`,
   },
   dark: {
     bg: '#0a0a0a', text: '#f5f5f2', textM: '#8f8f89', textFaint: '#4a4a46',
-    borderStrong: '#f5f5f2', borderSoft: '#242422', pillTrack: '#1c1c1a',
+    borderStrong: '#f5f5f2', borderSoft: '#242422', pillTrack: 'var(--pill-track)',
     pillBg: '#f5f5f2', pillText: '#0a0a0a',
-    bandFill: accent + '26',
+    bandFill: `color-mix(in srgb, ${accent} 15%, transparent)`,
   },
 };
 

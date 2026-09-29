@@ -4,12 +4,23 @@ import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../hooks/useTheme';
 import { useClosingTransition } from '../hooks/useClosingTransition';
-import { supabase, emailRedirectTo } from '../lib/supabase';
+import { useResendConfirmation } from '../hooks/useResendConfirmation';
 import { authedPost } from '../lib/billing';
 import { isTrialActive, trialDaysLeft } from '../lib/trial';
 import AppNav from '../components/AppNav';
 import { Card, SectionLabel, FieldRow } from '../components/settings/primitives';
 import PageHeader from '../components/PageHeader';
+import SegmentedControl from '../components/SegmentedControl';
+
+const THEME_OPTIONS = [
+  { id: 'dark', label: 'Dark', icon: 'ti-moon' },
+  { id: 'light', label: 'Light', icon: 'ti-sun' },
+];
+
+const UNIT_OPTIONS = [
+  { id: 'metric', label: 'Metric (kg/cm)' },
+  { id: 'imperial', label: 'Imperial (lb/in)' },
+];
 
 // ─── Reusable bits ──────────────────────────────────────────────────────────────
 function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) {
@@ -95,7 +106,7 @@ function ProBillingButton({ profile, pendingConfirmation }) {
           padding: '9px 16px',
           background: hasRealSubscription ? 'transparent' : 'var(--accent)',
           border: `1px solid ${hasRealSubscription ? 'var(--border-default)' : 'var(--accent)'}`,
-          borderRadius: 8, color: hasRealSubscription ? 'var(--text-secondary)' : '#0f0f0f',
+          borderRadius: 8, color: hasRealSubscription ? 'var(--text-secondary)' : 'var(--accent-contrast)',
           fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
@@ -113,36 +124,29 @@ function ProBillingButton({ profile, pendingConfirmation }) {
 // "already registered"). All that's left to do is confirm the email
 // that's already on file, or resend it if it didn't arrive.
 function ResendConfirmation({ email }) {
-  const [state, setState] = useState(null);
-
-  async function resend() {
-    setState('sending');
-    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
-    setState(error ? (error.message || 'Could not resend — try again.') : 'sent');
-  }
+  const { status, errorMessage, secondsLeft, canResend, resend } = useResendConfirmation(email);
 
   return (
     <div>
       <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 10px', lineHeight: 1.5 }}>
         Check <span style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>{email}</span> for a confirmation link — everything you've already logged stays right where it is.
       </p>
-      {state === 'sent' ? (
-        <span style={{ color: 'var(--accent)', fontSize: '13px' }}>Confirmation email sent.</span>
-      ) : (
-        <button
-          onClick={resend}
-          disabled={state === 'sending'}
-          style={{
-            padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
-            borderRadius: '8px', color: 'var(--accent)', fontSize: '13px', fontWeight: 600,
-            cursor: state === 'sending' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-          }}
-        >
-          {state === 'sending' ? 'Sending…' : 'Resend confirmation email'}
-        </button>
+      <button
+        onClick={resend}
+        disabled={!canResend}
+        style={{
+          padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
+          borderRadius: '8px', color: 'var(--accent)', fontSize: '13px', fontWeight: 600,
+          cursor: canResend ? 'pointer' : 'default', fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: canResend ? 1 : 0.6,
+        }}
+      >
+        {status === 'sending' ? 'Sending…' : secondsLeft > 0 ? `Resend in ${secondsLeft}s` : 'Resend confirmation email'}
+      </button>
+      {status === 'sent' && (
+        <div style={{ color: 'var(--accent)', fontSize: '13px', marginTop: '8px' }}>Confirmation email sent.</div>
       )}
-      {state && state !== 'sending' && state !== 'sent' && (
-        <div style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '8px' }}>{state}</div>
+      {status === 'error' && (
+        <div style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '8px' }}>{errorMessage}</div>
       )}
     </div>
   );
@@ -245,7 +249,7 @@ export default function Profile() {
                 background: saved ? 'var(--accent-bg)' : 'var(--accent)',
                 border: `1px solid ${saved ? 'var(--border-active)' : 'var(--accent)'}`,
                 borderRadius: '10px',
-                color: saved ? 'var(--accent)' : '#0f0f0f',
+                color: saved ? 'var(--accent)' : 'var(--accent-contrast)',
                 fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
                 fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
               }}
@@ -321,23 +325,7 @@ export default function Profile() {
           <Card>
             <SectionLabel>Appearance</SectionLabel>
             <FieldRow label="Theme" hint={theme === 'light' ? 'Light — matches most of the day' : 'Dark — easier on the eyes at night'}>
-              <div style={{ display: 'flex', gap: 6, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2 }}>
-                {[{ id: 'dark', label: 'Dark', icon: 'ti-moon' }, { id: 'light', label: 'Light', icon: 'ti-sun' }].map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setTheme(opt.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 18, border: 'none',
-                      background: theme === opt.id ? 'var(--accent)' : 'transparent',
-                      color: theme === opt.id ? '#0f0f0f' : 'var(--text-muted)',
-                      fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    }}
-                  >
-                    <i className={`ti ${opt.icon}`} style={{ fontSize: 14 }} />
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl options={THEME_OPTIONS} value={theme} onChange={setTheme} fill={false} />
             </FieldRow>
           </Card>
 
@@ -349,31 +337,7 @@ export default function Profile() {
                 <TextInput value={form.name} onChange={v => set('name', v)} width="180px" />
               </FieldRow>
               <FieldRow label="Units">
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[
-                    { value: 'metric',   label: 'Metric (kg/cm)' },
-                    { value: 'imperial', label: 'Imperial (lb/in)' },
-                  ].map(u => {
-                    const sel = form.unit === u.value;
-                    return (
-                      <button
-                        key={u.value}
-                        onClick={() => set('unit', u.value)}
-                        style={{
-                          padding: '8px 12px',
-                          background: sel ? 'var(--accent-bg)' : 'var(--bg-primary)',
-                          border: `1px solid ${sel ? 'var(--border-active)' : 'var(--border-default)'}`,
-                          borderRadius: '8px',
-                          color: sel ? 'var(--accent)' : 'var(--text-muted)',
-                          fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                          fontFamily: "'Plus Jakarta Sans', sans-serif",
-                        }}
-                      >
-                        {u.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <SegmentedControl options={UNIT_OPTIONS} value={form.unit} onChange={v => set('unit', v)} fill={false} />
               </FieldRow>
             </Card>
 

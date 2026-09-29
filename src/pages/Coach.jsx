@@ -12,6 +12,7 @@ import ClientDetail from '../components/coach/ClientDetail';
 import { needsAttention } from '../lib/clientInsights';
 import { todayLocalDate } from '../lib/patterns';
 import PageHeader from '../components/PageHeader';
+import SegmentedControl from '../components/SegmentedControl';
 
 function timeOfDayGreeting() {
   const h = new Date().getHours();
@@ -60,6 +61,7 @@ export default function Coach() {
   const isTrainer = !!profile?.coach_pass;
   const attentionCount = summaries.filter(s => needsAttention(s, today)).length;
   const selectedSummary = selectedClient ? summaries.find(s => s.client_id === selectedClient.id) : undefined;
+  const selectedRow = selectedClient ? clients.find(r => r.client?.id === selectedClient.id) : undefined;
 
   if (!profile) return null;
 
@@ -95,23 +97,14 @@ export default function Coach() {
               ← All clients
             </button>
           ) : isTrainer ? (
-            <div style={{ display: 'flex', gap: 2, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 9, padding: 3 }}>
-              {[{ id: 'clients', label: 'My clients' }, { id: 'my-coach', label: 'My coach' }].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setTrainerTab(t.id)}
-                  className="btn-press"
-                  style={{
-                    padding: '7px 14px', borderRadius: 7, border: 'none',
-                    background: trainerTab === t.id ? 'var(--accent-bg)' : 'transparent',
-                    color: trainerTab === t.id ? 'var(--accent)' : 'var(--text-muted)',
-                    fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  }}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              value={trainerTab}
+              onChange={setTrainerTab}
+              options={[
+                { id: 'clients', label: 'My clients' },
+                { id: 'my-coach', label: 'My coach' },
+              ]}
+            />
           ) : null}
         </PageHeader>
 
@@ -131,8 +124,6 @@ export default function Coach() {
                 summariesSupported={summariesSupported}
                 today={today}
                 onSelect={setSelectedClient}
-                onRevoke={revoke}
-                onSetGroup={setGroup}
                 onStatus={reportStatus}
                 loggedTodayCount={loggedTodayCount}
                 resolvedCount={resolvedStatuses.length}
@@ -142,7 +133,13 @@ export default function Coach() {
             <div style={{ marginTop: 20 }}><TeamCard /></div>
             </>
           ) : (
-            <ClientDetail client={selectedClient} summary={selectedSummary} />
+            <ClientDetail
+              client={selectedClient}
+              summary={selectedSummary}
+              row={selectedRow}
+              onSetGroup={setGroup}
+              onRevoke={async (id) => { await revoke(id); setSelectedClient(null); }}
+            />
           )}
         </div>
       </div>

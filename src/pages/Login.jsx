@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase, emailRedirectTo } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
+import { useResendConfirmation } from '../hooks/useResendConfirmation';
 import PreAuthThemeToggle from '../components/PreAuthThemeToggle';
 import { upsertProfile } from '../lib/db';
 
@@ -29,7 +30,7 @@ export default function Login() {
   // which is exactly what reads as "my password isn't working": the
   // password is correct, the account just was never finished setting up.
   const [unconfirmedEmail, setUnconfirmedEmail] = useState(null);
-  const [resendState, setResendState] = useState(null); // null | 'sending' | 'sent' | error string
+  const { status: resendStatus, errorMessage: resendError, secondsLeft: resendSecondsLeft, canResend, resend } = useResendConfirmation(unconfirmedEmail);
 
   // A real, already-confirmed account landing on a "log in / create an
   // account" screen doesn't make sense — most likely a stale bookmark or
@@ -58,7 +59,6 @@ export default function Login() {
     setLoading(true);
     setError(null);
     setUnconfirmedEmail(null);
-    setResendState(null);
     const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
       setLoading(false);
@@ -80,13 +80,6 @@ export default function Login() {
     }
     setLoading(false);
     navigate('/dashboard');
-  }
-
-  async function handleResend() {
-    if (!unconfirmedEmail) return;
-    setResendState('sending');
-    const { error: resendError } = await supabase.auth.resend({ type: 'signup', email: unconfirmedEmail, options: { emailRedirectTo } });
-    setResendState(resendError ? (resendError.message || 'Could not resend — try again.') : 'sent');
   }
 
   return (
@@ -154,24 +147,23 @@ export default function Login() {
               padding: '10px 14px', fontSize: '13px', color: '#c09a70', marginBottom: '16px', lineHeight: 1.5,
             }}>
               <p style={{ margin: '0 0 8px' }}>Your password is right, but this account was never confirmed — check {unconfirmedEmail} for the confirmation email we sent when you signed up.</p>
-              {resendState === 'sent' ? (
-                <p style={{ margin: 0, color: 'var(--accent)' }}>Confirmation email sent — check your inbox.</p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={resendState === 'sending'}
-                  style={{
-                    background: 'none', border: '1px solid #3a2e1e', borderRadius: 6, padding: '6px 12px',
-                    color: '#c09a70', fontSize: 12, fontWeight: 600, cursor: resendState === 'sending' ? 'default' : 'pointer',
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  }}
-                >
-                  {resendState === 'sending' ? 'Sending…' : 'Resend confirmation email'}
-                </button>
+              <button
+                type="button"
+                onClick={resend}
+                disabled={!canResend}
+                style={{
+                  background: 'none', border: '1px solid #3a2e1e', borderRadius: 6, padding: '6px 12px',
+                  color: '#c09a70', fontSize: 12, fontWeight: 600, cursor: canResend ? 'pointer' : 'default',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: canResend ? 1 : 0.6,
+                }}
+              >
+                {resendStatus === 'sending' ? 'Sending…' : resendSecondsLeft > 0 ? `Resend in ${resendSecondsLeft}s` : 'Resend confirmation email'}
+              </button>
+              {resendStatus === 'sent' && (
+                <p style={{ margin: '8px 0 0', color: 'var(--accent)' }}>Confirmation email sent — check your inbox.</p>
               )}
-              {resendState && resendState !== 'sending' && resendState !== 'sent' && (
-                <p style={{ margin: '8px 0 0', color: 'var(--danger)' }}>{resendState}</p>
+              {resendStatus === 'error' && (
+                <p style={{ margin: '8px 0 0', color: 'var(--danger)' }}>{resendError}</p>
               )}
             </div>
           )}
@@ -184,7 +176,7 @@ export default function Login() {
               background: email && password ? 'var(--accent)' : 'var(--bg-card)',
               border: `1px solid ${email && password ? 'var(--accent)' : 'var(--border-default)'}`,
               borderRadius: '10px',
-              color: email && password ? '#0f0f0f' : 'var(--text-hint)',
+              color: email && password ? 'var(--accent-contrast)' : 'var(--text-hint)',
               fontSize: '15px', fontWeight: 600,
               cursor: email && password && !loading ? 'pointer' : 'not-allowed',
               fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',

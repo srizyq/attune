@@ -1,8 +1,12 @@
 import { getWorkoutType } from '../../lib/workoutMath';
 import { Card, SectionLabel } from './shared';
+import ListRow from '../ListRow';
 
 // A read-only list of a client's logged workouts — the trainer sees them
-// (workout_logs has a trainer read policy) but never edits them.
+// (workout_logs has a trainer read policy) but never edits them. Uses
+// ListRow's visuals for consistency with the rest of the app, but stays
+// non-interactive (no onClick/chevron) since every field is already shown
+// here and there's no action to relocate into a detail view.
 export default function WorkoutsCard({ title, workouts, loading, showDate = false, style }) {
   const total = workouts.reduce((s, w) => s + w.caloriesBurned, 0);
   return (
@@ -17,16 +21,17 @@ export default function WorkoutsCard({ title, workouts, loading, showDate = fals
           {workouts.map(w => {
             const type = getWorkoutType(w.type);
             return (
-              <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid var(--border-default)' }}>
-                <i className={`ti ${type.icon}`} style={{ fontSize: 18, color: 'var(--accent)', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>{type.label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                    {showDate ? `${new Date(w.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} · ` : ''}{w.intensity} · {Math.round(w.durationMinutes)} min
-                  </div>
-                </div>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)', flexShrink: 0 }}>{Math.round(w.caloriesBurned)} kcal</span>
-              </div>
+              <ListRow
+                key={w.id}
+                avatar={<ListRow.SquareAvatar icon={type.icon} />}
+                title={type.label}
+                subtitleParts={[
+                  showDate ? new Date(w.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : null,
+                  w.intensity ? w.intensity.charAt(0).toUpperCase() + w.intensity.slice(1) : null,
+                  `${Math.round(w.durationMinutes)} min`,
+                ]}
+                trailing={<span style={{ fontSize: 12, color: 'var(--text-secondary)', flexShrink: 0 }}>{Math.round(w.caloriesBurned)} kcal</span>}
+              />
             );
           })}
           <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>

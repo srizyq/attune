@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SettingsModal } from './settings/primitives';
 import { WORKOUT_TYPES, INTENSITIES, estimateWorkoutCalories } from '../lib/workoutMath';
+import SegmentedControl from './SegmentedControl';
 
 const labelStyle = { fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' };
 const fieldStyle = { width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
@@ -64,21 +65,8 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
         </div>
 
         <label style={labelStyle}>Intensity</label>
-        <div style={{ display: 'flex', gap: 4, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2, marginBottom: 18 }}>
-          {INTENSITIES.map(i => (
-            <button
-              key={i.id}
-              onClick={() => setIntensity(i.id)}
-              style={{
-                flex: 1, padding: '8px 0', borderRadius: 18, border: 'none',
-                background: intensity === i.id ? 'var(--accent)' : 'transparent',
-                color: intensity === i.id ? '#0f0f0f' : 'var(--text-muted)',
-                fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              {i.label}
-            </button>
-          ))}
+        <div style={{ marginBottom: 18 }}>
+          <SegmentedControl options={INTENSITIES} value={intensity} onChange={setIntensity} fill />
         </div>
 
         <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
@@ -106,7 +94,7 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
           disabled={saving}
           style={{
             width: '100%', background: saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8,
-            padding: '12px', fontSize: 14, fontWeight: 600, color: saving ? 'var(--text-muted)' : '#0f0f0f',
+            padding: '12px', fontSize: 14, fontWeight: 600, color: saving ? 'var(--text-muted)' : 'var(--accent-contrast)',
             cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
           }}
         >

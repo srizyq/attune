@@ -107,7 +107,7 @@ export function Toggle({ on, onChange }) {
         width: '44px', height: '26px',
         borderRadius: '99px',
         border: `1px solid ${on ? 'var(--accent-dark)' : 'var(--border-default)'}`,
-        background: on ? '#4a7a4a33' : 'var(--bg-primary)',
+        background: on ? 'color-mix(in srgb, var(--accent-dark) 20%, transparent)' : 'var(--bg-primary)',
         position: 'relative',
         cursor: 'pointer',
         transition: 'all 0.2s',

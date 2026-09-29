@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OnboardingLayout from '../../components/OnboardingLayout';
-import { supabase, emailRedirectTo } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
+import { useResendConfirmation } from '../../hooks/useResendConfirmation';
 
 // A dedicated gate between "submitted the upgrade form" and "actually in
 // the app" — Step4 used to drop straight into /dashboard at this point,
@@ -18,8 +19,8 @@ export default function Step5() {
   const location = useLocation();
   const [email, setEmail] = useState(location.state?.email || null);
   const [checking, setChecking] = useState(true);
-  const [resendState, setResendState] = useState(null); // null | 'sending' | 'sent' | error string
   const pollRef = useRef(null);
+  const { status: resendStatus, errorMessage: resendError, secondsLeft, canResend, resend } = useResendConfirmation(email);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,13 +45,6 @@ export default function Step5() {
     return () => { cancelled = true; clearInterval(pollRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function handleResend() {
-    if (!email) return;
-    setResendState('sending');
-    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
-    setResendState(error ? (error.message || 'Could not resend — try again.') : 'sent');
-  }
 
   if (checking) {
     return (
@@ -83,23 +77,23 @@ export default function Step5() {
           Waiting for confirmation…
         </div>
 
-        {resendState === 'sent' ? (
-          <p style={{ color: 'var(--accent)', fontSize: 13, marginBottom: 20 }}>Confirmation email sent.</p>
-        ) : (
-          <button
-            onClick={handleResend}
-            disabled={resendState === 'sending' || !email}
-            style={{
-              padding: '11px 20px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
-              borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600,
-              cursor: resendState === 'sending' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 20,
-            }}
-          >
-            {resendState === 'sending' ? 'Sending…' : 'Resend confirmation email'}
-          </button>
+        <button
+          onClick={resend}
+          disabled={!canResend}
+          style={{
+            padding: '11px 20px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
+            borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600,
+            cursor: canResend ? 'pointer' : 'default', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 20,
+            opacity: canResend ? 1 : 0.6,
+          }}
+        >
+          {resendStatus === 'sending' ? 'Sending…' : secondsLeft > 0 ? `Resend in ${secondsLeft}s` : 'Resend confirmation email'}
+        </button>
+        {resendStatus === 'sent' && (
+          <p style={{ color: 'var(--accent)', fontSize: 13, marginTop: -14, marginBottom: 20 }}>Confirmation email sent.</p>
         )}
-        {resendState && resendState !== 'sending' && resendState !== 'sent' && (
-          <div style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 20 }}>{resendState}</div>
+        {resendStatus === 'error' && (
+          <div style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 20 }}>{resendError}</div>
         )}
 
         <div>

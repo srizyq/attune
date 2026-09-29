@@ -5,13 +5,46 @@ import { useTeam } from '../../hooks/useTeam';
 import { useAuth } from '../../hooks/useAuth';
 import { clientCountLabel, inviteExpiry, validateTeamName } from '../../lib/coachTeam';
 import { normalizeInviteCode } from '../../lib/coachInvite';
+import FormRow from '../FormRow';
+import ListRow from '../ListRow';
 
-const primary = { padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" };
 const ghost = { padding: '8px 14px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" };
 const quiet = { ...ghost, border: 'none', color: 'var(--text-muted)', padding: '6px 8px' };
 
-function initials(name) {
-  return (name || '?').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+// A teammate's info + (owner-only) remove action — previously an inline
+// "Remove" text button on the row itself; now the row's own detail view,
+// since the row became a single tap target like everywhere else.
+function TeamMemberDetail({ member, isSelf, isOwnerView, teamName, onRemove, busy, onClose }) {
+  return (
+    <div onClick={onClose} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
+      <div role="dialog" aria-modal="true" aria-label={member.name} onClick={e => e.stopPropagation()} className="modal-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, padding: 20, width: '100%', maxWidth: 380 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <ListRow.SquareAvatar name={member.name} size={48} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
+              {member.name}{isSelf ? ' (you)' : ''}
+            </div>
+            {member.role === 'owner' && (
+              <span style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>OWNER</span>
+            )}
+          </div>
+        </div>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
+          {clientCountLabel(member.client_count)}{!member.has_pass ? ' · Coach Pass inactive' : ''}
+        </p>
+        {isOwnerView && !isSelf && (
+          <FormRow.Button
+            icon="ti-user-x"
+            danger
+            disabled={busy}
+            onClick={() => { if (window.confirm(`Remove ${member.name} from ${teamName}? Their clients aren't affected.`)) onRemove(); }}
+          >
+            {busy ? 'Removing…' : `Remove from team`}
+          </FormRow.Button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // A practitioner's team: who's on it and how many clients each coaches (a
@@ -26,6 +59,7 @@ export default function TeamCard() {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
 
   if (team.loading || !team.supported) return null;
 
@@ -59,20 +93,20 @@ export default function TeamCard() {
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
           Coach alongside colleagues? A team shows who's on it and lets you bring a teammate in on a client — your clients are never shared unless they agree to it. Everyone keeps their own Coach Pass.
         </p>
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 220px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div>
             <label htmlFor="team-name" style={labelStyle}>Start a team</label>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <FormRow>
               <input id="team-name" value={name} maxLength={60} placeholder="e.g. Northside Physio" onChange={(e) => { setName(e.target.value); setError(null); }} onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }} style={fieldStyle} />
-              <button onClick={handleCreate} disabled={busy === 'create'} className="btn-press" style={{ ...primary, flexShrink: 0 }}>{busy === 'create' ? 'Creating…' : 'Create'}</button>
-            </div>
+              <FormRow.Button icon="ti-plus" primary onClick={handleCreate} disabled={busy === 'create'}>{busy === 'create' ? 'Creating…' : 'Create'}</FormRow.Button>
+            </FormRow>
           </div>
-          <div style={{ flex: '1 1 220px' }}>
+          <div>
             <label htmlFor="team-code" style={labelStyle}>Or join one</label>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <FormRow>
               <input id="team-code" value={code} placeholder="Invite code" onChange={(e) => { setCode(e.target.value); setError(null); }} onKeyDown={(e) => { if (e.key === 'Enter') handleJoin(); }} style={{ ...fieldStyle, textTransform: 'uppercase' }} />
-              <button onClick={handleJoin} disabled={busy === 'join'} className="btn-press" style={{ ...ghost, flexShrink: 0 }}>{busy === 'join' ? 'Joining…' : 'Join'}</button>
-            </div>
+              <FormRow.Button icon="ti-login-2" onClick={handleJoin} disabled={busy === 'join'}>{busy === 'join' ? 'Joining…' : 'Join'}</FormRow.Button>
+            </FormRow>
           </div>
         </div>
         {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '12px 0 0' }}>{error}</p>}
@@ -91,25 +125,34 @@ export default function TeamCard() {
         Teammates see each other's names and client counts, not clients. A client is only shared with a teammate if the client accepts.
       </p>
 
-      <ul style={{ listStyle: 'none', margin: '0 0 16px', padding: 0 }}>
+      <div style={{ marginBottom: 16 }}>
         {t.members.map((m) => (
-          <li key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border-default)' }}>
-            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: 'var(--accent)', fontFamily: "'Syne', sans-serif", flexShrink: 0 }}>{initials(m.name)}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+          <ListRow
+            key={m.user_id}
+            avatar={<ListRow.SquareAvatar name={m.name} />}
+            title={(
+              <>
                 {m.name}{m.user_id === user?.id ? ' (you)' : ''}
                 {m.role === 'owner' && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>OWNER</span>}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                {clientCountLabel(m.client_count)}{!m.has_pass ? ' · Coach Pass inactive' : ''}
-              </div>
-            </div>
-            {t.is_owner && m.user_id !== user?.id && (
-              <button aria-label={`Remove ${m.name}`} onClick={confirmThen(`Remove ${m.name} from ${t.name}? Their clients aren't affected.`, () => act(`remove-${m.user_id}`, () => team.remove(m.user_id)))} disabled={busy === `remove-${m.user_id}`} className="btn-press" style={quiet}>Remove</button>
+              </>
             )}
-          </li>
+            subtitleParts={[clientCountLabel(m.client_count), !m.has_pass ? 'Coach Pass inactive' : null]}
+            trailing={<ListRow.Chevron />}
+            onClick={() => setSelectedMember(m)}
+          />
         ))}
-      </ul>
+      </div>
+      {selectedMember && (
+        <TeamMemberDetail
+          member={selectedMember}
+          isSelf={selectedMember.user_id === user?.id}
+          isOwnerView={t.is_owner}
+          teamName={t.name}
+          busy={busy === `remove-${selectedMember.user_id}`}
+          onRemove={() => act(`remove-${selectedMember.user_id}`, () => team.remove(selectedMember.user_id)).then((ok) => { if (ok) setSelectedMember(null); })}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
 
       {t.is_owner && (
         <div style={{ marginBottom: 16 }}>

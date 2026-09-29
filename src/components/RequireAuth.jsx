@@ -9,12 +9,12 @@ export default function RequireAuth({ children }) {
   if (loading) {
     return (
       <div style={{
-        minHeight: 'var(--app-h)', background: '#0f0f0f', display: 'flex',
+        minHeight: 'var(--app-h)', background: 'var(--bg-primary)', display: 'flex',
         alignItems: 'center', justifyContent: 'center',
       }}>
         <div style={{
           width: 28, height: 28, borderRadius: '50%',
-          border: '3px solid #2a2a2a', borderTopColor: '#8fbc8f',
+          border: '3px solid var(--border-default)', borderTopColor: 'var(--accent)',
           animation: 'spin 0.8s linear infinite',
         }} />
       </div>

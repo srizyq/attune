@@ -147,7 +147,7 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
           <button
             onClick={handleCopy}
             disabled={!hasSource || copying}
-            style={{ width: '100%', background: !hasSource || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !hasSource || copying ? 'var(--text-muted)' : '#0f0f0f', cursor: !hasSource || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            style={{ width: '100%', background: !hasSource || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !hasSource || copying ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: !hasSource || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
           >
             {copying
               ? 'Copying…'

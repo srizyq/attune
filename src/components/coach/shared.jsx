@@ -1,4 +1,62 @@
+import { useState } from 'react';
 import { ACCENT } from './constants';
+import SegmentedControl from '../SegmentedControl';
+
+// The group-tag + disconnect controls for a client — previously lived at
+// the end of every client-list row; now lives in ClientDetail's header
+// instead, since the row itself became a single tap target into this view.
+export function RowActions({ row, onSetGroup, onRevoke }) {
+  const [editingGroup, setEditingGroup] = useState(false);
+  const [groupInput, setGroupInput] = useState(row.group_label || '');
+  const saveGroup = async () => {
+    setEditingGroup(false);
+    await onSetGroup(row.id, groupInput.trim());
+  };
+  return (
+    <>
+      {editingGroup ? (
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+          <input
+            value={groupInput}
+            onChange={e => setGroupInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') saveGroup(); if (e.key === 'Escape') setEditingGroup(false); }}
+            autoFocus
+            placeholder="Group"
+            aria-label="Group name"
+            style={{ width: 90, padding: '4px 8px', fontSize: 11, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 6, color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }}
+          />
+          <button onClick={saveGroup} aria-label="Save group" className="btn-press" style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 13, padding: 2 }}>
+            <i className="ti ti-check" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => { setGroupInput(row.group_label || ''); setEditingGroup(true); }}
+          className="btn-press"
+          title="Set group"
+          aria-label="Set group"
+          style={{
+            background: row.group_label ? 'var(--bg-primary)' : 'none',
+            border: row.group_label ? '1px solid var(--border-default)' : 'none',
+            borderRadius: 20, padding: row.group_label ? '3px 10px' : 4,
+            color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', flexShrink: 0, fontFamily: "'Plus Jakarta Sans', sans-serif",
+          }}
+        >
+          {row.group_label || <i className="ti ti-tag" />}
+        </button>
+      )}
+      <button
+        onClick={() => { if (window.confirm(`Disconnect ${row.client?.name || 'this client'}? You'll lose access to their data immediately.`)) onRevoke(row.id); }}
+        title="Disconnect"
+        aria-label="Disconnect client"
+        className="btn-press"
+        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}
+      >
+        <i className="ti ti-x" />
+      </button>
+    </>
+  );
+}
 
 export function Card({ children, style }) {
   return (
@@ -87,26 +145,17 @@ export function EmptyChartBox({ icon, message }) {
 }
 
 // 7 / 30 / 90 day picker used across the client tabs.
+// Thin wrapper around SegmentedControl — kept as its own component (rather
+// than inlining SegmentedControl at each call site) so OverviewTab and
+// ProgressTab don't need to change at all.
 export function RangeToggle({ value, onChange, options }) {
   return (
-    <div style={{ display: 'flex', gap: 8 }} role="group" aria-label="Date range">
-      {options.map(r => (
-        <button
-          key={r.id}
-          onClick={() => onChange(r.id)}
-          aria-pressed={value === r.id}
-          className="btn-press"
-          style={{
-            background: value === r.id ? 'var(--accent-bg)' : 'var(--bg-card)',
-            border: `1px solid ${value === r.id ? 'var(--accent-dark)' : 'var(--border-strong)'}`,
-            borderRadius: 8, padding: '7px 18px', fontSize: 13,
-            color: value === r.id ? 'var(--accent)' : 'var(--text-muted)', cursor: 'pointer',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-          }}
-        >
-          {r.label}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      value={value}
+      onChange={onChange}
+      options={options}
+      fill
+      style={{ maxWidth: 320 }}
+    />
   );
 }

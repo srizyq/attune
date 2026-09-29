@@ -56,8 +56,8 @@ export default function DaySelector({ selectedDate, onSelect }) {
                 opacity: isFuture ? 0.35 : 1,
               }}
             >
-              <span style={{ fontSize: 10, fontWeight: 600, color: isSelected ? '#0f0f0f' : 'var(--text-muted)' }}>{WEEKDAY_LABELS[d.getDay()]}</span>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, color: isSelected ? '#0f0f0f' : 'var(--text-secondary)' }}>{d.getDate()}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: isSelected ? 'var(--accent-contrast)' : 'var(--text-muted)' }}>{WEEKDAY_LABELS[d.getDay()]}</span>
+              <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, color: isSelected ? 'var(--accent-contrast)' : 'var(--text-secondary)' }}>{d.getDate()}</span>
             </button>
           );
         })}

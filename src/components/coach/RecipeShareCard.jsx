@@ -65,7 +65,7 @@ function RecipeShareCard({ trainerId, client }) {
               onClick={handleShare}
               disabled={!selectedId || sharing}
               className="btn-press"
-              style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
+              style={{ padding: '9px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
             >
               {sharing ? 'Sharing…' : 'Share'}
             </button>

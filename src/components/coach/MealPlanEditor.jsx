@@ -193,7 +193,7 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
       </div>
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <button onClick={handleSave} disabled={saving} className="btn-press" style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <button onClick={handleSave} disabled={saving} className="btn-press" style={{ padding: '8px 16px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {saving ? 'Saving…' : plan ? 'Save plan' : 'Create plan'}
         </button>
         {plan && <button onClick={handleRemove} className="btn-press" style={{ ...ghost, border: 'none', color: 'var(--text-muted)' }}>Remove plan</button>}

@@ -1,30 +1,26 @@
+import SegmentedControl from './SegmentedControl';
+
 // Pro-only choice between the hourly timeline, the meal-grouped view
 // (Breakfast/Lunch/Dinner/Snacks), and custom-named slots — shared between
 // Dashboard's daily log and the full /log page so picking one on either
 // page shows up on both, since both read the same profile.daily_log_view
 // field rather than keeping page-local state.
+//
+// Thin wrapper around SegmentedControl — kept as its own component (rather
+// than inlining the options at each call site) so both call sites stay in
+// sync if the view options themselves ever change.
 export default function DailyLogViewToggle({ value, onChange, fill = false }) {
   return (
-    <div style={{ display: 'flex', gap: 4, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 20, padding: 2, flexShrink: 0, ...(fill ? { width: '100%', maxWidth: 360 } : null) }}>
-      {[
+    <SegmentedControl
+      value={value}
+      onChange={onChange}
+      fill={fill}
+      style={fill ? { maxWidth: 360 } : undefined}
+      options={[
         { id: 'hourly', label: 'Hourly', icon: 'ti-clock' },
         { id: 'meals', label: 'Meals', icon: 'ti-list' },
         { id: 'slots', label: 'Slots', icon: 'ti-adjustments' },
-      ].map(opt => (
-        <button
-          key={opt.id}
-          onClick={() => onChange(opt.id)}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: fill ? '9px 12px' : '6px 12px', borderRadius: 18, border: 'none', ...(fill ? { flex: 1 } : null),
-            background: value === opt.id ? 'var(--accent)' : 'transparent',
-            color: value === opt.id ? '#0f0f0f' : 'var(--text-muted)',
-            fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-          }}
-        >
-          <i className={`ti ${opt.icon}`} style={{ fontSize: 13 }} />
-          {opt.label}
-        </button>
-      ))}
-    </div>
+      ]}
+    />
   );
 }

@@ -96,16 +96,22 @@ describe('TeamCard — on a team', () => {
 
   it('flags a teammate whose Coach Pass has lapsed', () => {
     setup(inTeam({ members: [member({ user_id: 'me', role: 'owner' }), member({ user_id: 'm1', has_pass: false, client_count: 0 })] }));
-    expect(screen.getByText('No clients yet · Coach Pass inactive')).toBeInTheDocument();
+    expect(screen.getByText('No clients yet • Coach Pass inactive')).toBeInTheDocument();
   });
 
-  it('the owner can remove a teammate (not themselves), after confirming', async () => {
+  it('opening your own row (as owner) offers no remove action', async () => {
+    setup(inTeam());
+    await userEvent.click(screen.getByRole('button', { name: /Olive Owner \(you\)/ }));
+    expect(screen.queryByRole('button', { name: 'Remove from team' })).not.toBeInTheDocument();
+  });
+
+  it('the owner can remove a teammate from their row detail, after confirming', async () => {
     const t = setup(inTeam());
-    expect(screen.queryByRole('button', { name: 'Remove Olive Owner' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Mia Mate/ }));
     confirm.mockReturnValueOnce(false);
-    await userEvent.click(screen.getByRole('button', { name: 'Remove Mia Mate' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove from team' }));
     expect(t.remove).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'Remove Mia Mate' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove from team' }));
     expect(t.remove).toHaveBeenCalledWith('m1');
   });
 
