@@ -10,6 +10,7 @@
 export const PROVENANCE = {
   verified: { label: 'Verified database', short: 'Verified', tone: 'good', description: 'AUSNUT 2023 — Australian government food composition data' },
   database: { label: 'Food database', short: 'Database', tone: 'good', description: 'A curated food-database entry (FatSecret)' },
+  restaurant: { label: 'Restaurant chain', short: 'Restaurant', tone: 'good', description: "Sourced from the chain's own published nutrition information" },
   community: { label: 'Community-submitted', short: 'Community', tone: 'fair', description: 'Crowd-sourced (Open Food Facts, community barcodes) — accuracy varies' },
   ai: { label: 'AI estimate', short: 'AI estimate', tone: 'ai', description: 'Estimated by AI from a photo, menu or description — treat as approximate' },
   custom: { label: 'Client-entered', short: 'Custom', tone: 'fair', description: 'A food the client created themselves' },
@@ -21,6 +22,7 @@ export const PROVENANCE = {
 export const BY_SOURCE = {
   ausnut: 'verified',
   fatsecret: 'database',
+  'restaurant-chain': 'restaurant',
   off: 'community',
   community: 'community',
   'common-dish': 'ai',

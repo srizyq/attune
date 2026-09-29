@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { addFoodLog, deleteFoodLog, updateFoodLog, getFoodLogsForDate } from '../lib/db';
+import { addFoodLog, deleteFoodLog, updateFoodLog, getFoodLogsForDate, getDaySlots, createDaySlot, updateDaySlot, deleteDaySlot } from '../lib/db';
 import { mealFromDate, buildDayTimeline } from '../lib/mealTime';
+import { mapSlotRow, buildSlotTimeline } from '../lib/daySlots';
 import { extendedFromRow, EXTENDED_KEYS } from '../lib/microNutrients';
 
 export function mapRow(row) {
@@ -40,6 +41,7 @@ export function mapRow(row) {
     source: row.source || null,
     loggedAt: row.logged_at || null,
     createdAt: row.created_at || null,
+    slotId: row.slot_id || null,
   };
 }
 
@@ -51,20 +53,30 @@ function extendedOf(food) {
 export function useFoodLogs(date) {
   const { user } = useAuth();
   const [logs, setLogs] = useState([]);
+  const [slotRows, setSlotRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
-    if (!user || !date) { setLogs([]); setLoading(false); return; }
+    if (!user || !date) { setLogs([]); setSlotRows([]); setLoading(false); return; }
     setLoading(true);
     // Unhandled before — a network blip here left loading stuck true
     // forever, since setLoading(false) below never ran (see useCustomFoods
     // for the same fix applied consistently across the data hooks).
     try {
-      const data = await getFoodLogsForDate(user.id, date);
-      setLogs(data);
+      // Fetched together since both drive the same day's view — Slots mode
+      // needs both to render a single timeline, and the whole point of
+      // fetching them side by side is that a re-render always sees a
+      // consistent pair rather than one refreshed a tick before the other.
+      const [logData, slotData] = await Promise.all([
+        getFoodLogsForDate(user.id, date),
+        getDaySlots(user.id, date),
+      ]);
+      setLogs(logData);
+      setSlotRows(slotData);
     } catch (err) {
       console.error('Failed to load food logs:', err);
       setLogs([]);
+      setSlotRows([]);
     } finally {
       setLoading(false);
     }
@@ -73,6 +85,7 @@ export function useFoodLogs(date) {
   useEffect(() => { refetch(); }, [refetch]);
 
   const items = useMemo(() => logs.map(mapRow), [logs]);
+  const daySlots = useMemo(() => slotRows.map(mapSlotRow), [slotRows]);
 
   const meals = useMemo(() => {
     const grouped = { breakfast: [], lunch: [], dinner: [], snacks: [] };
@@ -88,17 +101,23 @@ export function useFoodLogs(date) {
   // collapsed into expandable gap segments (see buildDayTimeline).
   const dayTimeline = useMemo(() => buildDayTimeline(items), [items]);
 
+  // Pro's third daily_log_view option — custom-named slots instead of
+  // literal clock hours (see src/lib/daySlots.js).
+  const slotTimeline = useMemo(() => buildSlotTimeline(daySlots, items), [daySlots, items]);
+
   // mealName is optional — when omitted (Pro/time-based logging), the meal
   // category is derived from loggedAt purely so the food_logs row (which
   // still requires a meal value) has something sensible; the Pro UI never
-  // shows this value to the user.
-  const addFood = useCallback(async (food, mealName, loggedAt) => {
+  // shows this value to the user. slotId is Slots mode's own analogue of
+  // mealName/loggedAt — which slot (if any) this item belongs to.
+  const addFood = useCallback(async (food, mealName, loggedAt, slotId) => {
     if (!user || !date) return;
     const meal = mealName ? mealName.toLowerCase() : mealFromDate(loggedAt || new Date());
     const created = await addFoodLog(user.id, {
       loggedDate: date,
       meal,
       loggedAt: loggedAt || null,
+      slotId: slotId ?? null,
       name: food.name,
       cal: food.cal,
       protein: food.protein || 0,
@@ -145,5 +164,29 @@ export function useFoodLogs(date) {
     return updated;
   }, []);
 
-  return { logs, meals, dayTimeline, loading, addFood, deleteFood, updateFood, refetch };
+  // Slot CRUD — same shape as the food-log actions above (call the db.js
+  // function, patch local state from its result rather than re-fetching).
+  const addSlot = useCallback(async (fields) => {
+    if (!user || !date) return;
+    const created = await createDaySlot(user.id, date, fields);
+    setSlotRows(prev => [...prev, created]);
+    return created;
+  }, [user, date]);
+
+  const editSlot = useCallback(async (id, fields) => {
+    const updated = await updateDaySlot(id, fields);
+    setSlotRows(prev => prev.map(s => (s.id === id ? updated : s)));
+    return updated;
+  }, []);
+
+  // Doesn't touch `logs` locally — the affected items' slot_id going null
+  // server-side (on delete set null) means the next refetch is what moves
+  // them into the Unsorted segment; deleting a slot rarely coincides with
+  // needing that reflected instantly, and refetch() is one tap away.
+  const removeSlot = useCallback(async (id) => {
+    await deleteDaySlot(id);
+    setSlotRows(prev => prev.filter(s => s.id !== id));
+  }, []);
+
+  return { logs, meals, dayTimeline, daySlots, slotTimeline, loading, addFood, deleteFood, updateFood, addSlot, editSlot, removeSlot, refetch };
 }

@@ -10,13 +10,15 @@ import { useLastLoggedAmounts } from '../hooks/useLastLoggedAmounts';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
-import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes } from '../lib/db';
+import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems } from '../lib/db';
 import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
+import { slotFromTime } from '../lib/daySlots';
 import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit } from '../lib/foodMath';
 import { ausnutExtraMicros } from '../lib/ausnutFood';
+import { mapRestaurantItemRow } from '../lib/restaurantFood';
 import { loggedRowToFood, favouriteRowToFood } from '../lib/foodRows';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
@@ -375,6 +377,15 @@ async function searchCommonDish(q) {
     servingGrams: row.serving_grams || 100,
     source: "common-dish",
   }));
+}
+
+// Manually-sourced fast-food/restaurant chain menu items, verified against
+// each chain's own published nutrition information — see scripts/import-
+// restaurant-chains/. Per-serving like common_dishes, not per-100g. See
+// mapRestaurantItemRow for the row-mapping (and why it's factored out).
+async function searchRestaurant(q) {
+  const rows = await searchRestaurantItems(q, 15);
+  return rows.map(mapRestaurantItemRow);
 }
 
 // ─── Barcode Scanner ──────────────────────────────────────────────────────────
@@ -1651,6 +1662,7 @@ export default function FoodSearch() {
   // they're in, or switching to "Meals" would still prompt for a time.
   const dailyLogView = profile?.daily_log_view || 'hourly';
   const logByTime = isPremium && dailyLogView === 'hourly';
+  const showSlots = isPremium && dailyLogView === 'slots';
   const today = todayLocalDate();
   // DailyLog's per-day "+ Add food" links here with the date it was
   // clicked from (e.g. { date: "2026-08-27" }), so forgetting to log
@@ -1670,7 +1682,7 @@ export default function FoodSearch() {
     setSelectedDate(next);
     setExpandedId(null);
   }
-  const { addFood: addFoodLog } = useFoodLogs(selectedDate);
+  const { addFood: addFoodLog, daySlots } = useFoodLogs(selectedDate);
   // 20, not 6 — now that Recently/Frequently logged each get their own
   // full tab instead of a short stacked preview, they can afford to
   // actually show enough history to find yesterday's food in.
@@ -1698,6 +1710,13 @@ export default function FoodSearch() {
   // The hourly timeline's per-hour "+" links here with { presetTime:
   // "HH:00" } so logging lands at the hour you tapped instead of "now".
   const [activeTime, setActiveTime] = useState(() => location.state?.presetTime || currentTimeHHMM());
+  // Slots mode's own analogue of activeMeal/activeTime — which day_slots
+  // row this item logs into. SlotTimeline's "APPEND TO <SLOT>" and
+  // QuickAddBar link here with presetSlotId; otherwise defaults to
+  // whichever slot is "current" once daySlots has loaded (empty on first
+  // render, same async gap activeMeal/activeTime don't have since they
+  // don't depend on a fetch).
+  const [activeSlotId, setActiveSlotId] = useState(() => location.state?.presetSlotId || null);
   const [expandedId, setExpandedId] = useState(null);
   const [mealDropdownOpen, setMealDropdownOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -1751,7 +1770,16 @@ export default function FoodSearch() {
     if (location.state?.openMenuScan) setMenuScanOpen(true);
     if (location.state?.openCreateFood) setCreateFoodOpen(true);
     if (location.state?.openMealBuilder) { setBuilderMode(true); setBuilderItems([]); setBuilderFromRecipes(true); }
+    if (location.state?.presetSlotId) setActiveSlotId(location.state.presetSlotId);
   }, [location.state]);
+  // No presetSlotId was given (a plain nav-bar "+" tap rather than a link
+  // from a specific slot) — falls back to whichever slot is "current" as
+  // soon as daySlots actually has rows, mirroring activeMeal's mealFromDate
+  // fallback above.
+  useEffect(() => {
+    if (!showSlots || activeSlotId || location.state?.presetSlotId || !daySlots.length) return;
+    setActiveSlotId(slotFromTime(daySlots)?.id ?? null);
+  }, [showSlots, activeSlotId, daySlots, location.state]);
   // editMealBuilder carries a recipe id, not a plain flag — waits for
   // savedMeals.rows to actually contain it (an async fetch, unlike the
   // flags above) before pre-filling the builder, and the ref stops this
@@ -1778,6 +1806,7 @@ export default function FoodSearch() {
   const [packagedLive, setPackagedLive] = useState([]);
   const [ausnutResults, setAusnutResults] = useState([]);
   const [commonDishResults, setCommonDishResults] = useState([]);
+  const [restaurantResults, setRestaurantResults] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
   const searchTimer = useRef(null);
@@ -1850,6 +1879,7 @@ export default function FoodSearch() {
   const [transcribing, setTranscribing] = useState(false);
   const [voiceError, setVoiceError] = useState(null);
   const recorderRef = useRef(null);
+  const voiceAutoStartRef = useRef(false);
 
   function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
@@ -1910,6 +1940,17 @@ export default function FoodSearch() {
     }
   }
 
+  // QuickAddBar's mic button links here with { openVoice: true } instead of
+  // opening its own recorder UI, since this page already owns the whole
+  // voice-search experience — auto-starts it once per landing, the same
+  // one-shot guard editAppliedRef uses above for editMealBuilder.
+  useEffect(() => {
+    if (location.state?.openVoice && !voiceAutoStartRef.current) {
+      voiceAutoStartRef.current = true;
+      startVoiceSearch();
+    }
+  }, [location.state]);
+
   function stopVoiceSearch() {
     recorderRef.current?.stop();
     setRecording(false);
@@ -1949,16 +1990,17 @@ export default function FoodSearch() {
     // ("mcdonalds", "halal snack pack") when the query is recognised.
     const searchQuery = expandFoodSlang(q) || q;
     const region = detectRegion();
-    // Four independent sources — run them together instead of one after
-    // another, so a search takes as long as the slowest of the four
-    // rather than the sum of all four.
-    const [offResult, fatSecretResult, ausnutResult, commonDishResult] = await Promise.allSettled([
+    // Five independent sources — run them together instead of one after
+    // another, so a search takes as long as the slowest of the five
+    // rather than the sum of all five.
+    const [offResult, fatSecretResult, ausnutResult, commonDishResult, restaurantResult] = await Promise.allSettled([
       searchOpenFoodFacts(searchQuery, region),
       searchFatSecret(searchQuery, region),
       searchAusnut(searchQuery),
       searchCommonDish(searchQuery),
+      searchRestaurant(searchQuery),
     ]);
-    let off = [], fatSecretResults = [], ausnut = [], commonDishes = [];
+    let off = [], fatSecretResults = [], ausnut = [], commonDishes = [], restaurant = [];
     if (offResult.status === "fulfilled") {
       off = offResult.value;
     } else {
@@ -1980,10 +2022,16 @@ export default function FoodSearch() {
     } else {
       console.error("Common dishes search error:", commonDishResult.reason);
     }
+    if (restaurantResult.status === "fulfilled") {
+      restaurant = restaurantResult.value;
+    } else {
+      console.error("Restaurant chains search error:", restaurantResult.reason);
+    }
     setGenericResults(fatSecretResults);
     setPackagedLive(off);
     setAusnutResults(ausnut);
     setCommonDishResults(commonDishes);
+    setRestaurantResults(restaurant);
     setLiveLoading(false);
   }, []);
 
@@ -1997,7 +2045,7 @@ export default function FoodSearch() {
     setAiEstimateResult(null);
     setAiEstimateError(null);
     setAiLimitReached(false);
-    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAusnutResults([]); setCommonDishResults([]); setLiveLoading(false); setLiveError(null); return; }
+    if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAusnutResults([]); setCommonDishResults([]); setRestaurantResults([]); setLiveLoading(false); setLiveError(null); return; }
     setLiveLoading(true);
     searchTimer.current = setTimeout(() => runLiveSearch(query.trim()), 500);
     return () => clearTimeout(searchTimer.current);
@@ -2009,14 +2057,15 @@ export default function FoodSearch() {
     const queryLower = trimmed.toLowerCase();
     const queryWords = queryLower.split(/\s+/).filter(Boolean);
     // Custom foods (the user's own data) first among equally-relevant
-    // results, then AUSNUT (Australian government data), then FatSecret's
-    // broader generic coverage — but relevance to what was actually typed
-    // wins over which source a result came from. See foodMatchRank.
-    // Within the same relevance tier, the shortest name wins the tie
-    // instead of whichever source happened to load first — surfaces a
-    // clean "Chicken Thigh" over AUSNUT's verbose "Chicken, thigh, lean,
+    // results, then AUSNUT (Australian government data) and restaurant
+    // chains (both manually-verified against an official source), then
+    // FatSecret's broader generic coverage — but relevance to what was
+    // actually typed wins over which source a result came from. See
+    // foodMatchRank. Within the same relevance tier, the shortest name wins
+    // the tie instead of whichever source happened to load first — surfaces
+    // a clean "Chicken Thigh" over AUSNUT's verbose "Chicken, thigh, lean,
     // raw" when both are equally valid matches for the words typed.
-    const combined = [...customFiltered, ...commonDishResults, ...ausnutResults, ...genericResults]
+    const combined = [...customFiltered, ...commonDishResults, ...ausnutResults, ...restaurantResults, ...genericResults]
       .map((f, i) => ({ f, i, rank: foodMatchRank(f.name, queryLower, queryWords) }))
       .sort((a, b) => a.rank - b.rank || a.f.name.length - b.f.name.length || a.i - b.i)
       .map(x => x.f);
@@ -2027,7 +2076,7 @@ export default function FoodSearch() {
       seen.add(key);
       return true;
     });
-  }, [customFiltered, commonDishResults, ausnutResults, genericResults, query]);
+  }, [customFiltered, commonDishResults, ausnutResults, restaurantResults, genericResults, query]);
 
   // Whether the single best database match is only a loose/partial one
   // (foodMatchRank's bottom tier — some but not all of the typed words
@@ -2118,7 +2167,7 @@ export default function FoodSearch() {
 
   async function logFood(food, meal, loggedAt) {
     try {
-      await addFoodLog(food, meal, loggedAt);
+      await addFoodLog(food, meal, loggedAt, showSlots ? activeSlotId : null);
       refetchRecent(); lastLogged.refetch();
       showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ""}`);
       setExpandedId(null);

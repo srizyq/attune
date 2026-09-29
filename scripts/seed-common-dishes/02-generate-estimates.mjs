@@ -11,13 +11,15 @@
 // user and would burn their free-tier monthly scan count):
 //   ANTHROPIC_API_KEY=... node scripts/seed-common-dishes/02-generate-estimates.mjs
 //
-// NOT incremental — this regenerates an estimate for every dish in
-// dish-list.json every time it's run, at full cost (~$1-1.25 for the
-// current ~1,200). Adding more dishes later ("we'll add more later"):
-// either accept regenerating the full list again, or add the names to a
-// separate new-dishes-only list and run this against just that file
-// instead of dish-list.json, then append the results into the existing
-// review file before Gate 3 rather than overwriting it.
+// NOT incremental by default — running with no arguments regenerates an
+// estimate for every dish in dish-list.json every time, at full cost
+// (~$1-1.25 for the current ~1,200). To add more dishes later without
+// re-spending on ones already estimated, pass the new-dishes-only file and
+// --append:
+//   node scripts/seed-common-dishes/02-generate-estimates.mjs new-dishes-list.json --append
+// --append writes results into dish-estimates-review.json/.csv alongside
+// whatever's already there (matched/replaced by name, so re-running against
+// the same file is still safe) instead of overwriting the review files.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -83,9 +85,12 @@ function csvEscape(value) {
 }
 
 async function main() {
-  const listPath = join(__dirname, 'dish-list.json');
+  const args = process.argv.slice(2);
+  const append = args.includes('--append');
+  const inputArg = args.find((a) => !a.startsWith('--'));
+  const listPath = inputArg ? join(__dirname, inputArg) : join(__dirname, 'dish-list.json');
   const dishes = JSON.parse(readFileSync(listPath, 'utf-8'));
-  console.log(`Loaded ${dishes.length} dishes from dish-list.json`);
+  console.log(`Loaded ${dishes.length} dishes from ${inputArg || 'dish-list.json'}`);
 
   const requests = dishes.map((dish, i) => ({
     custom_id: `dish-${i}`,
@@ -192,18 +197,29 @@ async function main() {
 
   // Results aren't guaranteed to come back in request order — sort by the
   // numeric suffix of custom_id so the review file reads in the same order
-  // as dish-list.json, which is much easier to skim against it.
+  // as the input list, which is much easier to skim against it.
   rows.sort((a, b) => Number(a.custom_id.split('-')[1]) - Number(b.custom_id.split('-')[1]));
 
   const jsonPath = join(__dirname, 'dish-estimates-review.json');
-  writeFileSync(jsonPath, JSON.stringify(rows, null, 2));
+  let outRows = rows;
+  if (append && existsSync(jsonPath)) {
+    const existingRows = JSON.parse(readFileSync(jsonPath, 'utf-8'));
+    const newNames = new Set(rows.map((r) => r.name?.toLowerCase().trim()));
+    // Existing rows keep their place; a name in both files means this run
+    // is regenerating it, so the new result replaces the old one rather
+    // than appearing twice.
+    const kept = existingRows.filter((r) => !newNames.has(r.name?.toLowerCase().trim()));
+    outRows = [...kept, ...rows];
+    console.log(`--append: merged with ${existingRows.length} existing rows (${kept.length} kept, ${rows.length} new/replaced) -> ${outRows.length} total`);
+  }
+  writeFileSync(jsonPath, JSON.stringify(outRows, null, 2));
 
   const csvHeader = [
     'name', 'category', 'status', 'flags', 'serving_label', 'serving_grams',
     'calories', 'protein_g', 'carbs_g', 'fat_g', 'fibre_g', 'sodium_mg', 'sugar_g', 'confidence',
   ];
   const csvLines = [csvHeader.join(',')];
-  for (const row of rows) {
+  for (const row of outRows) {
     const d = row.data || {};
     csvLines.push([
       csvEscape(row.name), csvEscape(row.category), csvEscape(row.status), csvEscape(row.flags.join('; ')),
@@ -217,7 +233,7 @@ async function main() {
 
   const flaggedCount = rows.filter((r) => r.flags.length > 0).length;
   const okCount = rows.length - flaggedCount;
-  console.log(`\nWrote ${rows.length} rows to ${jsonPath} and ${csvPath}`);
+  console.log(`\nThis run: ${rows.length} dishes generated (${jsonPath} now has ${outRows.length} total rows; ${csvPath} regenerated to match).`);
   console.log(`  Clean: ${okCount}`);
   console.log(`  Flagged (needs a look): ${flaggedCount}`);
   const flagCounts = {};
