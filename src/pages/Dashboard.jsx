@@ -55,20 +55,28 @@ const CHART_RANGE_OPTIONS = [{ id: '1W', label: '1W' }, { id: '1M', label: '1M' 
 const WATER_ML_PER_GLASS = 250;
 const WATER_LONG_PRESS_MS = 500;
 
-function WeightCard({ latest, weightTrendKg, weightUnit, onClick }) {
+function WeightCard({ latest, weightTrendKg, weightUnit, recentWeights, targetWeight, onClick }) {
   const trendDisplay = weightTrendKg == null ? null : round1(fromKg(weightTrendKg, weightUnit));
+  const hasSparkline = recentWeights.length >= 2;
   return (
-    <button onClick={onClick} style={{ all: 'unset', display: 'flex', width: '100%', height: '100%', cursor: 'pointer' }}>
-      <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+    <button onClick={onClick} style={{ all: 'unset', display: 'block', width: '100%', cursor: 'pointer' }}>
+      <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WEIGHT</span>
           {weightTrendKg != null && (
             <StatBadge>{trendDisplay >= 0 ? '+' : ''}{round1(trendDisplay)}</StatBadge>
           )}
         </div>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: hasSparkline ? 10 : 0 }}>
           {latest ? `${latest.weight}${latest.unit}` : '—'}
         </div>
+        {hasSparkline && <WeightSparkline points={recentWeights} color="var(--accent)" />}
+        {targetWeight != null && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: hasSparkline ? 8 : 12, paddingTop: hasSparkline ? 8 : 0, borderTop: hasSparkline ? '1px solid var(--border-default)' : 'none' }}>
+            <span style={{ fontSize: 11, color: 'var(--text-hint)' }}>Target</span>
+            <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>{round1(targetWeight)} {weightUnit}</span>
+          </div>
+        )}
       </Card>
     </button>
   );
@@ -308,7 +316,13 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
         <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>/ {target.toLocaleString()} kcal</span>
       </div>
 
-      <svg ref={chartRef} viewBox={`0 0 ${w} ${CHART_HEIGHT}`} style={{ width: '100%', height: CHART_HEIGHT, marginTop: 10, display: 'block' }}>
+      {/* Everyday baseline, not the per-day (workout-adjusted) target the
+          dashed line itself steps up to — there's no single flat number
+          honest enough to print for a week that includes a workout day,
+          so this labels the one constant real value instead. */}
+      <div style={{ textAlign: 'right', fontSize: 10, color: 'var(--text-hint)', marginTop: 6 }}>{baseCalorieTarget.toLocaleString()} KCAL</div>
+
+      <svg ref={chartRef} viewBox={`0 0 ${w} ${CHART_HEIGHT}`} style={{ width: '100%', height: CHART_HEIGHT, marginTop: 2, display: 'block' }}>
         {/* The user's own target is one continuous line across the whole
             chart; a day with burned calories breaks out of it as its own
             raised segment (see targetLineSegments). */}
@@ -353,14 +367,18 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
 
 // Weight + Today side by side, Water full-width below — the bento-card
 // grid the Weight/Water rail used to squeeze into one card with the chart.
-function DashboardTopCards({ latestWeight, weightTrendKg, weightUnit, onWeightClick, glasses, targetGlasses, setGlasses, ...todayProps }) {
+// Weight + Water stack in the left column (together they run about as
+// tall as Today's chart card on the right) — not three cards stacked
+// full-width, which is what left Weight's card looking half-empty with
+// Water stranded below both instead of filling the rest of its column.
+function DashboardTopCards({ latestWeight, weightTrendKg, weightUnit, recentWeights, targetWeight, onWeightClick, glasses, targetGlasses, setGlasses, ...todayProps }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12, alignItems: 'stretch' }}>
-        <WeightCard latest={latestWeight} weightTrendKg={weightTrendKg} weightUnit={weightUnit} onClick={onWeightClick} />
-        <TodayCard {...todayProps} />
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12, alignItems: 'start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <WeightCard latest={latestWeight} weightTrendKg={weightTrendKg} weightUnit={weightUnit} recentWeights={recentWeights} targetWeight={targetWeight} onClick={onWeightClick} />
+        <WaterCard glasses={glasses} targetGlasses={targetGlasses} setGlasses={setGlasses} />
       </div>
-      <WaterCard glasses={glasses} targetGlasses={targetGlasses} setGlasses={setGlasses} />
+      <TodayCard {...todayProps} />
     </div>
   );
 }
@@ -483,13 +501,13 @@ function SwipePager({ pages }) {
   );
 }
 
-function MacroCell({ label, value, target, color, onClick }) {
+function MacroCell({ label, value, target, color, tone, onClick }) {
   const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
   return (
     <Card style={{ padding: '12px 10px', marginBottom: 0, cursor: 'pointer' }} onClick={onClick}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 8, gap: 4 }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{label.toUpperCase()}</span>
-        <StatBadge style={{ padding: '2px 7px', fontSize: 11 }}>{pct}%</StatBadge>
+        <StatBadge tone={tone} style={{ padding: '2px 7px', fontSize: 11 }}>{pct}%</StatBadge>
       </div>
       <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color, whiteSpace: 'nowrap', marginBottom: 8 }}>
         {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>/{target}g</span>
@@ -534,6 +552,7 @@ function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWork
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: totalCaloriesBurned ? 'var(--accent)' : 'var(--text-hint)' }}>
             {totalCaloriesBurned ? Math.round(totalCaloriesBurned).toLocaleString() : '—'}
           </div>
+          {totalCaloriesBurned > 0 && <div style={{ fontSize: 10, color: 'var(--text-hint)', marginTop: 2 }}>Active burn</div>}
         </div>
       </div>
       {workouts.length > 0 && (
@@ -1017,6 +1036,14 @@ export default function Dashboard() {
     baseTarget: calorieTargetFor(date),
   }));
 
+  // Same recent-points derivation as WeightLogModal's own sparkline below
+  // — kept in sync intentionally, since both are "the last handful of real
+  // entries," not two different windows that could quietly drift apart.
+  const recentWeights = [...weightLogs]
+    .sort((a, b) => a.logged_date.localeCompare(b.logged_date))
+    .slice(-10)
+    .map(w => round1(fromKg(toKg(w.weight, w.unit), weightUnit)));
+
   // Real 7-day weight change from actually-logged entries — omitted (not
   // faked) if there isn't at least one weight log in each end of the
   // window to compare.
@@ -1087,6 +1114,8 @@ export default function Dashboard() {
                   latestWeight={latestWeight}
                   weightTrendKg={weightTrendKg}
                   weightUnit={weightUnit}
+                  recentWeights={recentWeights}
+                  targetWeight={profile?.target_weight}
                   onWeightClick={() => setShowWeightModal(true)}
                   glasses={glasses}
                   targetGlasses={profile?.water_target || 8}
@@ -1109,9 +1138,9 @@ export default function Dashboard() {
           </div>
 
           <div className="grid-3-fixed" style={{ gap: 12, marginBottom: '20px' }}>
-            <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={ACCENT} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-            <MacroCell label="Carbs" value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-            <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={ACCENT} tone="accent" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label="Carbs" value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} tone="carbs" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} tone="fat" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
           </div>
 
           <ActivityRow
