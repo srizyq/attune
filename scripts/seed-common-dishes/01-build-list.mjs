@@ -28,6 +28,8 @@ const CATEGORIES = {
     'Eggs florentine', 'Waffle with syrup', 'Belgian waffle', 'Breakfast quesadilla', 'Overnight oats',
     'Protein pancakes', 'Smashed avo with feta', 'Egg white omelette', 'Breakfast skillet',
     'Sourdough toast with butter', 'Toasted muesli bar', 'Yoghurt parfait', 'Continental breakfast plate',
+    // --- added: broad expansion pass ---
+    'Breakfast burger', 'Ricotta hotcakes', 'Corn and haloumi fritters', 'Poached eggs with avocado and feta', 'Breakfast bowl with quinoa', 'Chia seed pudding with berries', 'Eggs and soldiers', 'Breakfast panini', 'Sweet potato hash with eggs', 'Turkish eggs', 'Breakfast sausage and eggs', 'Breakfast nachos', 'Coconut yoghurt bowl', 'Green smoothie bowl', 'Egg white and spinach wrap', 'Breakfast tacos',
   ],
   'Sandwiches, wraps, rolls, burgers': [
     'Ham and cheese sandwich', 'Ham and salad sandwich', 'Chicken sandwich', 'Egg and lettuce sandwich',
@@ -47,6 +49,8 @@ const CATEGORIES = {
     'Peanut butter sandwich', 'Jam sandwich', 'Nutella sandwich', 'Schnitzel sandwich', 'Pork roll',
     'Chicken salad sandwich', 'BBQ chicken wrap', 'Buffalo chicken wrap', 'Caprese sandwich',
     'Focaccia sandwich',
+    // --- added: broad expansion pass ---
+    'Mushroom swiss burger', 'Turkey avocado wrap', 'Chicken parmesan sandwich', 'Smoked salmon sandwich', "Ploughman's sandwich", 'Falafel pita pocket', 'BLT wrap', 'Chicken caesar sub', 'Buffalo chicken sandwich', 'Ham and pineapple sandwich', 'Chicken schnitzel sub', 'Beef brisket sandwich', 'Vegan burger patty wrap',
   ],
   'Australian bakery & takeaway classics': [
     'Meat pie', 'Chicken pie', 'Steak pie', 'Party pie', 'Sausage roll', 'Cheese and bacon roll',
@@ -61,6 +65,8 @@ const CATEGORIES = {
     'Beef pie', 'Gravy roll', 'Sausage roll with sauce', 'Pie with mash and gravy',
     'Sweet potato scallop', 'Fish cake', 'Crab stick roll', 'Prawn twister', 'Money bag',
     'Spring roll platter', 'Yum cha dumpling', 'Custard donut', 'Jam tart',
+    // --- added: broad expansion pass ---
+    'Vegetable pastie', 'Corned beef pie', 'Curry pie', 'Mince and cheese pie', 'Ham and cheese croissant', 'Spinach and fetta roll', 'Vegemite scroll mini', 'Bacon and cheese scroll', 'Lemon curd tart', 'Apple and custard danish', 'Chocolate croissant', 'Passionfruit slice', 'Coffee scroll', 'Chicken and gravy roll', 'Beef and gravy roll', 'Pie floater',
   ],
   'Fish & chips / seafood takeaway': [
     'Fish and chips', 'Grilled fish and chips', 'Battered fish', 'Crumbed fish', 'Calamari rings',
@@ -69,6 +75,8 @@ const CATEGORIES = {
     'Oysters natural', 'Oysters kilpatrick', 'Fish and salad', 'Crumbed prawns', 'Squid rings',
     'Whiting fillets', 'Flake and chips', 'Seafood platter', 'Chips with gravy',
     'Chips with chicken salt',
+    // --- added: broad expansion pass ---
+    'Fish burger with chips', 'Beer battered flake', 'Fish and chips with mushy peas', 'Grilled barramundi and chips', 'Butterflied prawns grilled', 'Battered sausage', 'Dim sim and chips', 'Salt and pepper prawns', 'Mussels in the shell', 'Moreton Bay bug', 'Blue swimmer crab', 'Fish kebab', 'Snapper fillets', 'Garfish fillets', "Fisherman's basket", 'Dory fillets crumbed', 'Prawn cutlets with tartare', 'Lobster mornay', 'Grilled swordfish', 'Battered scallops', 'Whitebait fritters', 'John Dory fillets', 'Crumbed calamari', 'Fish burger with slaw', 'Chips with aioli', 'Grilled fish burger', 'Salmon burger', 'Prawn cutlets crumbed',
   ],
   'Pizza & Italian mains': [
     'Margherita pizza', 'Hawaiian pizza', 'Pepperoni pizza', 'Meat lovers pizza', 'Supreme pizza',
@@ -85,6 +93,8 @@ const CATEGORIES = {
     'Pumpkin ravioli', 'Spinach and ricotta cannelloni', 'Osso buco with risotto', 'Chicken saltimbocca',
     'Veal parmigiana', 'Beef ragu pasta', 'Tagliatelle bolognese', 'Polenta with mushrooms',
     'Caprese bruschetta', 'Mozzarella sticks', 'Antipasto platter', 'Focaccia bread',
+    // --- added: broad expansion pass ---
+    'Diavola pizza', 'Quattro formaggi pizza', 'Prosciutto and rocket pizza', 'Truffle mushroom pizza', 'Pumpkin and sage risotto', 'Beef carpaccio', 'Chicken parmigiana pizza', 'Vegetarian lasagne', 'Spaghetti aglio olio e peperoncino', 'Gnocchi with gorgonzola', 'Saltimbocca alla romana', 'Panzanella salad', 'Fritto misto', 'Prawn linguine', 'Tiramisu cup Italian',
   ],
   'Chinese (Aus-Chinese + authentic)': [
     'Sweet and sour pork', 'Sweet and sour chicken', 'Mongolian beef', 'Beef with black bean sauce',
@@ -106,6 +116,8 @@ const CATEGORIES = {
     'Ma po eggplant', 'Salt and pepper pork ribs', 'Crispy shredded beef', 'Honey soy chicken',
     'Mongolian lamb', 'Special fried noodles', 'Cantonese fried rice', 'Sichuan hot pot',
     'Chinese BBQ pork',
+    // --- added: broad expansion pass ---
+    'Beef and snow peas', 'Salt and pepper chips Chinese style', 'Sichuan fish fillet', 'Steamed fish with ginger and shallots', 'Chinese broccoli with garlic', 'Braised pork belly Chinese style', 'Wonton noodle soup', 'Cumin beef', 'Sweet and sour fish', 'Ginger and shallot chicken', 'Stir fried pork with vegetables', 'Chinese sausage fried rice', 'Braised tofu with mushrooms', 'Chilli prawns Chinese style',
   ],
   Thai: [
     'Pad thai', 'Pad see ew', 'Pad kra pao', 'Green curry', 'Red curry', 'Massaman curry',
@@ -116,11 +128,13 @@ const CATEGORIES = {
     'Thai red duck curry', 'Crispy pork belly Thai style', 'Thai omelette', 'Mango sticky rice',
     'Thai iced tea', 'Satay beef skewers', 'Thai fishcakes', 'Tom yum goong', 'Massaman beef curry',
     'Khao soi', 'Larb gai', 'Thai basil beef', 'Cashew chicken Thai style', 'Crying tiger beef',
-    'Thai crab curry', 'Thai prawn curry', 'Sticky rice with mango', 'Thai spring roll platter',
+    'Thai crab curry', 'Thai prawn curry', 'Thai spring roll platter',
     'Pad prik king', 'Gaeng som', 'Thai roasted duck curry', 'Thai chicken wings',
     'Thai fried fish', 'Thai steamed fish', 'Thai vegetable curry', 'Thai tofu stir fry',
     'Nam tok', 'Thai chicken larb', 'Fried rice with prawns Thai style',
     'Thai satay skewers with peanut sauce', 'Thai noodle soup', 'Boat noodles',
+    // --- added: broad expansion pass ---
+    'Thai pumpkin curry', 'Thai crispy pork belly stir fry', 'Thai fried banana', 'Thai basil pork', 'Thai spicy squid salad', 'Thai peanut noodle salad', 'Thai grilled chicken skewers', 'Thai fried spring rolls with sweet chilli', 'Thai jungle curry', 'Thai pork larb', 'Thai mango salad with prawns', 'Thai duck curry noodle soup', 'Thai fried rice with crab', 'Thai chicken wing skewers',
   ],
   Vietnamese: [
     'Pho', 'Beef pho', 'Chicken pho', 'Vegetarian pho', 'Banh mi', 'Rice paper rolls',
@@ -135,6 +149,8 @@ const CATEGORIES = {
     'Vietnamese meatballs', 'Bun rieu', 'Vietnamese pork belly', 'Vietnamese omelette',
     'Vietnamese salad rolls', 'Banh mi with pork', 'Banh mi with chicken', 'Banh mi with tofu',
     'Vietnamese noodle bowl with prawns',
+    // --- added: broad expansion pass ---
+    'Banh mi op la', 'Ca ri ga', 'Vietnamese grilled fish', 'Bun thit nuong', 'Vietnamese sausage roll', 'Vietnamese pork skewers with vermicelli', 'Bo kho', 'Vietnamese clay pot fish', 'Vietnamese egg coffee', 'Banh cuon', 'Vietnamese grilled prawns', 'Vietnamese beef salad', 'Che dessert', 'Vietnamese sticky rice with pork', 'Vietnamese lemongrass pork chop',
   ],
   Japanese: [
     'Chicken katsu curry', 'Pork katsu curry', 'Katsu curry', 'Sushi rolls', 'California roll',
@@ -148,6 +164,8 @@ const CATEGORIES = {
     'Agedashi tofu', 'Chawanmushi', 'Japanese curry rice', 'Beef curry Japanese style',
     'Chirashi bowl', 'Spicy tuna roll', 'Dragon roll', 'Rainbow roll', 'Salmon avocado roll',
     'Katsu sando', 'Wagyu beef bowl', 'Matcha dessert',
+    // --- added: broad expansion pass ---
+    'Chicken teriyaki don', 'Beef sukiyaki', 'Yakitori chicken skewers set', 'Tempura moriawase', 'Salmon sashimi platter', 'Curry udon Japanese', 'Nikujaga beef and potato stew', 'Oyakodon', 'Katsudon', 'Miso glazed salmon', 'Chirashi sushi bowl', 'Chicken yakitori don', 'Japanese hot pot nabe', 'Kaisen don seafood bowl', 'Vegetable tempura udon', 'Teppanyaki mixed grill', 'Japanese fried chicken karaage bento',
   ],
   Korean: [
     'Bibimbap', 'Korean fried chicken', 'Korean BBQ beef', 'Bulgogi', 'Kimchi jjigae',
@@ -158,6 +176,8 @@ const CATEGORIES = {
     'Naengmyeon', 'Korean fried tofu', 'Korean stir fried glass noodles', 'Doenjang jjigae',
     'Korean beef stew', 'Samgyeopsal', 'Korean grilled pork belly', 'Korean spicy chicken stew',
     'Dakbokkeumtang', 'Korean seaweed soup', 'Bibim guksu', 'Korean BBQ platter',
+    // --- added: broad expansion pass ---
+    'Ganjang gejang', 'Korean spicy rice cake soup', 'Yangnyeom chicken', 'Korean beef tartare', 'Korean fried squid', 'Jokbal', 'Kongnamul guk', 'Korean fish cake soup', 'Odeng skewers', 'Korean glass noodle stir fry', 'Korean corn cheese', 'Mandu dumplings', 'Korean rice cake skewers', 'Gimbap with tuna', 'Korean spicy rice cakes with fish cake', 'Korean beef ribs soup', 'Korean chicken skewers', 'Korean pancake with kimchi', 'Korean style fried chicken burger', 'Bibim naengmyeon', 'Korean seafood pancake',
   ],
   'Indian & South Asian': [
     'Butter chicken', 'Dal curry', 'Dal makhani', 'Chicken tikka masala', 'Chicken korma',
@@ -174,10 +194,12 @@ const CATEGORIES = {
     'Chicken 65', 'Onion bhaji', 'Vegetable pakora', 'Chicken pakora', 'Aloo tikki',
     'Chole bhature', 'Kadhai chicken', 'Butter paneer', 'Egg curry', 'Keema curry',
     'Mutton curry', 'Chicken korma with rice', 'Prawn biryani', 'Egg biryani',
-    'Hyderabadi biryani', 'Rasam', 'Curry laksa Indian style', 'Chicken 65 dry', 'Palak chicken',
+    'Hyderabadi biryani', 'Rasam', 'Chicken 65 dry', 'Palak chicken',
     'Tandoori prawns', 'Malabar chicken curry', 'Kerala fish curry', 'Punjabi chole',
     'Amritsari fish', 'Lahori chicken', 'Sri Lankan chicken curry', 'Sri Lankan dal curry',
     'Nepalese momos',
+    // --- added: broad expansion pass ---
+    'Pav bhaji', 'Misal pav', 'Dhokla', 'Kathi roll', 'Chicken chettinad', 'Andhra chicken curry', 'Bombay potatoes', 'Chettinad prawn curry', 'Fish moilee', 'Kadai paneer', 'Amritsari kulcha', 'Sindhi curry', 'Punjabi kadhi', 'Rasgulla', 'Kheer', 'Pindi chana',
   ],
   'Middle Eastern & Mediterranean': [
     'Shawarma plate', 'Chicken shawarma', 'Lamb shawarma', 'Beef shawarma', 'Falafel plate',
@@ -194,6 +216,8 @@ const CATEGORIES = {
     'Kibbeh nayeh', 'Falafel salad plate', 'Greek moussaka bake', 'Grilled octopus',
     'Calamari Greek style', 'Feta and olive plate', 'Pita and dips platter',
     'Chicken shish kebab', 'Beef kofta plate', 'Lamb shish kebab',
+    // --- added: broad expansion pass ---
+    'Musakhan', 'Fatteh', 'Freekeh pilaf', 'Chicken fatteh', 'Lentil kibbeh', 'Baba ganoush plate', 'Batata harra', 'Sujuk with eggs', 'Mansaf', 'Kunafa cheese dessert', 'Warak enab', 'Kofta kebab plate with rice', 'Grilled kafta skewers', 'Zaatar manakish', 'Chicken shawarma plate with rice',
   ],
   'Mexican & Latin American': [
     'Beef burrito', 'Chicken burrito', 'Bean burrito', 'Tacos', 'Beef tacos', 'Chicken tacos',
@@ -205,23 +229,26 @@ const CATEGORIES = {
     'Pozole', 'Carnitas', 'Al pastor tacos', 'Elote', 'Mexican street corn', 'Arepas',
     'Colombian empanadas', 'Brazilian feijoada', 'Brazilian churrasco', 'Peruvian ceviche',
     'Cuban sandwich', 'Argentinian steak', 'Chimichurri steak', 'Mole chicken',
+    // --- added: broad expansion pass ---
+    'Birria tacos', 'Chicken tinga tacos', 'Barbacoa tacos', 'Huevos rancheros', 'Tres leches cake', 'Flan', 'Arroz con pollo', 'Pupusas', 'Salvadoran pupusas with curtido', 'Cuban rice and beans', 'Aji de gallina', 'Lomo saltado', 'Peruvian chicken with rice', 'Molcajete', 'Elotes with cotija cheese', 'Chile relleno', 'Sopes', 'Camarones a la diabla', 'Beef birria stew', 'Guacamole and tortilla chips', 'Mexican street tacos platter', 'Tostones',
   ],
   'American/Western comfort & fast food': [
     'Mac and cheese', 'Fried chicken', 'Buffalo wings', 'Chicken tenders', 'Chicken nuggets',
-    'Onion rings', 'Hot dog American style', 'Chilli con carne', 'Clam chowder',
+    'Onion rings', 'Chilli con carne', 'Clam chowder',
     'Baked mac and cheese', 'BBQ ribs', 'Pulled pork sandwich', 'Coleslaw', 'Cornbread',
     'Meatloaf', 'Fried chicken sandwich', 'Popcorn chicken', 'Corn on the cob',
     'Baked potato with sour cream', 'Loaded fries', 'Poutine', 'Chicken and waffles',
     'Philly cheesesteak fries', 'Buffalo cauliflower', 'Southern fried chicken',
     'Biscuits and gravy', 'Sloppy joe', 'French fries', 'Curly fries', 'Waffle fries',
-    'Cheese fries', 'Jalapeno poppers', 'Mozzarella sticks American style',
-    'Chicken fried steak', 'Ribeye steak', 'T-bone steak', 'Steak and eggs',
+    'Cheese fries', 'Jalapeno poppers', 'Chicken fried steak', 'Ribeye steak', 'T-bone steak', 'Steak and eggs',
     'Grilled cheese with tomato soup', 'Turkey club', 'Cobb salad',
-    'Chicken caesar salad American style', 'Pulled pork nachos', 'Brisket sandwich',
+    'Pulled pork nachos', 'Brisket sandwich',
     'Smoked brisket', 'Mac and cheese bites', 'Deep dish pizza', 'New york style pizza',
     'Bagel with lox', 'Philadelphia cheesesteak', 'Baked beans American style',
     'Cornbread with butter', 'Fried pickles', 'Hush puppies', 'Shrimp and grits', 'Gumbo',
     'Jambalaya',
+    // --- added: broad expansion pass ---
+    'Buttermilk fried chicken', 'Chicken and biscuit', 'BBQ pulled pork sliders', 'Loaded nacho fries', 'Chicken pot pie', 'Corn dog bites', 'Bacon cheeseburger sliders', 'Southern biscuits with gravy', 'Buffalo chicken dip', 'Baked beans with bacon', 'Grilled cheese melt', 'Chicken parmesan sub', 'Meatball sub American style', 'Fried green tomatoes', 'Shrimp po boy', 'New england clam chowder bread bowl', 'Cheese steak egg rolls', 'Chicken fried bacon', 'Kansas city BBQ ribs',
   ],
   'British/European classics': [
     'Fish pie', "Shepherd's pie", 'Cottage pie', 'Beef stroganoff', 'Chicken schnitzel European style',
@@ -233,6 +260,8 @@ const CATEGORIES = {
     'Chorizo and beans', 'Gazpacho', 'Polish pierogi', 'German sausage with sauerkraut', 'Bratwurst',
     'Schnitzel with chips', 'Beef goulash with dumplings', 'Irish stew', 'Colcannon', 'Haggis',
     'Swedish meatballs',
+    // --- added: broad expansion pass ---
+    'Toad in the hole with onion gravy', 'Beef and ale pie', 'Kedgeree', 'Welsh rarebit', 'Bubble and squeak', 'Lancashire hotpot', 'Spotted dick', 'Fish and chips British style', 'Steak and ale pie', 'Chicken and leek pie', 'Devilled kidneys', 'Black pudding', 'French cassoulet', 'Beef bourguignon with mash', 'Spanish paella seafood', 'Italian osso buco milanese', 'German bratwurst with sauerkraut', 'Belgian moules frites', 'Portuguese custard tart', 'Greek moussaka', 'Hungarian goulash with noodles', 'Austrian wiener schnitzel with potato salad',
   ],
   'Salads & grain bowls': [
     'Caesar salad', 'Chicken caesar salad', 'Greek salad', 'Garden salad', 'Caprese salad',
@@ -244,28 +273,32 @@ const CATEGORIES = {
     'Fattoush', 'Halloumi and roast veg salad', 'Prawn salad', 'Warm quinoa bowl',
     'Falafel salad bowl', 'Mexican salad bowl', 'Grain bowl with tofu', 'Brown rice power bowl',
     'Sweet potato bowl', 'Vegan buddha bowl', 'Roast vegetable salad',
+    // --- added: broad expansion pass ---
+    'Tuna nicoise bowl', 'Chicken quinoa bowl', 'Roast pumpkin and feta salad', 'Mediterranean grain bowl', 'Warm lentil salad', 'Beetroot quinoa salad', 'Vietnamese vermicelli salad', 'Charred corn salad', 'Roasted cauliflower salad', 'Barley salad', 'Broccolini and almond salad', 'Freekeh salad', 'Edamame and soba salad', 'Chicken avocado salad', 'Watermelon and feta salad', 'Kimchi rice bowl', 'Farro salad', 'Spinach and strawberry salad', 'Chicken cobb salad bowl', 'Roast beetroot and walnut salad',
   ],
   'Soups & stews': [
     'Pumpkin soup', 'Minestrone soup', 'Chicken noodle soup', 'Beef stew', 'Laksa', 'Chicken laksa',
     'Vegetable soup', 'Tomato soup', 'Broccoli and cheese soup', 'Corn soup', 'Lentil soup',
-    'Split pea soup', 'French onion soup Western', 'Clam chowder soup', 'Seafood chowder',
-    'Beef and vegetable soup', 'Chicken and corn soup', 'Hot and sour soup Chinese',
-    'Wonton soup Chinese', 'Miso soup Japanese', 'Tom yum soup Thai', 'Pho soup Vietnamese',
+    'Split pea soup', 'Clam chowder soup', 'Seafood chowder',
+    'Beef and vegetable soup', 'Chicken and corn soup', 'Miso soup Japanese', 'Pho soup Vietnamese',
     'Goulash soup', 'Irish stew soup', 'Beef bourguignon stew', 'Chicken stew', 'Lamb stew',
     'Curry laksa', 'Asian noodle soup', 'Ramen soup', 'Udon soup', 'Congee soup', 'Mushroom soup',
     'Carrot and ginger soup', 'Sweet potato soup', 'Cauliflower soup', 'Chicken tortilla soup',
     'Black bean soup', 'Gumbo stew', 'Jambalaya stew', 'Beef chilli stew', 'Lamb tagine stew',
     'Massaman beef stew', 'Osso buco stew', 'Vegetable minestrone',
+    // --- added: broad expansion pass ---
+    'Borscht', 'Minestrone with pasta', 'French onion soup with cheese crouton', 'Butternut squash soup', 'Thai coconut chicken soup', 'Beef and barley soup', 'Split pea and ham soup', 'Cream of mushroom soup', 'Zucchini soup', 'Miso soup with tofu', 'Chicken and sweetcorn soup', 'Vichyssoise', 'Bouillabaisse', 'Goulash soup Hungarian', 'Sancocho stew', 'Groundnut stew', 'Irish beef and Guinness stew', 'Cream of pumpkin soup', 'Curried parsnip soup', 'Beef pho soup',
   ],
   'Rice & noodle dishes': [
-    'Fried rice', 'Nasi goreng', 'Pad see ew noodles', 'Congee rice', 'Paella rice', 'Biryani rice',
-    'Egg fried rice', 'Vegetable fried rice', 'Special fried rice dish', 'Char kway teow noodles',
-    'Pad thai noodles', 'Singapore noodles dish', 'Hokkien noodles dish', 'Chow mein noodles',
-    'Yaki udon', 'Dan dan noodles dish', 'Beef noodle soup dish', 'Rice noodle salad',
+    'Fried rice', 'Nasi goreng', 'Congee rice', 'Paella rice', 'Biryani rice',
+    'Egg fried rice', 'Vegetable fried rice', 'Pad thai noodles', 'Chow mein noodles',
+    'Yaki udon', 'Rice noodle salad',
     'Glass noodle salad', 'Japchae noodles', 'Rice pilaf', 'Coconut rice', 'Lemon rice',
     'Tomato rice', 'Jasmine rice bowl', 'Sticky rice', 'Nasi lemak', 'Mee goreng',
     'Kway teow soup', 'Bihun goreng', 'Claypot chicken rice', 'Hainanese chicken rice',
     'Yangzhou fried rice', 'Bibimbap rice bowl', 'Risotto rice dish',
+    // --- added: broad expansion pass ---
+    'Fried rice with vegetables', 'Pad woon sen glass noodles', 'Nasi campur', 'Fried rice with char siu', 'Vegetable biryani rice bowl', 'Chicken rice plate', 'Curry rice bowl', 'Duck rice', 'Fried rice with egg and spring onion', 'Rice noodle rolls', 'Rice vermicelli stir fry', 'Nasi padang', 'Tomato egg rice bowl', 'Curry udon', 'Somen noodles cold', 'Cellophane noodle stir fry', 'Fried rice with prawns and peas', 'Rice congee with pork', 'Beef brisket noodle bowl', 'Egg noodle stir fry', 'Fried rice ball onigiri style', 'Steamed rice with stir fried greens',
   ],
   'Vegetarian/vegan composite dishes': [
     'Veggie burger', 'Tofu stir fry', 'Chickpea curry vegan', 'Vegan bolognese', 'Vegan lasagne',
@@ -278,6 +311,8 @@ const CATEGORIES = {
     'Vegan risotto', 'Vegan stir fry noodles', 'Tofu pad thai', 'Cauliflower buffalo wings',
     'Vegan spring rolls', 'Vegan dumplings', 'Vegan sausage roll', 'Vegan pie',
     'Stuffed capsicum vegan', 'Vegan moussaka', 'Vegan paella', 'Vegan chow mein', 'Vegan fried rice',
+    // --- added: broad expansion pass ---
+    'Vegan tacos', 'Vegan enchiladas', 'Vegan pizza with vegetables', 'Vegan katsu sando', 'Vegan larb', 'Vegan dumplings fried', 'Vegan cottage pie', 'Tofu katsu curry', 'Vegan carbonara with mushroom', 'Vegan meatball sub', 'Vegan chicken burger', 'Vegan bibimbap', 'Vegan tikka masala', 'Tempeh curry', 'Vegan quiche', 'Vegan lentil bolognese', 'Vegan cauliflower wings', 'Jackfruit curry', 'Vegan beef stroganoff', 'Vegan gyoza',
   ],
   'Desserts, cakes & sweets': [
     'Pavlova', 'Lamington cake', 'Tiramisu', 'Cheesecake', 'New York cheesecake', 'Chocolate cake',
@@ -285,7 +320,7 @@ const CATEGORIES = {
     'Apple pie', 'Apple crumble', 'Sticky toffee pudding', 'Creme brulee', 'Panna cotta dessert',
     'Tiramisu cup', 'Brownie', 'Chocolate brownie', 'Blondie', 'Mud cake slice', 'Cupcake',
     'Vanilla cupcake', 'Chocolate cupcake', 'Donut dessert', 'Churros dessert', 'Baklava dessert',
-    'Gulab jamun dessert', 'Mango sticky rice dessert', 'Ice cream sundae', 'Chocolate mousse',
+    'Gulab jamun dessert', 'Ice cream sundae', 'Chocolate mousse',
     'Lemon meringue pie', 'Fruit tart', 'Custard tart dessert', 'Eclair', 'Profiteroles',
     'Macarons', 'French macaron', 'Cannoli', 'Gelato scoop', 'Sorbet', 'Affogato', 'Tim tam',
     'Anzac biscuits dessert', 'Chocolate chip cookie', 'Shortbread',
@@ -294,6 +329,8 @@ const CATEGORIES = {
     'Victoria sponge cake', 'Angel food cake', 'Rocky road', 'Fudge', 'Peppermint slice',
     'Caramel slice', 'Chocolate crackle', 'Fairy bread dessert', 'Jelly and ice cream',
     'Pavlova with berries',
+    // --- added: broad expansion pass ---
+    'Baklava roll', 'Eton mess', 'Banana split', 'Chocolate lava cake', 'Tiramisu cheesecake', 'Mango pudding', 'Coconut ice', 'Basque cheesecake', 'Choc chip cookie sundae', 'Malva pudding', 'Persimmon pudding', 'White chocolate mud cake', 'Ferrero cheesecake', 'Nutella crepe', 'Mochi ice cream', 'Dulce de leche cake',
   ],
   'Snacks, dips & party food': [
     'Party pies', 'Mini sausage rolls', 'Spring rolls party size', 'Arancini balls', 'Nachos platter',
@@ -307,19 +344,21 @@ const CATEGORIES = {
     'BBQ sausage on bread', 'Sausage sizzle with onions', 'Mini pizzas', 'Cheese cubes',
     'Pigs in blankets', 'Cheese balls', 'Spinach and ricotta triangles', 'Samosas party platter',
     'Vegetable spring rolls party', 'Cocktail franks', 'Chips and gravy party',
+    // --- added: broad expansion pass ---
+    'Cheese kransky rolls', 'Mini hot dogs', 'Cocktail spring rolls', 'Mini beef sliders', 'Prawn crackers party', 'Cheese and spinach triangles', 'Chicken drumettes party', 'Mini quiches lorraine', 'Beetroot dip', 'Tzatziki dip with pita', 'Olive tapenade with bread', 'Mini spinach pies', 'Salt and pepper squid party platter', 'Rice paper roll party platter', 'Bacon wrapped dates', 'Cheese fondue with bread', 'Party pinwheels',
   ],
   "Café/pub food & kids'/lunchbox items": [
     'Chicken nuggets kids', 'Fairy bread', 'Vegemite sandwich', 'Ham and cheese toastie kids',
     'Fish fingers', 'Fish finger sandwich', 'Cheese toastie', 'Mac and cheese kids',
     'Spaghetti on toast', 'Baked beans kids', 'Chicken schnitzel kids meal', 'Sausages and mash',
-    'Mini pizzas kids', 'Chicken drumsticks', 'Sausage sizzle kids', 'Party pies kids',
-    'Cheerios kids snack', 'Cheese and crackers kids', 'Toasted sandwich', 'Pub parma',
-    'Pub schnitzel', 'Chicken parmigiana pub', 'Steak and chips pub', 'Fish and chips pub',
-    'Pub burger', 'Pub nachos', 'Pub salt and pepper squid', 'Pub calamari', 'Chicken wings pub',
+    'Mini pizzas kids', 'Chicken drumsticks', 'Sausage sizzle kids', 'Cheerios kids snack', 'Toasted sandwich', 'Pub parma',
+    'Pub schnitzel', 'Chicken parmigiana pub', 'Steak and chips pub', 'Pub burger', 'Pub nachos', 'Pub calamari', 'Chicken wings pub',
     'Pub caesar salad', 'Beer battered fish', 'Pub steak sandwich', 'Loaded potato skins',
-    'Pub garlic bread', 'Chicken caesar wrap pub', "Ploughman's lunch pub", 'Pub pasta', 'Pub curry',
+    'Pub garlic bread', 'Chicken caesar wrap pub', 'Pub pasta', 'Pub curry',
     'Pub risotto', 'Kids fish and chips', 'School lunchbox sandwich', 'Lunchbox wrap', 'Muesli bar',
     'Fruit box snack', 'Cheese stick snack',
+    // --- added: broad expansion pass ---
+    'Kids spaghetti bolognese', 'Kids mini pizza', 'Lunchbox fruit pouch', 'Lunchbox cheese and crackers', 'Lunchbox ham sandwich', 'Kids pasta with butter', 'Kids sausages and mash', 'Pub fish and chips', 'Pub chicken schnitzel with chips', 'Pub beef burger', 'Pub seafood basket', 'Pub roast dinner', 'Kids chicken tenders', 'School lunch sushi roll', 'Kids vegemite sandwich', 'Kids yoghurt pouch', 'Pub fish tacos', 'Pub loaded wedges',
   ],
   'BBQ, roasts & grilled mains': [
     'Roast lamb', 'Roast lamb with vegetables', 'BBQ ribs Aus', 'Steak with chips',
@@ -329,6 +368,8 @@ const CATEGORIES = {
     'Grilled barramundi', 'BBQ chicken skewers', 'Char-grilled chicken', 'Grilled pork chops',
     'BBQ brisket', 'Smoked pork ribs', 'Grilled kangaroo steak', 'BBQ mixed grill',
     'Grilled corn on the cob BBQ', 'Roast vegetables', 'Grilled vegetable skewers',
+    // --- added: broad expansion pass ---
+    'BBQ pork belly', 'Grilled snapper', 'BBQ lamb cutlets', 'Char-grilled octopus', 'Grilled chicken tenderloins', 'BBQ butterflied chicken', 'Roast turkey', 'Grilled scotch fillet', 'BBQ pork belly skewers', 'Grilled swordfish steak', 'BBQ whole snapper', 'Rotisserie chicken', 'Char-grilled prawns skewers', 'Grilled lamb backstrap', 'Slow cooked pulled lamb', 'Grilled rump steak', 'BBQ butterflied lamb', 'Grilled quail', 'Smoked beef brisket', 'BBQ chicken wings', 'Grilled flathead fillets', 'Char-grilled zucchini and haloumi', 'Whole roast chicken with stuffing', 'Grilled T-bone with chimichurri', 'Beef short ribs BBQ', 'Slow roasted pork shoulder', 'Grilled porterhouse steak',
   ],
 };
 
