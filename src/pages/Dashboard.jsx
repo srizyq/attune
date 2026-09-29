@@ -22,7 +22,7 @@ import LogWorkoutModal from '../components/LogWorkoutModal';
 import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
-import HourlyTimeline from '../components/HourlyTimeline';
+import SlotTimeline from '../components/SlotTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import SegmentedControl from '../components/SegmentedControl';
 import Toast from '../components/Toast';
@@ -32,7 +32,6 @@ import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import TrialBanner from '../components/TrialBanner';
 import { round1 } from '../lib/format';
-import { hourToHHMM } from '../lib/mealTime';
 import FormRow from '../components/FormRow';
 import ListRow from '../components/ListRow';
 
@@ -802,14 +801,14 @@ export default function Dashboard() {
   // Same default/derivation as DailyLog.jsx — reading the same profile
   // field is what keeps a choice made on either page in sync with the
   // other, rather than each page tracking it separately.
-  const dailyLogView = profile?.daily_log_view || 'hourly';
-  const showHourlyLog = isPremium && dailyLogView === 'hourly';
+  const dailyLogView = profile?.daily_log_view || 'meals';
+  const showSlots = isPremium && dailyLogView === 'slots';
   const [viewSaveError, setViewSaveError] = useState(null);
   async function handleViewChange(v) {
     setViewSaveError(null);
     try { await saveProfile({ daily_log_view: v }); } catch { setViewSaveError("Couldn't save — try again."); }
   }
-  const { meals, dayTimeline, deleteFood, updateFood, refetch: refetchFoodLogs } = useFoodLogs(viewedDate);
+  const { meals, slotTimeline, deleteFood, updateFood, addSlot, editSlot, removeSlot, refetch: refetchFoodLogs } = useFoodLogs(viewedDate);
   const { checkin, save: saveCheckin } = useCheckins(viewedDate);
   // 90 days (not 30) so the pattern engine's more specific candidates
   // (fibre, hydration, sugar, breakfast) have a real chance to each reach
@@ -1108,12 +1107,16 @@ export default function Dashboard() {
               )}
             </div>
             {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 10 }}>{viewSaveError}</p>}
-            {showHourlyLog ? (
-              <HourlyTimeline
-                segments={dayTimeline}
+            {showSlots ? (
+              <SlotTimeline
+                segments={slotTimeline}
                 onDelete={handleDeleteFoodItem}
                 onSave={updateFood}
-                onNavigateAdd={(hour) => navigate('/food', { state: { date: viewedDate, presetTime: hourToHHMM(hour) } })}
+                onNavigateAdd={(slot) => navigate('/food', { state: { date: viewedDate, presetSlotId: slot.id, presetTime: slot.slotTime } })}
+                onAddSlot={addSlot}
+                onEditSlot={editSlot}
+                onDeleteSlot={removeSlot}
+                emptyMessage="Nothing set up for today yet — add your first slot below."
               />
             ) : (
               <MealLog

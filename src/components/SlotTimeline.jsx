@@ -35,10 +35,9 @@ function TimeDot({ isLast }) {
 
 // Pro's custom-named slot timeline (daily_log_view === 'slots') — a
 // dot-and-line vertical list of the day's day_slots (see src/lib/daySlots.js),
-// each showing its own kcal/macro totals and logged items, in the same
-// expandable-card shape HourlyTimeline.jsx uses for clock hours. A slot with
-// nothing logged in it yet shows its stored macro targets ("balance") and a
-// prompt to log against it instead of an item list.
+// each showing its own kcal/macro totals and logged items in an expandable
+// card. A slot with nothing logged in it yet shows its stored macro targets
+// ("balance") and a prompt to log against it instead of an item list.
 export default function SlotTimeline({ segments, onDelete, onSave, onNavigateAdd, onAddSlot, onEditSlot, onDeleteSlot, emptyMessage = 'Nothing set up for this day yet.' }) {
   const [openSlots, setOpenSlots] = useState({});
   const [expandedItemId, setExpandedItemId] = useState(null);

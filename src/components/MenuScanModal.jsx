@@ -47,7 +47,7 @@ function MacroGrid({ pick }) {
   return <MacroBreakdown values={{ cal: pick.cal, protein: pick.protein, carbs: pick.carbs, fat: pick.fat }} />;
 }
 
-export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchManually }) {
+export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchManually }) {
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -160,7 +160,7 @@ export default function MenuScanModal({ onClose, onAddFood, logByTime, onSearchM
       };
       const meal = mealFromDate(now);
       const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
-      await onAddFood(food, logByTime ? null : mealLabel, logByTime ? now : null);
+      await onAddFood(food, showSlots ? null : mealLabel, showSlots ? now : null);
       onClose();
     } catch (err) {
       console.error(err);

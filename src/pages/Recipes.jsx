@@ -139,8 +139,8 @@ export default function Recipes() {
   const { addFood, refetch: refetchLogs } = useFoodLogs(today);
 
   const isPremium = !!profile?.is_premium;
-  const dailyLogView = profile?.daily_log_view || 'hourly';
-  const logByTime = isPremium && dailyLogView === 'hourly';
+  const dailyLogView = profile?.daily_log_view || 'meals';
+  const logByTime = isPremium && dailyLogView === 'slots';
   const defaultMeal = useMemo(() => {
     const m = mealFromDate(new Date());
     return m.charAt(0).toUpperCase() + m.slice(1);
