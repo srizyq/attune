@@ -271,8 +271,7 @@
       "saturated_fat_g": 0.8,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/chicken-fish/3pc-chicken-mcnuggets.html",
-      "verified_date": "2026-09-28",
-      "_unverified": true
+      "verified_date": "2026-09-29"
     },
     {
       "id": "mcdonalds-au_6pc-chicken-mcnuggets",
@@ -387,7 +386,8 @@
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/chicken-fish/mccrispy.html",
       "verified_date": "2026-09-28",
-      "_unverified": true
+      "_unverified": true,
+      "_unverified_reason": "Independent sources split into two disagreeing clusters: FatSecret AU's archived listing (634 cal/26.2P/59.2C/27.6F) closely matches this draft, but macmenusau.com and other aggregators report ~470 cal/26P/46C/20F for what they also call 'McCrispy' -- possibly a different/renamed product (search results also surfaced a distinct 'Crispy Chicken Deluxe Burger' on CalorieKing). Needs a source that can positively confirm which product name is current before this can be resolved either way."
     },
     {
       "id": "mcdonalds-au_coca-cola-medium",
@@ -596,8 +596,7 @@
       "saturated_fat_g": 6.6,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/mccafe-drinks/cappuccino-large.html",
-      "verified_date": "2026-09-28",
-      "_unverified": true
+      "verified_date": "2026-09-29"
     },
     {
       "id": "mcdonalds-au_flat-white-medium",
@@ -635,8 +634,7 @@
       "saturated_fat_g": 4.6,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/mccafe-drinks/hot-chocolate-small.html",
-      "verified_date": "2026-09-28",
-      "_unverified": true
+      "verified_date": "2026-09-29"
     },
     {
       "id": "mcdonalds-au_latte-medium",
@@ -712,8 +710,7 @@
       "saturated_fat_g": 14.9,
       "trans_fat_g": 0,
       "source_url": "https://www.mcdonalds.com/au/en-au/menu/mccafe-food/apple-crumble-muffin.html",
-      "verified_date": "2026-09-28",
-      "_unverified": true
+      "verified_date": "2026-09-29"
     },
     {
       "id": "mcdonalds-au_small-fries",
