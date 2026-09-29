@@ -1636,10 +1636,6 @@
     "category": "Thai"
   },
   {
-    "name": "Sticky rice with mango",
-    "category": "Thai"
-  },
-  {
     "name": "Thai spring roll platter",
     "category": "Thai"
   },
@@ -2536,10 +2532,6 @@
     "category": "Indian & South Asian"
   },
   {
-    "name": "Curry laksa Indian style",
-    "category": "Indian & South Asian"
-  },
-  {
     "name": "Chicken 65 dry",
     "category": "Indian & South Asian"
   },
@@ -3056,10 +3048,6 @@
     "category": "American/Western comfort & fast food"
   },
   {
-    "name": "Hot dog American style",
-    "category": "American/Western comfort & fast food"
-  },
-  {
     "name": "Chilli con carne",
     "category": "American/Western comfort & fast food"
   },
@@ -3160,10 +3148,6 @@
     "category": "American/Western comfort & fast food"
   },
   {
-    "name": "Mozzarella sticks American style",
-    "category": "American/Western comfort & fast food"
-  },
-  {
     "name": "Chicken fried steak",
     "category": "American/Western comfort & fast food"
   },
@@ -3189,10 +3173,6 @@
   },
   {
     "name": "Cobb salad",
-    "category": "American/Western comfort & fast food"
-  },
-  {
-    "name": "Chicken caesar salad American style",
     "category": "American/Western comfort & fast food"
   },
   {
@@ -3596,10 +3576,6 @@
     "category": "Soups & stews"
   },
   {
-    "name": "French onion soup Western",
-    "category": "Soups & stews"
-  },
-  {
     "name": "Clam chowder soup",
     "category": "Soups & stews"
   },
@@ -3616,19 +3592,7 @@
     "category": "Soups & stews"
   },
   {
-    "name": "Hot and sour soup Chinese",
-    "category": "Soups & stews"
-  },
-  {
-    "name": "Wonton soup Chinese",
-    "category": "Soups & stews"
-  },
-  {
     "name": "Miso soup Japanese",
-    "category": "Soups & stews"
-  },
-  {
-    "name": "Tom yum soup Thai",
     "category": "Soups & stews"
   },
   {
@@ -3732,10 +3696,6 @@
     "category": "Rice & noodle dishes"
   },
   {
-    "name": "Pad see ew noodles",
-    "category": "Rice & noodle dishes"
-  },
-  {
     "name": "Congee rice",
     "category": "Rice & noodle dishes"
   },
@@ -3756,23 +3716,7 @@
     "category": "Rice & noodle dishes"
   },
   {
-    "name": "Special fried rice dish",
-    "category": "Rice & noodle dishes"
-  },
-  {
-    "name": "Char kway teow noodles",
-    "category": "Rice & noodle dishes"
-  },
-  {
     "name": "Pad thai noodles",
-    "category": "Rice & noodle dishes"
-  },
-  {
-    "name": "Singapore noodles dish",
-    "category": "Rice & noodle dishes"
-  },
-  {
-    "name": "Hokkien noodles dish",
     "category": "Rice & noodle dishes"
   },
   {
@@ -3781,14 +3725,6 @@
   },
   {
     "name": "Yaki udon",
-    "category": "Rice & noodle dishes"
-  },
-  {
-    "name": "Dan dan noodles dish",
-    "category": "Rice & noodle dishes"
-  },
-  {
-    "name": "Beef noodle soup dish",
     "category": "Rice & noodle dishes"
   },
   {
@@ -4144,10 +4080,6 @@
     "category": "Desserts, cakes & sweets"
   },
   {
-    "name": "Mango sticky rice dessert",
-    "category": "Desserts, cakes & sweets"
-  },
-  {
     "name": "Ice cream sundae",
     "category": "Desserts, cakes & sweets"
   },
@@ -4477,183 +4409,163 @@
   },
   {
     "name": "Chicken nuggets kids",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Fairy bread",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Vegemite sandwich",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Ham and cheese toastie kids",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Fish fingers",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Fish finger sandwich",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Cheese toastie",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Mac and cheese kids",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Spaghetti on toast",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Baked beans kids",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Chicken schnitzel kids meal",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Sausages and mash",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Mini pizzas kids",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Chicken drumsticks",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Sausage sizzle kids",
-    "category": "Café/pub food & kids'/lunchbox items"
-  },
-  {
-    "name": "Party pies kids",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Cheerios kids snack",
-    "category": "Café/pub food & kids'/lunchbox items"
-  },
-  {
-    "name": "Cheese and crackers kids",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Toasted sandwich",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub parma",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub schnitzel",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Chicken parmigiana pub",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Steak and chips pub",
-    "category": "Café/pub food & kids'/lunchbox items"
-  },
-  {
-    "name": "Fish and chips pub",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub burger",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub nachos",
-    "category": "Café/pub food & kids'/lunchbox items"
-  },
-  {
-    "name": "Pub salt and pepper squid",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub calamari",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Chicken wings pub",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub caesar salad",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Beer battered fish",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub steak sandwich",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Loaded potato skins",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub garlic bread",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Chicken caesar wrap pub",
-    "category": "Café/pub food & kids'/lunchbox items"
-  },
-  {
-    "name": "Ploughman's lunch pub",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub pasta",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub curry",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Pub risotto",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Kids fish and chips",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "School lunchbox sandwich",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Lunchbox wrap",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Muesli bar",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Fruit box snack",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Cheese stick snack",
-    "category": "Café/pub food & kids'/lunchbox items"
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items"
   },
   {
     "name": "Roast lamb",

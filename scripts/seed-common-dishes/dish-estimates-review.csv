@@ -408,7 +408,6 @@ Cashew chicken Thai style,Thai,succeeded,,1 serve (~400g),400,520,32,30,30,4,980
 Crying tiger beef,Thai,succeeded,,1 serve (~300g),300,480,38,12,31,1.5,980,7,medium
 Thai crab curry,Thai,succeeded,LOW_CONFIDENCE,1 serve (~400g),400,420,22,14,30,2.5,980,6,low
 Thai prawn curry,Thai,succeeded,,"1 serve (~400g, curry + prawns, no rice)",400,420,22,14,31,3,980,8,medium
-Sticky rice with mango,Thai,succeeded,,1 serve (~350g),350,480,6.5,85,14,4,180,40,medium
 Thai spring roll platter,Thai,succeeded,,"1 serve (6 rolls, ~180g) with sauce",200,420,9,42,24,3.5,680,12,medium
 Pad prik king,Thai,succeeded,,1 serve (~300g),300,420,24,15,29,4,950,5,medium
 Gaeng som,Thai,succeeded,,1 serve (~350g),350,210,16,15,8,3,980,6,medium
@@ -633,7 +632,6 @@ Prawn biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,560,24,74,17,3
 Egg biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,620,18,78,26,4,780,6,medium
 Hyderabadi biryani,Indian & South Asian,succeeded,,1 serve (~400g),400,620,28,68,26,4,980,6,medium
 Rasam,Indian & South Asian,succeeded,,1 cup (~250ml),250,70,2.5,10,2.5,1.8,480,3,medium
-Curry laksa Indian style,Indian & South Asian,succeeded,LOW_CONFIDENCE,1 bowl (~550g),550,620,26,55,34,4,1450,8,low
 Chicken 65 dry,Indian & South Asian,succeeded,,1 serve (~250g),250,480,32,18,31,1.5,900,3,medium
 Palak chicken,Indian & South Asian,succeeded,,1 serve (~350g),350,420,32,12,27,4.5,680,4,medium
 Tandoori prawns,Indian & South Asian,succeeded,,"1 serve (~200g, 6-8 prawns with marinade)",200,260,32,6,12,1,620,3,medium
@@ -763,7 +761,6 @@ Buffalo wings,American/Western comfort & fast food,succeeded,,"1 serve (~6 wings
 Chicken tenders,American/Western comfort & fast food,succeeded,,5 pieces (~150g),150,380,22,24,21,1.5,680,1,medium
 Chicken nuggets,American/Western comfort & fast food,succeeded,,6 pieces (~100g),100,280,14,18,17,1,490,1,high
 Onion rings,American/Western comfort & fast food,succeeded,,"1 serve (~150g, ~8-10 rings)",150,420,5.5,45,24,2.5,620,4.5,medium
-Hot dog American style,American/Western comfort & fast food,succeeded,,1 hot dog with bun (~150g),150,340,13,30,19,1.5,900,6,medium
 Chilli con carne,American/Western comfort & fast food,succeeded,,1 serve (~350g),350,420,28,28,20,8,780,8,medium
 Clam chowder,American/Western comfort & fast food,succeeded,,1 bowl (~300g),300,300,12,25,17,2,950,4,medium
 Baked mac and cheese,American/Western comfort & fast food,succeeded,,1 serve (~350g),350,490,20.5,42,27,2,750,6,medium
@@ -789,7 +786,6 @@ Curly fries,American/Western comfort & fast food,succeeded,,1 regular serve (~15
 Waffle fries,American/Western comfort & fast food,succeeded,,1 regular serve (~120g),120,340,4,42,17,4,480,0.5,medium
 Cheese fries,American/Western comfort & fast food,succeeded,,1 serve (~350g),350,950,22,85,58,6,1100,2,medium
 Jalapeno poppers,American/Western comfort & fast food,succeeded,,6 pieces (~150g),150,420,12,30,28,2,700,3,medium
-Mozzarella sticks American style,American/Western comfort & fast food,succeeded,,"1 serve, 6 sticks (~150g) with marinara sauce",150,440,19,34,25,2,980,4,medium
 Chicken fried steak,American/Western comfort & fast food,succeeded,,"1 serve (~350g, steak + gravy)",350,700,32,35,46,2,1300,3,medium
 Ribeye steak,American/Western comfort & fast food,succeeded,,1 serve (~300g cooked),300,750,68,0,52,0,480,0,medium
 T-bone steak,American/Western comfort & fast food,succeeded,,1 steak (~300g),300,670,62,0,46,0,620,0,medium
@@ -797,7 +793,6 @@ Steak and eggs,American/Western comfort & fast food,succeeded,,"1 serve (~350g, 
 Grilled cheese with tomato soup,American/Western comfort & fast food,succeeded,,1 sandwich + 1 cup soup (~380g),380,560,19,55,31,4,1450,13,medium
 Turkey club,American/Western comfort & fast food,succeeded,,"1 sandwich (3 slices toast, ~330g)",330,620,34,46,34,4,1450,6,medium
 Cobb salad,American/Western comfort & fast food,succeeded,,1 serve (~400g),400,620,38,12,47,4.5,1150,4,medium
-Chicken caesar salad American style,American/Western comfort & fast food,succeeded,,1 serve (~400g),400,620,35,20,44,3.5,1050,4,medium
 Pulled pork nachos,American/Western comfort & fast food,succeeded,,1 serve (~450g),450,780,38,58,42,6,1350,8,medium
 Brisket sandwich,American/Western comfort & fast food,succeeded,,1 sandwich (~300g),300,680,38,55,33,3,1300,12,medium
 Smoked brisket,American/Western comfort & fast food,succeeded,,1 serve (~200g),200,470,42,2,33,0.3,780,1,medium
@@ -898,15 +893,11 @@ Broccoli and cheese soup,Soups & stews,succeeded,,1 bowl (~350g),350,310,12.5,16
 Corn soup,Soups & stews,succeeded,,1 bowl (~300g),300,150,4.5,24,4.5,2.5,700,9,medium
 Lentil soup,Soups & stews,succeeded,,1 bowl (~300g),300,210,12.5,28,5.5,8,780,4.5,medium
 Split pea soup,Soups & stews,succeeded,,1 bowl (~300g),300,240,14,36,5,8,780,5,medium
-French onion soup Western,Soups & stews,succeeded,,1 bowl (~350g),350,280,10.5,24,15,2.5,1150,9,medium
 Clam chowder soup,Soups & stews,succeeded,,1 bowl (~300g),300,285,12.5,22,17,1.8,980,4.5,medium
 Seafood chowder,Soups & stews,succeeded,,1 bowl (~400g),400,420,20.5,28,25,2.5,980,6,medium
 Beef and vegetable soup,Soups & stews,succeeded,,1 bowl (~350g),350,180,15,12,7,2.5,780,4,medium
 Chicken and corn soup,Soups & stews,succeeded,,1 bowl (~300g),300,180,12.5,20,5.5,1.8,780,6.5,high
-Hot and sour soup Chinese,Soups & stews,succeeded,,1 bowl (~350g),350,180,9.5,16,8.5,1.5,980,3.5,medium
-Wonton soup Chinese,Soups & stews,succeeded,,1 serve (~400g),400,220,14,20,9,1.5,1400,2,medium
 Miso soup Japanese,Soups & stews,succeeded,,1 bowl (~250g),250,60,4.5,5.5,2.3,1.5,780,1.5,high
-Tom yum soup Thai,Soups & stews,succeeded,,1 bowl (~350g),350,180,14,9,9,1.5,1200,4,medium
 Pho soup Vietnamese,Soups & stews,succeeded,,1 serve (~600g),600,450,28,60,10,3,1800,6,medium
 Goulash soup,Soups & stews,succeeded,,1 bowl (~350g),350,280,18,20,14,3,950,5,medium
 Irish stew soup,Soups & stews,succeeded,,1 bowl (~350g),350,260,15,20,13,3,780,4,medium
@@ -932,21 +923,14 @@ Massaman beef stew,Soups & stews,succeeded,,1 serve (~400g),400,560,32,24,36,4,8
 Osso buco stew,Soups & stews,succeeded,,1 serve (~450g incl. shank + sauce),450,520,38,15,33,3,780,6,medium
 Vegetable minestrone,Soups & stews,succeeded,,1 bowl (~350g),350,150,5.5,22,4.5,5,780,6,medium
 Nasi goreng,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,22,78,24,3.5,1350,8,medium
-Pad see ew noodles,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,28,70,24,4,1400,8,medium
 Congee rice,Rice & noodle dishes,succeeded,,1 bowl (~400g),400,220,8,38,4,1,650,1,medium
 Paella rice,Rice & noodle dishes,succeeded,,1 serve (~400g),400,520,24,62,18,3,900,4,medium
 Biryani rice,Rice & noodle dishes,succeeded,,1 serve (~350g),350,490,22,62,16,3.5,780,5,medium
 Egg fried rice,Rice & noodle dishes,succeeded,,1 serve (~300g),300,480,11.5,68,17,1.8,780,2,medium
 Vegetable fried rice,Rice & noodle dishes,succeeded,,1 serve (~350g),350,480,10.5,78,13,4,820,4.5,medium
-Special fried rice dish,Rice & noodle dishes,succeeded,,1 serve (~350g),350,560,18,72,21,3,980,4,medium
-Char kway teow noodles,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,22,68,30,3.5,1450,6,medium
 Pad thai noodles,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,25,78,24,4,1450,18,medium
-Singapore noodles dish,Rice & noodle dishes,succeeded,,1 serve (~400g),400,520,20,68,17,4,980,8,medium
-Hokkien noodles dish,Rice & noodle dishes,succeeded,,1 serve (~450g),450,620,24,78,22,5.5,1450,9,medium
 Chow mein noodles,Rice & noodle dishes,succeeded,,1 serve (~350g),350,480,16,62,17,4,980,6,medium
 Yaki udon,Rice & noodle dishes,succeeded,,1 serve (~400g),400,520,20,68,18,4.5,1450,8,medium
-Dan dan noodles dish,Rice & noodle dishes,succeeded,,1 serve (~400g),400,620,24,65,30,4,1450,6,medium
-Beef noodle soup dish,Rice & noodle dishes,succeeded,,1 bowl (~550g),550,480,28,60,14,3.5,1600,5,medium
 Rice noodle salad,Rice & noodle dishes,succeeded,,1 serve (~350g),350,380,10.5,55,13,4.5,780,12,medium
 Glass noodle salad,Rice & noodle dishes,succeeded,,1 serve (~300g),300,280,9.5,38,10.5,3,780,9,medium
 Japchae noodles,Rice & noodle dishes,succeeded,,1 serve (~300g),300,380,8.5,58,13,3.5,780,10,medium
@@ -1035,7 +1019,6 @@ Donut dessert,"Desserts, cakes & sweets",succeeded,,1 donut (~60g),60,240,3.5,30
 Churros dessert,"Desserts, cakes & sweets",succeeded,,"1 serve (~150g, 5-6 churros with sauce)",150,520,6.5,62,27,2.5,380,30,medium
 Baklava dessert,"Desserts, cakes & sweets",succeeded,,1 piece (~60g),60,250,3.8,27,15,1.2,110,18,medium
 Gulab jamun dessert,"Desserts, cakes & sweets",succeeded,,2 pieces (~90g),90,300,4.5,45,12,0.3,90,38,medium
-Mango sticky rice dessert,"Desserts, cakes & sweets",succeeded,,1 serve (~300g),300,420,6,72,13,3.5,90,32,medium
 Ice cream sundae,"Desserts, cakes & sweets",succeeded,,1 sundae (~300g),300,430,6.5,55,21,1,140,45,medium
 Chocolate mousse,"Desserts, cakes & sweets",succeeded,,1 serve (~120g),120,280,4.5,22,20,1.5,55,19,medium
 Lemon meringue pie,"Desserts, cakes & sweets",succeeded,,1 slice (~120g),120,340,4.2,51,13.5,0.8,190,37,medium
@@ -1133,18 +1116,14 @@ Sausages and mash,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~40
 Mini pizzas kids,Café/pub food & kids'/lunchbox items,succeeded,,3 mini pizzas (~150g),150,380,15,42,17,2.5,650,5,medium
 Chicken drumsticks,Café/pub food & kids'/lunchbox items,succeeded,,2 drumsticks (~180g),180,370,38,2,23,0,380,1,medium
 Sausage sizzle kids,Café/pub food & kids'/lunchbox items,succeeded,,1 small sausage on bread with onion (~90g),90,220,7.5,20,12,1.5,480,4.5,medium
-Party pies kids,Café/pub food & kids'/lunchbox items,succeeded,,3 mini pies (~120g),120,330,9.5,28,20,1.5,480,2.5,medium
 Cheerios kids snack,Café/pub food & kids'/lunchbox items,succeeded,,1 bowl (~30g),30,113,2.6,23,1.5,2.7,190,3,medium
-Cheese and crackers kids,Café/pub food & kids'/lunchbox items,succeeded,,1 kids serve (~60g),60,260,8.5,22,15.5,1,400,1.5,medium
 Toasted sandwich,Café/pub food & kids'/lunchbox items,succeeded,,1 sandwich (2 slices bread),150,380,18,38,17,2.5,780,5,medium
 Pub parma,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~550g),550,1150,55,90,62,6,1600,10,medium
 Pub schnitzel,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~500g),500,1150,48,90,65,6,1400,8,medium
 Chicken parmigiana pub,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~550g),550,1150,58,85,62,6,1650,12,medium
 Steak and chips pub,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~450g, steak + chips + salad/veg)",450,850,48,55,47,5,900,4,medium
-Fish and chips pub,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~450g, 1 piece battered fish + chips)",450,1050,35,90,62,7,1100,2,medium
 Pub burger,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~500g burger + chips),500,1150,45,95,65,6,1600,15,medium
 Pub nachos,Café/pub food & kids'/lunchbox items,succeeded,LOW_CONFIDENCE,1 share serve (~450g),450,1150,42,90,68,8,1900,8,low
-Pub salt and pepper squid,Café/pub food & kids'/lunchbox items,succeeded,,1 pub entrée serve (~300g incl. salad/lemon),300,620,32,40,36,2.5,980,3,medium
 Pub calamari,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~300g),300,720,32,55,40,3,980,3,medium
 Chicken wings pub,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~8 wings, ~350g)",350,850,55,20,60,1,1600,8,medium
 Pub caesar salad,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~350g),350,620,22,24,46,3.5,1150,4,medium
@@ -1153,7 +1132,6 @@ Pub steak sandwich,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~40
 Loaded potato skins,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (4 skins, ~300g)",300,620,24,40,40,4,980,3,medium
 Pub garlic bread,Café/pub food & kids'/lunchbox items,succeeded,,"1 serve (~4-5 slices, ~150g)",150,480,10.5,48,27,2.5,780,3.5,medium
 Chicken caesar wrap pub,Café/pub food & kids'/lunchbox items,succeeded,,1 wrap (~350g),350,720,34,55,40,4,1250,5,medium
-Ploughman's lunch pub,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~400g),400,780,32,55,46,5,1900,12,medium
 Pub pasta,Café/pub food & kids'/lunchbox items,succeeded,LOW_CONFIDENCE,1 serve (~450g),450,780,34,68,42,4,1150,6,low
 Pub curry,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~450g),450,620,28,62,28,4,1100,8,medium
 Pub risotto,Café/pub food & kids'/lunchbox items,succeeded,,1 serve (~400g),400,640,22,68,30,4,980,5,medium

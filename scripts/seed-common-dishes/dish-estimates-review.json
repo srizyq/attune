@@ -8222,26 +8222,6 @@
     }
   },
   {
-    "custom_id": "dish-409",
-    "name": "Sticky rice with mango",
-    "category": "Thai",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Sticky rice with mango",
-      "serving_label": "1 serve (~350g)",
-      "serving_grams": 350,
-      "calories": 480,
-      "protein_g": 6.5,
-      "carbs_g": 85,
-      "fat_g": 14,
-      "fibre_g": 4,
-      "sodium_mg": 180,
-      "sugar_g": 40,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-410",
     "name": "Thai spring roll platter",
     "category": "Thai",
@@ -9252,7 +9232,7 @@
       "LOW_CONFIDENCE"
     ],
     "data": {
-      "name": "Vietnamese meatballs (xíu mại)",
+      "name": "Vietnamese meatballs (x\u00edu m\u1ea1i)",
       "serving_label": "1 serve (~5-6 meatballs with sauce, ~300g)",
       "serving_grams": 300,
       "calories": 420,
@@ -12734,28 +12714,6 @@
     }
   },
   {
-    "custom_id": "dish-634",
-    "name": "Curry laksa Indian style",
-    "category": "Indian & South Asian",
-    "status": "succeeded",
-    "flags": [
-      "LOW_CONFIDENCE"
-    ],
-    "data": {
-      "name": "Curry laksa (Indian style)",
-      "serving_label": "1 bowl (~550g)",
-      "serving_grams": 550,
-      "calories": 620,
-      "protein_g": 26,
-      "carbs_g": 55,
-      "fat_g": 34,
-      "fibre_g": 4,
-      "sodium_mg": 1450,
-      "sugar_g": 8,
-      "confidence": "low"
-    }
-  },
-  {
     "custom_id": "dish-635",
     "name": "Chicken 65 dry",
     "category": "Indian & South Asian",
@@ -15346,26 +15304,6 @@
     }
   },
   {
-    "custom_id": "dish-764",
-    "name": "Hot dog American style",
-    "category": "American/Western comfort & fast food",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "American style hot dog",
-      "serving_label": "1 hot dog with bun (~150g)",
-      "serving_grams": 150,
-      "calories": 340,
-      "protein_g": 13,
-      "carbs_g": 30,
-      "fat_g": 19,
-      "fibre_g": 1.5,
-      "sodium_mg": 900,
-      "sugar_g": 6,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-765",
     "name": "Chilli con carne",
     "category": "American/Western comfort & fast food",
@@ -15870,26 +15808,6 @@
     }
   },
   {
-    "custom_id": "dish-790",
-    "name": "Mozzarella sticks American style",
-    "category": "American/Western comfort & fast food",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Mozzarella sticks (American style)",
-      "serving_label": "1 serve, 6 sticks (~150g) with marinara sauce",
-      "serving_grams": 150,
-      "calories": 440,
-      "protein_g": 19,
-      "carbs_g": 34,
-      "fat_g": 25,
-      "fibre_g": 2,
-      "sodium_mg": 980,
-      "sugar_g": 4,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-791",
     "name": "Chicken fried steak",
     "category": "American/Western comfort & fast food",
@@ -16025,26 +15943,6 @@
       "fat_g": 47,
       "fibre_g": 4.5,
       "sodium_mg": 1150,
-      "sugar_g": 4,
-      "confidence": "medium"
-    }
-  },
-  {
-    "custom_id": "dish-798",
-    "name": "Chicken caesar salad American style",
-    "category": "American/Western comfort & fast food",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Chicken Caesar salad, American style",
-      "serving_label": "1 serve (~400g)",
-      "serving_grams": 400,
-      "calories": 620,
-      "protein_g": 35,
-      "carbs_g": 20,
-      "fat_g": 44,
-      "fibre_g": 3.5,
-      "sodium_mg": 1050,
       "sugar_g": 4,
       "confidence": "medium"
     }
@@ -16900,7 +16798,7 @@
     "status": "succeeded",
     "flags": [],
     "data": {
-      "name": "Tortilla española (Spanish potato omelette)",
+      "name": "Tortilla espa\u00f1ola (Spanish potato omelette)",
       "serving_label": "1 wedge/slice (~150g)",
       "serving_grams": 150,
       "calories": 260,
@@ -17161,7 +17059,7 @@
     "flags": [],
     "data": {
       "name": "Caesar salad",
-      "serving_label": "1 entrée serve (~300g)",
+      "serving_label": "1 entr\u00e9e serve (~300g)",
       "serving_grams": 300,
       "calories": 470,
       "protein_g": 14,
@@ -18072,26 +17970,6 @@
     }
   },
   {
-    "custom_id": "dish-899",
-    "name": "French onion soup Western",
-    "category": "Soups & stews",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "French onion soup",
-      "serving_label": "1 bowl (~350g)",
-      "serving_grams": 350,
-      "calories": 280,
-      "protein_g": 10.5,
-      "carbs_g": 24,
-      "fat_g": 15,
-      "fibre_g": 2.5,
-      "sodium_mg": 1150,
-      "sugar_g": 9,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-900",
     "name": "Clam chowder soup",
     "category": "Soups & stews",
@@ -18172,46 +18050,6 @@
     }
   },
   {
-    "custom_id": "dish-904",
-    "name": "Hot and sour soup Chinese",
-    "category": "Soups & stews",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Hot and sour soup (Chinese restaurant style)",
-      "serving_label": "1 bowl (~350g)",
-      "serving_grams": 350,
-      "calories": 180,
-      "protein_g": 9.5,
-      "carbs_g": 16,
-      "fat_g": 8.5,
-      "fibre_g": 1.5,
-      "sodium_mg": 980,
-      "sugar_g": 3.5,
-      "confidence": "medium"
-    }
-  },
-  {
-    "custom_id": "dish-905",
-    "name": "Wonton soup Chinese",
-    "category": "Soups & stews",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Wonton soup",
-      "serving_label": "1 serve (~400g)",
-      "serving_grams": 400,
-      "calories": 220,
-      "protein_g": 14,
-      "carbs_g": 20,
-      "fat_g": 9,
-      "fibre_g": 1.5,
-      "sodium_mg": 1400,
-      "sugar_g": 2,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-906",
     "name": "Miso soup Japanese",
     "category": "Soups & stews",
@@ -18229,26 +18067,6 @@
       "sodium_mg": 780,
       "sugar_g": 1.5,
       "confidence": "high"
-    }
-  },
-  {
-    "custom_id": "dish-907",
-    "name": "Tom yum soup Thai",
-    "category": "Soups & stews",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Tom Yum Soup (Thai)",
-      "serving_label": "1 bowl (~350g)",
-      "serving_grams": 350,
-      "calories": 180,
-      "protein_g": 14,
-      "carbs_g": 9,
-      "fat_g": 9,
-      "fibre_g": 1.5,
-      "sodium_mg": 1200,
-      "sugar_g": 4,
-      "confidence": "medium"
     }
   },
   {
@@ -18756,26 +18574,6 @@
     }
   },
   {
-    "custom_id": "dish-933",
-    "name": "Pad see ew noodles",
-    "category": "Rice & noodle dishes",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Pad see ew (chicken)",
-      "serving_label": "1 serve (~400g)",
-      "serving_grams": 400,
-      "calories": 620,
-      "protein_g": 28,
-      "carbs_g": 70,
-      "fat_g": 24,
-      "fibre_g": 4,
-      "sodium_mg": 1400,
-      "sugar_g": 8,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-934",
     "name": "Congee rice",
     "category": "Rice & noodle dishes",
@@ -18876,46 +18674,6 @@
     }
   },
   {
-    "custom_id": "dish-939",
-    "name": "Special fried rice dish",
-    "category": "Rice & noodle dishes",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Special fried rice",
-      "serving_label": "1 serve (~350g)",
-      "serving_grams": 350,
-      "calories": 560,
-      "protein_g": 18,
-      "carbs_g": 72,
-      "fat_g": 21,
-      "fibre_g": 3,
-      "sodium_mg": 980,
-      "sugar_g": 4,
-      "confidence": "medium"
-    }
-  },
-  {
-    "custom_id": "dish-940",
-    "name": "Char kway teow noodles",
-    "category": "Rice & noodle dishes",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Char kway teow",
-      "serving_label": "1 serve (~400g)",
-      "serving_grams": 400,
-      "calories": 620,
-      "protein_g": 22,
-      "carbs_g": 68,
-      "fat_g": 30,
-      "fibre_g": 3.5,
-      "sodium_mg": 1450,
-      "sugar_g": 6,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-941",
     "name": "Pad thai noodles",
     "category": "Rice & noodle dishes",
@@ -18932,46 +18690,6 @@
       "fibre_g": 4,
       "sodium_mg": 1450,
       "sugar_g": 18,
-      "confidence": "medium"
-    }
-  },
-  {
-    "custom_id": "dish-942",
-    "name": "Singapore noodles dish",
-    "category": "Rice & noodle dishes",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Singapore noodles",
-      "serving_label": "1 serve (~400g)",
-      "serving_grams": 400,
-      "calories": 520,
-      "protein_g": 20,
-      "carbs_g": 68,
-      "fat_g": 17,
-      "fibre_g": 4,
-      "sodium_mg": 980,
-      "sugar_g": 8,
-      "confidence": "medium"
-    }
-  },
-  {
-    "custom_id": "dish-943",
-    "name": "Hokkien noodles dish",
-    "category": "Rice & noodle dishes",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Hokkien Noodles (Stir-fried)",
-      "serving_label": "1 serve (~450g)",
-      "serving_grams": 450,
-      "calories": 620,
-      "protein_g": 24,
-      "carbs_g": 78,
-      "fat_g": 22,
-      "fibre_g": 5.5,
-      "sodium_mg": 1450,
-      "sugar_g": 9,
       "confidence": "medium"
     }
   },
@@ -19012,46 +18730,6 @@
       "fibre_g": 4.5,
       "sodium_mg": 1450,
       "sugar_g": 8,
-      "confidence": "medium"
-    }
-  },
-  {
-    "custom_id": "dish-946",
-    "name": "Dan dan noodles dish",
-    "category": "Rice & noodle dishes",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Dan dan noodles",
-      "serving_label": "1 serve (~400g)",
-      "serving_grams": 400,
-      "calories": 620,
-      "protein_g": 24,
-      "carbs_g": 65,
-      "fat_g": 30,
-      "fibre_g": 4,
-      "sodium_mg": 1450,
-      "sugar_g": 6,
-      "confidence": "medium"
-    }
-  },
-  {
-    "custom_id": "dish-947",
-    "name": "Beef noodle soup dish",
-    "category": "Rice & noodle dishes",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Beef noodle soup",
-      "serving_label": "1 bowl (~550g)",
-      "serving_grams": 550,
-      "calories": 480,
-      "protein_g": 28,
-      "carbs_g": 60,
-      "fat_g": 14,
-      "fibre_g": 3.5,
-      "sodium_mg": 1600,
-      "sugar_g": 5,
       "confidence": "medium"
     }
   },
@@ -20822,26 +20500,6 @@
     }
   },
   {
-    "custom_id": "dish-1036",
-    "name": "Mango sticky rice dessert",
-    "category": "Desserts, cakes & sweets",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Mango sticky rice",
-      "serving_label": "1 serve (~300g)",
-      "serving_grams": 300,
-      "calories": 420,
-      "protein_g": 6,
-      "carbs_g": 72,
-      "fat_g": 13,
-      "fibre_g": 3.5,
-      "sodium_mg": 90,
-      "sugar_g": 32,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-1037",
     "name": "Ice cream sundae",
     "category": "Desserts, cakes & sweets",
@@ -22490,7 +22148,7 @@
   {
     "custom_id": "dish-1119",
     "name": "Chicken nuggets kids",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22510,7 +22168,7 @@
   {
     "custom_id": "dish-1120",
     "name": "Fairy bread",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22530,7 +22188,7 @@
   {
     "custom_id": "dish-1121",
     "name": "Vegemite sandwich",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22550,7 +22208,7 @@
   {
     "custom_id": "dish-1122",
     "name": "Ham and cheese toastie kids",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22570,7 +22228,7 @@
   {
     "custom_id": "dish-1123",
     "name": "Fish fingers",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22590,7 +22248,7 @@
   {
     "custom_id": "dish-1124",
     "name": "Fish finger sandwich",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22610,7 +22268,7 @@
   {
     "custom_id": "dish-1125",
     "name": "Cheese toastie",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22630,7 +22288,7 @@
   {
     "custom_id": "dish-1126",
     "name": "Mac and cheese kids",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22650,7 +22308,7 @@
   {
     "custom_id": "dish-1127",
     "name": "Spaghetti on toast",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22670,7 +22328,7 @@
   {
     "custom_id": "dish-1128",
     "name": "Baked beans kids",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22690,7 +22348,7 @@
   {
     "custom_id": "dish-1129",
     "name": "Chicken schnitzel kids meal",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22710,7 +22368,7 @@
   {
     "custom_id": "dish-1130",
     "name": "Sausages and mash",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22730,7 +22388,7 @@
   {
     "custom_id": "dish-1131",
     "name": "Mini pizzas kids",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22750,7 +22408,7 @@
   {
     "custom_id": "dish-1132",
     "name": "Chicken drumsticks",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22770,7 +22428,7 @@
   {
     "custom_id": "dish-1133",
     "name": "Sausage sizzle kids",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22788,29 +22446,9 @@
     }
   },
   {
-    "custom_id": "dish-1134",
-    "name": "Party pies kids",
-    "category": "Café/pub food & kids'/lunchbox items",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Party pies (mini meat pies)",
-      "serving_label": "3 mini pies (~120g)",
-      "serving_grams": 120,
-      "calories": 330,
-      "protein_g": 9.5,
-      "carbs_g": 28,
-      "fat_g": 20,
-      "fibre_g": 1.5,
-      "sodium_mg": 480,
-      "sugar_g": 2.5,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-1135",
     "name": "Cheerios kids snack",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22828,29 +22466,9 @@
     }
   },
   {
-    "custom_id": "dish-1136",
-    "name": "Cheese and crackers kids",
-    "category": "Café/pub food & kids'/lunchbox items",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Cheese and crackers (kids serve)",
-      "serving_label": "1 kids serve (~60g)",
-      "serving_grams": 60,
-      "calories": 260,
-      "protein_g": 8.5,
-      "carbs_g": 22,
-      "fat_g": 15.5,
-      "fibre_g": 1,
-      "sodium_mg": 400,
-      "sugar_g": 1.5,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-1137",
     "name": "Toasted sandwich",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22870,7 +22488,7 @@
   {
     "custom_id": "dish-1138",
     "name": "Pub parma",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22890,7 +22508,7 @@
   {
     "custom_id": "dish-1139",
     "name": "Pub schnitzel",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22910,7 +22528,7 @@
   {
     "custom_id": "dish-1140",
     "name": "Chicken parmigiana pub",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22930,7 +22548,7 @@
   {
     "custom_id": "dish-1141",
     "name": "Steak and chips pub",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22948,29 +22566,9 @@
     }
   },
   {
-    "custom_id": "dish-1142",
-    "name": "Fish and chips pub",
-    "category": "Café/pub food & kids'/lunchbox items",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Fish and chips (pub style)",
-      "serving_label": "1 serve (~450g, 1 piece battered fish + chips)",
-      "serving_grams": 450,
-      "calories": 1050,
-      "protein_g": 35,
-      "carbs_g": 90,
-      "fat_g": 62,
-      "fibre_g": 7,
-      "sodium_mg": 1100,
-      "sugar_g": 2,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-1143",
     "name": "Pub burger",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -22990,7 +22588,7 @@
   {
     "custom_id": "dish-1144",
     "name": "Pub nachos",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [
       "LOW_CONFIDENCE"
@@ -23010,29 +22608,9 @@
     }
   },
   {
-    "custom_id": "dish-1145",
-    "name": "Pub salt and pepper squid",
-    "category": "Café/pub food & kids'/lunchbox items",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Salt and pepper squid",
-      "serving_label": "1 pub entrée serve (~300g incl. salad/lemon)",
-      "serving_grams": 300,
-      "calories": 620,
-      "protein_g": 32,
-      "carbs_g": 40,
-      "fat_g": 36,
-      "fibre_g": 2.5,
-      "sodium_mg": 980,
-      "sugar_g": 3,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-1146",
     "name": "Pub calamari",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23052,7 +22630,7 @@
   {
     "custom_id": "dish-1147",
     "name": "Chicken wings pub",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23072,7 +22650,7 @@
   {
     "custom_id": "dish-1148",
     "name": "Pub caesar salad",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23092,7 +22670,7 @@
   {
     "custom_id": "dish-1149",
     "name": "Beer battered fish",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23112,7 +22690,7 @@
   {
     "custom_id": "dish-1150",
     "name": "Pub steak sandwich",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23132,7 +22710,7 @@
   {
     "custom_id": "dish-1151",
     "name": "Loaded potato skins",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23152,7 +22730,7 @@
   {
     "custom_id": "dish-1152",
     "name": "Pub garlic bread",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23172,7 +22750,7 @@
   {
     "custom_id": "dish-1153",
     "name": "Chicken caesar wrap pub",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23190,29 +22768,9 @@
     }
   },
   {
-    "custom_id": "dish-1154",
-    "name": "Ploughman's lunch pub",
-    "category": "Café/pub food & kids'/lunchbox items",
-    "status": "succeeded",
-    "flags": [],
-    "data": {
-      "name": "Ploughman's lunch (pub style)",
-      "serving_label": "1 serve (~400g)",
-      "serving_grams": 400,
-      "calories": 780,
-      "protein_g": 32,
-      "carbs_g": 55,
-      "fat_g": 46,
-      "fibre_g": 5,
-      "sodium_mg": 1900,
-      "sugar_g": 12,
-      "confidence": "medium"
-    }
-  },
-  {
     "custom_id": "dish-1155",
     "name": "Pub pasta",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [
       "LOW_CONFIDENCE"
@@ -23234,7 +22792,7 @@
   {
     "custom_id": "dish-1156",
     "name": "Pub curry",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23254,7 +22812,7 @@
   {
     "custom_id": "dish-1157",
     "name": "Pub risotto",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23274,7 +22832,7 @@
   {
     "custom_id": "dish-1158",
     "name": "Kids fish and chips",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23294,7 +22852,7 @@
   {
     "custom_id": "dish-1159",
     "name": "School lunchbox sandwich",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23314,7 +22872,7 @@
   {
     "custom_id": "dish-1160",
     "name": "Lunchbox wrap",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [
       "LOW_CONFIDENCE"
@@ -23336,7 +22894,7 @@
   {
     "custom_id": "dish-1161",
     "name": "Muesli bar",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23356,7 +22914,7 @@
   {
     "custom_id": "dish-1162",
     "name": "Fruit box snack",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
@@ -23376,7 +22934,7 @@
   {
     "custom_id": "dish-1163",
     "name": "Cheese stick snack",
-    "category": "Café/pub food & kids'/lunchbox items",
+    "category": "Caf\u00e9/pub food & kids'/lunchbox items",
     "status": "succeeded",
     "flags": [],
     "data": {
