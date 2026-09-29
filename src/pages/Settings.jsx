@@ -7,6 +7,7 @@ import NotificationsModal from '../components/settings/NotificationsModal';
 import CoachModal from '../components/settings/CoachModal';
 import PrivacyModal from '../components/settings/PrivacyModal';
 import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
 
 // Which "page" each section opens as — short sections (a couple of field
 // rows) are quick to check and dismiss, so they open as a popup right
@@ -227,7 +228,7 @@ export default function Settings() {
           ) : (
             /* Grouped list — every section title visible at once, no tabs
                to switch between and lose track of what else exists. */
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, boxShadow: 'var(--card-shadow)', overflow: 'hidden' }}>
+            <Card style={{ padding: 0, marginBottom: 0, overflow: 'hidden' }}>
               {SECTIONS.map((s, idx) => (
                 <button
                   key={s.id}
@@ -253,7 +254,7 @@ export default function Settings() {
                   <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16, flexShrink: 0 }} />
                 </button>
               ))}
-            </div>
+            </Card>
           )}
 
           {/* Required FatSecret Platform API attribution — must not be

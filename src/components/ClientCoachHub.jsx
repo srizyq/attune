@@ -10,6 +10,7 @@ import CoachConsentCard from './CoachConsentCard';
 import CoachCheckinCard from './CoachCheckinCard';
 import MealPlanCard from './MealPlanCard';
 import FormRow from './FormRow';
+import Card from './Card';
 import { coachPassButtonLabel } from '../lib/coachPass';
 import { targetsForDate, dayTargetsActive, describeTrainingDays } from '../lib/dayTargets';
 import { todayLocalDate } from '../lib/patterns';
@@ -200,7 +201,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
         />
       ))}
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+      <Card style={{ padding: 24, marginBottom: 20 }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>
         {trainersLoading ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
@@ -248,7 +249,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
             {inviteStatus && inviteStatus !== 'loading' && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '8px 0 0' }}>{inviteStatus}</p>}
           </>
         )}
-      </div>
+      </Card>
 
       {trainer && (
         <>
@@ -256,7 +257,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
           <MealPlanCard />
 
           {hasTargets && (
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+            <Card style={{ padding: 24, marginBottom: 20 }}>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your current targets</div>
               <div className="grid-4">
                 <TargetStat label="Calories" value={targets.calories ? `${targets.calories}` : '—'} />
@@ -265,7 +266,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
                 <TargetStat label="Fat" value={targets.fat ? `${targets.fat}g` : '—'} />
               </div>
               {dayNote && <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '14px 0 0' }}>{dayNote}</p>}
-            </div>
+            </Card>
           )}
 
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>Notes from your coach</div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ACCENT } from './constants';
 import SegmentedControl from '../SegmentedControl';
+import Card from '../Card';
 
 // The group-tag + disconnect controls for a client — previously lived at
 // the end of every client-list row; now lives in ClientDetail's header
@@ -58,21 +59,9 @@ export function RowActions({ row, onSetGroup, onRevoke }) {
   );
 }
 
-export function Card({ children, style }) {
-  return (
-    <div style={{
-      background: 'var(--bg-card)',
-      border: '1px solid var(--card-border)',
-      boxShadow: 'var(--card-shadow)',
-      borderRadius: '16px',
-      padding: '24px',
-      marginBottom: '16px',
-      ...style,
-    }}>
-      {children}
-    </div>
-  );
-}
+// Card moved to a top-level shared component (used app-wide, not just
+// Coach) — re-exported here so existing imports keep working.
+export { Card };
 
 export function SectionLabel({ icon, children }) {
   return (
@@ -127,11 +116,11 @@ export function StatRow({ label, value }) {
 
 export function StatCard({ label, value, hint, color = ACCENT }) {
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <Card style={{ borderRadius: 12, padding: 16, marginBottom: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
       <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: value === '—' ? 'var(--text-hint)' : color, lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: 11, color: 'var(--text-hint)' }}>{hint}</div>
-    </div>
+    </Card>
   );
 }
 

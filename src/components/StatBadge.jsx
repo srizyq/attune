@@ -9,8 +9,12 @@ const TINTS = {
   fat: 'var(--ai-purple)',
 };
 
-export default function StatBadge({ tone = 'neutral', children, style }) {
-  const tint = TINTS[tone];
+export default function StatBadge({ tone = 'neutral', color, children, style }) {
+  // `color` is an escape hatch for the many one-off metric colors that
+  // don't have (and don't need) their own named tone — MicroCard already
+  // carries a `color` per nutrient, so badges there just reuse it directly
+  // instead of this file needing an ever-growing tone-per-nutrient map.
+  const tint = color || TINTS[tone];
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,

@@ -5,6 +5,7 @@ import { KINDS, formatMeasurement, kindLabel, latestByKind, unitFor, validateIma
 import { todayLocalDate } from '../lib/patterns';
 import PhotoGallery from './PhotoGallery';
 import FormRow from './FormRow';
+import Card from './Card';
 
 const input = { padding: '8px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' };
 const heading = { fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' };
@@ -68,7 +69,7 @@ export default function BodyProgressCard() {
   const latest = latestByKind(measurements.rows);
 
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+    <Card style={{ padding: 20, marginBottom: 24 }}>
       <div style={{ ...heading, marginBottom: 4 }}>Body &amp; photos</div>
       <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 16px', lineHeight: 1.5 }}>
         Only you{profile ? ' — and your coach, if you’re connected to one —' : ''} can see these.
@@ -128,6 +129,6 @@ export default function BodyProgressCard() {
           <PhotoGallery photos={photos.photos} urls={photos.urls} onDelete={photos.remove} emptyText="No photos yet — add one to see your progress over time." />
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -10,6 +10,8 @@ import { MICRO_GROUPS } from '../components/coach/constants';
 import { targetsForDate } from '../lib/dayTargets';
 import PageHeader from '../components/PageHeader';
 import DateStepper from '../components/DateStepper';
+import Card from '../components/Card';
+import StatBadge from '../components/StatBadge';
 
 const DEFAULT_TARGETS = Object.fromEntries(MICRO_NUTRIENTS.map(m => [m.key, m.defaultTarget]));
 
@@ -17,11 +19,14 @@ function MacroRow({ label, value, unit, target, color }) {
   const pct = target ? Math.min((value / target) * 100, 100) : null;
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
-        <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
-          {value}{unit}{target ? <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> / {target}{unit}</span> : null}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
+            {value}{unit}{target ? <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> / {target}{unit}</span> : null}
+          </span>
+          {pct !== null && <StatBadge color={color} style={{ padding: '2px 7px', fontSize: 11 }}>{Math.round(pct)}%</StatBadge>}
+        </div>
       </div>
       {pct !== null && (
         <div style={{ height: 6, background: 'var(--border-default)', borderRadius: 99 }}>
@@ -123,7 +128,7 @@ export default function Nutrients() {
         <div className="page-pad" style={{ maxWidth: 700 }}>
           {loading ? null : (
             <>
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+              <Card style={{ padding: 24, marginBottom: 20 }}>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{isToday ? "Today's calories" : 'Calories'}</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
                   {Math.round(totals.cal).toLocaleString()}
@@ -132,7 +137,7 @@ export default function Nutrients() {
                 <MacroRow label="Protein" value={round1(totals.protein)} unit="g" target={dayTargets.protein_g} color="var(--accent)" />
                 <MacroRow label="Carbs" value={round1(totals.carbs)} unit="g" target={dayTargets.carbs_g} color="var(--water-blue)" />
                 <MacroRow label="Fat" value={round1(totals.fat)} unit="g" target={dayTargets.fat_g} color="var(--ai-purple)" />
-              </div>
+              </Card>
 
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Other nutrients</div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
