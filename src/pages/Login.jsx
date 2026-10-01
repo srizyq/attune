@@ -1,14 +1,81 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import { useResendConfirmation } from '../hooks/useResendConfirmation';
+import { usePasswordResetRequest } from '../hooks/usePasswordResetRequest';
 import PreAuthThemeToggle from '../components/PreAuthThemeToggle';
 import { upsertProfile } from '../lib/db';
 
+// Never reveals whether the email is actually registered — the "sent"
+// state shows regardless (see usePasswordResetRequest's own comment),
+// which is Supabase's own anti-enumeration behaviour, not something
+// faked here.
+function ForgotPasswordForm({ email, setEmail, inputStyle, status, errorMessage, secondsLeft, canSend, sendReset, onBack }) {
+  return (
+    <div style={{ width: '100%', maxWidth: '400px' }}>
+      <h1 style={{
+        fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)',
+        fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center',
+      }}>Reset your password</h1>
+      <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '28px', textAlign: 'center' }}>
+        Enter your email and we'll send you a link to set a new one.
+      </p>
+
+      <input
+        type="email"
+        placeholder="Email address"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        onFocus={e => e.target.style.borderColor = 'var(--accent-dark)'}
+        onBlur={e => e.target.style.borderColor = email ? 'var(--border-active)' : 'var(--border-default)'}
+        style={{ ...inputStyle(email), marginBottom: '18px' }}
+        autoComplete="email"
+        autoFocus
+      />
+
+      {status === 'sent' && (
+        <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: 'var(--accent)', marginBottom: '16px', lineHeight: 1.5 }}>
+          If an account exists for {email}, a reset link is on its way — check your inbox.
+        </div>
+      )}
+      {status === 'error' && (
+        <div style={{ background: '#1a0f0f', border: '1px solid #c0707040', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: 'var(--danger)', marginBottom: '16px' }}>
+          {errorMessage}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={sendReset}
+        disabled={!canSend}
+        style={{
+          width: '100%', padding: '14px',
+          background: email && canSend ? 'var(--accent)' : 'var(--bg-card)',
+          border: `1px solid ${email && canSend ? 'var(--accent)' : 'var(--border-default)'}`,
+          borderRadius: '10px',
+          color: email && canSend ? 'var(--accent-contrast)' : 'var(--text-hint)',
+          fontSize: '15px', fontWeight: 600,
+          cursor: canSend ? 'pointer' : 'not-allowed',
+          fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
+        }}
+      >
+        {status === 'sending' ? 'Sending…' : secondsLeft > 0 ? `Resend in ${secondsLeft}s` : 'Send reset link →'}
+      </button>
+
+      <p style={{ color: 'var(--text-hint)', fontSize: '13px', textAlign: 'center', marginTop: '20px' }}>
+        <button type="button" onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: 'pointer', padding: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          ← Back to login
+        </button>
+      </p>
+    </div>
+  );
+}
+
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { theme, toggleTheme, touched } = usePreAuthTheme();
   // RequireAuth's isUnsignedGuest gate means is_anonymous here can only
@@ -19,6 +86,11 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  // ResetPassword's "link expired" screen sends people back here with
+  // this flag so they land straight back in the request form instead of
+  // having to find and click "Forgot password?" a second time.
+  const [forgotPassword, setForgotPassword] = useState(!!location.state?.openForgotPassword);
+  const { status: resetStatus, errorMessage: resetError, secondsLeft: resetSecondsLeft, canSend, sendReset } = usePasswordResetRequest(email);
   // Signing up leaves the account "unconfirmed" (still an anonymous
   // Supabase user under the hood — see onboarding/Step4 and Step5) until
   // the emailed link is clicked. Someone who skipped that, then comes
@@ -96,6 +168,19 @@ export default function Login() {
       </div>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
+        {forgotPassword ? (
+          <ForgotPasswordForm
+            email={email}
+            setEmail={setEmail}
+            inputStyle={inputStyle}
+            status={resetStatus}
+            errorMessage={resetError}
+            secondsLeft={resetSecondsLeft}
+            canSend={canSend}
+            sendReset={sendReset}
+            onBack={() => setForgotPassword(false)}
+          />
+        ) : (
         <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px' }}>
           <h1 style={{
             fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)',
@@ -133,6 +218,16 @@ export default function Login() {
               autoComplete="current-password"
             />
           </div>
+
+          <p style={{ textAlign: 'right', marginTop: '-10px', marginBottom: '18px' }}>
+            <button
+              type="button"
+              onClick={() => setForgotPassword(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '13px', cursor: 'pointer', padding: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              Forgot password?
+            </button>
+          </p>
 
           {error && (
             <div style={{
@@ -189,6 +284,7 @@ export default function Login() {
             New here? <Link to="/onboarding/step1" style={{ color: 'var(--accent)' }}>Create an account</Link>
           </p>
         </form>
+        )}
       </div>
     </div>
   );

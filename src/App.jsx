@@ -11,6 +11,7 @@ import Step3 from './pages/onboarding/Step3'
 import Step4 from './pages/onboarding/Step4'
 import Step5 from './pages/onboarding/Step5'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import FoodSearch from "./pages/FoodSearch";
 import Recipes from "./pages/Recipes";
@@ -66,6 +67,7 @@ function AnimatedRoutes() {
       <Routes location={renderedLocation}>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/onboarding" element={<Navigate to="/onboarding/welcome" replace />} />

@@ -22,3 +22,9 @@ export const supabase = createClient(url, anonKey);
 // allowlist (Authentication → URL Configuration) — Supabase rejects an
 // emailRedirectTo that isn't allow-listed even when it's passed correctly.
 export const emailRedirectTo = `${window.location.origin}/dashboard`;
+
+// Same allowlist requirement as emailRedirectTo above — this origin must
+// also be added to Supabase's Redirect URLs (Authentication → URL
+// Configuration), separately, since Supabase checks each redirectTo value
+// against the allowlist independently.
+export const passwordResetRedirectTo = `${window.location.origin}/reset-password`;
