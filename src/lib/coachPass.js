@@ -2,6 +2,7 @@
 // coachTrialDays) is the authority on who gets a trial; this mirrors its rule
 // only to label the button honestly.
 export const COACH_TRIAL_DAYS = 30;
+export const COACH_PASS_PRICE = 'A$19.99/month';
 
 // Never had a Coach Pass subscription (paid, trialing or cancelled): the same
 // test the server applies before adding a trial to Checkout.

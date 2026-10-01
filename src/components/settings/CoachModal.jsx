@@ -9,17 +9,18 @@ import { coachPassHint, eligibleForCoachTrial, COACH_TRIAL_DAYS } from '../../li
 import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
 import FormRow from '../FormRow';
 
-function CoachPassButton({ profile, pendingConfirmation, onGoToProfile }) {
+function CoachPassButton({ profile, pendingConfirmation, onGoToProfile, onGoToPricing }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleClick = async () => {
+  // Only "Manage billing" (an existing real subscription) still talks to
+  // Stripe directly here — starting a new subscription now goes through
+  // Pricing.jsx instead, the one place that owns checkout for Pro/Coach.
+  const handleManageBilling = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { url } = profile?.coach_pass
-        ? await authedPost('/api/create-portal-session')
-        : await authedPost('/api/create-checkout-session', { plan: 'coach' });
+      const { url } = await authedPost('/api/create-portal-session');
       window.location.href = url;
     } catch (err) {
       setError(err.message);
@@ -60,7 +61,7 @@ function CoachPassButton({ profile, pendingConfirmation, onGoToProfile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
       <button
-        onClick={handleClick}
+        onClick={profile?.coach_pass ? handleManageBilling : onGoToPricing}
         disabled={loading}
         style={{
           padding: '9px 16px',
@@ -124,6 +125,10 @@ export default function CoachModal({ onClose, closing }) {
     onClose();
     navigate('/profile');
   };
+  const goToPricing = () => {
+    onClose();
+    navigate('/pricing');
+  };
   const { trainers, loading: trainersLoading, redeemCode, disconnect } = useMyTrainers();
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [inviteStatus, setInviteStatus] = useState(null);
@@ -149,7 +154,7 @@ export default function CoachModal({ onClose, closing }) {
           label="Coach Pass"
           hint={eligibleForCoachTrial(profile) ? `Unlimited clients · ${COACH_TRIAL_DAYS}-day free trial` : coachPassHint(profile)}
         >
-          <CoachPassButton profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={goToProfile} />
+          <CoachPassButton profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={goToProfile} onGoToPricing={goToPricing} />
         </FieldRow>
         <button
           onClick={() => navigate('/coach')}

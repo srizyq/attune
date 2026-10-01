@@ -64,11 +64,11 @@ describe('the signup flow starts the free trial', () => {
     expect(await trialOf(db, id)).toBeNull();
   });
 
-  it('does nothing for an account that predates the trial (new signups only)', async () => {
+  it('works for an account that predates the trial launch — claiming is opt-in now, not automatic', async () => {
     const { db, id } = await setup({ createdAt: '2026-09-01T00:00:00Z' });
     const { rows } = await as(db, id, `select public.start_free_trial() as ends`);
-    expect(rows[0].ends).toBeNull();
-    expect(await trialOf(db, id)).toBeNull();
+    expect(daysFromNow(rows[0].ends)).toBeGreaterThan(29.9);
+    expect(daysFromNow(await trialOf(db, id))).toBeGreaterThan(29.9);
   });
 
   it('requires a signed-in user', async () => {

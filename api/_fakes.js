@@ -15,7 +15,7 @@ export function fakeSupabase(resolve, { user = { id: 'caller' }, authError = nul
           };
         }
         return (...args) => {
-          if (prop === 'eq' || prop === 'in' || prop === 'lte' || prop === 'gte') state.filters[args[0]] = args[1];
+          if (prop === 'eq' || prop === 'in' || prop === 'lte' || prop === 'gte' || prop === 'is') state.filters[args[0]] = args[1];
           else if (prop === 'update' || prop === 'insert' || prop === 'delete' || prop === 'upsert') { state.op = prop; state.payload = args[0]; }
           else if (prop === 'maybeSingle' || prop === 'single') state.single = true;
           else if (prop === 'order') state.order = args;

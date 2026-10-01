@@ -21,8 +21,12 @@ const resolver = (s) => {
   if (table === 'trainer_clients' && filters.trainer_id === 'coach' && filters.client_id) return { data: db.checkinLink ? { id: 'l' } : null };
   if (table === 'profiles' && filters.id === 'client1') return { data: db.checkinClient };
   if (table === 'profiles' && filters.id === 'coach') return { data: { name: 'Jordan Lee' } };
+  if (table === 'profiles' && 'free_month_reminder_sent_at' in filters) {
+    if (db.freeMonthThrows) throw new Error('query exploded');
+    return db.freeMonthError ? { data: null, error: { message: 'column does not exist' } } : { data: db.freeMonthCandidates, error: null };
+  }
   if (table === 'trainer_clients') return { data: db.links };
-  if (table === 'push_subscriptions') return { data: [sub] };
+  if (table === 'push_subscriptions') return { data: db.freeMonthSubs ?? [sub] };
   if (table === 'food_logs') return { data: [] };
   return { data: null };
 };
@@ -39,6 +43,7 @@ beforeEach(() => {
   sendNotification.mockReset().mockResolvedValue(undefined);
   db = {
     reminderProfiles: [], updates: [], digestError: false,
+    freeMonthCandidates: [], freeMonthError: false,
     forms: [], checkinResponses: [], checkinLink: true, checkinError: false, checkinClient: { notify_trainer_comments: true, reminder_timezone: null },
     trainers: [{ id: 'trainer', reminder_timezone: 'UTC', activity_alert_last_sent_date: null }],
     links: [
@@ -151,6 +156,51 @@ describe('check-in due nudges', () => {
     const res = await run();
     expect(res.code).toBe(200);
     expect(res.body.checkins).toEqual({ checked: 0, sent: 0 });
+  });
+});
+
+describe('free-month reminder', () => {
+  beforeEach(() => { db.trainers = []; db.forms = []; });
+
+  it('nudges someone still eligible for their free month, and stamps it so it is not repeated', async () => {
+    db.freeMonthCandidates = [{ id: 'u1' }];
+    const res = await run();
+    expect(res.body.freeMonth).toEqual({ checked: 1, sent: 1 });
+    expect(JSON.parse(sendNotification.mock.calls.at(-1)[1])).toEqual({
+      title: 'Attune',
+      body: "You've got a free month of Pro waiting — unlimited AI scans, full micronutrient tracking, and more, on us for 30 days.",
+      url: '/pricing',
+    });
+    expect(db.updates).toContainEqual(expect.objectContaining({ table: 'profiles', payload: expect.objectContaining({ free_month_reminder_sent_at: expect.any(String) }), filters: { id: 'u1' } }));
+  });
+
+  it('marks as reminded before sending, so a crash cannot cause repeats', async () => {
+    db.freeMonthCandidates = [{ id: 'u1' }];
+    sendNotification.mockRejectedValue(Object.assign(new Error('boom'), { statusCode: 500 }));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await run();
+    expect(db.updates.some(u => u.table === 'profiles' && u.filters.id === 'u1' && u.payload.free_month_reminder_sent_at)).toBe(true);
+  });
+
+  it('skips someone with no push subscription', async () => {
+    db.freeMonthCandidates = [{ id: 'u1' }];
+    db.freeMonthSubs = [];
+    expect((await run()).body.freeMonth).toEqual({ checked: 1, sent: 0 });
+  });
+
+  it('is harmless before the free-month-reminder migration has been run', async () => {
+    db.freeMonthError = true;
+    const res = await run();
+    expect(res.code).toBe(200);
+    expect(res.body.freeMonth).toEqual({ checked: 0, sent: 0 });
+  });
+
+  it('never lets a query failure break the reminders response', async () => {
+    db.freeMonthThrows = true;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await run();
+    expect(res.code).toBe(200);
+    expect(res.body.freeMonth).toEqual({ checked: 0, sent: 0 });
   });
 });
 

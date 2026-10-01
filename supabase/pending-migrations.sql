@@ -633,8 +633,16 @@ grant execute on function public.set_client_micro_targets(uuid, jsonb) to authen
 -- then the profile row already exists, so it became an UPDATE that the
 -- trigger silently reverted: no new signup got their 30 days. The trial now
 -- starts through start_free_trial(), which picks the date itself (the caller
--- can't choose it), only ever sets it once, and only for accounts created
--- since the trial launched that have attached an email.
+-- can't choose it) and only ever sets it once per account.
+--
+-- Originally gated to accounts created since the trial launched (2026-09-18),
+-- back when onboarding called this automatically on every signup — that gate
+-- was what kept the trial from silently back-filling every pre-existing
+-- account the moment it shipped. Trial start is opt-in now (a real "start my
+-- free month" action on the pricing page, not an automatic onboarding step),
+-- so that protection no longer applies: the one-shot `trial_ends_at is null`
+-- check below is what actually prevents re-claiming, regardless of when the
+-- account was created.
 
 -- Same protections as before; the only change is that trial_ends_at may be
 -- set from null by start_free_trial() below, which flags its own transaction.
@@ -687,11 +695,11 @@ begin
   end if;
 
   select created_at, email, email_change into acct from auth.users where id = uid;
-  -- New signups only: created since the trial launched (2026-09-18), and
-  -- has attached real credentials (email is empty until confirmed, so the
-  -- pending address in email_change counts too — the API's `new_email` is
-  -- that same value; there is no such column on auth.users).
-  if acct.created_at is null or acct.created_at < timestamptz '2026-09-18 00:00:00+00' then
+  -- Must have attached real credentials — email is empty until confirmed, so
+  -- the pending address in email_change counts too (the API's `new_email` is
+  -- that same value; there is no such column on auth.users). A guest who
+  -- never signed up for real has nothing to claim.
+  if acct.created_at is null then
     return null;
   end if;
   if coalesce(acct.email, '') = '' and coalesce(acct.email_change, '') = '' then
@@ -708,6 +716,13 @@ $$;
 
 revoke all on function public.start_free_trial() from public, anon;
 grant execute on function public.start_free_trial() to authenticated;
+
+-- One-time "you still have a free month available" push (api/send-
+-- reminders.js) — not a privileged column (same trust level as
+-- reminder_last_sent_date/activity_alert_last_sent_date above: written only
+-- by the cron's service-role connection, and a bogus client write to it at
+-- worst costs someone a reminder they'd have gotten, never grants access).
+alter table public.profiles add column if not exists free_month_reminder_sent_at timestamptz;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════

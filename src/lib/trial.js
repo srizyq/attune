@@ -36,3 +36,12 @@ export function trialJustEnded(profile) {
 export function withTrial(profile) {
   return profile && isTrialActive(profile) ? { ...profile, is_premium: true } : profile;
 }
+
+// Whether this account can still claim its one-time free month — never
+// started one (trial_ends_at has always been null, win or lose, since
+// start_free_trial() only ever sets it once) and isn't already Pro through
+// some other route (a real subscription or a comp grant), which would make
+// "start a free month" a confusing thing to offer.
+export function canClaimFreeMonth(profile) {
+  return !!profile && !profile.trial_ends_at && !profile.is_premium;
+}

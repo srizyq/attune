@@ -1,0 +1,272 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { useProfile } from '../hooks/useProfile';
+import { authedPost } from '../lib/billing';
+import { supabase } from '../lib/supabase';
+import { isTrialActive, trialDaysLeft, canClaimFreeMonth, TRIAL_DAYS } from '../lib/trial';
+import { COACH_TRIAL_DAYS, COACH_PASS_PRICE, eligibleForCoachTrial, coachPassButtonLabel, coachPassHint } from '../lib/coachPass';
+import AppNav from '../components/AppNav';
+import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
+
+const PRO_PRICE = 'A$4.99/month';
+
+const PRO_BENEFITS = [
+  'Unlimited AI photo & menu scans (free: 5 photo + 3 menu scans a month)',
+  'Full micronutrient tracking — vitamins, minerals, and fat breakdown',
+  'Set your own target for every nutrient, not just the default guideline',
+  'Slots — log by exact time instead of fixed meal categories',
+  'Unlimited saved meals (free: 10)',
+  'Longer expenditure trend history',
+];
+
+const COACH_BENEFITS = [
+  'Unlimited clients',
+  'Build and assign custom meal plans',
+  'Set personalised nutrition targets per client',
+  'Custom check-in forms with response tracking',
+  'Direct messaging with your clients',
+  "Track clients' weight, measurements, and progress photos",
+  'Private coaching notes per client',
+  'Weekly adherence reports',
+];
+
+function Benefit({ children }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+      <i className="ti ti-check" style={{ fontSize: 14, color: 'var(--accent)', marginTop: 2, flexShrink: 0 }} />
+      <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{children}</span>
+    </div>
+  );
+}
+
+function PendingConfirmationButton({ onGoToProfile }) {
+  return (
+    <button
+      onClick={onGoToProfile}
+      style={{ width: '100%', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
+      Confirm your email to subscribe
+    </button>
+  );
+}
+
+// The one place that actually talks to Stripe (or claims the one-time free
+// month) for both plans — every "Upgrade to Pro" / "Become a coach" CTA
+// across the app now lands here instead of triggering checkout inline
+// wherever it happens to be, so there's a single tested path instead of
+// one near-duplicate per paywall.
+function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const hasRealSubscription = !!profile?.stripe_pro_subscription_id;
+  const isComp = !!profile?.is_premium && !hasRealSubscription && !isTrialActive(profile);
+
+  async function claimFreeMonth() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { error: rpcError } = await supabase.rpc('start_free_trial');
+      if (rpcError) throw rpcError;
+      await refetchProfile();
+    } catch (err) {
+      setError(err.message || "Couldn't start your free month — try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function checkout() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { url } = await authedPost('/api/create-checkout-session', { plan: 'pro' });
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  async function manageBilling() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { url } = await authedPost('/api/create-portal-session');
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  let status = null;
+  let action = null;
+  if (pendingConfirmation) {
+    action = <PendingConfirmationButton onGoToProfile={onGoToProfile} />;
+  } else if (hasRealSubscription) {
+    status = `Subscribed · ${profile?.pro_status || 'active'}`;
+    action = (
+      <button onClick={manageBilling} disabled={busy} style={btnStyle('secondary', busy)}>
+        {busy ? 'Loading…' : 'Manage billing'}
+      </button>
+    );
+  } else if (isComp) {
+    status = 'Comp access — no billing to manage';
+  } else if (isTrialActive(profile)) {
+    status = `${trialDaysLeft(profile)} day${trialDaysLeft(profile) === 1 ? '' : 's'} left in your free month`;
+    action = (
+      <button onClick={checkout} disabled={busy} style={btnStyle('primary', busy)}>
+        {busy ? 'Loading…' : 'Subscribe now'}
+      </button>
+    );
+  } else if (canClaimFreeMonth(profile)) {
+    action = (
+      <button onClick={claimFreeMonth} disabled={busy} style={btnStyle('primary', busy)}>
+        {busy ? 'Starting…' : 'Start my free month'}
+      </button>
+    );
+  } else {
+    // Already had a free month (it lapsed without converting) — not
+    // eligible again, straight to a real subscription.
+    action = (
+      <button onClick={checkout} disabled={busy} style={btnStyle('primary', busy)}>
+        {busy ? 'Loading…' : `Subscribe — ${PRO_PRICE}`}
+      </button>
+    );
+  }
+
+  return (
+    <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Pro</div>
+      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{PRO_PRICE}</div>
+      {!pendingConfirmation && canClaimFreeMonth(profile) ? (
+        <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {TRIAL_DAYS} days free, no card required</div>
+      ) : (
+        <div style={{ marginBottom: 14 }} />
+      )}
+      <div style={{ flex: 1, marginBottom: 18 }}>
+        {PRO_BENEFITS.map((b) => <Benefit key={b}>{b}</Benefit>)}
+      </div>
+      {status && <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 10, textAlign: 'center' }}>{status}</div>}
+      {action}
+      {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{error}</div>}
+    </Card>
+  );
+}
+
+function CoachCard({ profile, pendingConfirmation, onGoToProfile }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const hasRealSubscription = !!profile?.stripe_subscription_id;
+  const isComp = !!profile?.coach_pass && !hasRealSubscription;
+
+  async function checkout() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { url } = await authedPost('/api/create-checkout-session', { plan: 'coach' });
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  async function manageBilling() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { url } = await authedPost('/api/create-portal-session');
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  let status = null;
+  let action = null;
+  if (pendingConfirmation) {
+    action = <PendingConfirmationButton onGoToProfile={onGoToProfile} />;
+  } else if (hasRealSubscription) {
+    status = coachPassHint(profile);
+    action = (
+      <button onClick={manageBilling} disabled={busy} style={btnStyle('secondary', busy)}>
+        {busy ? 'Loading…' : 'Manage billing'}
+      </button>
+    );
+  } else if (isComp) {
+    status = 'Comp access — no billing to manage';
+  } else {
+    action = (
+      <button onClick={checkout} disabled={busy} style={btnStyle('primary', busy)}>
+        {busy ? 'Loading…' : coachPassButtonLabel(profile)}
+      </button>
+    );
+  }
+
+  return (
+    <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Coach Pass</div>
+      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{COACH_PASS_PRICE}</div>
+      {!pendingConfirmation && eligibleForCoachTrial(profile) ? (
+        <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {COACH_TRIAL_DAYS} days free</div>
+      ) : (
+        <div style={{ marginBottom: 14 }} />
+      )}
+      <div style={{ flex: 1, marginBottom: 18 }}>
+        {COACH_BENEFITS.map((b) => <Benefit key={b}>{b}</Benefit>)}
+      </div>
+      {status && <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 10, textAlign: 'center' }}>{status}</div>}
+      {action}
+      {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{error}</div>}
+    </Card>
+  );
+}
+
+function btnStyle(kind, busy) {
+  const primary = kind === 'primary';
+  return {
+    width: '100%',
+    background: primary ? 'var(--accent)' : 'transparent',
+    border: `1px solid ${primary ? 'var(--accent)' : 'var(--border-default)'}`,
+    borderRadius: 10,
+    padding: '12px',
+    fontSize: 13,
+    fontWeight: 600,
+    color: primary ? 'var(--accent-contrast)' : 'var(--text-secondary)',
+    cursor: busy ? 'default' : 'pointer',
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+  };
+}
+
+export default function Pricing() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { profile, loading, refetch } = useProfile();
+  const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
+  // Same as Profile.jsx's own derivation — RequireAuth's isUnsignedGuest
+  // gate means is_anonymous here can only mean "signed up, hasn't
+  // confirmed their email yet", and new_email is what actually carries
+  // that pending address (see Dashboard.jsx's identical comment).
+  const pendingConfirmation = !!user?.is_anonymous && !!user?.new_email;
+
+  return (
+    <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
+      <AppNav active="pricing" initials={initials} />
+      <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        <PageHeader title="Plans" subtitle="Compare Pro and Coach Pass" onBack={() => navigate('/dashboard')} backLabel="Back to Dashboard" />
+        <div className="page-pad" style={{ maxWidth: 900 }}>
+          {loading ? null : (
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <ProCard profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} refetchProfile={refetch} />
+              <CoachCard profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

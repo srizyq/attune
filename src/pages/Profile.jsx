@@ -58,18 +58,19 @@ function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) 
 // checkout flow (a trial especially — that's the whole point of putting a
 // clear upgrade path in front of someone mid-trial), not "Manage billing"
 // dead-ending on create-portal-session's "No billing account found yet".
-function ProBillingButton({ profile, pendingConfirmation }) {
+function ProBillingButton({ profile, pendingConfirmation, onGoToPricing }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const hasRealSubscription = !!profile?.stripe_pro_subscription_id;
 
-  const handleClick = async () => {
+  // Managing an existing subscription still talks to Stripe directly —
+  // starting a new one goes through Pricing.jsx instead, the one place
+  // that owns checkout for Pro/Coach now.
+  const handleManageBilling = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { url } = hasRealSubscription
-        ? await authedPost('/api/create-portal-session')
-        : await authedPost('/api/create-checkout-session', { plan: 'pro' });
+      const { url } = await authedPost('/api/create-portal-session');
       window.location.href = url;
     } catch (err) {
       setError(err.message);
@@ -100,7 +101,7 @@ function ProBillingButton({ profile, pendingConfirmation }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
       <button
-        onClick={handleClick}
+        onClick={hasRealSubscription ? handleManageBilling : onGoToPricing}
         disabled={loading}
         style={{
           padding: '9px 16px',
@@ -307,7 +308,7 @@ export default function Profile() {
                   : 'Comp access'
               }
             >
-              <ProBillingButton profile={profile} pendingConfirmation={pendingConfirmation} />
+              <ProBillingButton profile={profile} pendingConfirmation={pendingConfirmation} onGoToPricing={() => navigate('/pricing')} />
             </FieldRow>
             <button
               onClick={requestLogout}

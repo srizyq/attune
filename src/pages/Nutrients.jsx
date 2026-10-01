@@ -109,7 +109,7 @@ export default function Nutrients() {
   // The selected day's targets — a rest day can have its own (see lib/dayTargets.js).
   const dayTargets = targetsForDate(profile, selectedDate);
   const isPremium = !!profile?.is_premium;
-  const goUpgrade = () => navigate('/settings');
+  const goUpgrade = () => navigate('/pricing');
   // Pro-only custom targets (Settings → Goals & Targets) — a nutrient
   // missing here just means "use the default guideline", handled inside
   // MicroCard itself.

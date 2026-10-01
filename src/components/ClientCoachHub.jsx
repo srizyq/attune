@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { useMyTrainers, useCoachNote } from '../hooks/useCoach';
-import { authedPost } from '../lib/billing';
 import CoachNote from './CoachNote';
 import CoachChatModal from './CoachChatModal';
 import CoachConsentCard from './CoachConsentCard';
@@ -11,28 +10,14 @@ import CoachCheckinCard from './CoachCheckinCard';
 import MealPlanCard from './MealPlanCard';
 import FormRow from './FormRow';
 import Card from './Card';
-import { coachPassButtonLabel } from '../lib/coachPass';
+import { coachPassButtonLabel, COACH_PASS_PRICE } from '../lib/coachPass';
 import { targetsForDate, dayTargetsActive, describeTrainingDays } from '../lib/dayTargets';
 import { todayLocalDate } from '../lib/patterns';
 
-const COACH_PASS_PRICE = 'A$19.99/month';
-
-function CoachPassUpsell({ profile, pendingConfirmation, onGoToProfile }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleSubscribe = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { url } = await authedPost('/api/create-checkout-session', { plan: 'coach' });
-      window.location.href = url;
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
-
+// Points at the pricing page rather than starting checkout right here —
+// see Pricing.jsx, the one place that actually talks to Stripe for
+// Pro/Coach now, instead of a near-identical checkout button per paywall.
+function CoachPassUpsell({ profile, pendingConfirmation, onGoToProfile, onGoToPricing }) {
   return (
     <div style={{
       background: 'linear-gradient(160deg, var(--accent-bg) 0%, var(--bg-subtle) 65%)',
@@ -46,7 +31,6 @@ function CoachPassUpsell({ profile, pendingConfirmation, onGoToProfile }) {
         <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 440, lineHeight: 1.5 }}>
           Get your own dashboard to manage clients' nutrition, weight, and check-ins in one place — {COACH_PASS_PRICE}.
         </div>
-        {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6 }}>{error}</div>}
       </div>
       {/* Signup is already real at this point (RequireAuth's
           isUnsignedGuest gate is the only thing standing between
@@ -65,12 +49,11 @@ function CoachPassUpsell({ profile, pendingConfirmation, onGoToProfile }) {
         </button>
       ) : (
         <button
-          onClick={handleSubscribe}
-          disabled={loading}
+          onClick={onGoToPricing}
           className="btn-press"
-          style={{ padding: '10px 20px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
+          style={{ padding: '10px 20px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
         >
-          {loading ? 'Loading…' : coachPassButtonLabel(profile)}
+          {coachPassButtonLabel(profile)}
         </button>
       )}
     </div>
@@ -169,7 +152,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
 
   return (
     <div style={{ maxWidth: 900 }}>
-      {showUpsell && <CoachPassUpsell profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />}
+      {showUpsell && <CoachPassUpsell profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} onGoToPricing={() => navigate('/pricing')} />}
 
       {arrivalError && (
         <div role="alert" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: 'var(--danger)', fontSize: 13 }}>

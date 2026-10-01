@@ -144,6 +144,57 @@ async function runCheckinDueNudges(supabase, nowMs = Date.now()) {
   return { checked: forms.length, sent };
 }
 
+// Nudges anyone still eligible for their one-time free month of Pro (never
+// started a trial, not already premium) and not yet reminded about it. Same
+// isolation as the digest/check-in functions above: runs inside this
+// existing cron (project is at Vercel's 12-function cap), any failure here
+// is logged and must never affect the reminder pushes above, and a user is
+// stamped as reminded *before* sending so a crash can only skip the nudge,
+// never repeat it. One-time by design, not a recurring nag — profiles.
+// free_month_reminder_sent_at being non-null is what keeps this from
+// re-selecting the same person on the next run.
+async function runFreeMonthReminder(supabase) {
+  const { data: candidates, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .is('trial_ends_at', null)
+    .eq('is_premium', false)
+    .is('free_month_reminder_sent_at', null);
+  // Before the free-month-reminder migration has been run this column
+  // doesn't exist yet.
+  if (error) return { checked: 0, sent: 0 };
+
+  let sent = 0;
+  for (const profile of candidates || []) {
+    await supabase.from('profiles').update({ free_month_reminder_sent_at: new Date().toISOString() }).eq('id', profile.id);
+
+    const { data: subs } = await supabase
+      .from('push_subscriptions')
+      .select('id, endpoint, subscription')
+      .eq('user_id', profile.id);
+    if (!subs || subs.length === 0) continue;
+
+    const payload = JSON.stringify({
+      title: 'Attune',
+      body: "You've got a free month of Pro waiting — unlimited AI scans, full micronutrient tracking, and more, on us for 30 days.",
+      url: '/pricing',
+    });
+    for (const sub of subs) {
+      try {
+        await webpush.sendNotification(sub.subscription, payload);
+        sent++;
+      } catch (err) {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+        } else {
+          console.error('Free-month reminder push failed:', sub.endpoint, err.message);
+        }
+      }
+    }
+  }
+  return { checked: (candidates || []).length, sent };
+}
+
 export default async function handler(req, res) {
   // This is an action endpoint (it sends real pushes and mutates
   // notification-sent state), not content — a shared cache serving a
@@ -256,5 +307,12 @@ export default async function handler(req, res) {
     console.error('Check-in nudges failed:', err);
   }
 
-  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest, checkins });
+  let freeMonth = { checked: 0, sent: 0 };
+  try {
+    freeMonth = await runFreeMonthReminder(supabase);
+  } catch (err) {
+    console.error('Free-month reminder failed:', err);
+  }
+
+  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest, checkins, freeMonth });
 }

@@ -12,7 +12,6 @@ import Slider from '../components/Slider';
 import EditableNumber from '../components/EditableNumber';
 import MacroPreviewBar from '../components/MacroPreviewBar';
 import { Card, SectionLabel, FieldRow, Select, Segmented } from '../components/settings/primitives';
-import { authedPost } from '../lib/billing';
 import PageHeader from '../components/PageHeader';
 
 // Shows the adaptive-target estimate, or an honest explanation of what's
@@ -62,24 +61,11 @@ function AdaptiveTargetPanel({ loading, result, goal, onRefresh }) {
   );
 }
 
-// Starts checkout right from the paywall instead of sending the tap back
-// to Settings just to find the same button again on the Profile page.
-function UpgradeProButton({ pendingConfirmation, onGoToProfile }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleClick = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { url } = await authedPost('/api/create-checkout-session', { plan: 'pro' });
-      window.location.href = url;
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
-
+// Points at the pricing page rather than starting checkout right here —
+// see Pricing.jsx, which is now the one place that actually talks to
+// Stripe for Pro/Coach, so there's a single tested checkout path instead
+// of one per paywall.
+function UpgradeProButton({ pendingConfirmation, onGoToProfile, onGoToPricing }) {
   // Signup is already real at this point (RequireAuth's isUnsignedGuest
   // gate is the only thing standing between "browsing" and "has an
   // account" now) but unconfirmed — a subscription started now would
@@ -98,16 +84,12 @@ function UpgradeProButton({ pendingConfirmation, onGoToProfile }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <button
-        onClick={handleClick}
-        disabled={loading}
-        style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: loading ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-      >
-        {loading ? 'Loading…' : 'Upgrade to Pro'}
-      </button>
-      {error && <span style={{ color: 'var(--danger)', fontSize: 11 }}>{error}</span>}
-    </div>
+    <button
+      onClick={onGoToPricing}
+      style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
+      Upgrade to Pro
+    </button>
   );
 }
 
@@ -501,7 +483,7 @@ export default function SettingsGoals() {
                   <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 340 }}>
                     Set your own target for every nutrient on the Nutrients page instead of the default guideline — Pro only.
                   </p>
-                  <UpgradeProButton pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />
+                  <UpgradeProButton pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} onGoToPricing={() => navigate('/pricing')} />
                 </div>
               </div>
             ) : (

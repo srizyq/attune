@@ -166,23 +166,9 @@ export default function Step4() {
         : updateError.message);
       return;
     }
-    // Starts the free trial clock the moment real credentials attach —
-    // not at the signInAnonymously() above, which happens before anyone's
-    // committed to an actual account (see trial_ends_at's comment in
-    // schema.sql). Goes through start_free_trial() rather than writing
-    // trial_ends_at directly: the profile row already exists by now, and a
-    // direct client write to that column is (deliberately) reverted by
-    // protect_privileged_profile_columns. Non-fatal like the name upsert
-    // above: a trial that fails to start here is a lost perk, not a blocked
-    // signup, so it doesn't hold up navigating to email confirmation.
-    try {
-      await withRetry(async () => {
-        const { error: trialError } = await supabase.rpc('start_free_trial');
-        if (trialError) throw trialError;
-      }, 2);
-    } catch (err) {
-      console.error('Failed to start free trial:', err);
-    }
+    // The free month of Pro is opt-in now (claimed from the pricing page,
+    // not granted automatically here) — see start_free_trial()'s schema.sql
+    // comment for why signup used to start it and no longer does.
     // Confirming ownership of the email is a separate step from here on
     // (see onboarding/Step5) rather than a small inline message on this
     // same screen — this was the confusing part: dropping straight into

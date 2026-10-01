@@ -2663,7 +2663,7 @@ export default function FoodSearch() {
           isPremium={isPremium}
           showSlots={showSlots}
           savedMealsCount={savedMeals.rows.length}
-          onUpgrade={() => navigate('/settings')}
+          onUpgrade={() => navigate('/pricing')}
           onClose={() => setBuilderReviewOpen(false)}
           onRemove={(i) => setBuilderItems(prev => prev.filter((_, idx) => idx !== i))}
           onSave={handleSaveBuilderMeal}

@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ThemeProvider } from '../context/ThemeProvider';
 import CoachConsentGate from './CoachConsentGate';
+import TrialEndedPaywall from './TrialEndedPaywall';
 
 export default function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -44,6 +45,7 @@ export default function RequireAuth({ children }) {
     <ThemeProvider>
       {children}
       <CoachConsentGate />
+      <TrialEndedPaywall />
     </ThemeProvider>
   );
 }

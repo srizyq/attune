@@ -17,6 +17,7 @@ import Recipes from "./pages/Recipes";
 import Settings from "./pages/Settings";
 import SettingsGoals from "./pages/SettingsGoals";
 import Profile from "./pages/Profile";
+import Pricing from "./pages/Pricing";
 import Nutrients from "./pages/Nutrients";
 import Expenditure from "./pages/Expenditure";
 import DailyLog from "./pages/DailyLog";
@@ -86,6 +87,7 @@ function AnimatedRoutes() {
         <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
         <Route path="/join/:code" element={<JoinCoach />} />
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+        <Route path="/pricing" element={<RequireAuth><Pricing /></RequireAuth>} />
         <Route path="/prototypes/dashboard-redesign" element={<DashboardRedesignHarness />} />
         <Route path="/prototypes/settings-redesign" element={<SettingsRedesignHarness />} />
         <Route path="*" element={<Navigate to="/" replace />} />

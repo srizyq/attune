@@ -428,7 +428,7 @@ export default function Expenditure() {
               value={rangeId}
               onChange={id => {
                 const r = RANGES.find(x => x.id === id);
-                if (r.pro && !isPremium) navigate('/settings');
+                if (r.pro && !isPremium) navigate('/pricing');
                 else setRangeId(id);
               }}
               fill
