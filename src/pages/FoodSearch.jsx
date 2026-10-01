@@ -1202,7 +1202,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           </div>
           {dailyTarget.calories > 0 && (
             <div style={{ marginBottom: 12 }}>
-              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={scaled.cal} itemName={result.name} />
+              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={scaled.cal} />
             </div>
           )}
           <AddControls

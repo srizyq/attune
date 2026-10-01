@@ -450,7 +450,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
 
           {dailyTarget.calories > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={totals.cal} itemName={result.name} />
+              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={totals.cal} />
             </div>
           )}
 
