@@ -16,7 +16,8 @@ import StatBadge from '../components/StatBadge';
 const DEFAULT_TARGETS = Object.fromEntries(MICRO_NUTRIENTS.map(m => [m.key, m.defaultTarget]));
 
 function MacroRow({ label, value, unit, target, color }) {
-  const pct = target ? Math.min((value / target) * 100, 100) : null;
+  const pct = target ? (value / target) * 100 : null;
+  const barPct = pct !== null ? Math.min(pct, 100) : null;
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
@@ -28,9 +29,9 @@ function MacroRow({ label, value, unit, target, color }) {
           {pct !== null && <StatBadge color={color} style={{ padding: '2px 7px', fontSize: 11 }}>{Math.round(pct)}%</StatBadge>}
         </div>
       </div>
-      {pct !== null && (
+      {barPct !== null && (
         <div style={{ height: 6, background: 'var(--border-default)', borderRadius: 99 }}>
-          <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.5s ease' }} />
+          <div style={{ height: '100%', width: `${barPct}%`, background: color, borderRadius: 99, transition: 'width 0.5s ease' }} />
         </div>
       )}
     </div>

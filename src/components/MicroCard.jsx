@@ -16,7 +16,8 @@ import StatBadge from './StatBadge';
 // "favour over saturated fat") show text instead of a bar.
 export default function MicroCard({ icon, label, value, unit, guideline, target, defaultTarget, color, locked, onUpgrade }) {
   const effectiveTarget = target || defaultTarget;
-  const pct = effectiveTarget ? Math.min((value / effectiveTarget) * 100, 100) : null;
+  const pct = effectiveTarget ? (value / effectiveTarget) * 100 : null;
+  const barPct = pct !== null ? Math.min(pct, 100) : null;
   return (
     <Card
       onClick={locked ? onUpgrade : undefined}
@@ -40,7 +41,7 @@ export default function MicroCard({ icon, label, value, unit, guideline, target,
       {pct !== null ? (
         <>
           <div style={{ height: 5, background: 'var(--border-default)', borderRadius: 99, marginTop: 8, filter: locked ? 'blur(4px)' : 'none' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.5s ease' }} />
+            <div style={{ height: '100%', width: `${barPct}%`, background: color, borderRadius: 99, transition: 'width 0.5s ease' }} />
           </div>
           {/* A custom target already reads as a target in the value line
               above ("12g / 25g") — the default-guideline case has no such

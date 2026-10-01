@@ -502,7 +502,8 @@ function SwipePager({ pages }) {
 }
 
 function MacroCell({ label, value, target, color, tone, onClick }) {
-  const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
+  const pct = target > 0 ? Math.round((value / target) * 100) : 0;
+  const barPct = Math.min(100, pct);
   return (
     <Card style={{ padding: '12px 10px', marginBottom: 0, cursor: 'pointer' }} onClick={onClick}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 8, gap: 4 }}>
@@ -513,7 +514,7 @@ function MacroCell({ label, value, target, color, tone, onClick }) {
         {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>/{target}g</span>
       </div>
       <div style={{ height: 4, borderRadius: 2, background: 'var(--border-default)', overflow: 'hidden' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 2 }} />
+        <div style={{ width: `${barPct}%`, height: '100%', background: color, borderRadius: 2 }} />
       </div>
     </Card>
   );
