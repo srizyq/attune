@@ -24,9 +24,13 @@ describe('Nutrients — extended sections', () => {
     const meals = { ...empty, lunch: [{ name: 'Salmon', thiamin: 0.2, caffeine: 0 }, { name: 'Tea', thiamin: 0.3, caffeine: 40 }, { name: 'Mystery', thiamin: null, caffeine: null }] };
     setup({ meals, logs: [row(), row(), row()] });
     expect(screen.getAllByText(/Based on 2 of 3 foods logged/).length).toBe(3);
-    const card = screen.getByText('Thiamin (B1)').closest('div').parentElement;
+    // MicroCard wraps its header row (icon+label+% badge) and its value row
+    // as siblings inside the shared Card component — closest('div') only
+    // reaches the header row, so one more parentElement is needed to land
+    // on Card's own root, which contains both.
+    const card = screen.getByText('Thiamin (B1)').closest('div').parentElement.parentElement;
     expect(within(card).getByText('0.5')).toBeInTheDocument();
-    const caf = screen.getByText('Caffeine').closest('div').parentElement;
+    const caf = screen.getByText('Caffeine').closest('div').parentElement.parentElement;
     expect(within(caf).getByText('40')).toBeInTheDocument();
   });
 

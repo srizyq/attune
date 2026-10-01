@@ -25,7 +25,10 @@ describe('DiaryTab micronutrients', () => {
     expect(screen.getByText('B vitamins & vitamin E')).toBeInTheDocument();
     expect(screen.getByText('More minerals')).toBeInTheDocument();
     expect(screen.getByText('Omega fats, caffeine & alcohol')).toBeInTheDocument();
-    const thiamin = screen.getByText('Thiamin (B1)').closest('div').parentElement;
+    // See Nutrients.test.jsx's identical comment: MicroCard's header row
+    // and value row are siblings under Card's root, one level above what
+    // closest('div') alone reaches.
+    const thiamin = screen.getByText('Thiamin (B1)').closest('div').parentElement.parentElement;
     expect(within(thiamin).getByText(/0\.14/)).toBeInTheDocument(); // not 0.1
     expect(screen.getAllByText(/Based on 1 of 1 foods logged/).length).toBe(3); // once per extended group
   });
