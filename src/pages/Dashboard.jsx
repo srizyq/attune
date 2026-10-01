@@ -601,40 +601,6 @@ function WorkoutRow({ workout: w, type, onDelete }) {
   );
 }
 
-// ─── Mood Check-in ────────────────────────────────────────────────────────────
-function MoodCheckin({ mood, setMood, energy, setEnergy }) {
-  const moods = [
-    { id: 'great', emoji: '😄', label: 'Great' },
-    { id: 'good',  emoji: '🙂', label: 'Good' },
-    { id: 'okay',  emoji: '😐', label: 'Okay' },
-    { id: 'low',   emoji: '😔', label: 'Low' },
-    { id: 'tired', emoji: '😴', label: 'Tired' },
-  ];
-  return (
-    <div>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-        {moods.map(m => (
-          <button key={m.id} onClick={() => setMood(m.id)} title={m.label} style={{ flex: 1, padding: '8px 4px', borderRadius: '8px', border: `1px solid ${mood === m.id ? 'var(--border-active)' : 'var(--border-default)'}`, background: mood === m.id ? 'var(--accent-bg)' : 'transparent', cursor: 'pointer', fontSize: '20px', transition: 'background 0.15s, border-color 0.15s' }}>
-            {m.emoji}
-          </button>
-        ))}
-      </div>
-      <div>
-        <div style={{ color: 'var(--text-hint)', fontSize: '11px', marginBottom: '6px' }}>Energy level</div>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
-            <button key={n} onClick={() => setEnergy(n)} style={{ flex: 1, height: '28px', padding: '11px 0', backgroundClip: 'content-box', borderRadius: '99px', border: 'none', background: n <= energy ? 'var(--accent)' : 'var(--border-default)', cursor: 'pointer', transition: 'background 0.15s' }} aria-label={`Energy ${n} of 10`} />
-          ))}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-          <span style={{ color: 'var(--text-hint)', fontSize: '10px' }}>low</span>
-          <span style={{ color: 'var(--text-hint)', fontSize: '10px' }}>high</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Meal Log ─────────────────────────────────────────────────────────────────
 function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, onCopyYesterday, copyingYesterday }) {
   const [open, setOpen] = useState({});
@@ -974,8 +940,6 @@ export default function Dashboard() {
   const mood = checkin?.mood ?? null;
   const energy = checkin?.energy ?? 6;
   const glasses = checkin?.water_glasses ?? 0;
-  const setMood = (m) => saveCheckin({ mood: m, energy });
-  const setEnergy = (e) => saveCheckin({ mood, energy: e });
   const setGlasses = (n) => saveCheckin({ mood, energy, water_glasses: n });
 
   const allItems = Object.values(meals).flat();
@@ -1157,14 +1121,6 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Check in: mood — water moved into the hero card above. */}
-          <div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 500, marginBottom: '10px' }}>Check in</div>
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: '16px', padding: '20px' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '14px' }}>How are you feeling?</span>
-              <MoodCheckin mood={mood} setMood={setMood} energy={energy} setEnergy={setEnergy} />
-            </div>
-          </div>
         </div>
       </div>
 
