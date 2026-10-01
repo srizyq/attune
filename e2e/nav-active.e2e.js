@@ -12,9 +12,9 @@ import { SCREENS } from './screenList.js';
 // -content span (the filled pill), not the outer tap-target button.
 //
 // Mobile trims to 5 slots (dashboard/log/+/coach/settings — see AppNav.jsx's
-// own comment), so food-search/recipes and insights are intentionally
+// own comment), so food-search/recipes are intentionally
 // tab-less there; every other screen should highlight exactly one.
-const NO_MOBILE_TAB = new Set(['food-search', 'recipes', 'insights']);
+const NO_MOBILE_TAB = new Set(['food-search', 'recipes']);
 
 for (const screen of SCREENS) {
   test(`nav highlights ${screen.name}`, async ({ page, context }, testInfo) => {

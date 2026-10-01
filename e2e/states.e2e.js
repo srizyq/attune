@@ -19,7 +19,7 @@ const STATES = [
   {
     name: 'free-tier',
     backend: { profile: { is_premium: false, pro_status: null, stripe_pro_subscription_id: null, stripe_customer_id: null, daily_log_view: null } },
-    screens: ['dashboard', 'daily-log', 'food-search', 'settings', 'profile', 'insights', 'nutrients'],
+    screens: ['dashboard', 'daily-log', 'food-search', 'settings', 'profile', 'nutrients'],
   },
   {
     name: 'trial-ending',

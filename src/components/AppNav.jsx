@@ -6,14 +6,11 @@ import QuickActionSheet from './QuickActionSheet';
 // Desktop sidebar keeps the fuller set of primary pages. Mobile trims to
 // the 4 highest-frequency destinations plus a center "+" for everything
 // else — Meal Plans was a real nav item here until it was removed as a
-// feature entirely (static/demo page, never backed by real data); AI
-// Insights loses its own mobile slot in favour of a Dashboard shortcut
-// instead, since it's a lower-frequency destination than logging itself.
+// feature entirely (static/demo page, never backed by real data).
 const DESKTOP_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard', path: '/dashboard' },
   { id: 'food', label: 'Food search', icon: 'ti-search', path: '/food' },
   { id: 'coach', label: 'Coach', icon: 'ti-users', path: '/coach' },
-  { id: 'insights', label: 'AI insights', icon: 'ti-sparkles', path: '/insights' },
 ];
 
 const MOBILE_ITEMS = [

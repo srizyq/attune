@@ -9,7 +9,6 @@ export const SCREENS = [
   { name: 'recipes', path: '/recipes' },
   { name: 'nutrients', path: '/nutrients' },
   { name: 'expenditure', path: '/expenditure' },
-  { name: 'insights', path: '/insights' },
   { name: 'settings', path: '/settings' },
   { name: 'settings-goals', path: '/settings/goals' },
   { name: 'coach', path: '/coach' },

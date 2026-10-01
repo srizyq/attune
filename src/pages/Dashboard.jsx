@@ -10,7 +10,7 @@ import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
 import { useWorkoutLogs, useWorkoutLogsRange } from '../hooks/useWorkoutLogs';
-import { todayLocalDate, dateNDaysAgo, dateRange, generateInsights, computeStreak } from '../lib/patterns';
+import { todayLocalDate, dateNDaysAgo, dateRange, computeStreak } from '../lib/patterns';
 import { goalMacroSplits, buildTargets } from '../lib/calorieTargets';
 import { toKg, fromKg } from '../lib/adaptiveTDEE';
 import { weightInKg, getWorkoutType } from '../lib/workoutMath';
@@ -755,24 +755,6 @@ function ShortcutRow({ navigate, date }) {
   );
 }
 
-// ─── Insights & Data ────────────────────────────────────────────────────────
-function ChangeRow({ label, value, trend }) {
-  const up = trend === 'up';
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid var(--border-default)' }}>
-      <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{value}</span>
-        {trend && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text-muted)' }}>
-            <i className={`ti ti-trending-${up ? 'up' : 'down'}`} style={{ fontSize: 12 }} />
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── Streak strip — replaces the old flame + number pill ("🔥 0 day
 // streak") and the duplicate "Logging streak" row that used to live in
 // Insights & Data. A week of dots (Sunday-start, matching LogCalendar's
@@ -971,23 +953,6 @@ export default function Dashboard() {
     })();
   }, [profile, computeAdaptive, saveProfile]);
 
-  // Separate from the effect above — this one is purely for the "Avg.
-  // expenditure" row below and runs regardless of calorie_mode, so
-  // Calculated/Custom-mode users still see their real estimated
-  // maintenance if they've logged enough to support one. Gated by the
-  // same honesty rules as everywhere else the adaptive engine appears —
-  // omitted entirely (not faked) when there isn't enough data yet.
-  const [expenditureEstimate, setExpenditureEstimate] = useState(null);
-  const expenditureFetchedRef = useRef(false);
-  useEffect(() => {
-    if (!profile || expenditureFetchedRef.current) return;
-    expenditureFetchedRef.current = true;
-    (async () => {
-      const result = await computeAdaptive(profile.goal || 'maintain');
-      if (result.ready) setExpenditureEstimate(result.estimate.tdee);
-    })();
-  }, [profile, computeAdaptive]);
-
   const name = profile?.name || 'there';
   const { note: coachNote, dismiss: dismissCoachNote } = useCoachNote('general');
   const [coachChatOpen, setCoachChatOpen] = useState(false);
@@ -1002,7 +967,6 @@ export default function Dashboard() {
   // pending account — made a friend's real signup look like it had
   // silently failed.
   const pendingConfirmation = !!user?.is_anonymous && !!user?.new_email;
-  const insight = generateInsights(dailyData, 1)[0];
   const streak = computeStreak(dailyData);
 
   const initials = (name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
@@ -1191,37 +1155,6 @@ export default function Dashboard() {
                 copyingYesterday={copyingYesterday}
               />
             )}
-          </div>
-
-          {/* Insights & Data */}
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 16, padding: 20, marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>INSIGHTS &amp; DATA</span>
-              <span onClick={() => navigate('/insights')} style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
-                View patterns <i className="ti ti-chevron-right" style={{ fontSize: 12 }} />
-              </span>
-            </div>
-            <div
-              onClick={() => navigate('/insights')}
-              style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}
-            >
-              <i className="ti ti-sparkles" style={{ color: 'var(--accent)', fontSize: 15, marginTop: 2 }} />
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                {insight?.body || 'Start logging your meals to get personalised tips based on your patterns.'}
-              </div>
-            </div>
-            <div>
-              {weightTrendKg !== null && (
-                <ChangeRow
-                  label="Weight trend (7-day)"
-                  value={`${weightTrendKg >= 0 ? '+' : ''}${round1(weightUnit === 'lb' ? weightTrendKg / 0.453592 : weightTrendKg)} ${weightUnit}`}
-                  trend={weightTrendKg >= 0 ? 'up' : 'down'}
-                />
-              )}
-              {expenditureEstimate != null && (
-                <ChangeRow label="Estimated maintenance" value={`${expenditureEstimate.toLocaleString()} kcal`} />
-              )}
-            </div>
           </div>
 
           {/* Check in: mood — water moved into the hero card above. */}

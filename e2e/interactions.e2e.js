@@ -27,7 +27,6 @@ const SCENARIOS = [
   { name: 'food-search-typing', path: '/food', act: async (p) => { await p.getByPlaceholder(/Search any food/).fill('chicken breast with a very long search phrase that keeps going'); } },
   { name: 'expenditure-log-weight', path: '/expenditure', act: (p) => p.getByRole('button', { name: /Log weight/ }).first().click() },
   { name: 'profile-logout-confirm', path: '/profile', backend: { session: { is_anonymous: true, email: '', new_email: 'sam@example.test' } }, act: (p) => p.getByRole('button', { name: 'Log out' }).click() },
-  { name: 'insights-mood-picked', path: '/insights', act: async (p) => { await p.getByText('Great', { exact: true }).click(); await p.getByRole('button', { name: '7', exact: true }).click(); } },
   { name: 'food-created-tab', path: '/food', act: (p) => p.getByRole('button', { name: 'Created' }).click() },
   {
     name: 'settings-goals-type-calories',
