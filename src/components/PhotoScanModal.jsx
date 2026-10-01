@@ -1,13 +1,80 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { timeStringToDate, formatTime12h } from '../lib/mealTime';
 import { useClosingTransition } from '../hooks/useClosingTransition';
+import { useVoiceTranscription } from '../hooks/useVoiceTranscription';
+import { useProfile } from '../hooks/useProfile';
+import { useFoodLogs } from '../hooks/useFoodLogs';
+import { targetsForDate } from '../lib/dayTargets';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
 import DragSheet from './DragSheet';
 import MacroBreakdown from './MacroBreakdown';
+import DayBudgetImpact from './DayBudgetImpact';
+import TargetIntervalPicker from './TargetIntervalPicker';
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
+
+const round1 = n => Math.round(n * 10) / 10;
+
+// The API returns each ingredient's own AI-estimated weight (baseGrams) and
+// the macros that go with it (baseCal etc.) — kept separate from the live,
+// user-editable `grams` so editing one ingredient's weight scales just that
+// ingredient's own macros proportionally, without losing the AI's original
+// estimate to re-derive from.
+function ingredientsFromResponse(list) {
+  return (list || []).map(ing => ({
+    name: ing.name,
+    baseGrams: Number(ing.grams) || 0,
+    grams: Number(ing.grams) || 0,
+    baseCal: Number(ing.cal) || 0,
+    baseProtein: Number(ing.protein) || 0,
+    baseCarbs: Number(ing.carbs) || 0,
+    baseFat: Number(ing.fat) || 0,
+    baseFibre: Number(ing.fibre) || 0,
+    baseSodium: Number(ing.sodium) || 0,
+    baseSugar: Number(ing.sugar) || 0,
+  }));
+}
+
+function scaleIngredient(ing) {
+  const ratio = ing.baseGrams > 0 ? ing.grams / ing.baseGrams : 1;
+  return {
+    name: ing.name,
+    grams: ing.grams,
+    cal: Math.round(ing.baseCal * ratio),
+    protein: round1(ing.baseProtein * ratio),
+    carbs: round1(ing.baseCarbs * ratio),
+    fat: round1(ing.baseFat * ratio),
+    fibre: round1(ing.baseFibre * ratio),
+    sodium: Math.round(ing.baseSodium * ratio),
+    sugar: round1(ing.baseSugar * ratio),
+  };
+}
+
+function IngredientRow({ ingredient, onGramsChange, last }) {
+  const scaled = scaleIngredient(ingredient);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: last ? 'none' : '1px solid var(--border-default)' }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ingredient.name}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{scaled.cal} kcal · {scaled.protein}g P · {scaled.carbs}g C · {scaled.fat}g F</div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+        <input
+          type="number"
+          min="0"
+          inputMode="decimal"
+          value={ingredient.grams}
+          onChange={e => onGramsChange(e.target.value)}
+          aria-label={`${ingredient.name} weight in grams`}
+          style={{ width: 54, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 6, padding: '6px', color: 'var(--text-primary)', fontSize: 13, textAlign: 'right', outline: 'none', fontFamily: 'inherit' }}
+        />
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>g</span>
+      </div>
+    </div>
+  );
+}
 
 // Downscale + re-encode before upload: keeps the request well under
 // serverless body-size limits, and a smaller image also means fewer
@@ -47,6 +114,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   const [preview, setPreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+  const [ingredients, setIngredients] = useState([]);
   const [error, setError] = useState(null);
   const [limitReached, setLimitReached] = useState(false);
   const [meal, setMeal] = useState(defaultMeal);
@@ -64,11 +132,44 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   const [showMicros, setShowMicros] = useState(false);
   const { closing, close } = useClosingTransition(onClose);
 
+  // Speaking a correction instead of typing it — same record/upload
+  // plumbing as Food Search's voice search, appending to (rather than
+  // replacing) anything already typed.
+  const { recording: voiceRecording, transcribing: voiceTranscribing, error: voiceError, start: startVoice, stop: stopVoice } = useVoiceTranscription((text) => {
+    setComment(prev => (prev.trim() ? `${prev.trim()} ${text}` : text));
+  });
+
+  // Read-only here — today's logs for the day-budget-impact preview, not
+  // wired to onAddFood (that already goes through the parent's own
+  // useFoodLogs via onAddFood/addFood). Mirrors BarcodeScanner's own
+  // DayBudgetImpact wiring in FoodSearch.jsx.
+  const { profile } = useProfile();
+  const { logs: todaysLogs } = useFoodLogs(selectedDate);
+  const dailyTarget = targetsForDate(profile, selectedDate);
+  const consumedToday = todaysLogs.reduce((s, l) => s + (Number(l.calories) || 0), 0);
+
+  const scaledIngredients = useMemo(() => ingredients.map(scaleIngredient), [ingredients]);
+  const totals = useMemo(() => scaledIngredients.reduce((t, i) => ({
+    cal: t.cal + i.cal,
+    protein: t.protein + i.protein,
+    carbs: t.carbs + i.carbs,
+    fat: t.fat + i.fat,
+    fibre: t.fibre + i.fibre,
+    sodium: t.sodium + i.sodium,
+    sugar: t.sugar + i.sugar,
+  }), { cal: 0, protein: 0, carbs: 0, fat: 0, fibre: 0, sodium: 0, sugar: 0 }), [scaledIngredients]);
+
+  function updateIngredientGrams(index, raw) {
+    const grams = raw === '' ? 0 : Math.max(0, Number(raw) || 0);
+    setIngredients(prev => prev.map((ing, i) => (i === index ? { ...ing, grams } : ing)));
+  }
+
   async function handleFile(file) {
     if (!file) return;
     setError(null);
     setLimitReached(false);
     setResult(null);
+    setIngredients([]);
     setComment('');
     setCorrectionError(null);
     setAnalyzing(true);
@@ -91,6 +192,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
         return;
       }
       setResult(data);
+      setIngredients(ingredientsFromResponse(data.ingredients));
     } catch (err) {
       console.error(err);
       setError("Couldn't analyze this photo. Check your connection and try again.");
@@ -125,6 +227,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
         return;
       }
       setResult(data);
+      setIngredients(ingredientsFromResponse(data.ingredients));
       setComment('');
       setHasCorrected(true);
     } catch (err) {
@@ -141,7 +244,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   // estimating from what the food looks like. Keeps the AI-guessed name,
   // since a nutrition panel rarely carries a clean marketing name.
   async function handleReadLabel() {
-    if (!preview) return;
+    if (!preview || !result) return;
     setReadingLabel(true);
     setLabelError(null);
     try {
@@ -160,13 +263,26 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
         setLabelError(data.error || "Couldn't read the label. Try a closer, well-lit photo of it.");
         return;
       }
-      setResult(prev => ({
-        ...prev,
-        portion: data.serving || prev.portion,
-        cal: data.cal, protein: data.protein, carbs: data.carbs, fat: data.fat,
+      setResult({
+        ...result,
+        portion: data.serving || result.portion,
         confidence: 'high',
         labelVisible: false,
-      }));
+      });
+      // A nutrition label describes one packaged product, not a composite
+      // meal — always a single ingredient, matching what the label states.
+      setIngredients([{
+        name: result.name,
+        baseGrams: Number(data.servingGrams) || 100,
+        grams: Number(data.servingGrams) || 100,
+        baseCal: Number(data.cal) || 0,
+        baseProtein: Number(data.protein) || 0,
+        baseCarbs: Number(data.carbs) || 0,
+        baseFat: Number(data.fat) || 0,
+        baseFibre: Number(data.fibre) || 0,
+        baseSodium: Number(data.sodium) || 0,
+        baseSugar: Number(data.sugar) || 0,
+      }]);
     } catch (err) {
       console.error(err);
       setLabelError("Couldn't read the label. Check your connection and try again.");
@@ -178,6 +294,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   function reset() {
     setPreview(null);
     setResult(null);
+    setIngredients([]);
     setError(null);
     setLimitReached(false);
     setComment('');
@@ -187,28 +304,30 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   }
 
   async function handleAdd() {
-    if (!result) return;
+    if (!result || scaledIngredients.length === 0) return;
     setAdding(true);
     try {
-      const food = {
-        name: result.name,
-        cal: result.cal,
-        protein: result.protein,
-        carbs: result.carbs,
-        fat: result.fat,
-        fibre: result.fibre || 0,
-        sodium: result.sodium || 0,
-        sugar: result.sugar || 0,
-        source: 'photo',
-        // Deliberately no servingGrams — an AI portion estimate isn't a
-        // real measured weight, so downstream editing correctly falls
-        // back to relative-only scaling instead of pretending precision.
-        // servingLabel is just the AI's own portion text (e.g. "1 medium
-        // bowl (~350g)") for display — Recent/Frequent show it instead of
-        // a generic "Logged before" once it's on the row.
-        servingLabel: result.portion || null,
-      };
-      await onAddFood(food, showSlots ? null : meal, showSlots ? timeStringToDate(time, new Date(selectedDate + 'T00:00:00')) : null);
+      // Separate entries — chicken, rice, sauce each land as their own row
+      // in today's log, editable independently like any other food.
+      for (const ing of scaledIngredients) {
+        const food = {
+          name: ing.name,
+          cal: ing.cal,
+          protein: ing.protein,
+          carbs: ing.carbs,
+          fat: ing.fat,
+          fibre: ing.fibre || 0,
+          sodium: ing.sodium || 0,
+          sugar: ing.sugar || 0,
+          source: 'photo',
+          // Unlike the old single-blob estimate, this weight passed
+          // through the user's own edit (or was left at the AI's
+          // estimate on purpose) — safe to carry as a real servingGrams.
+          servingGrams: ing.grams ? Math.round(ing.grams) : null,
+          servingLabel: ing.grams ? `${Math.round(ing.grams)}g` : null,
+        };
+        await onAddFood(food, showSlots ? null : meal, showSlots ? timeStringToDate(time, new Date(selectedDate + 'T00:00:00')) : null);
+      }
       onClose();
     } catch (err) {
       console.error(err);
@@ -293,7 +412,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
             <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 2 }}>{result.name}</div>
             {result.portion && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{result.portion}</div>}
-            <MacroBreakdown values={{ cal: result.cal, protein: result.protein, carbs: result.carbs, fat: result.fat }} />
+            <MacroBreakdown values={totals} />
             <button
               onClick={() => setShowMicros(s => !s)}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', marginTop: 12, padding: '6px 0 0' }}
@@ -303,15 +422,37 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
             </button>
             {showMicros && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-default)' }}>
-                <MicroStat value={result.fibre} unit="g" label="Fibre" />
-                <MicroStat value={result.sodium} unit="mg" label="Sodium" />
-                <MicroStat value={result.sugar} unit="g" label="Sugar" />
+                <MicroStat value={totals.fibre} unit="g" label="Fibre" />
+                <MicroStat value={totals.sodium} unit="mg" label="Sodium" />
+                <MicroStat value={totals.sugar} unit="g" label="Sugar" />
               </div>
             )}
           </div>
+
+          {/* Each detected component gets its own editable weight — editing
+              it rescales just that component's own macros (see
+              scaleIngredient), and the totals/MacroBreakdown above move
+              with it live. */}
+          {ingredients.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Ingredients</div>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '0 14px' }}>
+                {ingredients.map((ing, i) => (
+                  <IngredientRow key={i} ingredient={ing} onGramsChange={(v) => updateIngredientGrams(i, v)} last={i === ingredients.length - 1} />
+                ))}
+              </div>
+            </div>
+          )}
+
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
             This is a visual estimate, not verified nutrition data — review before adding, and adjust later if it's off.
           </p>
+
+          {dailyTarget.calories > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={totals.cal} itemName={result.name} />
+            </div>
+          )}
 
           {/* The photo itself can carry a real nutrition panel (a
               packaged product shot from the front) — offering to
@@ -347,7 +488,20 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
               170g rice, not 2 eggs and less rice"), and a cramped input
               made that awkward to type and re-read before sending. */}
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, display: 'block' }}>Not quite right? Tell it what's wrong</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)' }}>Not quite right? Tell it what's wrong</label>
+              {voiceTranscribing && <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid var(--text-hint)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />}
+              {!voiceTranscribing && voiceRecording && (
+                <button onClick={stopVoice} title="Stop recording" style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: 0, display: 'flex', animation: 'pulse 1.2s ease-in-out infinite' }}>
+                  <i className="ti ti-player-stop-filled" />
+                </button>
+              )}
+              {!voiceTranscribing && !voiceRecording && (
+                <button onClick={startVoice} className="hit-slop" title="Speak your correction" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: 0, display: 'flex' }}>
+                  <i className="ti ti-microphone" />
+                </button>
+              )}
+            </div>
             <textarea
               value={comment}
               onChange={e => setComment(e.target.value)}
@@ -356,6 +510,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
               rows={3}
               style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 8 }}
             />
+            {voiceError && <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--danger)' }}>{voiceError}</div>}
             <button
               onClick={handleCorrect}
               disabled={!comment.trim() || correcting}
@@ -376,25 +531,21 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            {showSlots ? (
-              <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '7px 10px', color: 'var(--text-secondary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
-            ) : (
-              <select value={meal} onChange={e => setMeal(e.target.value)} style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '7px 10px', color: 'var(--text-secondary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
-                {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            )}
-            <button onClick={reset} style={{ background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Retake</button>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'stretch' }}>
+            <TargetIntervalPicker showSlots={showSlots} meal={meal} setMeal={setMeal} time={time} setTime={setTime} meals={MEALS} />
+            <button onClick={reset} style={{ background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}>Retake</button>
           </div>
           <button
             onClick={handleAdd}
             disabled={adding}
             style={{ width: '100%', background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            {adding ? 'Adding…' : showSlots ? `+ Add at ${formatTime12h(time)}` : `+ Add to ${meal}`}
+            {adding
+              ? 'Adding…'
+              : `+ Add ${scaledIngredients.length > 1 ? `${scaledIngredients.length} items` : scaledIngredients[0]?.name || 'item'} ${showSlots ? `at ${formatTime12h(time)}` : `to ${meal}`}`}
           </button>
           {onCreateCustom && (
-            <button onClick={() => onCreateCustom(result)} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <button onClick={() => onCreateCustom({ name: result.name, portion: result.portion, cal: totals.cal, protein: totals.protein, carbs: totals.carbs, fat: totals.fat })} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {hasCorrected
                 // Once you've corrected it, saving it as a custom food
                 // means this exact dish never needs an AI guess again —

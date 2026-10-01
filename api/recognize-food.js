@@ -22,16 +22,18 @@ const client = new Anthropic();
 
 const FREE_MONTHLY_SCAN_LIMIT = 5;
 
-const PROMPT = `You're looking at a photo of food. Identify what's in it and estimate its nutrition.
+const PROMPT = `You're looking at a photo of food. Identify what's in it, break it down into its main components, and estimate each component's nutrition separately.
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"name": "short food name", "portion": "estimated portion, e.g. '1 medium bowl (~350g)'", "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number, "confidence": "low" | "medium" | "high", "labelVisible": boolean}
+{"name": "short overall dish name", "portion": "estimated total portion, e.g. '1 bowl (~430g total)'", "confidence": "low" | "medium" | "high", "labelVisible": boolean, "ingredients": [{"name": "component name, e.g. 'Chicken curry' or 'Rice'", "grams": number, "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number}]}
 
 If the photo doesn't clearly show food, reply with exactly: {"error": "No food detected in this photo."}
 
-Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal. fibre and sugar are grams, sodium is milligrams — same visual-estimate confidence as the main macros, not a separate, more hedged guess. This is a best-effort visual estimate, not a lab measurement — use your best judgement on typical portion sizes and preparation (e.g. oil/butter used in cooking, dressing on a salad).
+Break composite meals into their main visually-distinct components (a curry-and-rice plate is "Chicken curry" + "Rice", not one blob — but don't split further into individual spices, oil, or seasoning). A single simple item (a piece of fruit, a protein bar, a glass of milk) is just one entry in the array. Most photos should produce 1-4 ingredients — don't over-split.
 
-Portion size is the single biggest source of error in a visual estimate. If the photo shows a real-world reference object at a known typical size — a hand, standard cutlery, a coin, a credit card, a standard dinner plate (~27cm) or bowl — use it to calibrate the scale of the food instead of guessing portion size from the food alone. Say so implicitly through a tighter, more confident portion estimate; you don't need to name the reference object in the output.
+grams is your best estimate of that component's own weight, independent of the others — the user can edit it afterward, so it needs to be a real, standalone weight for that component, not just a share of a total you picked first. Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal. fibre and sugar are grams, sodium is milligrams — same visual-estimate confidence as the main macros, not a separate, more hedged guess. This is a best-effort visual estimate, not a lab measurement — use your best judgement on typical portion sizes and preparation (e.g. oil/butter used in cooking, dressing on a salad).
+
+Portion size is the single biggest source of error in a visual estimate. If the photo shows a real-world reference object at a known typical size — a hand, standard cutlery, a coin, a credit card, a standard dinner plate (~27cm) or bowl — use it to calibrate the scale of the food instead of guessing portion size from the food alone. Say so implicitly through tighter, more confident gram estimates; you don't need to name the reference object in the output.
 
 labelVisible: true only if an actual printed nutrition facts / information panel (with real numbers on it) is legibly visible somewhere in the photo — not just packaging or a brand name. This lets the app offer to re-read the label directly instead of estimating.
 
@@ -46,15 +48,15 @@ Two things that commonly go wrong on packaged/branded products specifically:
 // correcting the food identity and correcting the portion size both flow
 // through the same field, since the model can tell which the user means.
 function correctionPrompt(previousResult, comment) {
-  return `You're looking at a photo of food. A first-pass estimate was made, and the user has reviewed it and left a correction.
+  return `You're looking at a photo of food. A first-pass estimate was made, broken into components, and the user has reviewed it and left a correction.
 
 Previous estimate: ${JSON.stringify(previousResult)}
 User's correction: "${comment}"
 
-Re-identify the food and re-estimate its nutrition, taking the user's correction as ground truth (e.g. if they say it's actually a different food, or a different portion size, trust that over the photo's first impression).
+Re-identify the food and its components, re-estimating nutrition, taking the user's correction as ground truth (e.g. if they say it's actually a different food, a different portion size, or has an extra or missing component, trust that over the photo's first impression).
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"name": "short food name", "portion": "estimated portion, e.g. '1 medium bowl (~350g)'", "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number, "confidence": "low" | "medium" | "high", "labelVisible": boolean}
+{"name": "short overall dish name", "portion": "estimated total portion, e.g. '1 bowl (~430g total)'", "confidence": "low" | "medium" | "high", "labelVisible": boolean, "ingredients": [{"name": "component name", "grams": number, "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number}]}
 
 labelVisible: true only if an actual printed nutrition facts panel (with real numbers) is legibly visible in the photo.
 
@@ -145,7 +147,10 @@ export default async function handler(req, res) {
   try {
     const response = await client.messages.create({
       model: 'claude-sonnet-5',
-      max_tokens: 512,
+      // Was 512 for a single combined estimate — a per-ingredient array
+      // (up to ~4 components, each with its own full macro set) needs more
+      // room to avoid truncating mid-JSON on a busier plate.
+      max_tokens: 768,
       // Adaptive thinking is on by default and its budget comes out of
       // max_tokens — on a harder-to-read photo, thinking alone can consume
       // the whole budget and leave zero tokens for the actual answer
@@ -206,6 +211,12 @@ export default async function handler(req, res) {
 
     if (parsed.error) {
       res.status(200).json({ error: parsed.error });
+      return;
+    }
+
+    if (!Array.isArray(parsed.ingredients) || parsed.ingredients.length === 0) {
+      console.error('Food recognition response missing ingredients array:', { ...diagnostics, text: textBlock.text });
+      res.status(502).json({ error: "Couldn't understand the response for this photo. Try again." });
       return;
     }
 

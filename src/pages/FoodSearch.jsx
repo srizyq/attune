@@ -26,6 +26,7 @@ import MenuScanModal from '../components/MenuScanModal';
 import MarqueeText from '../components/MarqueeText';
 import Toast from '../components/Toast';
 import { useClosingTransition } from '../hooks/useClosingTransition';
+import { useVoiceTranscription } from '../hooks/useVoiceTranscription';
 import { getCategoryStyle } from '../lib/foodCategories';
 import PageHeader from '../components/PageHeader';
 import DateStepper from '../components/DateStepper';
@@ -1873,75 +1874,14 @@ export default function FoodSearch() {
 
   const inputRef = useRef(null);
 
-  // Voice search — records with MediaRecorder, sends the audio to
-  // api/transcribe-voice.js (OpenAI Whisper) and drops the result straight
-  // into the search box. recorderRef holds the in-progress MediaRecorder
-  // across the start/stop call pair; recording/transcribing are the two
-  // separate UI states (actively listening vs. waiting on the network).
-  const [recording, setRecording] = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
-  const [voiceError, setVoiceError] = useState(null);
-  const recorderRef = useRef(null);
+  // Voice search — drops the transcribed text straight into the search
+  // box. See useVoiceTranscription for the actual record/upload plumbing,
+  // shared with Photo Scan's correction-box mic.
   const voiceAutoStartRef = useRef(false);
-
-  function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(",")[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  async function transcribeAndSearch(blob) {
-    setTranscribing(true);
-    try {
-      const base64 = await blobToBase64(blob);
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("/api/transcribe-voice", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-        body: JSON.stringify({ audio: base64, mimeType: blob.type }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || "Couldn't transcribe that.");
-      if (data.text?.trim()) {
-        setQuery(data.text.trim());
-        setExpandedId(null);
-      } else {
-        setVoiceError("Didn't catch that — try again.");
-      }
-    } catch (err) {
-      console.error("Voice search error:", err);
-      setVoiceError(err.message || "Couldn't understand that — try again or type instead.");
-    } finally {
-      setTranscribing(false);
-    }
-  }
-
-  async function startVoiceSearch() {
-    setVoiceError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-      recorder.onstop = () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
-        transcribeAndSearch(blob);
-      };
-      recorder.start();
-      recorderRef.current = recorder;
-      setRecording(true);
-    } catch (err) {
-      console.error("Microphone access error:", err);
-      setVoiceError("Couldn't access your microphone — check your browser's permission settings.");
-    }
-  }
+  const { recording, transcribing, error: voiceError, start: startVoiceSearch, stop: stopVoiceSearch } = useVoiceTranscription((text) => {
+    setQuery(text);
+    setExpandedId(null);
+  });
 
   // QuickAddBar's mic button links here with { openVoice: true } instead of
   // opening its own recorder UI, since this page already owns the whole
@@ -1953,11 +1893,6 @@ export default function FoodSearch() {
       startVoiceSearch();
     }
   }, [location.state]);
-
-  function stopVoiceSearch() {
-    recorderRef.current?.stop();
-    setRecording(false);
-  }
 
   // Foods the user has created themselves — shown alongside everything
   // else, matched by name when searching.

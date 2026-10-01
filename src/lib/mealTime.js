@@ -40,6 +40,29 @@ export function formatTime12h(hhmm) {
   return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
 }
 
+const DAY_PART_WINDOWS = [
+  { label: 'Night', before: 5 },
+  { label: 'Morning', before: 11 },
+  { label: 'Midday', before: 14 },
+  { label: 'Afternoon', before: 17 },
+  { label: 'Evening', before: 21 },
+];
+
+// A coarse, human day-part bucket for a "HH:MM" clock time — used to label
+// a time-based slot as e.g. "Midday (12:45)" instead of just the bare time.
+function dayPartLabel(hhmm) {
+  const h = Number((hhmm || '').split(':')[0]);
+  if (Number.isNaN(h)) return '';
+  for (const w of DAY_PART_WINDOWS) if (h < w.before) return w.label;
+  return 'Night';
+}
+
+export function formatTargetInterval(hhmm) {
+  const label = dayPartLabel(hhmm);
+  const time = formatTime12h(hhmm);
+  return label ? `${label} (${time})` : time;
+}
+
 export function formatTimeFromDate(d) {
   return formatTime12h(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
 }
