@@ -598,7 +598,10 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   // useFoodLogs via onAddFood/addFood).
   const { logs: todaysLogs } = useFoodLogs(selectedDate);
   const dailyTarget = targetsForDate(profile, selectedDate);
-  const consumedToday = todaysLogs.reduce((s, l) => s + (l.cal || 0), 0);
+  // useFoodLogs' `logs` is the raw snake_case row shape (see Nutrients.jsx's
+  // own totals reducer) — `.calories`, not the mapped `.cal` that `items`
+  // would carry. Reading `.cal` here silently summed to 0 every time.
+  const consumedToday = todaysLogs.reduce((s, l) => s + (Number(l.calories) || 0), 0);
   const favourites = useFavouriteFoods();
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
