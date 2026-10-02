@@ -223,7 +223,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setForgotPassword(true)}
-              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '13px', cursor: 'pointer', padding: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '13px', cursor: 'pointer', padding: '4px 0', minHeight: 24, fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               Forgot password?
             </button>
