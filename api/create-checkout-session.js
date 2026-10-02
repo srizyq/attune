@@ -31,6 +31,17 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, serviceKey);
   const stripe = new Stripe(stripeKey);
 
+  // app_settings.payments_frozen — a single switch flipped by hand in the
+  // Supabase SQL editor (see schema.sql's "Payments freeze switch" block) to
+  // stop any new Pro/Coach Pass billing from starting. Checked before the
+  // auth lookup below since there's nothing else worth doing once this is
+  // on.
+  const { data: settings } = await supabase.from('app_settings').select('payments_frozen').maybeSingle();
+  if (settings?.payments_frozen) {
+    res.status(503).json({ error: 'Payments are paused right now — check back soon.' });
+    return;
+  }
+
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) {

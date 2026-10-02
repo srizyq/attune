@@ -22,6 +22,7 @@
 --   12. Restaurant chains
 --   13. Custom-named daily log slots
 --   14. Retire the Hourly daily-log view
+--   15. Payments freeze switch
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block).
@@ -2049,3 +2050,85 @@ update public.profiles set daily_log_view = 'slots' where daily_log_view = 'hour
 alter table public.profiles drop constraint if exists profiles_daily_log_view_check;
 alter table public.profiles add constraint profiles_daily_log_view_check
   check (daily_log_view in ('meals', 'slots'));
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Payments freeze switch (schema update — run against an existing DB; safe to
+-- re-run). Tests: supabase/tests/payments-frozen.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- A single on/off switch, flipped by hand in the SQL editor (`update
+-- app_settings set payments_frozen = true`), that stops anyone from starting
+-- new Pro/Coach Pass billing or claiming the free trial — api/create-
+-- checkout-session.js and start_free_trial() below both check it before
+-- doing anything. It does NOT touch billing already running on an existing
+-- subscription — pausing those needs scripts/pause-all-billing.mjs, since
+-- that's a live Stripe call this table alone can't make.
+create table if not exists public.app_settings (
+  id boolean primary key default true,
+  payments_frozen boolean not null default false,
+  constraint app_settings_singleton check (id)
+);
+insert into public.app_settings (id) values (true) on conflict (id) do nothing;
+
+alter table public.app_settings enable row level security;
+-- Readable by anyone, signed in or not — Pricing.jsx needs this before it can
+-- decide whether to show any Subscribe/free-trial button at all. No insert/
+-- update/delete policy for anon or authenticated, deliberately: with RLS on
+-- and no matching policy every client write is denied, so only the SQL
+-- editor's own superuser connection (which doesn't go through RLS) can flip
+-- the switch.
+drop policy if exists "app_settings: select all" on public.app_settings;
+create policy "app_settings: select all" on public.app_settings
+  for select using (true);
+
+-- Re-defined (not just altered) so the one new check sits right at the top,
+-- next to the "Not signed in" guard it belongs with — same reasoning as
+-- protect_privileged_profile_columns being re-defined earlier in this file
+-- rather than patched around.
+create or replace function public.start_free_trial()
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  existing timestamptz;
+  acct record;
+  ends timestamptz;
+begin
+  if uid is null then
+    raise exception 'Not signed in';
+  end if;
+
+  if (select payments_frozen from public.app_settings limit 1) then
+    raise exception 'Free trials are paused right now — check back soon.';
+  end if;
+
+  select trial_ends_at into existing from public.profiles where id = uid;
+  if existing is not null then
+    return existing;
+  end if;
+
+  select created_at, email, email_change into acct from auth.users where id = uid;
+  -- Must have attached real credentials — email is empty until confirmed, so
+  -- the pending address in email_change counts too (the API's `new_email` is
+  -- that same value; there is no such column on auth.users). A guest who
+  -- never signed up for real has nothing to claim.
+  if acct.created_at is null then
+    return null;
+  end if;
+  if coalesce(acct.email, '') = '' and coalesce(acct.email_change, '') = '' then
+    return null;
+  end if;
+
+  ends := now() + interval '30 days';
+  perform set_config('app.allow_trial_start', 'on', true);
+  update public.profiles set trial_ends_at = ends where id = uid and trial_ends_at is null;
+  perform set_config('app.allow_trial_start', 'off', true);
+  return ends;
+end;
+$$;
+
+revoke all on function public.start_free_trial() from public, anon;
+grant execute on function public.start_free_trial() to authenticated;
