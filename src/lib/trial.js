@@ -11,6 +11,8 @@
 // Pro in the UI but still hits the server's real free-scan limit. No
 // framework/browser-specific syntax here (no import.meta, no JSX) since
 // Vercel's serverless functions bundle this file directly from api/.
+import { hasProAccess } from './proAccess';
+
 export const TRIAL_DAYS = 30;
 
 export function isTrialActive(profile) {
@@ -30,7 +32,7 @@ export function trialDaysLeft(profile) {
 // account (not for an account that never had a trial at all, and not for
 // one whose trial ended because they're now a real paying subscriber).
 export function trialJustEnded(profile) {
-  return !!profile?.trial_ends_at && !profile?.is_premium && new Date(profile.trial_ends_at) <= new Date();
+  return !!profile?.trial_ends_at && !hasProAccess(profile) && new Date(profile.trial_ends_at) <= new Date();
 }
 
 export function withTrial(profile) {
@@ -40,8 +42,9 @@ export function withTrial(profile) {
 // Whether this account can still claim its one-time free month — never
 // started one (trial_ends_at has always been null, win or lose, since
 // start_free_trial() only ever sets it once) and isn't already Pro through
-// some other route (a real subscription or a comp grant), which would make
-// "start a free month" a confusing thing to offer.
+// some other route (a real subscription, a comp grant, or a Coach Pass,
+// which already includes Pro — see proAccess.js), which would make "start
+// a free month" a confusing, wasted thing to offer.
 export function canClaimFreeMonth(profile) {
-  return !!profile && !profile.trial_ends_at && !profile.is_premium;
+  return !!profile && !profile.trial_ends_at && !hasProAccess(profile);
 }

@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, emailRedirectTo } from '../lib/supabase';
 import { useProfile } from '../hooks/useProfile';
+import { hasProAccess } from '../lib/proAccess';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { useCheckins } from '../hooks/useCheckins';
 import { useHistory } from '../hooks/useHistory';
@@ -814,7 +815,7 @@ export default function Dashboard() {
   const viewedDate = location.state?.date || today;
   const isViewingToday = viewedDate === today;
   const { profile, save: saveProfile } = useProfile();
-  const isPremium = !!profile?.is_premium;
+  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   // Same default/derivation as DailyLog.jsx — reading the same profile
   // field is what keeps a choice made on either page in sync with the
   // other, rather than each page tracking it separately.

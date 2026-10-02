@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
+import { hasProAccess } from '../lib/proAccess';
 import { useSavedMeals } from '../hooks/useSavedMeals';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { scaleFood, sumFoodItems, formatAmountUnit } from '../lib/foodMath';
@@ -138,7 +139,7 @@ export default function Recipes() {
   const today = todayLocalDate();
   const { addFood, refetch: refetchLogs } = useFoodLogs(today);
 
-  const isPremium = !!profile?.is_premium;
+  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const dailyLogView = profile?.daily_log_view || 'meals';
   const logByTime = isPremium && dailyLogView === 'slots';
   const defaultMeal = useMemo(() => {

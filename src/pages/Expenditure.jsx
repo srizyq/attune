@@ -6,6 +6,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useProfile } from '../hooks/useProfile';
+import { hasProAccess } from '../lib/proAccess';
 import { useHistory } from '../hooks/useHistory';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { useTheme } from '../hooks/useTheme';
@@ -179,7 +180,7 @@ export default function Expenditure() {
   const { profile } = useProfile();
   const { theme } = useTheme();
   const { note: weightCoachNote, dismiss: dismissWeightCoachNote } = useCoachNote('weight');
-  const isPremium = !!profile?.is_premium;
+  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const [rangeId, setRangeId] = useState('1m');
   const [weightRange, setWeightRange] = useState('30d');
 

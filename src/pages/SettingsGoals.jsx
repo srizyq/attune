@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
+import { hasProAccess } from '../lib/proAccess';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
 import { goalMacroSplits, calcCalories, buildTargets, splitFromGrams } from '../lib/calorieTargets';
 import { MICRO_NUTRIENTS } from '../lib/microNutrients';
@@ -468,7 +469,7 @@ export default function SettingsGoals() {
               <SectionLabel>Micronutrient targets</SectionLabel>
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>PRO</span>
             </div>
-            {!profile?.is_premium ? (
+            {!hasProAccess(profile) ? (
               <div style={{ position: 'relative' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>
                   {MICRO_NUTRIENTS.slice(0, 6).map(n => (

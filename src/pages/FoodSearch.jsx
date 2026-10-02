@@ -8,6 +8,7 @@ import { useFavouriteFoods } from '../hooks/useFavouriteFoods';
 import { useFrequentFoods } from '../hooks/useFrequentFoods';
 import { useLastLoggedAmounts } from '../hooks/useLastLoggedAmounts';
 import { useProfile } from '../hooks/useProfile';
+import { hasProAccess } from '../lib/proAccess';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
 import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems } from '../lib/db';
@@ -1656,7 +1657,7 @@ export default function FoodSearch() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useProfile();
-  const isPremium = !!profile?.is_premium;
+  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   // Whether logging a food should ask for a time (Pro's custom slots) or a
   // meal (everyone else) — matches DailyLog.jsx's own showSlots derivation

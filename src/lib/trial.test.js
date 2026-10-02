@@ -36,6 +36,9 @@ describe('trialJustEnded', () => {
   it('is false for an account that never had a trial', () => {
     expect(trialJustEnded({ trial_ends_at: null, is_premium: false })).toBe(false);
   });
+  it('is false for a lapsed trial if they still have Pro via a Coach Pass', () => {
+    expect(trialJustEnded({ trial_ends_at: past(1), is_premium: false, coach_pass: true })).toBe(false);
+  });
 });
 
 describe('canClaimFreeMonth', () => {
@@ -51,5 +54,8 @@ describe('canClaimFreeMonth', () => {
   });
   it('is false with no profile', () => {
     expect(canClaimFreeMonth(null)).toBe(false);
+  });
+  it('is false for a Coach Pass holder — they already have Pro, so a trial of it would be wasted', () => {
+    expect(canClaimFreeMonth({ trial_ends_at: null, is_premium: false, coach_pass: true })).toBe(false);
   });
 });

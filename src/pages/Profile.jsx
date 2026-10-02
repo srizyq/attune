@@ -7,6 +7,7 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { useResendConfirmation } from '../hooks/useResendConfirmation';
 import { authedPost } from '../lib/billing';
 import { isTrialActive, trialDaysLeft } from '../lib/trial';
+import { hasProAccess } from '../lib/proAccess';
 import AppNav from '../components/AppNav';
 import { Card, SectionLabel, FieldRow } from '../components/settings/primitives';
 import PageHeader from '../components/PageHeader';
@@ -96,6 +97,15 @@ function ProBillingButton({ profile, pendingConfirmation, onGoToPricing }) {
   // the function comment above).
   if (profile?.is_premium && !hasRealSubscription && !isTrialActive(profile)) {
     return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Comp access — no billing to manage</span>;
+  }
+
+  // Coach Pass includes Pro (see lib/proAccess.js) — someone with an active
+  // Coach Pass and no Pro subscription/comp/trial of their own already has
+  // every Pro feature for free. Pointing them at checkout (or dangling a
+  // free-trial offer canClaimFreeMonth would otherwise still show) would be
+  // offering to sell them something they already have.
+  if (!profile?.is_premium && profile?.coach_pass) {
+    return <span style={{ color: 'var(--text-hint)', fontSize: 12, textAlign: 'right', maxWidth: 160 }}>Included with your Coach Pass — no billing to manage</span>;
   }
 
   return (
@@ -302,10 +312,11 @@ export default function Profile() {
             <FieldRow
               label="Pro"
               hint={
-                !profile?.is_premium ? 'Unlimited AI scans, custom micronutrient targets, and more'
+                !hasProAccess(profile) ? 'Unlimited AI scans, custom micronutrient targets, and more'
                   : profile?.stripe_pro_subscription_id ? `Active subscription · ${profile?.pro_status || 'active'}`
                   : isTrialActive(profile) ? `Free trial — ${trialDaysLeft(profile)} day${trialDaysLeft(profile) === 1 ? '' : 's'} left`
-                  : 'Comp access'
+                  : profile?.is_premium ? 'Comp access'
+                  : 'Included with your Coach Pass'
               }
             >
               <ProBillingButton profile={profile} pendingConfirmation={pendingConfirmation} onGoToPricing={() => navigate('/pricing')} />

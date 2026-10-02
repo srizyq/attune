@@ -16,13 +16,18 @@ import Card from '../components/Card';
 // room a full page gives it, matching how Nutrients/Profile/Expenditure
 // already work as their own screens instead of a modal.
 //
-// Account (session/subscription/theme) isn't a row here — it lives under
-// the Profile card above instead, so session management sits next to the
-// identity it belongs to rather than being a sibling of Goals/Notifications.
+// Account (session/subscription management for a plan you already have)
+// isn't a row here — it lives under the Profile card above instead, so
+// session management sits next to the identity it belongs to. Plans &
+// Billing is different: it's for *comparing/choosing* a plan, which needs
+// to be reachable even if you aren't already staring at a paywall — hence
+// its own row (a plain route, not a modal/page like the others), rather
+// than only being reachable from an upsell prompt buried elsewhere.
 const SECTIONS = [
   { id: 'goals',   icon: 'ti-target',       label: 'Goals & Targets', kind: 'page' },
   { id: 'notifs',  icon: 'ti-bell',         label: 'Notifications',   kind: 'modal' },
   { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'modal' },
+  { id: 'plans',   icon: 'ti-credit-card',  label: 'Plans & Billing', kind: 'route', path: '/pricing' },
   { id: 'privacy', icon: 'ti-shield-lock',  label: 'Privacy',         kind: 'modal' },
 ];
 
@@ -46,6 +51,7 @@ const SEARCH_INDEX = [
   { section: 'coach', label: 'Coach Pass', keywords: 'coach pass subscribe billing trainer' },
   { section: 'coach', label: 'Coach Mode', keywords: 'coach mode client dashboard' },
   { section: 'coach', label: 'My trainer', keywords: 'trainer invite code connect' },
+  { section: 'plans', label: 'Compare Pro & Coach Pass', keywords: 'pricing plans pro coach pass subscribe billing upgrade price compare' },
   { section: 'profile', label: 'Account status', keywords: 'account email guest sign in' },
   { section: 'profile', label: 'Pro features', keywords: 'pro premium upgrade' },
   { section: 'profile', label: 'Theme', keywords: 'theme dark light appearance' },
@@ -76,6 +82,7 @@ export default function Settings() {
     const section = SECTIONS.find(s => s.id === id);
     if (!section) return;
     if (section.kind === 'page') navigate('/settings/goals');
+    else if (section.kind === 'route') navigate(section.path);
     else setOpenModal(id);
   }
 
@@ -123,6 +130,10 @@ export default function Settings() {
     goals: profile?.calorie_target ? `${profile.calorie_target.toLocaleString()} kcal · ${goalLabels[profile.goal] || 'Maintain'}` : 'Not set up yet',
     notifs: profile?.reminder_enabled ? `Daily reminder at ${profile.reminder_time || '19:00'}` : 'All reminders off',
     coach: profile?.coach_pass ? 'Coach Pass active' : 'Not active',
+    plans: profile?.coach_pass && profile?.is_premium ? 'Pro · Coach Pass'
+      : profile?.coach_pass ? 'Coach Pass (includes Pro)'
+      : profile?.is_premium ? 'Pro'
+      : 'Compare plans',
     profile: pendingConfirmation ? 'Pending email confirmation' : (user?.email || 'Signed in'),
     privacy: 'Data export, Privacy Policy, Terms of Service',
   };

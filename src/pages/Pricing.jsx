@@ -22,13 +22,15 @@ const PRO_BENEFITS = [
 ];
 
 const COACH_BENEFITS = [
+  'Includes full Pro access for your own personal tracking — no separate subscription',
   'Unlimited clients',
   'Build and assign custom meal plans',
-  'Set personalised nutrition targets per client',
+  'Set personalised nutrition targets per client, including training vs rest days',
   'Custom check-in forms with response tracking',
   'Direct messaging with your clients',
   "Track clients' weight, measurements, and progress photos",
   'Private coaching notes per client',
+  'Co-coach a client with a teammate (they have to agree first)',
   'Weekly adherence reports',
 ];
 
@@ -101,6 +103,14 @@ function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }
     }
   }
 
+  // Coach Pass already includes Pro (see lib/proAccess.js) — someone with an
+  // active Coach Pass and no Pro subscription/comp/trial of their own
+  // already has every Pro feature for free (canClaimFreeMonth already knows
+  // this and won't offer a trial here either). Checking it ahead of the
+  // trial/free-month branches means a coach never sees a paid-sounding CTA
+  // for something they already get for free.
+  const grantedByCoachPass = !!profile?.coach_pass && !hasRealSubscription && !isComp;
+
   let status = null;
   let action = null;
   if (pendingConfirmation) {
@@ -114,6 +124,8 @@ function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }
     );
   } else if (isComp) {
     status = 'Comp access — no billing to manage';
+  } else if (grantedByCoachPass) {
+    status = 'Included with your Coach Pass — no separate subscription needed';
   } else if (isTrialActive(profile)) {
     status = `${trialDaysLeft(profile)} day${trialDaysLeft(profile) === 1 ? '' : 's'} left in your free month`;
     action = (

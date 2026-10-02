@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
+import { hasProAccess } from '../lib/proAccess';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
 import AppNav from '../components/AppNav';
@@ -108,7 +109,7 @@ export default function Nutrients() {
 
   // The selected day's targets — a rest day can have its own (see lib/dayTargets.js).
   const dayTargets = targetsForDate(profile, selectedDate);
-  const isPremium = !!profile?.is_premium;
+  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const goUpgrade = () => navigate('/pricing');
   // Pro-only custom targets (Settings → Goals & Targets) — a nutrient
   // missing here just means "use the default guideline", handled inside

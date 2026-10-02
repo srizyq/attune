@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
+import { hasProAccess } from '../lib/proAccess';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
 import { slotFromTime } from '../lib/daySlots';
@@ -29,7 +30,7 @@ export default function DailyLog() {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, save: saveProfile } = useProfile();
-  const isPremium = !!profile?.is_premium;
+  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const dailyLogView = profile?.daily_log_view || 'meals';
   const showSlots = isPremium && dailyLogView === 'slots';
   const [viewSaveError, setViewSaveError] = useState(null);
