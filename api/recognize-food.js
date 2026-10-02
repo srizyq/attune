@@ -19,7 +19,16 @@ import { withCompGrants } from '../src/lib/compGrants.js';
 import { withTrial } from '../src/lib/trial.js';
 import { withCoachProAccess } from '../src/lib/proAccess.js';
 
-const client = new Anthropic();
+// Constructed lazily, after the config check below, rather than at module
+// load — the SDK throws immediately if ANTHROPIC_API_KEY is missing, which
+// at module scope would crash the whole function (every request gets a
+// bare 500 with no JSON body) instead of the clean "not fully configured"
+// response the config check is supposed to give.
+let client;
+function getClient() {
+  if (!client) client = new Anthropic();
+  return client;
+}
 
 const FREE_MONTHLY_SCAN_LIMIT = 5;
 
@@ -82,7 +91,7 @@ export default async function handler(req, res) {
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) {
+  if (!supabaseUrl || !serviceKey || !process.env.ANTHROPIC_API_KEY) {
     res.status(500).json({ error: 'Photo recognition is not fully configured' });
     return;
   }
@@ -148,7 +157,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await client.messages.create({
+    const response = await getClient().messages.create({
       model: 'claude-sonnet-5',
       // Was 512 for a single combined estimate — a per-ingredient array
       // (up to ~4 components, each with its own full macro set) needs more
