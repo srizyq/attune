@@ -11,7 +11,7 @@
 // Pro in the UI but still hits the server's real free-scan limit. No
 // framework/browser-specific syntax here (no import.meta, no JSX) since
 // Vercel's serverless functions bundle this file directly from api/.
-import { hasProAccess } from './proAccess';
+import { hasProAccess } from './proAccess.js';
 
 export const TRIAL_DAYS = 30;
 
