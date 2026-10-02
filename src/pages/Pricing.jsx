@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
@@ -91,7 +91,7 @@ function PendingConfirmationButton({ onGoToProfile }) {
 // across the app now lands here instead of triggering checkout inline
 // wherever it happens to be, so there's a single tested path instead of
 // one near-duplicate per paywall.
-function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }) {
+function ProCard({ profile, pendingConfirmation, paymentsFrozen, onGoToProfile, refetchProfile }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [confirming, setConfirming] = useState(false);
@@ -159,6 +159,10 @@ function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }
     status = 'Comp access — no billing to manage';
   } else if (grantedByCoachPass) {
     status = 'Included with your Coach Pass — no separate subscription needed';
+  } else if (paymentsFrozen) {
+    // Covers both the paid Subscribe button and the free-trial claim below —
+    // neither should be offered while app_settings.payments_frozen is on.
+    status = 'Payments are temporarily paused — check back soon.';
   } else if (isTrialActive(profile)) {
     status = `${trialDaysLeft(profile)} day${trialDaysLeft(profile) === 1 ? '' : 's'} left in your free month`;
     action = (
@@ -187,7 +191,7 @@ function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }
       <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Pro</div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{PRO_PRICE}</div>
-        {!pendingConfirmation && canClaimFreeMonth(profile) ? (
+        {!pendingConfirmation && !paymentsFrozen && canClaimFreeMonth(profile) ? (
           <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {TRIAL_DAYS} days free, no card required</div>
         ) : (
           <div style={{ marginBottom: 14 }} />
@@ -215,7 +219,7 @@ function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }
   );
 }
 
-function CoachCard({ profile, pendingConfirmation, onGoToProfile }) {
+function CoachCard({ profile, pendingConfirmation, paymentsFrozen, onGoToProfile }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [confirming, setConfirming] = useState(false);
@@ -259,6 +263,8 @@ function CoachCard({ profile, pendingConfirmation, onGoToProfile }) {
     );
   } else if (isComp) {
     status = 'Comp access — no billing to manage';
+  } else if (paymentsFrozen) {
+    status = 'Payments are temporarily paused — check back soon.';
   } else {
     action = (
       <button onClick={() => setConfirming(true)} disabled={busy} style={btnStyle('primary', busy)}>
@@ -267,7 +273,7 @@ function CoachCard({ profile, pendingConfirmation, onGoToProfile }) {
     );
   }
 
-  const trialEligible = eligibleForCoachTrial(profile);
+  const trialEligible = !paymentsFrozen && eligibleForCoachTrial(profile);
 
   return (
     <>
@@ -322,6 +328,16 @@ export default function Pricing() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile, loading, refetch } = useProfile();
+  // null until loaded — kept apart from `loading` below so a frozen check
+  // that's slow to answer can't let the old unfrozen cards flash up first.
+  const [paymentsFrozen, setPaymentsFrozen] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.from('app_settings').select('payments_frozen').maybeSingle()
+      .then(({ data }) => { if (!cancelled) setPaymentsFrozen(!!data?.payments_frozen); })
+      .catch(() => { if (!cancelled) setPaymentsFrozen(false); });
+    return () => { cancelled = true; };
+  }, []);
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   // Same as Profile.jsx's own derivation — RequireAuth's isUnsignedGuest
   // gate means is_anonymous here can only mean "signed up, hasn't
@@ -335,10 +351,10 @@ export default function Pricing() {
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         <PageHeader title="Plans" subtitle="Compare Pro and Coach Pass" onBack={() => navigate('/dashboard')} backLabel="Back to Dashboard" />
         <div className="page-pad" style={{ maxWidth: 900 }}>
-          {loading ? null : (
+          {loading || paymentsFrozen === null ? null : (
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <ProCard profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} refetchProfile={refetch} />
-              <CoachCard profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} />
+              <ProCard profile={profile} pendingConfirmation={pendingConfirmation} paymentsFrozen={paymentsFrozen} onGoToProfile={() => navigate('/profile')} refetchProfile={refetch} />
+              <CoachCard profile={profile} pendingConfirmation={pendingConfirmation} paymentsFrozen={paymentsFrozen} onGoToProfile={() => navigate('/profile')} />
             </div>
           )}
         </div>
