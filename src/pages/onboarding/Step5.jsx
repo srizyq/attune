@@ -33,7 +33,14 @@ export default function Step5() {
       if (!user.is_anonymous) {
         // Already confirmed — either they clicked the link in this same
         // tab, or they landed/refreshed here after already confirming
-        // elsewhere.
+        // elsewhere. getUser() only reports that; it doesn't update the
+        // cached session or reissue its JWT (is_anonymous is baked in at
+        // issuance), so without this, landing on /dashboard would still
+        // read the old, stale is_anonymous: true and show the pending-
+        // confirmation banner despite being confirmed — see
+        // AuthProvider's identical fix for the "skipped this screen"
+        // case.
+        await supabase.auth.refreshSession();
         navigate('/dashboard', { replace: true });
         return;
       }

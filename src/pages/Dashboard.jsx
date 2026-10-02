@@ -671,8 +671,11 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
 // clicked the confirmation link yet", so this no longer needs a separate
 // "still just browsing as a guest" branch.
 function ConfirmEmailBanner({ email }) {
+  const { checkEmailConfirmed } = useAuth();
   const [visible, setVisible] = useState(true);
   const [resendState, setResendState] = useState(null); // null | 'sending' | 'sent' | error string
+  const [checking, setChecking] = useState(false);
+  const [checkMessage, setCheckMessage] = useState(null);
   if (!visible) return null;
 
   async function resend() {
@@ -681,18 +684,37 @@ function ConfirmEmailBanner({ email }) {
     setResendState(error ? (error.message || 'Could not resend — try again.') : 'sent');
   }
 
+  // Confirming the link elsewhere (a different tab, the mail app) doesn't
+  // reach this already-open session by itself — AuthProvider re-checks
+  // automatically on tab focus, but this covers it immediately for anyone
+  // who doesn't switch away and back. If it's really confirmed, this
+  // banner unmounts on its own once pendingConfirmation flips false.
+  async function checkConfirmed() {
+    setChecking(true);
+    setCheckMessage(null);
+    const confirmed = await checkEmailConfirmed();
+    setChecking(false);
+    if (!confirmed) setCheckMessage("Still not confirmed — click the link in your email first.");
+  }
+
   return (
     <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
         <span style={{ color: 'var(--accent)', fontSize: '14px', flexShrink: 0 }}>✉️</span>
         <span style={{ color: 'var(--text-secondary)', fontSize: '13px', minWidth: 0, overflowWrap: 'anywhere' }}>
           Almost there — check <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{email}</span> to confirm your account.
+          <button onClick={checkConfirmed} disabled={checking} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: checking ? 'default' : 'pointer', marginLeft: '4px', padding: '6px 2px', textDecoration: 'underline' }}>
+            {checking ? 'Checking…' : "I've confirmed"}
+          </button>
           {resendState === 'sent' ? (
             <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>Sent!</span>
           ) : (
             <button onClick={resend} disabled={resendState === 'sending'} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: resendState === 'sending' ? 'default' : 'pointer', marginLeft: '4px', padding: '6px 2px', textDecoration: 'underline' }}>
               {resendState === 'sending' ? 'Sending…' : 'Resend email'}
             </button>
+          )}
+          {checkMessage && (
+            <span style={{ color: 'var(--text-hint)', display: 'block', marginTop: 4 }}>{checkMessage}</span>
           )}
           {resendState && resendState !== 'sending' && resendState !== 'sent' && (
             <span style={{ color: 'var(--danger)', display: 'block', marginTop: 4 }}>{resendState}</span>
