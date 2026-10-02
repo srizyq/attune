@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 
@@ -11,12 +11,13 @@ vi.mock('../lib/billing', () => ({ authedPost: vi.fn() }));
 vi.mock('../lib/supabase', () => ({ supabase: { rpc: vi.fn() } }));
 
 import Pricing from './Pricing';
+import { authedPost } from '../lib/billing';
 
 const setup = (profile) => {
   state.profile = profile;
   render(<MemoryRouter><Pricing /></MemoryRouter>);
 };
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.mocked(authedPost).mockClear(); });
 
 describe('Pricing — Pro card reflects Coach Pass including Pro', () => {
   it('a brand-new free user is offered the free month, no coach-pass messaging', () => {
@@ -63,5 +64,37 @@ describe('Pricing — Pro card reflects Coach Pass including Pro', () => {
     expect(screen.getByText(/Includes full Pro access for your own personal tracking/)).toBeInTheDocument();
     expect(screen.getByText(/training vs rest days/)).toBeInTheDocument();
     expect(screen.getByText(/Co-coach a client with a teammate/)).toBeInTheDocument();
+  });
+});
+
+describe('Pricing — checkout requires confirming first', () => {
+  it('clicking Subscribe does not hit checkout until the confirm modal is accepted', () => {
+    const past = new Date(Date.now() - 86400000).toISOString();
+    setup({ is_premium: false, coach_pass: false, trial_ends_at: past });
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe — A\$4\.99\/month/ }));
+    expect(authedPost).not.toHaveBeenCalled();
+    expect(screen.getByText('Subscribe to Pro?')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to payment' }));
+    expect(authedPost).toHaveBeenCalledWith('/api/create-checkout-session', { plan: 'pro' });
+  });
+
+  it('cancelling the confirm modal leaves checkout untouched', async () => {
+    const past = new Date(Date.now() - 86400000).toISOString();
+    setup({ is_premium: false, coach_pass: false, trial_ends_at: past });
+    fireEvent.click(screen.getByRole('button', { name: /Subscribe — A\$4\.99\/month/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(authedPost).not.toHaveBeenCalled();
+    // The modal plays a brief exit animation (useClosingTransition) before unmounting.
+    await waitFor(() => expect(screen.queryByText('Subscribe to Pro?')).not.toBeInTheDocument());
+  });
+
+  it('starting a Coach Pass free trial also confirms first, with trial-specific wording', () => {
+    setup({ is_premium: false, coach_pass: false, trial_ends_at: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Start 30-day free trial' }));
+    expect(authedPost).not.toHaveBeenCalled();
+    expect(screen.getByText('Start your 30-day free trial?')).toBeInTheDocument();
+    expect(screen.getByText(/won't be charged until the trial ends/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to payment' }));
+    expect(authedPost).toHaveBeenCalledWith('/api/create-checkout-session', { plan: 'coach' });
   });
 });

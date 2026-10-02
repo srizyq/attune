@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
+import { useClosingTransition } from '../hooks/useClosingTransition';
 import { authedPost } from '../lib/billing';
 import { supabase } from '../lib/supabase';
 import { isTrialActive, trialDaysLeft, canClaimFreeMonth, TRIAL_DAYS } from '../lib/trial';
@@ -43,6 +44,37 @@ function Benefit({ children }) {
   );
 }
 
+// A plain "Subscribe" click used to go straight to Stripe with nothing in
+// our own app ever asking "are you sure" — easy to blow through by
+// accident (especially with Stripe's Link autofill on a returning card,
+// which can complete checkout in essentially one click) and the reason a
+// user ended up paid instead of on the free trial they meant to start.
+// This is the one gate every paid checkout (Pro or Coach Pass) now passes
+// through first — same modal chrome as Profile.jsx's logout-confirm.
+function ConfirmSubscribeModal({ title, body, confirmLabel, busy, onCancel, onConfirm }) {
+  const { closing, close } = useClosingTransition(onCancel);
+  return (
+    <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 210, padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
+          {title}
+        </div>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px' }}>
+          {body}
+        </p>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={close} style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={busy} style={{ flex: 1, padding: '11px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 14, fontWeight: 600, cursor: busy ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {busy ? 'Loading…' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PendingConfirmationButton({ onGoToProfile }) {
   return (
     <button
@@ -62,6 +94,7 @@ function PendingConfirmationButton({ onGoToProfile }) {
 function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [confirming, setConfirming] = useState(false);
   const hasRealSubscription = !!profile?.stripe_pro_subscription_id;
   const isComp = !!profile?.is_premium && !hasRealSubscription && !isTrialActive(profile);
 
@@ -129,7 +162,7 @@ function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }
   } else if (isTrialActive(profile)) {
     status = `${trialDaysLeft(profile)} day${trialDaysLeft(profile) === 1 ? '' : 's'} left in your free month`;
     action = (
-      <button onClick={checkout} disabled={busy} style={btnStyle('primary', busy)}>
+      <button onClick={() => setConfirming(true)} disabled={busy} style={btnStyle('primary', busy)}>
         {busy ? 'Loading…' : 'Subscribe now'}
       </button>
     );
@@ -143,34 +176,49 @@ function ProCard({ profile, pendingConfirmation, onGoToProfile, refetchProfile }
     // Already had a free month (it lapsed without converting) — not
     // eligible again, straight to a real subscription.
     action = (
-      <button onClick={checkout} disabled={busy} style={btnStyle('primary', busy)}>
+      <button onClick={() => setConfirming(true)} disabled={busy} style={btnStyle('primary', busy)}>
         {busy ? 'Loading…' : `Subscribe — ${PRO_PRICE}`}
       </button>
     );
   }
 
   return (
-    <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Pro</div>
-      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{PRO_PRICE}</div>
-      {!pendingConfirmation && canClaimFreeMonth(profile) ? (
-        <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {TRIAL_DAYS} days free, no card required</div>
-      ) : (
-        <div style={{ marginBottom: 14 }} />
+    <>
+      <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Pro</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{PRO_PRICE}</div>
+        {!pendingConfirmation && canClaimFreeMonth(profile) ? (
+          <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {TRIAL_DAYS} days free, no card required</div>
+        ) : (
+          <div style={{ marginBottom: 14 }} />
+        )}
+        <div style={{ flex: 1, marginBottom: 18 }}>
+          {PRO_BENEFITS.map((b) => <Benefit key={b}>{b}</Benefit>)}
+        </div>
+        {status && <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 10, textAlign: 'center' }}>{status}</div>}
+        {action}
+        {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{error}</div>}
+      </Card>
+      {confirming && (
+        <ConfirmSubscribeModal
+          title={isTrialActive(profile) ? 'Subscribe to Pro now?' : 'Subscribe to Pro?'}
+          body={isTrialActive(profile)
+            ? `You still have ${trialDaysLeft(profile)} day${trialDaysLeft(profile) === 1 ? '' : 's'} left in your free month. Subscribing now ends that early and starts ${PRO_PRICE} billing right away. You'll be taken to Stripe to enter payment details.`
+            : `You're about to start a ${PRO_PRICE} subscription — billing starts immediately. You'll be taken to Stripe to enter payment details. You can cancel any time from Manage billing.`}
+          confirmLabel="Continue to payment"
+          busy={busy}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => { setConfirming(false); checkout(); }}
+        />
       )}
-      <div style={{ flex: 1, marginBottom: 18 }}>
-        {PRO_BENEFITS.map((b) => <Benefit key={b}>{b}</Benefit>)}
-      </div>
-      {status && <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 10, textAlign: 'center' }}>{status}</div>}
-      {action}
-      {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{error}</div>}
-    </Card>
+    </>
   );
 }
 
 function CoachCard({ profile, pendingConfirmation, onGoToProfile }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [confirming, setConfirming] = useState(false);
   const hasRealSubscription = !!profile?.stripe_subscription_id;
   const isComp = !!profile?.coach_pass && !hasRealSubscription;
 
@@ -213,28 +261,44 @@ function CoachCard({ profile, pendingConfirmation, onGoToProfile }) {
     status = 'Comp access — no billing to manage';
   } else {
     action = (
-      <button onClick={checkout} disabled={busy} style={btnStyle('primary', busy)}>
+      <button onClick={() => setConfirming(true)} disabled={busy} style={btnStyle('primary', busy)}>
         {busy ? 'Loading…' : coachPassButtonLabel(profile)}
       </button>
     );
   }
 
+  const trialEligible = eligibleForCoachTrial(profile);
+
   return (
-    <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Coach Pass</div>
-      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{COACH_PASS_PRICE}</div>
-      {!pendingConfirmation && eligibleForCoachTrial(profile) ? (
-        <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {COACH_TRIAL_DAYS} days free</div>
-      ) : (
-        <div style={{ marginBottom: 14 }} />
+    <>
+      <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Coach Pass</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{COACH_PASS_PRICE}</div>
+        {!pendingConfirmation && trialEligible ? (
+          <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {COACH_TRIAL_DAYS} days free</div>
+        ) : (
+          <div style={{ marginBottom: 14 }} />
+        )}
+        <div style={{ flex: 1, marginBottom: 18 }}>
+          {COACH_BENEFITS.map((b) => <Benefit key={b}>{b}</Benefit>)}
+        </div>
+        {status && <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 10, textAlign: 'center' }}>{status}</div>}
+        {action}
+        {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{error}</div>}
+      </Card>
+      {confirming && (
+        <ConfirmSubscribeModal
+          title={trialEligible ? `Start your ${COACH_TRIAL_DAYS}-day free trial?` : 'Subscribe to Coach Pass?'}
+          body={trialEligible
+            ? `You'll be taken to Stripe to add a card. You won't be charged until the trial ends — cancel any time before then to avoid being billed ${COACH_PASS_PRICE}.`
+            : `You're about to start a ${COACH_PASS_PRICE} subscription — billing starts immediately. You'll be taken to Stripe to enter payment details.`}
+          confirmLabel="Continue to payment"
+          busy={busy}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => { setConfirming(false); checkout(); }}
+        />
       )}
-      <div style={{ flex: 1, marginBottom: 18 }}>
-        {COACH_BENEFITS.map((b) => <Benefit key={b}>{b}</Benefit>)}
-      </div>
-      {status && <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 10, textAlign: 'center' }}>{status}</div>}
-      {action}
-      {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{error}</div>}
-    </Card>
+    </>
   );
 }
 
