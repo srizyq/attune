@@ -138,7 +138,7 @@ export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
       {result && (
         <div>
           <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <i className="ti ti-sparkles" /> New estimate — {result.confidence || 'medium'} confidence
+            <i className="ti ti-sparkles" /> New estimate
           </div>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
             <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 2 }}>{result.name}</div>

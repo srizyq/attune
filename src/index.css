@@ -37,13 +37,14 @@
   --danger: #c07070;
   --gold: #e8c468;
   --text-primary: #e8e8e8;
-  --text-secondary: #ccc;
-  /* #666/#444 measured at 3.3:1 / 2.0:1 against this background — both
-     fail WCAG AA's 4.5:1 floor for normal text, and both tokens are used
-     for real content (labels, empty states, timestamps), not just
-     decoration. Lightened to ~5.2:1 / ~4.5:1 without touching font-size. */
-  --text-muted: #858585;
-  --text-hint: #7b7b7b;
+  --text-secondary: #dcdcdc;
+  /* The grey tiers carry real content (labels, units, dates, hints), so they
+     sit well above WCAG AA's 4.5:1 floor on this background (~9:1 / ~7.5:1)
+     rather than just clearing it — they used to read as washed out next to
+     the headline numbers. Paired with bold weight, see the rule at the end
+     of this file. */
+  --text-muted: #bdbdbd;
+  --text-hint: #a9a9a9;
   --pill-track: #211c19;
   --pill-bg: #f5f0e8;
   --pill-text: #181412;
@@ -103,13 +104,14 @@
   --danger: #c07070;
   --gold: #e8c468;
   --text-primary: #e8e8e8;
-  --text-secondary: #ccc;
-  /* #666/#444 measured at 3.3:1 / 2.0:1 against this background — both
-     fail WCAG AA's 4.5:1 floor for normal text, and both tokens are used
-     for real content (labels, empty states, timestamps), not just
-     decoration. Lightened to ~5.2:1 / ~4.5:1 without touching font-size. */
-  --text-muted: #858585;
-  --text-hint: #7b7b7b;
+  --text-secondary: #dcdcdc;
+  /* The grey tiers carry real content (labels, units, dates, hints), so they
+     sit well above WCAG AA's 4.5:1 floor on this background (~9:1 / ~7.5:1)
+     rather than just clearing it — they used to read as washed out next to
+     the headline numbers. Paired with bold weight, see the rule at the end
+     of this file. */
+  --text-muted: #bdbdbd;
+  --text-hint: #a9a9a9;
   --pill-track: #211c19;
   --pill-bg: #f5f0e8;
   --pill-text: #181412;
@@ -157,11 +159,11 @@
   --danger: #c07070;
   --gold: #e8c468;
   --text-primary: #181412;
-  --text-secondary: #3a332e;
-  --text-muted: #6b6258;
-  /* #999999 measured at 2.85:1 against white — fails AA's 4.5:1 floor.
-     text-muted already passes (5.3:1) so only hint needs lightening here. */
-  --text-hint: #79706a;
+  --text-secondary: #2a241f;
+  /* Darker greys than the original warm taupe so labels read as clearly as
+     the headline numbers beside them (~9:1 / ~7.5:1 on the cream cards). */
+  --text-muted: #4a4239;
+  --text-hint: #5c534a;
   --pill-track: #f0e6d8;
   --pill-bg: #181412;
   --pill-text: #fbf6f0;
@@ -459,4 +461,14 @@ button:not(:disabled):active {
    its kcal chip aren't squeezed into an ellipsis. */
 @media (max-width: 380px) {
   .scan-bar-label { display: none; }
+}
+
+/* Grey text is bold everywhere. Most of it is set inline (a style prop that
+   names one of the grey tokens), which no class can out-rank without
+   !important — so match on the token itself. Class-based greys (the nav,
+   page-header subtitles) set their own weight in appshell.css. */
+[style*="var(--text-muted)"],
+[style*="var(--text-hint)"],
+[style*="var(--text-secondary)"] {
+  font-weight: 700 !important;
 }

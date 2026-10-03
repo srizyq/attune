@@ -28,6 +28,7 @@ import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import SegmentedControl from '../components/SegmentedControl';
 import Toast from '../components/Toast';
 import { targetLineSegments } from '../lib/chartTarget';
+import { bucketWeeks } from '../lib/chartWeeks';
 import { targetsForDate } from '../lib/dayTargets';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
@@ -60,8 +61,8 @@ function WeightCard({ latest, weightTrendKg, weightUnit, recentWeights, targetWe
   const trendDisplay = weightTrendKg == null ? null : round1(fromKg(weightTrendKg, weightUnit));
   const hasSparkline = recentWeights.length >= 2;
   return (
-    <button onClick={onClick} style={{ all: 'unset', display: 'block', width: '100%', cursor: 'pointer' }}>
-      <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer' }}>
+    <button onClick={onClick} style={{ all: 'unset', display: 'flex', flexDirection: 'column', width: '100%', flex: 1, cursor: 'pointer' }}>
+      <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer', flex: 1, boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WEIGHT</span>
           {weightTrendKg != null && (
@@ -214,7 +215,7 @@ function WaterCard({ glasses, targetGlasses, setGlasses }) {
   const filledSegments = Math.min(WATER_SEGMENTS, Math.round((glasses / Math.max(1, targetGlasses)) * WATER_SEGMENTS));
 
   return (
-    <Card style={{ padding: '16px 18px', marginBottom: 0 }}>
+    <Card style={{ padding: '16px 18px', marginBottom: 0, flex: 1, boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WATER</span>
         <StatBadge>{glasses} / {round1(targetMl / 1000)}L</StatBadge>
@@ -258,36 +259,43 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
   // Measure the chart's actual rendered width so the SVG viewBox can match
   // it 1:1 in pixels, instead of guessing a fixed width and letting the
   // browser stretch it to fit (see CHART_HEIGHT note above).
+  // The chart area flexes to fill whatever height the card is stretched to
+  // (it's matched to the Weight + Water column beside it), so both axes are
+  // measured — never smaller than CHART_HEIGHT.
   const chartRef = useRef(null);
-  const [chartWidth, setChartWidth] = useState(300);
+  const [chartSize, setChartSize] = useState({ w: 300, h: CHART_HEIGHT });
   useEffect(() => {
     const el = chartRef.current;
     if (!el) return;
-    const measure = () => setChartWidth(el.clientWidth || 300);
+    const measure = () => setChartSize({ w: el.clientWidth || 300, h: Math.max(CHART_HEIGHT, el.clientHeight || 0) });
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
+  // 1W is one bar per day; 1M / 3M are one bar per week (see chartWeeks.js) —
+  // 30 or 90 daily bars were too thin to read and widened the card.
+  const weekly = chartRange !== '1W';
+  const days = weekly ? bucketWeeks(chartDays) : chartDays;
+
   // Each day's own target is the plain baseline plus whatever THAT day
   // burned (see Dashboard's useWorkoutLogsRange) — not one shared number
   // for the whole chart. Logging a workout for one day must only raise
   // that day's segment of the target line, not the rest of the week's.
-  const dayTargets = chartDays.map(d => (d.baseTarget ?? baseCalorieTarget) + (d.caloriesBurned || 0));
+  const dayTargets = days.map(d => (d.baseTarget ?? baseCalorieTarget) + (d.caloriesBurned || 0));
 
   // Headroom above the tallest of any day's target/actual so neither the
   // target line nor a big over-target bar sits flush against the top edge.
-  const max = Math.max(target, ...chartDays.map(d => d.calories), ...dayTargets, 1) * 1.08;
+  const max = Math.max(target, ...days.map(d => d.calories), ...dayTargets, 1) * 1.08;
   const topPad = 4;
-  const baseline = CHART_HEIGHT - 6;
+  const chartHeight = chartSize.h;
+  const baseline = chartHeight - 6;
   const plotHeight = baseline - topPad;
-  const w = chartWidth;
-  // Gap shrinks as the range grows so 90 daily bars (3M) still fit without
-  // overlapping — bars get thin rather than the chart scrolling or sampling.
-  const gap = chartDays.length > 40 ? 1 : chartDays.length > 14 ? 2 : 5;
-  const barWidth = Math.max(1, (w - gap * (chartDays.length - 1)) / chartDays.length);
-  const bars = chartDays.map((d, i) => {
+  const w = chartSize.w;
+  const gap = days.length > 14 ? 3 : 5;
+  const barWidth = Math.max(1, (w - gap * (days.length - 1)) / days.length);
+  const bars = days.map((d, i) => {
     const dayTarget = dayTargets[i];
     const barHeight = (d.calories / max) * plotHeight;
     return {
@@ -298,16 +306,22 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
     };
   });
 
-  // A handful of evenly-spaced labels regardless of range, so 90 days
-  // doesn't cram 90 labels under the axis.
-  const labelCount = Math.min(chartDays.length, chartRange === '1W' ? 7 : 5);
-  const labelStep = Math.max(1, Math.floor((chartDays.length - 1) / (labelCount - 1)));
-  const labelIdxs = new Set();
-  for (let i = 0; i < chartDays.length; i += labelStep) labelIdxs.add(i);
-  labelIdxs.add(chartDays.length - 1);
+  // A handful of evenly-spaced labels regardless of range. Each is placed
+  // absolutely under its own bar rather than every bar getting a (mostly
+  // hidden) label in a flex row — those hidden labels still took up width
+  // and stretched the whole card past the screen on 1M / 3M.
+  const labelCount = Math.min(days.length, weekly ? 3 : 7);
+  const labelStep = Math.max(1, Math.round((days.length - 1) / Math.max(1, labelCount - 1)));
+  const labelIdxs = [];
+  for (let i = 0; i < days.length; i += labelStep) labelIdxs.push(i);
+  if (labelIdxs.length > 1 && days.length - 1 - labelIdxs[labelIdxs.length - 1] < labelStep / 2) labelIdxs.pop();
+  if (!labelIdxs.includes(days.length - 1)) labelIdxs.push(days.length - 1);
+  const labelFor = (d) => (weekly
+    ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+    : new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short' }));
 
   return (
-    <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer' }} onClick={onChartClick}>
+    <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer', height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minWidth: 0 }} onClick={onChartClick}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>TODAY</span>
         <StatBadge>{round1(Math.max(0, target - consumed))} left</StatBadge>
@@ -323,35 +337,47 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
           so this labels the one constant real value instead. */}
       <div style={{ textAlign: 'right', fontSize: 10, color: 'var(--text-hint)', marginTop: 6 }}>{baseCalorieTarget.toLocaleString()} KCAL</div>
 
-      <svg ref={chartRef} viewBox={`0 0 ${w} ${CHART_HEIGHT}`} style={{ width: '100%', height: CHART_HEIGHT, marginTop: 2, display: 'block' }}>
-        {/* The user's own target is one continuous line across the whole
-            chart; a day with burned calories breaks out of it as its own
-            raised segment (see targetLineSegments). */}
-        {targetLineSegments(chartDays, baseCalorieTarget).map(seg => {
-          const y = baseline - (seg.value / max) * plotHeight;
-          return <line key={`target-${seg.start}`} x1={bars[seg.start].x} y1={y} x2={bars[seg.end].x + barWidth} y2={y} stroke="var(--text-hint)" strokeWidth="2" strokeLinecap="round" strokeDasharray="0 5" />;
+      <div ref={chartRef} style={{ position: 'relative', flex: 1, minHeight: CHART_HEIGHT, marginTop: 2 }}>
+        <svg viewBox={`0 0 ${w} ${chartHeight}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}>
+          {/* The user's own target is one continuous line across the whole
+              chart; a day with burned calories breaks out of it as its own
+              raised segment (see targetLineSegments). */}
+          {targetLineSegments(days, baseCalorieTarget).map(seg => {
+            const y = baseline - (seg.value / max) * plotHeight;
+            return <line key={`target-${seg.start}`} x1={bars[seg.start].x} y1={y} x2={bars[seg.end].x + barWidth} y2={y} stroke="var(--text-hint)" strokeWidth="2" strokeLinecap="round" strokeDasharray="0 5" />;
+          })}
+          {bars.map((b, i) => (
+            <rect
+              key={i}
+              x={b.x}
+              y={b.y}
+              width={barWidth}
+              height={Math.max(0, b.height)}
+              rx={Math.min(3, barWidth / 2)}
+              fill={b.over ? 'var(--danger-strong)' : 'var(--accent-strong)'}
+              opacity={b.over ? 0.85 : 1}
+            />
+          ))}
+        </svg>
+      </div>
+      <div style={{ position: 'relative', height: 14, marginTop: 6, marginBottom: 16 }} onClick={e => e.stopPropagation()}>
+        {labelIdxs.map((i, n) => {
+          const center = ((bars[i].x + barWidth / 2) / w) * 100;
+          const first = n === 0 && center < 12;
+          const last = n === labelIdxs.length - 1 && center > 88;
+          return (
+            <span
+              key={days[i].date}
+              style={{
+                position: 'absolute', top: 0, whiteSpace: 'nowrap', fontSize: 10, color: 'var(--text-hint)', lineHeight: '14px',
+                left: first ? 0 : last ? 'auto' : `${center}%`, right: last ? 0 : 'auto',
+                transform: first || last ? 'none' : 'translateX(-50%)',
+              }}
+            >
+              {labelFor(days[i])}
+            </span>
+          );
         })}
-        {bars.map((b, i) => (
-          <rect
-            key={i}
-            x={b.x}
-            y={b.y}
-            width={barWidth}
-            height={Math.max(0, b.height)}
-            rx={Math.min(3, barWidth / 2)}
-            fill={b.over ? 'var(--danger-strong)' : 'var(--accent-strong)'}
-            opacity={b.over ? 0.85 : 1}
-          />
-        ))}
-      </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }} onClick={e => e.stopPropagation()}>
-        {chartDays.map((d, i) => (
-          <span key={d.date} style={{ fontSize: 10, color: 'var(--text-hint)', visibility: labelIdxs.has(i) ? 'visible' : 'hidden' }}>
-            {chartRange === '1W'
-              ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short' })
-              : new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-          </span>
-        ))}
       </div>
 
       <div onClick={e => e.stopPropagation()}>
@@ -374,8 +400,8 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
 // Water stranded below both instead of filling the rest of its column.
 function DashboardTopCards({ latestWeight, weightTrendKg, weightUnit, recentWeights, targetWeight, onWeightClick, glasses, targetGlasses, setGlasses, ...todayProps }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12, alignItems: 'start' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 12, alignItems: 'stretch' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
         <WeightCard latest={latestWeight} weightTrendKg={weightTrendKg} weightUnit={weightUnit} recentWeights={recentWeights} targetWeight={targetWeight} onClick={onWeightClick} />
         <WaterCard glasses={glasses} targetGlasses={targetGlasses} setGlasses={setGlasses} />
       </div>
@@ -752,9 +778,38 @@ function ShortcutRow({ navigate, date }) {
 // day's actual logging status instead of reducing everything to a single
 // number that reads as "0" — a failure — the moment a new day starts.
 // Logged days fill in bold; not-yet-logged days stay light instead.
-const STREAK_WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-function StreakStrip({ byDate, onSelectDay }) {
+// One tab per day of this week: weekday name over a ring that fills with how
+// much of that day's calorie target was eaten (orange; red once over it; an
+// empty grey ring for nothing logged). The day being viewed gets a card-
+// coloured pill behind it. Future days are faded and not tappable.
+const RING = 34;
+const RING_STROKE = 3;
+
+function DayRing({ fraction, over, children }) {
+  const r = (RING - RING_STROKE) / 2;
+  const c = 2 * Math.PI * r;
+  const filled = Math.max(0, Math.min(1, fraction));
+  return (
+    <span style={{ position: 'relative', width: RING, height: RING, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`} aria-hidden="true" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" stroke="var(--text-hint)" strokeOpacity="0.35" strokeWidth={RING_STROKE} />
+        {filled > 0 && (
+          <circle
+            data-testid="day-ring-arc"
+            cx={RING / 2} cy={RING / 2} r={r} fill="none"
+            stroke={over ? 'var(--danger-strong)' : 'var(--accent)'}
+            strokeWidth={RING_STROKE} strokeLinecap="round"
+            strokeDasharray={`${c * filled} ${c}`}
+          />
+        )}
+      </svg>
+      {children}
+    </span>
+  );
+}
+
+function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
   const today = todayLocalDate();
   const weekStart = new Date(today + 'T00:00:00');
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
@@ -765,30 +820,40 @@ function StreakStrip({ byDate, onSelectDay }) {
   });
 
   return (
-    <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
-      {days.map((dateStr, i) => {
+    <div style={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
+      {days.map((dateStr) => {
         const isFuture = dateStr > today;
-        const isToday = dateStr === today;
-        const logged = !!byDate.get(dateStr)?.calories;
+        const isSelected = dateStr === viewedDate;
+        const calories = Number(byDate.get(dateStr)?.calories) || 0;
+        const target = targetFor(dateStr);
+        const fraction = target > 0 ? calories / target : calories > 0 ? 1 : 0;
+        const dayDate = new Date(dateStr + 'T00:00:00');
+        const pct = Math.round(fraction * 100);
         return (
           <button
             key={dateStr}
             className="hit-slop hit-slop-tight"
+            data-testid="day-tab"
             disabled={isFuture}
             onClick={() => onSelectDay(dateStr)}
-            title={isFuture ? undefined : (logged ? 'Logged — view this day' : 'Not logged — view this day')}
+            aria-pressed={isSelected}
+            aria-label={`${dayDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}${isFuture ? '' : calories ? `, ${pct}% of calorie target` : ', nothing logged'}`}
             style={{
-              width: 40, height: 40, borderRadius: '50%', padding: 0, fontFamily: 'inherit',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14, fontWeight: 700,
-              background: logged ? 'var(--accent)' : 'transparent',
-              border: `1px solid ${logged ? 'var(--accent)' : isToday ? 'var(--border-strong)' : 'var(--border-default)'}`,
-              color: logged ? 'var(--accent-contrast)' : 'var(--text-hint)',
+              flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+              padding: '7px 0 8px', borderRadius: 16, fontFamily: 'inherit', cursor: isFuture ? 'default' : 'pointer',
+              background: isSelected ? 'var(--bg-card)' : 'transparent',
+              border: `1px solid ${isSelected ? 'var(--border-default)' : 'transparent'}`,
               opacity: isFuture ? 0.4 : 1,
-              cursor: isFuture ? 'default' : 'pointer',
             }}
           >
-            {STREAK_WEEKDAY_LABELS[i]}
+            <span style={{ fontSize: 11, fontWeight: isSelected ? 800 : 600, color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+              {dayDate.toLocaleDateString('en-AU', { weekday: 'short' })}
+            </span>
+            <DayRing fraction={fraction} over={calories > target && target > 0}>
+              <span style={{ fontSize: 13, fontWeight: isSelected ? 800 : 600, color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                {dayDate.getDate()}
+              </span>
+            </DayRing>
           </button>
         );
       })}
@@ -1037,7 +1102,7 @@ export default function Dashboard() {
         </div>
 
         <div className="page-pad-top" style={{ paddingBottom: 12, borderBottom: '1px solid var(--border-default)' }}>
-          <StreakStrip byDate={byDate} onSelectDay={(date) => navigate('/dashboard', { state: { date } })} />
+          <StreakStrip byDate={byDate} viewedDate={viewedDate} targetFor={calorieTargetFor} onSelectDay={(date) => navigate('/dashboard', { state: { date } })} />
         </div>
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>

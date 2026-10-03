@@ -480,11 +480,6 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
               <IncludesRow allergens={detail.allergens} sodiumMg={adjusted.sodium} sodium={adjusted.sodium} fibre={adjusted.fibre} sugar={adjusted.sugar} />
             )}
           </div>
-          {picked.data.confidence && (
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <i aria-hidden="true" className="ti ti-sparkles" /> AI estimate — {picked.data.confidence} confidence
-            </p>
-          )}
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
             This is an AI estimate based on the menu photo, not verified nutrition data — review before adding.
           </p>

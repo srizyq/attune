@@ -754,6 +754,20 @@ export async function getRestaurantComponents(chainId) {
   return data;
 }
 
+// Every menu item for one chain, for its own menu page. The biggest chain
+// (Starbucks) has a few hundred rows, so the cap is generous, not tight.
+export async function getRestaurantItems(chainId) {
+  const { data, error } = await supabase
+    .from('restaurant_items')
+    .select('*')
+    .eq('chain_id', chainId)
+    .order('category', { ascending: true })
+    .order('name', { ascending: true })
+    .limit(1000);
+  if (error) throw error;
+  return data;
+}
+
 export async function getRestaurantChains() {
   const { data, error } = await supabase
     .from('restaurant_chains')

@@ -4,6 +4,14 @@ import { openApp, settle, assertLayout } from './harness.js';
 // Layout bugs love modals, sheets, menus and expanded rows — the parts of the
 // app you only see after tapping something. Each scenario opens one and runs
 // the same checks (the modal's own scroll area is scrolled to its end too).
+const RESTAURANT_BACKEND = {
+  tables: {
+    restaurant_chains: [{ id: 'mcdonalds-au', name: "McDonald's", country: 'AU', category: 'burgers' }],
+    restaurant_items: ['Big Mac', 'Quarter Pounder', 'McChicken'].map((name, i) => ({ id: `mcdonalds-au_${i}`, chain_id: 'mcdonalds-au', chain_name: "McDonald's", name, category: 'Burgers', size_label: null, serving_label: '1 burger', serving_grams: 200, calories: 500 + i * 20, protein_g: 25, carbs_g: 40, fat_g: 25, fibre_g: 3, sodium_mg: 900, sugar_g: 8 }))
+      .concat([{ id: 'mcdonalds-au_f', chain_id: 'mcdonalds-au', chain_name: "McDonald's", name: 'Medium Fries', category: 'Sides', size_label: null, serving_label: '1 serve', serving_grams: 111, calories: 337, protein_g: 4, carbs_g: 41, fat_g: 17, fibre_g: 4, sodium_mg: 200, sugar_g: 0 }]),
+  },
+};
+
 const SCENARIOS = [
   { name: 'quick-add-sheet', path: '/dashboard', mobileOnly: true, act: (p) => p.getByRole('button', { name: 'Quick add' }).click() },
   { name: 'settings-notifications', path: '/settings', act: (p) => p.getByRole('button', { name: /Notifications/ }).first().click() },
@@ -23,6 +31,14 @@ const SCENARIOS = [
   // than the view toggle. Explicit click keeps this self-contained
   // regardless of the fixture profile's own daily_log_view default.
   { name: 'daily-log-edit-item', path: '/log', act: async (p) => { await p.getByRole('button', { name: 'Meals' }).last().click(); await p.getByText('Grilled chicken').first().click(); } },
+  // 1M / 3M show one bar per week; before that, 30-90 hidden date labels each
+  // took up width and pushed the calorie card off the right of the screen.
+  { name: 'dashboard-chart-1m', path: '/dashboard', act: async (p) => { await p.getByRole('button', { name: '1M', exact: true }).click(); } },
+  { name: 'dashboard-chart-3m', path: '/dashboard', act: async (p) => { await p.getByRole('button', { name: '3M', exact: true }).click(); } },
+  // Searching a chain's name (or nickname) offers the chain itself; its card
+  // opens a menu page with only that chain's items.
+  { name: 'food-restaurant-card', path: '/food', backend: RESTAURANT_BACKEND, act: async (p) => { await p.getByPlaceholder(/Search any food/).fill('maccas'); await p.getByRole('button', { name: /McDonald's/ }).waitFor(); } },
+  { name: 'food-restaurant-menu', path: '/food', backend: RESTAURANT_BACKEND, act: async (p) => { await p.getByPlaceholder(/Search any food/).fill('maccas'); await p.getByRole('button', { name: /McDonald's/ }).click(); await p.getByRole('heading', { name: "McDonald's" }).waitFor(); await p.getByRole('tab', { name: /Burgers/ }).click(); await p.getByText('Big Mac').first().waitFor(); } },
   { name: 'food-create-custom', path: '/food', act: (p) => p.getByTitle('Create a custom food').click() },
   { name: 'food-expand-result', path: '/food', act: async (p) => { await p.getByText('Almonds').first().click(); } },
   { name: 'food-search-typing', path: '/food', act: async (p) => { await p.getByPlaceholder(/Search any food/).fill('chicken breast with a very long search phrase that keeps going'); } },

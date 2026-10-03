@@ -115,3 +115,32 @@ test('menu-scan-confirm-pinned-actions', async ({ page, context }, testInfo) => 
   await page.getByRole('button', { name: 'Close' }).last().click();
   await expect(crop).toHaveCount(0);
 });
+
+// The "add this product" sheet after a barcode isn't found: its fields used to
+// be wider than the sheet, so you had to swipe sideways inside it to reach them.
+test('barcode-add-product-fits', async ({ page, context }, testInfo) => {
+  const ctx = await openApp({ page, context }, testInfo);
+  await page.route('**/world.openfoodfacts.org/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 0 }) }));
+  await page.goto('/dashboard');
+  await settle(page);
+  await page.evaluate(() => {
+    window.history.pushState({ usr: { openScan: true }, key: 'scan', idx: 1 }, '', '/food');
+    window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
+  });
+  await page.getByRole('button', { name: /Enter barcode manually/ }).click();
+  await page.getByPlaceholder(/barcode/i).fill('9310232962474');
+  await page.getByRole('button', { name: 'Look up' }).click();
+  await page.getByRole('button', { name: /Add this product for everyone/ }).click();
+  await page.getByPlaceholder('Product name').waitFor();
+  await page.getByPlaceholder('Calories').fill('285');
+  await page.waitForTimeout(400);
+
+  // Every field sits inside the sheet — nothing pokes out of its right edge.
+  const sheetRight = await page.evaluate(() => document.documentElement.clientWidth);
+  for (const ph of ['Product name', 'Brand (optional)', 'Serving (e.g. 1 cup)', 'Calories', 'Protein (g)', 'Sodium (mg)']) {
+    const box = await page.getByPlaceholder(ph).boundingBox();
+    expect(box.x, ph).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width, `${ph} stays inside the screen`).toBeLessThanOrEqual(sheetRight);
+  }
+  await assertLayout(page, testInfo, 'x-barcode-add-product', ctx);
+});

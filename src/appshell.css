@@ -445,6 +445,7 @@
   font-size: 13px;
   line-height: 1.35;
   color: var(--text-muted);
+  font-weight: 700;
   margin: 2px 0 0;
   overflow-wrap: anywhere;
 }

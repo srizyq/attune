@@ -11,7 +11,7 @@ import { useProfile } from '../hooks/useProfile';
 import { hasProAccess } from '../lib/proAccess';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
-import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems } from '../lib/db';
+import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems, getRestaurantChains } from '../lib/db';
 import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
@@ -20,6 +20,8 @@ import { slotFromTime } from '../lib/daySlots';
 import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit, caloriesLookInconsistent } from '../lib/foodMath';
 import { ausnutExtraMicros } from '../lib/ausnutFood';
 import { mapRestaurantItemRow } from '../lib/restaurantFood';
+import { matchChains } from '../lib/restaurantChains';
+import { ChainResultCards, ChainMenu } from '../components/RestaurantChains';
 import { loggedRowToFood, favouriteRowToFood } from '../lib/foodRows';
 import { withBrand } from '../lib/format';
 import AppNav from '../components/AppNav';
@@ -360,15 +362,14 @@ async function searchAusnut(q) {
 // dishes (curries, pad thai, meat pies, etc.) AUSNUT has essentially no
 // coverage of — see scripts/seed-common-dishes/. Already per-serving
 // (not per-100g like AUSNUT), so no scaling-base conversion is needed, same
-// shape as custom_foods below. Still labeled "AI estimate" (with a
-// low-confidence suffix where the model flagged one at generation time,
-// same wording the live estimate path uses) since it isn't lab data.
+// shape as custom_foods below. Still labeled "AI estimate" since it isn't
+// lab data (no confidence level is shown — it only invited second-guessing).
 async function searchCommonDish(q) {
   const rows = await searchCommonDishes(q, 8);
   return rows.map(row => ({
     id: "dish_" + row.id,
     name: row.name,
-    meta: `${row.serving_label} · AI estimate${row.confidence === "low" ? " (low confidence)" : ""}`,
+    meta: `${row.serving_label} · AI estimate`,
     cuisine: "all",
     cal: Math.round(row.calories),
     protein: Math.round(row.protein_g * 10) / 10,
@@ -648,10 +649,10 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   // name/brand are typed, not guessed from the label, since a nutrition
   // panel rarely carries a clean marketing name.
   const [scannedBarcode, setScannedBarcode] = useState(null);
-  const [addingProduct, setAddingProduct] = useState(false);
   // Set when the product we're showing has calories that don't match its own
   // macros and no other source had a consistent answer.
   const [calorieWarning, setCalorieWarning] = useState(false);
+  const [addingProduct, setAddingProduct] = useState(false);
   const [newProduct, setNewProduct] = useState(BLANK_NEW_PRODUCT);
   const [labelAnalyzing, setLabelAnalyzing] = useState(false);
   const [labelError, setLabelError] = useState(null);
@@ -1105,9 +1106,9 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
             <input type="text" placeholder="Product name" value={newProduct.name} onChange={e => updateNewProduct("name", e.target.value)}
-              style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+              style={{ width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
             <input type="text" placeholder="Brand (optional)" value={newProduct.brand} onChange={e => updateNewProduct("brand", e.target.value)}
-              style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+              style={{ width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
           </div>
 
           {!labelPreview && (
@@ -1132,15 +1133,15 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8, marginBottom: 12 }}>
             <input type="text" placeholder="Serving (e.g. 1 cup)" value={newProduct.serving} onChange={e => updateNewProduct("serving", e.target.value)}
-              style={{ gridColumn: "1 / -1", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+              style={{ gridColumn: "1 / -1", width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
             {[
               ["cal", "Calories"], ["protein", "Protein (g)"], ["carbs", "Carbs (g)"], ["fat", "Fat (g)"],
               ["fibre", "Fibre (g)"], ["sodium", "Sodium (mg)"], ["sugar", "Sugar (g)"],
             ].map(([key, label]) => (
               <input key={key} type="number" inputMode="decimal" placeholder={label} value={newProduct[key]} onChange={e => updateNewProduct(key, e.target.value)}
-                style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+                style={{ width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
             ))}
             {/* Split from the mapped fields above since it needs the g/ml
                 toggle alongside it — whichever's picked here becomes this
@@ -1150,7 +1151,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
                 amount/unit option later instead of g/kg/lb/oz. */}
             <div style={{ display: "flex", gap: 6 }}>
               <input type="number" inputMode="decimal" placeholder={newProduct.servingUnit === "ml" ? "Serving (ml)" : "Serving (g)"} value={newProduct.servingGrams} onChange={e => updateNewProduct("servingGrams", e.target.value)}
-                style={{ flex: 1, minWidth: 0, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+                style={{ flex: 1, minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
               {["g", "ml"].map(u => (
                 <button key={u} type="button" onClick={() => updateNewProduct("servingUnit", u)}
                   style={{
@@ -1211,13 +1212,13 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
             {unit !== servingUnit && `≈${gramsEquivalent}${servingUnit} · `}label serving: {result.serving}
           </div>
-          {dailyTarget.calories > 0 && (
           {calorieWarning && (
             <div role="alert" style={{ display: "flex", gap: 8, alignItems: "flex-start", background: "var(--bg-card)", border: "1px solid var(--gold)", borderRadius: 10, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>
               <i aria-hidden="true" className="ti ti-alert-triangle" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0, marginTop: 1 }} />
               <span>The calories here don't match this product's protein, carbs and fat, so one of them may be wrong. Check the pack's nutrition panel before logging.</span>
             </div>
           )}
+          {dailyTarget.calories > 0 && (
             <div style={{ marginBottom: 12 }}>
               <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={scaled.cal} />
             </div>
@@ -1842,6 +1843,20 @@ export default function FoodSearch() {
   const [ausnutResults, setAusnutResults] = useState([]);
   const [commonDishResults, setCommonDishResults] = useState([]);
   const [restaurantResults, setRestaurantResults] = useState([]);
+  // Every restaurant chain, loaded once, so typing "maccas" can offer
+  // McDonald's itself (and its whole menu) — see restaurantChains.js.
+  const [chains, setChains] = useState([]);
+  const [activeChain, setActiveChain] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    getRestaurantChains()
+      .then((rows) => { if (!cancelled) setChains(rows || []); })
+      .catch((err) => console.error('Restaurant chains load failed:', err));
+    return () => { cancelled = true; };
+  }, []);
+  const matchedChains = useMemo(() => matchChains(query, chains), [query, chains]);
+  // Typing again leaves the open menu — the search box is for searching.
+  useEffect(() => { setActiveChain(null); }, [query]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
   const searchTimer = useRef(null);
@@ -1883,7 +1898,7 @@ export default function FoodSearch() {
       setAiEstimateResult({
         id: 'ai_' + Date.now(),
         name: data.name,
-        meta: `${data.portion || '1 serving'} · AI estimate${data.confidence === 'low' ? ' (low confidence)' : ''}`,
+        meta: `${data.portion || '1 serving'} · AI estimate`,
         cuisine: 'all',
         cal: Math.round(data.cal) || 0,
         protein: Math.round((data.protein || 0) * 10) / 10,
@@ -2078,6 +2093,24 @@ export default function FoodSearch() {
   const allResults = useMemo(() => [...foodsResults, ...packagedResults], [foodsResults, packagedResults]);
 
   const browsing = query === "";
+
+  // One food row, built the same way everywhere a food can be added — used by
+  // a restaurant's own menu page, which lists items outside the main search.
+  const renderFood = (food) => (
+    <FoodCard
+      key={food.id}
+      food={food}
+      isExpanded={expandedId === food.id}
+      onToggle={() => handleToggle(food.id)}
+      defaultMeal={activeMeal} selectedDate={selectedDate}
+      defaultTime={activeTime}
+      showSlots={showSlots}
+      onAdd={handleAdd}
+      addLabel={builderMode ? "+ Add to recipe" : undefined}
+      isFavourite={favourites.isFavourite(food.name)}
+      onToggleFavourite={() => favourites.toggle(food)}
+    />
+  );
   // Favourites/Frequently logged/Recently logged as tabs instead of a
   // stacked scroll — all three are now one tap away instead of requiring
   // a scroll past everything else to reach the bottom two.
@@ -2313,8 +2346,8 @@ export default function FoodSearch() {
               has essentially no real database coverage, so the honest
               answer is "estimate this," not "here's a wrong match ranked
               like it's a right one." */}
-          {!browsing && aiEstimateQuery !== query.trim() && (
-            bestMatchIsWeak ? (
+          {!browsing && !activeChain && aiEstimateQuery !== query.trim() && (
+            bestMatchIsWeak && !matchedChains.length ? (
               <button
                 onClick={handleAiEstimate}
                 disabled={aiEstimating}
@@ -2339,7 +2372,7 @@ export default function FoodSearch() {
             )
           )}
 
-          {!browsing && aiEstimateQuery === query.trim() && aiEstimateError && (
+          {!browsing && !activeChain && aiEstimateQuery === query.trim() && aiEstimateError && (
             <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: "var(--danger)", marginBottom: 14 }}>
               {aiEstimateError}
               {!aiLimitReached && (
@@ -2348,7 +2381,7 @@ export default function FoodSearch() {
             </div>
           )}
 
-          {!browsing && aiEstimateQuery === query.trim() && aiEstimateResult && (
+          {!browsing && !activeChain && aiEstimateQuery === query.trim() && aiEstimateResult && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                 <i className="ti ti-sparkles" style={{ fontSize: 12 }} /> AI estimate
@@ -2501,12 +2534,18 @@ export default function FoodSearch() {
             </>
           )}
 
+          {/* One restaurant's own menu, opened from its card in the results */}
+          {!browsing && activeChain && (
+            <ChainMenu chain={activeChain} onBack={() => setActiveChain(null)} renderFood={renderFood} />
+          )}
+
           {/* Search results */}
-          {!browsing && (
+          {!browsing && !activeChain && (
             <>
+              <ChainResultCards chains={matchedChains} onOpen={setActiveChain} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                  {liveLoading ? "Searching…" : `${allResults.length} result${allResults.length !== 1 ? "s" : ""}`}
+                  {liveLoading ? "Searching…" : `${allResults.length + matchedChains.length} result${allResults.length + matchedChains.length !== 1 ? "s" : ""}`}
                 </span>
               </div>
 
@@ -2541,7 +2580,7 @@ export default function FoodSearch() {
               {/* Foods — custom foods + FatSecret generic results
                   (raw/cooked/every-cut variants across every food category,
                   not brands) */}
-              {foodsResults.length === 0 && !liveLoading && packagedResults.length === 0 && !liveError ? (
+              {foodsResults.length === 0 && !liveLoading && packagedResults.length === 0 && !liveError && !matchedChains.length ? (
                 <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-hint)", fontSize: 14 }}>
                   <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
                   No foods found for "{query}"
