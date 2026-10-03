@@ -13,9 +13,16 @@ function swipeLeft(el, distance) {
 }
 
 describe('SwipeToDelete', () => {
-  it('renders the row and a hidden Delete action', () => {
+  it('keeps the Delete action out of the accessibility tree until actually revealed', () => {
     render(<SwipeToDelete onDelete={vi.fn()}><div>Chocolate</div></SwipeToDelete>);
     expect(screen.getByText('Chocolate')).toBeInTheDocument();
+    // Not display:none — it needs to be in the DOM to slide into view as you
+    // drag — but genuinely unreachable (no role, no tab stop) while closed,
+    // not just sitting visually behind the row. See the e2e layout check
+    // this exists to satisfy: a hit-testable "Delete" permanently behind
+    // every row is exactly what it flags as a real covered-element bug.
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    swipeLeft(screen.getByText('Chocolate'), 60);
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
@@ -71,6 +78,7 @@ describe('SwipeToDelete', () => {
   it('tapping the revealed Delete button deletes', () => {
     const onDelete = vi.fn();
     render(<SwipeToDelete onDelete={onDelete}><div>Chocolate</div></SwipeToDelete>);
+    swipeLeft(screen.getByText('Chocolate'), 60);
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
