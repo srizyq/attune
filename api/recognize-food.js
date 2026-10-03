@@ -31,6 +31,7 @@ function getClient() {
 }
 
 const FREE_MONTHLY_SCAN_LIMIT = 5;
+const FREE_CORRECTION_GRACE = 10;
 
 const PROMPT = `You're looking at a photo of food. Identify what's in it, break it down into its main components, and estimate each component's nutrition separately.
 
@@ -133,13 +134,21 @@ export default async function handler(req, res) {
   // A correction re-analyzes a scan the user already paid a cap-count
   // for, so it doesn't cost another one — the cap check/increment below
   // is skipped entirely for correction calls, not just the increment.
-  const isCorrection = typeof correction === 'string' && correction.trim().length > 0;
+  // It only counts as one when it carries the estimate it's correcting —
+  // a bare `correction` string is just a fresh scan with a note attached.
+  const isCorrection = typeof correction === 'string' && correction.trim().length > 0
+    && !!previousResult && typeof previousResult === 'object';
 
   const today = new Date().toISOString().slice(0, 10);
   const inSamePeriod = samePeriod(profile.photo_scans_period_start, today);
   const usedSoFar = inSamePeriod ? profile.photo_scans_used : 0;
 
-  if (!isCorrection && !profile.is_premium && usedSoFar >= FREE_MONTHLY_SCAN_LIMIT) {
+  // Corrections can't be tied to a specific earlier scan server-side, so
+  // they're free only while the user is under their cap; past it they draw
+  // from a small grace allowance (and count) so a direct API caller can't
+  // get unlimited scans by labelling every request a correction.
+  const scanLimit = FREE_MONTHLY_SCAN_LIMIT + (isCorrection ? FREE_CORRECTION_GRACE : 0);
+  if (!profile.is_premium && usedSoFar >= scanLimit) {
     res.status(403).json({
       error: `You've used all ${FREE_MONTHLY_SCAN_LIMIT} free photo scans this month — upgrade to Pro for unlimited scans.`,
       limitReached: true,
@@ -189,7 +198,7 @@ export default async function handler(req, res) {
     // we rejected the request before ever calling Anthropic (missing
     // image, wrong type, or already over the limit above), or if this is
     // a free correction re-analysis of a scan that already counted.
-    if (!isCorrection && !profile.is_premium) {
+    if (!profile.is_premium && (!isCorrection || usedSoFar >= FREE_MONTHLY_SCAN_LIMIT)) {
       await supabase.from('profiles')
         .update({ photo_scans_used: usedSoFar + 1, photo_scans_period_start: today })
         .eq('id', userId);

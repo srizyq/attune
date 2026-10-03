@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 describe('recognize-menu detail mode', () => {
-  it('answers a free user who is already at the scan cap, because it belongs to a scan already counted', async () => {
+  it('answers a free user who is already at the scan cap, from a small grace allowance', async () => {
     const res = fakeRes();
     await handler(req({ detail: true, pick: { name: 'Wrap', cal: 700 } }), res);
     expect(res.code).toBe(200);
@@ -42,10 +42,29 @@ describe('recognize-menu detail mode', () => {
     expect(res.body.source.box).toBeNull();
   });
 
-  it('does not count against the monthly cap', async () => {
+  it('is free while the user is still under the cap', async () => {
+    sb = fakeSupabase((state) => (state.table === 'profiles' && state.op === 'select'
+      ? { data: { ...FREE_USER_AT_CAP, menu_scans_used: 1 }, error: null } : { data: [], error: null }), { user: { id: 'u1', email: 'someone@example.test' } });
     const res = fakeRes();
     await handler(req({ detail: true, pick: { name: 'Wrap' } }), res);
+    expect(res.code).toBe(200);
     expect(sb.calls.some((c) => c.table === 'profiles' && c.op === 'update')).toBe(false);
+  });
+
+  it('counts past the cap, and stops once the grace allowance is spent', async () => {
+    await handler(req({ detail: true, pick: { name: 'Wrap' } }), fakeRes());
+    expect(sb.calls.some((c) => c.table === 'profiles' && c.op === 'update')).toBe(true);
+    sb = fakeSupabase((state) => (state.table === 'profiles' && state.op === 'select'
+      ? { data: { ...FREE_USER_AT_CAP, menu_scans_used: 13 }, error: null } : { data: [], error: null }), { user: { id: 'u1', email: 'someone@example.test' } });
+    const res = fakeRes();
+    await handler(req({ detail: true, pick: { name: 'Wrap' } }), res);
+    expect(res.code).toBe(403);
+  });
+
+  it('treats a correction without the previous item as a normal, capped scan', async () => {
+    const res = fakeRes();
+    await handler(req({ correction: 'x' }), res);
+    expect(res.code).toBe(403);
   });
 
   it('sends the detail prompt, not the full-menu prompt', async () => {

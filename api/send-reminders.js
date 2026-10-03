@@ -215,7 +215,12 @@ export default async function handler(req, res) {
   // Vercel's own scheduler calling in — nothing sends it automatically
   // here the way Vercel Cron would. Keep both values in sync if either
   // is ever rotated.
-  if (process.env.CRON_SECRET && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Fail closed: a missing secret must not leave the endpoint open.
+  if (!process.env.CRON_SECRET) {
+    res.status(500).json({ error: 'Reminder cron is not fully configured' });
+    return;
+  }
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }

@@ -26,6 +26,7 @@ function getClient() {
 }
 
 const FREE_MONTHLY_SCAN_LIMIT = 3;
+const FREE_FOLLOW_UP_GRACE = 10;
 
 const GOAL_COPY = {
   lose: 'losing weight (in a calorie deficit)',
@@ -147,7 +148,8 @@ export default async function handler(req, res) {
   // cap-count for, so it doesn't cost another one — the cap check/
   // increment below is skipped entirely for correction calls, same as
   // recognize-food.js's isCorrection branch.
-  const isCorrection = typeof correction === 'string' && correction.trim().length > 0;
+  const isCorrection = typeof correction === 'string' && correction.trim().length > 0
+    && !!previousItem && typeof previousItem === 'object';
   // The confirm step's follow-up for a dish that's already been picked
   // (portion sizes, quick tweaks, allergens — see _menuDetail.js). Free for
   // the same reason a correction is: it belongs to a scan already counted.
@@ -158,7 +160,11 @@ export default async function handler(req, res) {
   const inSamePeriod = samePeriod(profile.menu_scans_period_start, today);
   const usedSoFar = inSamePeriod ? profile.menu_scans_used : 0;
 
-  if (!isFollowUp && !profile.is_premium && usedSoFar >= FREE_MONTHLY_SCAN_LIMIT) {
+  // Follow-ups can't be tied to a specific earlier scan server-side, so
+  // they're free only while under the cap; past it they draw from a small
+  // grace allowance (and count) instead of being unlimited.
+  const scanLimit = FREE_MONTHLY_SCAN_LIMIT + (isFollowUp ? FREE_FOLLOW_UP_GRACE : 0);
+  if (!profile.is_premium && usedSoFar >= scanLimit) {
     res.status(403).json({
       error: `You've used all ${FREE_MONTHLY_SCAN_LIMIT} free menu scans this month — upgrade to Pro for unlimited scans.`,
       limitReached: true,
@@ -251,7 +257,7 @@ export default async function handler(req, res) {
     // Counts against the cap the moment we've actually spent the money on
     // an Anthropic call, not counted if this is a free correction
     // re-analysis of an item from a menu that already counted.
-    if (!isFollowUp && !profile.is_premium) {
+    if (!profile.is_premium && (!isFollowUp || usedSoFar >= FREE_MONTHLY_SCAN_LIMIT)) {
       await supabase.from('profiles')
         .update({ menu_scans_used: usedSoFar + 1, menu_scans_period_start: today })
         .eq('id', userId);

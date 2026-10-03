@@ -33,7 +33,7 @@ const resolver = (s) => {
 const run = async () => {
   sb = fakeSupabase(resolver);
   const res = fakeRes();
-  await handler({ method: 'GET', headers: {} }, res);
+  await handler({ method: 'GET', headers: { authorization: 'Bearer test-secret' } }, res);
   return res;
 };
 
@@ -54,9 +54,24 @@ beforeEach(() => {
     lastLogs: [{ user_id: 'quiet', last_log_date: '2026-09-10' }, { user_id: 'active', last_log_date: '2026-09-20' }],
   };
   Object.assign(process.env, { VITE_SUPABASE_URL: 'x', SUPABASE_SERVICE_ROLE_KEY: 'x', VITE_VAPID_PUBLIC_KEY: 'x', VAPID_PRIVATE_KEY: 'x' });
-  delete process.env.CRON_SECRET;
+  process.env.CRON_SECRET = 'test-secret';
 });
 afterEach(() => vi.useRealTimers());
+
+describe('cron auth', () => {
+  it('rejects a missing or wrong secret', async () => {
+    const res = fakeRes();
+    await handler({ method: 'GET', headers: {} }, res);
+    expect(res.code).toBe(401);
+  });
+
+  it('fails closed when CRON_SECRET is not configured', async () => {
+    delete process.env.CRON_SECRET;
+    const res = fakeRes();
+    await handler({ method: 'GET', headers: {} }, res);
+    expect(res.code).toBe(500);
+  });
+});
 
 describe('inactive-client digest', () => {
   it('sends a coach one push with the count of quiet clients, and records that it did', async () => {

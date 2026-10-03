@@ -1908,7 +1908,7 @@ export default function FoodSearch() {
       voiceAutoStartRef.current = true;
       startVoiceSearch();
     }
-  }, [location.state]);
+  }, [location.state, startVoiceSearch]);
 
   // Foods the user has created themselves — shown alongside everything
   // else, matched by name when searching.

@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
 import { AuthProvider } from './context/AuthProvider'
 import { useAuth } from './hooks/useAuth'
@@ -14,21 +14,24 @@ import Login from './pages/Login'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import FoodSearch from "./pages/FoodSearch";
-import Recipes from "./pages/Recipes";
-import Settings from "./pages/Settings";
-import SettingsGoals from "./pages/SettingsGoals";
-import Profile from "./pages/Profile";
-import Pricing from "./pages/Pricing";
-import Nutrients from "./pages/Nutrients";
-import Expenditure from "./pages/Expenditure";
 import DailyLog from "./pages/DailyLog";
-import Coach from "./pages/Coach";
-import JoinCoach from "./pages/JoinCoach";
-import DashboardRedesignHarness from "./prototypes/dashboard-redesign/Harness";
-import SettingsRedesignHarness from "./prototypes/settings-redesign/Harness";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
 import { locationChanged, isPageTransition } from './lib/routeTransition';
+
+// Secondary screens load on demand so the first paint ships less JS. The
+// bottom-nav tabs (Dashboard, Food, Log) stay eager to keep tab switches instant.
+const Recipes = lazy(() => import('./pages/Recipes'));
+const Settings = lazy(() => import('./pages/Settings'));
+const SettingsGoals = lazy(() => import('./pages/SettingsGoals'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const Nutrients = lazy(() => import('./pages/Nutrients'));
+const Expenditure = lazy(() => import('./pages/Expenditure'));
+const Coach = lazy(() => import('./pages/Coach'));
+const JoinCoach = lazy(() => import('./pages/JoinCoach'));
+const DashboardRedesignHarness = lazy(() => import('./prototypes/dashboard-redesign/Harness'));
+const SettingsRedesignHarness = lazy(() => import('./prototypes/settings-redesign/Harness'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 // Bottom-nav destinations switch between each other like iOS tabs (a soft
 // cross-dissolve + slight rise); everything else is reached by drilling in
@@ -64,6 +67,7 @@ function AnimatedRoutes() {
 
   return (
     <div key={renderedLocation.pathname} className={animClass} onAnimationEnd={() => setAnimClass('')}>
+      <Suspense fallback={null}>
       <Routes location={renderedLocation}>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
@@ -94,6 +98,7 @@ function AnimatedRoutes() {
         <Route path="/prototypes/settings-redesign" element={<SettingsRedesignHarness />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </div>
   );
 }
