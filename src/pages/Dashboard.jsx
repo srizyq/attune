@@ -34,6 +34,8 @@ import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import TrialBanner from '../components/TrialBanner';
 import InstallPrompt from '../components/InstallPrompt';
+import CalorieLimitBanner from '../components/CalorieLimitBanner';
+import { activeLimit } from '../lib/calorieLimit';
 import PullIndicator from '../components/PullIndicator';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { round1, withBrand } from '../lib/format';
@@ -1117,6 +1119,7 @@ export default function Dashboard() {
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
           {pendingConfirmation && <ConfirmEmailBanner email={user?.new_email} />}
+          <CalorieLimitBanner limit={activeLimit(profile, today)} today={today} />
           <InstallPrompt />
           <TrialBanner profile={profile} userId={user?.id} />
           {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} onClick={() => setCoachChatOpen(true)} style={{ marginBottom: 16 }} />}

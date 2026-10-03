@@ -12,6 +12,7 @@ import GoalRateCard from '../components/settings/GoalRateCard';
 import { MICRO_NUTRIENTS } from '../lib/microNutrients';
 import { dayTargetsToInputs, parseDayTargetInputs } from '../lib/dayTargets';
 import RestDayTargetsCard from '../components/settings/RestDayTargetsCard';
+import CalorieLimitCard from '../components/settings/CalorieLimitCard';
 import AppNav from '../components/AppNav';
 import Slider from '../components/Slider';
 import EditableNumber from '../components/EditableNumber';
@@ -563,6 +564,15 @@ export default function SettingsGoals() {
           </Card>
 
           </div>
+
+          <CalorieLimitCard
+            profile={profile}
+            today={todayLocalDate()}
+            onSave={(periods) => saveProfile({ calorie_limit_periods: periods })}
+            onUpgrade={() => navigate('/pricing')}
+            pendingConfirmation={pendingConfirmation}
+            onConfirmEmail={() => navigate('/profile')}
+          />
 
           {supportsDay && (
             <RestDayTargetsCard

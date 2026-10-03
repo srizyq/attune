@@ -7,6 +7,11 @@
 //
 // Mirrors target_for_date / valid_rest_day_targets / valid_training_days in
 // supabase/schema.sql; supabase/tests/day-targets.test.js compares the two.
+//
+// A Pro member's temporary calorie limit (lib/calorieLimit.js) is applied on
+// top of whichever of those two sets the day would otherwise use. The SQL
+// target_for_date does not know about limits, so the coach summaries (which
+// call it) show the underlying target.
 
 // Monday first for display; `dow` is the number stored (0 = Sunday .. 6 =
 // Saturday — JavaScript's getDay, Postgres's extract(dow ...)).
@@ -19,6 +24,8 @@ export const WEEKDAYS = [
   { dow: 6, short: 'Sat', label: 'Saturday' },
   { dow: 0, short: 'Sun', label: 'Sunday' },
 ];
+import { activeLimit, limitedTargets } from './calorieLimit.js';
+
 export const MAX_CALORIES = 20000;
 export const MAX_GRAMS = 2000;
 
@@ -50,6 +57,14 @@ export function dayTargetsActive(profile) {
 // isRestDay }. Unset targets are null. isRestDay is true only when the
 // rest-day set is actually what's being returned.
 export function targetsForDate(profile, isoDate) {
+  const base = dayTargetsFor(profile, isoDate);
+  const limit = activeLimit(profile, isoDate);
+  // `limit` is present only on days a limit applies, so everything else gets
+  // exactly the object it always did.
+  return limit ? { ...limitedTargets(base, limit), limit } : base;
+}
+
+function dayTargetsFor(profile, isoDate) {
   const out = { isRestDay: false };
   for (const f of TARGET_FIELDS) out[f.key] = profile?.[f.column] ?? null;
   if (!dayTargetsActive(profile)) return out;

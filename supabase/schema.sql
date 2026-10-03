@@ -3273,3 +3273,62 @@ $$;
 
 revoke all on function public.rate_limit_hit(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.rate_limit_hit(text, integer, integer) to service_role;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Temporary calorie limits (schema update — run against an existing DB; safe
+-- to re-run).
+-- ═══════════════════════════════════════════════════════════════════════════
+-- A Pro member can hold their daily calories to a lower (or higher) number for
+-- a set stretch of days. Each period is {id, start, end, calories, created_at}
+-- (dates 'YYYY-MM-DD', end inclusive); finished ones are kept so the days
+-- inside them still show the target they had. The app (src/lib/calorieLimit.js)
+-- applies a period only while the account has Pro, so a lapsed Pro simply goes
+-- back to the normal target. This function is the safety net behind it: shape,
+-- sane ranges, at most 60 entries, and no two periods overlapping.
+alter table public.profiles add column if not exists calorie_limit_periods jsonb not null default '[]'::jsonb;
+
+create or replace function public.valid_calorie_limit_periods(p jsonb)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  n integer;
+  i integer;
+  j integer;
+  a jsonb;
+  b jsonb;
+  cal numeric;
+  a_start date; a_end date; b_start date; b_end date;
+begin
+  if p is null or jsonb_typeof(p) <> 'array' then return false; end if;
+  n := jsonb_array_length(p);
+  if n > 60 then return false; end if;
+  for i in 0 .. n - 1 loop
+    a := p -> i;
+    if jsonb_typeof(a) <> 'object' then return false; end if;
+    -- coalesce: a missing key gives NULL, and `NULL <> 'number'` is NULL, not true.
+    if coalesce(jsonb_typeof(a -> 'calories'), '') <> 'number' then return false; end if;
+    cal := (a ->> 'calories')::numeric;
+    if cal < 800 or cal > 20000 then return false; end if;
+    if coalesce(jsonb_typeof(a -> 'start'), '') <> 'string' or coalesce(jsonb_typeof(a -> 'end'), '') <> 'string' then return false; end if;
+    a_start := (a ->> 'start')::date;
+    a_end := (a ->> 'end')::date;
+    if a_end < a_start or a_end - a_start > 366 then return false; end if;
+    for j in 0 .. i - 1 loop
+      b := p -> j;
+      b_start := (b ->> 'start')::date;
+      b_end := (b ->> 'end')::date;
+      if a_start <= b_end and b_start <= a_end then return false; end if;
+    end loop;
+  end loop;
+  return true;
+exception when others then
+  -- A date that doesn't parse, a number out of range, … all just mean "invalid".
+  return false;
+end;
+$$;
+
+alter table public.profiles drop constraint if exists profiles_calorie_limit_periods_valid;
+alter table public.profiles add constraint profiles_calorie_limit_periods_valid
+  check (public.valid_calorie_limit_periods(calorie_limit_periods));

@@ -114,3 +114,37 @@ describe('dayTargetsToInputs / describeTrainingDays', () => {
     expect(TARGET_FIELDS.map((f) => f.key)).toEqual(['calories', 'protein_g', 'carbs_g', 'fat_g']);
   });
 });
+
+describe('targetsForDate with a temporary calorie limit', () => {
+  const profile = (extra = {}) => ({
+    is_premium: true, calorie_target: 2200, protein_g: 165, carbs_g: 220, fat_g: 73,
+    calorie_limit_periods: [{ id: 'a', start: '2026-10-01', end: '2026-10-14', calories: 1760, created_at: '2026-10-01T00:00:00Z' }],
+    ...extra,
+  });
+  it('uses the limit inside the period, scaling the macros, and says which limit it is', () => {
+    const t = targetsForDate(profile(), '2026-10-05');
+    expect(t).toMatchObject({ calories: 1760, protein_g: 132, carbs_g: 176, fat_g: 58, isRestDay: false });
+    expect(t.limit.id).toBe('a');
+  });
+  it('is the normal target (with no limit key at all) outside the period', () => {
+    for (const d of ['2026-09-30', '2026-10-15']) {
+      const t = targetsForDate(profile(), d);
+      expect(t).toEqual({ calories: 2200, protein_g: 165, carbs_g: 220, fat_g: 73, isRestDay: false });
+      expect('limit' in t).toBe(false);
+    }
+  });
+  it('is ignored when the account is not Pro, so a lapsed Pro goes back to normal', () => {
+    expect(targetsForDate(profile({ is_premium: false }), '2026-10-05').calories).toBe(2200);
+  });
+  it('scales from a rest day\'s own targets when that is what the day would use', () => {
+    // 2026-10-04 is a Sunday (0); training days are Mon-Fri, so it is a rest day.
+    const p = profile({ rest_day_targets: { calories: 1600, protein_g: 150 }, training_days: [1, 2, 3, 4, 5], calorie_limit_periods: [{ id: 'a', start: '2026-10-01', end: '2026-10-14', calories: 1200, created_at: 'x' }] });
+    const t = targetsForDate(p, '2026-10-04');
+    expect(t.isRestDay).toBe(true);
+    expect(t.calories).toBe(1200);
+    expect(t.protein_g).toBe(Math.round(150 * (1200 / 1600)));
+  });
+  it('a profile without any periods is unchanged', () => {
+    expect(targetsForDate({ is_premium: true, calorie_target: 2000 }, '2026-10-05').calories).toBe(2000);
+  });
+});

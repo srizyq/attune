@@ -217,7 +217,15 @@ export default async function handler(req, res) {
       .select('rest_day_targets, training_days')
       .eq('id', userId)
       .single();
-    const todays = targetsForDate({ ...profile, ...(dayCols || {}) }, today);
+    // Read on its own so a database that hasn't had the calorie-limit column
+    // added yet still gets the rest-day targets above. A Pro member's
+    // temporary limit changes what "remaining today" means, so it counts here.
+    const { data: limitCols } = await supabase
+      .from('profiles')
+      .select('calorie_limit_periods')
+      .eq('id', userId)
+      .single();
+    const todays = targetsForDate({ ...profile, ...(dayCols || {}), ...(limitCols || {}) }, today);
     remaining = {
       calories: Math.max(0, Math.round((todays.calories || 2000) - consumed.calories)),
       protein: Math.max(0, Math.round((todays.protein_g || 0) - consumed.protein)),
