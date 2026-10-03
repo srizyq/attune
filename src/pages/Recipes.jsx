@@ -11,6 +11,7 @@ import AppNav from '../components/AppNav';
 import Toast from '../components/Toast';
 import { Card, SectionLabel } from '../components/settings/primitives';
 import ModalPortal from '../components/ModalPortal';
+import RecipeEditor from '../components/RecipeEditor';
 import PageHeader from '../components/PageHeader';
 import FormRow from '../components/FormRow';
 import ListRow from '../components/ListRow';
@@ -30,7 +31,7 @@ const inputStyle = {
 // actual "log N servings" control, matching the amount+unit interaction
 // every other food in the app already uses (see FoodSearch's AddControls)
 // rather than inventing a new one.
-function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, logByTime, defaultMeal, defaultTime }) {
+function RecipeCard({ recipe, isExpanded, onToggle, onAddIngredient, onSaveEdit, onDelete, onLog, logByTime, defaultMeal, defaultTime }) {
   const items = useMemo(() => recipe.items || [], [recipe.items]);
   const servings = Number(recipe.servings) || 1;
   const totals = useMemo(() => sumFoodItems(items), [items]);
@@ -40,6 +41,8 @@ function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, log
   const [meal, setMeal] = useState(defaultMeal);
   const [time, setTime] = useState(defaultTime);
   const [logging, setLogging] = useState(false);
+  // Edit mode swaps the sheet's body for RecipeEditor.
+  const [editing, setEditing] = useState(false);
 
   const scaledForLog = scaleFood(perServing, Number(servingsToLog) || 0);
 
@@ -65,19 +68,29 @@ function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, log
       />
       {isExpanded && (
         <ModalPortal>
-        <div onClick={onToggle} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 300 }}>
+        <div onClick={editing ? undefined : onToggle} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 300 }}>
           <div
             onClick={e => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label={recipe.name}
             className="modal-panel"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '16px 16px 0 0', padding: 20, width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto' }}
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 480, maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{recipe.name}</div>
-              <button onClick={onToggle} aria-label="Close" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}>✕</button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 14px', gap: 10, flexShrink: 0 }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{editing ? 'Edit recipe' : recipe.name}</div>
+              <button onClick={editing ? () => setEditing(false) : onToggle} aria-label={editing ? 'Cancel editing' : 'Close'} className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}>✕</button>
             </div>
+
+            {editing ? (
+              <RecipeEditor
+                recipe={recipe}
+                onCancel={() => setEditing(false)}
+                onAddIngredient={(draft) => onAddIngredient(recipe, draft)}
+                onSave={async (changes) => { await onSaveEdit(recipe, changes); setEditing(false); }}
+              />
+            ) : (
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px calc(20px + var(--safe-bottom, 0px))' }}>
 
             <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: 14, marginBottom: 14 }}>
               {items.map((it, i) => (
@@ -123,9 +136,11 @@ function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, log
             </div>
 
             <FormRow>
-              <FormRow.Button icon="ti-edit" onClick={() => onEdit(recipe)}>Edit</FormRow.Button>
+              <FormRow.Button icon="ti-edit" onClick={() => setEditing(true)}>Edit recipe</FormRow.Button>
               <FormRow.Button icon="ti-trash" danger onClick={() => onDelete(recipe)}>Delete</FormRow.Button>
             </FormRow>
+            </div>
+            )}
           </div>
         </div>
         </ModalPortal>
@@ -190,6 +205,17 @@ export default function Recipes() {
     }
   }
 
+  async function handleSaveEdit(recipe, changes) {
+    try {
+      await savedMeals.update(recipe.id, changes);
+      showToast(`${changes.name} updated`);
+    } catch (err) {
+      console.error('Failed to update recipe:', err);
+      showToast(`Couldn't update ${recipe.name} — try again`, true);
+      throw err;
+    }
+  }
+
   async function handleDelete(recipe) {
     try {
       await savedMeals.remove(recipe.id);
@@ -248,7 +274,8 @@ export default function Recipes() {
                   recipe={recipe}
                   isExpanded={expandedId === recipe.id}
                   onToggle={() => setExpandedId(prev => (prev === recipe.id ? null : recipe.id))}
-                  onEdit={(r) => navigate('/food', { state: { editMealBuilder: r.id } })}
+                  onAddIngredient={(r, draft) => navigate('/food', { state: { editMealBuilder: r.id, editDraft: draft } })}
+                  onSaveEdit={handleSaveEdit}
                   onDelete={handleDelete}
                   onLog={handleLog}
                   logByTime={logByTime}

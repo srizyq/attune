@@ -1787,6 +1787,7 @@ export default function FoodSearch() {
   // /recipes' Edit button) rather than create a new one — routes the
   // eventual save through savedMeals.update instead of .create.
   const [editingRecipeId, setEditingRecipeId] = useState(null);
+  const [editDraftMeta, setEditDraftMeta] = useState(null); // name/servings carried from the recipe editor
   // Whether the builder was entered from the Recipes page at all (new or
   // edit) — determines whether finishing (save or cancel) returns there
   // instead of just closing back to plain Food search.
@@ -1829,11 +1830,18 @@ export default function FoodSearch() {
     const recipe = savedMeals.rows.find(r => r.id === editId);
     if (!recipe) return;
     editAppliedRef.current = true;
+    // "Add ingredient" from the recipe editor brings its unsaved edits along
+    // (new amounts, removed ingredients, a new name/servings) so they aren't
+    // lost on the way to food search.
+    const draft = location.state?.editDraft;
     setBuilderMode(true);
-    setBuilderItems(recipe.items || []);
+    setBuilderItems(draft?.items || recipe.items || []);
+    setEditDraftMeta(draft ? { name: draft.name, servings: draft.servings } : null);
     setEditingRecipeId(recipe.id);
     setBuilderFromRecipes(true);
-    setBuilderReviewOpen(true);
+    // Straight to the review for a plain edit; for "Add ingredient" land on the
+    // search instead, with the floating bar to review once something is added.
+    setBuilderReviewOpen(!draft);
   }, [location.state, savedMeals.rows]);
 
   // Live external search state — FatSecret (generic foods, comprehensive
@@ -2208,6 +2216,7 @@ export default function FoodSearch() {
     setBuilderItems([]);
     setBuilderReviewOpen(false);
     setEditingRecipeId(null);
+    setEditDraftMeta(null);
     setBuilderFromRecipes(false);
     editAppliedRef.current = false;
     if (returnToRecipes) navigate('/recipes');
@@ -2741,8 +2750,8 @@ export default function FoodSearch() {
           onRemove={(i) => setBuilderItems(prev => prev.filter((_, idx) => idx !== i))}
           onSave={handleSaveBuilderMeal}
           isEditing={!!editingRecipeId}
-          initialName={editingRecipeId ? savedMeals.rows.find(r => r.id === editingRecipeId)?.name : ""}
-          initialServings={editingRecipeId ? savedMeals.rows.find(r => r.id === editingRecipeId)?.servings : 1}
+          initialName={editingRecipeId ? (editDraftMeta?.name ?? savedMeals.rows.find(r => r.id === editingRecipeId)?.name) : ""}
+          initialServings={editingRecipeId ? (editDraftMeta?.servings ?? savedMeals.rows.find(r => r.id === editingRecipeId)?.servings) : 1}
         />
       )}
     </div>

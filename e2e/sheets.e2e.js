@@ -7,7 +7,7 @@ import { openApp, settle, assertLayout } from './harness.js';
 // the theme wrapper came out dark for light-mode users).
 const SHEETS = [
   { name: 'log-item', path: '/log', buttons: ['Save', 'Delete'], open: async (p) => { await p.getByRole('button', { name: 'Meals' }).last().click(); await p.getByText('Grilled chicken').first().click(); } },
-  { name: 'recipe', path: '/recipes', buttons: ['Log', 'Edit', 'Delete'], open: async (p) => { await p.getByText('Big breakfast').first().click(); } },
+  { name: 'recipe', path: '/recipes', buttons: ['Log', 'Edit recipe', 'Delete'], open: async (p) => { await p.getByText('Big breakfast').first().click(); } },
 ];
 
 for (const theme of ['dark', 'light']) {
