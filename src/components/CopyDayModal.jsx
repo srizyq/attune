@@ -5,6 +5,7 @@ import { mapRow } from '../hooks/useFoodLogs';
 import { mapSlotRow, formatSlotTime } from '../lib/daySlots';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { todayLocalDate } from '../lib/patterns';
+import { withBrand } from '../lib/format';
 import DaySelector from './DaySelector';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
@@ -132,7 +133,7 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>{MEAL_LABELS[mealKey]}</div>
                 {grouped[mealKey].map(item => (
                   <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-                    <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                    <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{withBrand(item.name, item.brand)}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>{Math.round(item.cal)} kcal</div>
                   </div>
                 ))}

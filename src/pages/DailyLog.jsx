@@ -19,7 +19,7 @@ import DaySelector from '../components/DaySelector';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import CopyDayModal from '../components/CopyDayModal';
 import Toast from '../components/Toast';
-import { round1 } from '../lib/format';
+import { round1, withBrand } from '../lib/format';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import PageHeader from '../components/PageHeader';
@@ -215,7 +215,7 @@ export default function DailyLog() {
                     {items.length === 0 && yesterdayByMeal[mealKey].length > 0 && (
                       <YesterdayMealPrompt
                         mealLabel={MEAL_LABELS[mealKey]}
-                        names={yesterdayByMeal[mealKey].map(r => r.food_name).join(', ')}
+                        names={yesterdayByMeal[mealKey].map(r => withBrand(r.food_name, r.brand)).join(', ')}
                         kcal={Math.round(yesterdayByMeal[mealKey].reduce((sum, r) => sum + (Number(r.calories) || 0), 0))}
                         onCommit={() => copyFromYesterday(mealKey)}
                         disabled={copyingYesterday}

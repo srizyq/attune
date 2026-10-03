@@ -21,6 +21,7 @@ import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmoun
 import { ausnutExtraMicros } from '../lib/ausnutFood';
 import { mapRestaurantItemRow } from '../lib/restaurantFood';
 import { loggedRowToFood, favouriteRowToFood } from '../lib/foodRows';
+import { withBrand } from '../lib/format';
 import AppNav from '../components/AppNav';
 import PhotoScanModal from '../components/PhotoScanModal';
 import MenuScanModal from '../components/MenuScanModal';
@@ -1408,6 +1409,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <MarqueeText text={it.name} style={{ fontSize: 13, color: "var(--text-secondary)" }} />
                   <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {it.brand ? `${it.brand} · ` : ""}
                     {it.loggedAmount != null && it.loggedUnit ? `${formatAmountUnit(it.loggedAmount, it.loggedUnit)} · ` : ""}
                     <span style={{ color: "var(--accent)" }}>{Math.round(it.cal)} kcal</span>
                   </div>
@@ -1471,10 +1473,11 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
 function recentRowMeta(row, fallback) {
   const lastAmount = row.logged_amount != null ? Number(row.logged_amount) : null;
   const lastUnit = row.logged_unit || null;
-  if (lastAmount != null && lastUnit) return formatAmountUnit(lastAmount, lastUnit);
-  if (row.serving_label) return row.serving_label;
-  if (row.serving_grams) return `${Math.round(Number(row.serving_grams))}g`;
-  return fallback;
+  const prefix = row.brand ? `${row.brand} · ` : '';
+  if (lastAmount != null && lastUnit) return prefix + formatAmountUnit(lastAmount, lastUnit);
+  if (row.serving_label) return prefix + row.serving_label;
+  if (row.serving_grams) return `${prefix}${Math.round(Number(row.serving_grams))}g`;
+  return prefix + fallback;
 }
 
 function MacroPill({ value, unit = "g", label, color }) {
@@ -2109,17 +2112,17 @@ export default function FoodSearch() {
     try {
       await addFoodLog(food, meal, loggedAt, showSlots ? activeSlotId : null);
       refetchRecent(); lastLogged.refetch();
-      showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ""}`);
+      showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ""}`);
       setExpandedId(null);
     } catch (err) {
       console.error("Failed to log food:", err);
-      showToast(`Couldn't add ${food.name} — try again`, true);
+      showToast(`Couldn't add ${withBrand(food.name, food.brand)} — try again`, true);
     }
   }
 
   function addToBuilder(food) {
     setBuilderItems(prev => [...prev, food]);
-    showToast(`${food.name} added to recipe`);
+    showToast(`${withBrand(food.name, food.brand)} added to recipe`);
     setExpandedId(null);
   }
 
@@ -2130,7 +2133,7 @@ export default function FoodSearch() {
 
   async function handleDeleteCustom(food) {
     await customFoods.remove(food.customId);
-    showToast(`${food.name} removed`);
+    showToast(`${withBrand(food.name, food.brand)} removed`);
     setExpandedId(null);
   }
 
@@ -2613,7 +2616,7 @@ export default function FoodSearch() {
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
           showSlots={showSlots}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onCreateCustom={() => { setScanOpen(false); setCreateFoodPrefill(null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
@@ -2626,7 +2629,7 @@ export default function FoodSearch() {
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
           showSlots={showSlots}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onCreateCustom={(prefill) => { setPhotoScanOpen(false); setCreateFoodPrefill(prefill || null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setPhotoScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
@@ -2638,7 +2641,7 @@ export default function FoodSearch() {
           onClose={() => setMenuScanOpen(false)}
           showSlots={showSlots}
           selectedDate={selectedDate}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onSearchManually={() => { setMenuScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
       )}
@@ -2651,7 +2654,7 @@ export default function FoodSearch() {
           initialFood={createFoodPrefill}
           onCreate={async (food) => {
             await customFoods.create(food);
-            showToast(`"${food.name}" saved as a custom food`);
+            showToast(`"${withBrand(food.name, food.brand)}" saved as a custom food`);
           }}
         />
       )}
