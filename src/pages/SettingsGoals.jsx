@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
@@ -121,6 +121,11 @@ function UpgradeProButton({ pendingConfirmation, onGoToProfile, onGoToPricing })
 
 // `sex` isn't editable here but the formula needs it (Mifflin–St Jeor differs by
 // ~166 kcal); `pace` is the weekly goal rate in kg, null = not chosen yet.
+// How long after the last change the draft is written to the profile. Long
+// enough that dragging a slider is one save, short enough to feel immediate.
+const AUTOSAVE_DELAY_MS = 600;
+const SAVED_FLASH_MS = 1800;
+
 const DEFAULT_FORM = { unit: 'metric', age: 30, weight: 70, height: 170, goal: 'maintain', activity: 'moderate', sex: 'unspecified', pace: null, targetWeight: '' };
 
 export default function SettingsGoals() {
@@ -132,7 +137,13 @@ export default function SettingsGoals() {
   // mean "signed up, hasn't confirmed their email yet" — never "browsing
   // without an account".
   const pendingConfirmation = !!user?.is_anonymous;
-  const [saving, setSaving] = useState(false);
+  // idle → saving → saved (flashes, then idle) | error. Edits are written
+  // to the profile automatically; there is no Save button.
+  const [saveState, setSaveState] = useState('idle');
+  const [saveError, setSaveError] = useState(null);
+  // The draft (as draftKey) last handed to a save — autosave only fires for a
+  // draft that differs from it.
+  const [lastSavedKey, setLastSavedKey] = useState(null);
   const { latest: latestWeight } = useWeightLogs(todayLocalDate(), todayLocalDate());
 
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -166,21 +177,6 @@ export default function SettingsGoals() {
     JSON.stringify(microTargets) !== JSON.stringify(baseline.microTargets) ||
     JSON.stringify(restDay) !== JSON.stringify(baseline.restDay)
   );
-  const [popupVisible, setPopupVisible] = useState(false);
-  const [popupClosing, setPopupClosing] = useState(false);
-  useEffect(() => {
-    if (isDirty) {
-      setPopupClosing(false);
-      setPopupVisible(true);
-      return;
-    }
-    if (!popupVisible) return;
-    setPopupClosing(true);
-    const t = setTimeout(() => { setPopupVisible(false); setPopupClosing(false); }, 160);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDirty]);
-
   const { compute: computeAdaptive } = useAdaptiveTarget();
   const [adaptiveResult, setAdaptiveResult] = useState(null);
   const [adaptiveLoading, setAdaptiveLoading] = useState(false);
@@ -201,6 +197,11 @@ export default function SettingsGoals() {
   // disappears without handleSave needing to touch baseline itself.
   useEffect(() => {
     if (!profile) return;
+    // The profile changes after every autosave. If the person has kept editing
+    // since that save began, their draft is newer than what just came back —
+    // overwriting it would snap a slider back mid-drag — so only refresh the
+    // baseline and leave the draft alone.
+    const keepDraft = isDirty;
     const syncedForm = {
       unit: profile.unit || 'metric',
       age: profile.age || 30,
@@ -212,30 +213,34 @@ export default function SettingsGoals() {
       pace: profile.pace_kg_per_week != null ? Number(profile.pace_kg_per_week) : null,
       targetWeight: profile.target_weight != null ? String(profile.target_weight) : '',
     };
-    setForm(syncedForm);
+    if (!keepDraft) setForm(syncedForm);
     let syncedCal = customCal, syncedProtein = proteinPct, syncedFat = fatPct;
     if (profile.calorie_target) {
       syncedCal = profile.calorie_target;
       const split = splitFromGrams(profile.protein_g || 0, profile.carbs_g || 0, profile.fat_g || 0);
       syncedProtein = Math.round(split.protein * 100);
       syncedFat = Math.round(split.fat * 100);
-      setCustomCal(syncedCal);
-      setProteinPct(syncedProtein);
-      setFatPct(syncedFat);
+      if (!keepDraft) {
+        setCustomCal(syncedCal);
+        setProteinPct(syncedProtein);
+        setFatPct(syncedFat);
+      }
     }
     let syncedMode = calMode;
     if (profile.calorie_mode) {
       syncedMode = profile.calorie_mode;
-      setCalMode(syncedMode);
-      if (syncedMode === 'adaptive') refreshAdaptive(profile.goal || 'maintain', syncedForm.goal === 'maintain' ? null : (syncedForm.pace ?? defaultPace(syncedForm.goal)));
+      if (!keepDraft) setCalMode(syncedMode);
+      if (!keepDraft && syncedMode === 'adaptive') refreshAdaptive(profile.goal || 'maintain', syncedForm.goal === 'maintain' ? null : (syncedForm.pace ?? defaultPace(syncedForm.goal)));
     }
     const syncedMicroTargets = Object.fromEntries(
       Object.entries(profile.micro_targets || {}).map(([k, v]) => [k, String(v)])
     );
-    setMicroTargets(syncedMicroTargets);
+    if (!keepDraft) setMicroTargets(syncedMicroTargets);
     const syncedRestDay = { inputs: dayTargetsToInputs(profile).inputs, trainingDays: dayTargetsToInputs(profile).trainingDays };
-    setRestDay(syncedRestDay);
-    setDayError(null);
+    if (!keepDraft) {
+      setRestDay(syncedRestDay);
+      setDayError(null);
+    }
     setBaseline({
       ...syncedForm, age: Number(syncedForm.age), weight: Number(syncedForm.weight), height: Number(syncedForm.height),
       calMode: syncedMode, customCal: syncedCal, proteinPct: syncedProtein, fatPct: syncedFat,
@@ -283,22 +288,36 @@ export default function SettingsGoals() {
     if (calMode === 'adaptive') refreshAdaptive(goal, paceFor(goal));
   };
 
+  // Everything the draft would write, as one string: what autosave compares to
+  // decide "has anything changed since the last save".
+  const draftKey = JSON.stringify({ form, calMode, customCal, proteinPct, fatPct, microTargets, restDay, calories: preview.calories });
+  // Adaptive's number isn't known until its estimate arrives; saving the
+  // placeholder first would write the wrong target for a moment.
+  const adaptivePending = calMode === 'adaptive' && (adaptiveLoading || !adaptiveResult);
+
   const handleSave = async () => {
-    // Rest-day targets: validated up front so a typo is reported before anything
-    // is saved. Adaptive mode can't have them (it rewrites the everyday numbers
-    // itself), so saving in that mode turns them off.
+    setLastSavedKey(draftKey);
+    // Rest-day targets: an invalid entry is reported but doesn't hold up the
+    // rest of the page — everything else still saves, and the rest-day fields
+    // are left as they were until they're valid. Adaptive mode can't have them
+    // (it rewrites the everyday numbers itself), so saving there turns them off.
     let dayFields = {};
     if (supportsDay) {
       if (calMode === 'adaptive') {
         dayFields = { rest_day_targets: null, training_days: null };
       } else {
         const parsed = parseDayTargetInputs(restDay.inputs, restDay.trainingDays);
-        if (parsed.error) { setDayError(parsed.error); return; }
-        dayFields = { rest_day_targets: parsed.rest, training_days: parsed.trainingDays };
+        if (parsed.error) setDayError(parsed.error);
+        else {
+          setDayError(null);
+          dayFields = { rest_day_targets: parsed.rest, training_days: parsed.trainingDays };
+        }
       }
+    } else {
+      setDayError(null);
     }
-    setDayError(null);
-    setSaving(true);
+    setSaveState('saving');
+    setSaveError(null);
     try {
       // Drop empty/invalid entries so clearing an input actually removes
       // the target (falls back to the default guideline) instead of
@@ -327,14 +346,43 @@ export default function SettingsGoals() {
         micro_targets: cleanedMicroTargets,
         ...dayFields,
       });
-      // No need to touch popup state here — saveProfile updates `profile`,
-      // which re-runs the sync effect above and refreshes `baseline` to
-      // match the just-saved draft, so isDirty (and the popup) clears on
-      // its own the moment the new profile lands.
-    } finally {
-      setSaving(false);
+      // saveProfile updates `profile`, which re-runs the sync effect above and
+      // refreshes `baseline` to match, so isDirty clears on its own.
+      setSaveState('saved');
+    } catch (err) {
+      // This used to vanish — the page just looked like it hadn't saved.
+      console.error('Saving goals failed:', err);
+      setSaveError(err?.message || 'Unknown error');
+      setSaveState('error');
     }
   };
+
+  const needsSave = isDirty && draftKey !== lastSavedKey && !adaptivePending;
+
+  // Autosave: a short pause after the last change, one save at a time. A change
+  // made while a save is in flight is picked up when it finishes (saveState
+  // leaves 'saving', this re-runs). A save that failed isn't retried until the
+  // draft changes again, so a persistent error can't loop.
+  const handleSaveRef = useRef(handleSave);
+  const needsSaveRef = useRef(false);
+  useEffect(() => {
+    handleSaveRef.current = handleSave;
+    needsSaveRef.current = needsSave;
+  });
+  useEffect(() => {
+    if (!needsSave || saveState === 'saving') return;
+    const t = setTimeout(() => handleSaveRef.current(), AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [draftKey, needsSave, saveState]);
+
+  // Leaving the page inside the pause shouldn't lose the last change.
+  useEffect(() => () => { if (needsSaveRef.current) handleSaveRef.current(); }, []);
+
+  useEffect(() => {
+    if (saveState !== 'saved') return;
+    const t = setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), SAVED_FLASH_MS);
+    return () => clearTimeout(t);
+  }, [saveState]);
 
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
@@ -364,6 +412,7 @@ export default function SettingsGoals() {
                 targetWeight={form.targetWeight}
                 onTargetWeightChange={(v) => set('targetWeight', v)}
                 currentKg={currentKg}
+                manualCalories={calMode === 'custom'}
               />
             )}
             <div style={{ marginTop: '16px' }}>
@@ -574,38 +623,37 @@ export default function SettingsGoals() {
         </div>
       </div>
 
-      {popupVisible && (
+      {saveState !== 'idle' && (
         <div
-          className={popupClosing ? 'toast-out' : 'toast-in'}
+          role="status"
+          className="toast-in"
           style={{
-            // Plain `bottom: 84` sits 84px above the real (layout-viewport)
-            // bottom edge — behind the keyboard once one's open, since
-            // that edge doesn't move even though the keyboard now covers
-            // it. This is the only Save affordance on a page that's all
-            // numeric goal inputs, so it's reachable behind the keyboard
-            // on every single edit otherwise. Adding back the keyboard's
-            // own height (100vh minus the shrunk --vvh) keeps it 84px
-            // above the *visible* bottom — the keyboard's top edge —
-            // instead, and is a no-op (adds 0) when no keyboard is open.
+            // Sits above the keyboard's top edge as well as the bottom nav:
+            // plain `bottom` is measured from the layout viewport, which an
+            // open keyboard covers; adding back the keyboard's height keeps it
+            // visible, and adds 0 when no keyboard is open.
             position: 'fixed', left: '50%', bottom: 'calc(84px + (100vh - var(--vvh, 100vh)))', zIndex: 150,
             width: 'calc(100% - 32px)', maxWidth: 420,
-            background: 'var(--bg-subtle)', border: '1px solid var(--border-strong)', borderRadius: 14,
-            padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
+            background: 'var(--bg-subtle)', border: `1px solid ${saveState === 'error' ? 'var(--danger)' : 'var(--border-strong)'}`, borderRadius: 14,
+            padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
             boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
           }}
         >
-          <span style={{ color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600 }}>Unsaved changes</span>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{
-              padding: '9px 18px', background: saving ? 'var(--border-default)' : 'var(--accent)',
-              border: 'none', borderRadius: 8, color: saving ? 'var(--text-muted)' : 'var(--accent-contrast)',
-              fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-            }}
-          >
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
+          <span style={{ color: saveState === 'error' ? 'var(--danger)' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, minWidth: 0 }}>
+            {saveState === 'saving' && 'Saving…'}
+            {saveState === 'saved' && 'Saved'}
+            {saveState === 'error' && (
+              <>Couldn't save your changes<span style={{ display: 'block', fontWeight: 400, fontSize: 12, color: 'var(--text-muted)', marginTop: 2, wordBreak: 'break-word' }}>{saveError}</span></>
+            )}
+          </span>
+          {saveState === 'error' && (
+            <button
+              onClick={handleSave}
+              style={{ padding: '8px 16px', background: 'var(--accent)', border: 'none', borderRadius: 8, color: 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}
+            >
+              Retry
+            </button>
+          )}
         </div>
       )}
     </div>

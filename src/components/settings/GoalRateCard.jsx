@@ -21,7 +21,7 @@ function dateLabel(d) {
 
 // "How fast?" — MacroFactor-style: you choose a weekly rate and a target
 // weight; the daily calorie offset and the finish date follow from them.
-export default function GoalRateCard({ goal, unit, paceKg, onPaceChange, targetWeight, onTargetWeightChange, currentKg, now }) {
+export default function GoalRateCard({ goal, unit, paceKg, onPaceChange, targetWeight, onTargetWeightChange, currentKg, now, manualCalories = false }) {
   const scale = SCALE[unit === 'imperial' ? 'imperial' : 'metric'];
   const shown = snap(scale.fromKg(paceKg), scale);
   const offset = Math.abs(calcGoalAdjustment(goal, paceKg));
@@ -51,6 +51,11 @@ export default function GoalRateCard({ goal, unit, paceKg, onPaceChange, targetW
       <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '8px 0 0' }}>
         {goal === 'lose' ? '−' : '+'}{offset.toLocaleString()} kcal/day from your maintenance
       </p>
+      {manualCalories && (
+        <p role="note" style={{ color: 'var(--gold)', fontSize: 12, margin: '8px 0 0', lineHeight: 1.5 }}>
+          Your calorie target is set by hand (Custom), so this rate won't change it. Switch to Calculated or Adaptive to have your calories follow it.
+        </p>
+      )}
       {warning && (
         <p role="note" style={{ color: 'var(--gold)', fontSize: 12, margin: '8px 0 0', lineHeight: 1.5 }}>{warning}</p>
       )}
