@@ -23,6 +23,11 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
   const fileInputRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
+  // A failed shutter press used to just return — the button looked dead.
+  // Kept separate from `error` (which swaps the whole view for the
+  // "camera unavailable" fallback) so the live preview stays up and the
+  // user can simply try again.
+  const [captureError, setCaptureError] = useState(null);
   // Torch (the phone's flash held on continuously) — a real MediaStreamTrack
   // constraint, not a photo flash mode, so it stays lit while framing the
   // shot instead of only firing at capture. Support is inconsistent (solid
@@ -81,16 +86,30 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
   }
 
   function capture() {
+    setCaptureError(null);
     const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      onCapture(new File([blob], 'capture.jpg', { type: 'image/jpeg' }));
-    }, 'image/jpeg', 0.9);
+    // videoWidth is 0 until the first frame has actually decoded, which can
+    // lag `ready` (set as soon as play() resolves) on some mobile browsers.
+    if (!video || !video.videoWidth) {
+      setCaptureError("Camera isn't ready yet — give it a second and tap again.");
+      return;
+    }
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          setCaptureError("Couldn't capture that — try again, or choose a photo instead.");
+          return;
+        }
+        onCapture(new File([blob], 'capture.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', 0.9);
+    } catch (err) {
+      console.error('Capture failed:', err);
+      setCaptureError("Couldn't capture that — try again, or choose a photo instead.");
+    }
   }
 
   const containerStyle = fullScreen
@@ -158,6 +177,14 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
               left: 0, right: 0, textAlign: 'center',
               fontSize: fullScreen ? 13 : 11, color: '#ccc', textShadow: '0 1px 3px rgba(0,0,0,0.8)',
             }}>{hint}</div>
+          )}
+          {captureError && (
+            <div role="alert" style={{
+              position: 'absolute', left: 16, right: 16,
+              bottom: fullScreen ? 'calc(130px + env(safe-area-inset-bottom))' : 84,
+              textAlign: 'center', fontSize: 13, color: '#fff',
+              background: 'rgba(20,17,16,0.8)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 8, padding: '8px 12px',
+            }}>{captureError}</div>
           )}
           {ready && (
             <div style={{

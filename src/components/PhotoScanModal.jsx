@@ -174,8 +174,19 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     setComment('');
     setCorrectionError(null);
     setAnalyzing(true);
+    let dataUrl, base64;
     try {
-      const { dataUrl, base64 } = await resizeImage(file);
+      ({ dataUrl, base64 } = await resizeImage(file));
+    } catch (err) {
+      // Not a network problem — the file itself couldn't be decoded
+      // (unsupported format, e.g. HEIC on a desktop browser). Say so,
+      // instead of the "check your connection" the catch below gives.
+      console.error('Image prep failed:', err);
+      setError("Couldn't read that image — try taking the photo again, or pick a JPEG/PNG.");
+      setAnalyzing(false);
+      return;
+    }
+    try {
       setPreview(dataUrl);
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/recognize-food', {
@@ -353,7 +364,10 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   // The camera itself renders full-screen, outside the modal card entirely
   // — it's the active step and should feel like an actual camera app, not
   // a cramped preview box inside a dialog.
-  if (!preview) {
+  // `&& !error`: a failure before the preview exists (image decode, etc.)
+  // used to fall through to here and show the camera again with no sign
+  // anything went wrong.
+  if (!preview && !error) {
     return <CameraCapture onCapture={handleFile} hint="Line up a clear, well-lit shot" fullScreen onClose={close} />;
   }
 
@@ -428,7 +442,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
 
   return (
     <DragSheet title="Scan food photo" onClose={close} closing={closing} footer={footer}>
-      <img src={preview} alt="" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
+      {preview && <img src={preview} alt="" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />}
 
       {analyzing && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '20px 0', color: 'var(--text-muted)', fontSize: 13 }}>

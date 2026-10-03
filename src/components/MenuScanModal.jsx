@@ -142,8 +142,19 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     setPicked(null);
     setActiveTab('goal');
     setAnalyzing(true);
+    let dataUrl, base64;
     try {
-      const { dataUrl, base64 } = await resizeImage(file);
+      ({ dataUrl, base64 } = await resizeImage(file));
+    } catch (err) {
+      // Not a network problem — the file itself couldn't be decoded
+      // (unsupported format, e.g. HEIC on a desktop browser). Say so,
+      // instead of the "check your connection" the catch below gives.
+      console.error('Image prep failed:', err);
+      setError("Couldn't read that image — try taking the photo again, or pick a JPEG/PNG.");
+      setAnalyzing(false);
+      return;
+    }
+    try {
       setPreview(dataUrl);
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/recognize-menu', {
@@ -270,7 +281,10 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
   // Same pattern as PhotoScanModal — the camera is its own full-screen
   // step, not squeezed into the modal card, so it feels like an actual
   // camera rather than a small embedded preview.
-  if (!preview) {
+  // `&& !error`: a failure before the preview exists (image decode, etc.)
+  // used to fall through to here and show the camera again with no sign
+  // anything went wrong.
+  if (!preview && !error) {
     return <CameraCapture onCapture={handleFile} hint="Fit the whole menu section in frame" fullScreen onClose={close} />;
   }
 

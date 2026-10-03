@@ -29,6 +29,8 @@ function AdaptiveTargetPanel({ loading, result, goal, onRefresh }) {
     const messages = {
       'no-weight-logs': 'Log your weight from the dashboard to get started — adaptive targeting learns from your real weight trend over time.',
       'not-enough-span': `Keep logging weight — ${result.daysNeeded} more day${result.daysNeeded === 1 ? '' : 's'} of spread before there's enough of a trend to work from.`,
+      'not-enough-weigh-ins': `Log your weight on ${result.daysNeeded} more day${result.daysNeeded === 1 ? '' : 's'} — a few weigh-ins are needed so one off day on the scale can't skew your target.`,
+      'implausible-estimate': "Your logged food and weight don't add up to a believable maintenance level — usually a few days of unfinished food logging. Keep logging and it'll settle.",
       'not-enough-logged-days': `Log food on ${result.daysNeeded} more day${result.daysNeeded === 1 ? '' : 's'} within your weight-logging window — the estimate needs to see what you're actually eating, not just the scale.`,
     };
     return (

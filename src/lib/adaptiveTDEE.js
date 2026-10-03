@@ -30,6 +30,30 @@ const TREND_TAU_DAYS = 7;
 const MIN_TREND_SPAN_DAYS = 14;
 const MIN_LOGGED_CALORIE_DAYS = 10;
 
+// Noise tolerance. The scale swings ±1–2 kg day to day on water and sodium
+// alone, and a food diary has gaps — so neither raw input is trusted
+// point-for-point:
+//  - the weight *rate* is the median pairwise slope (Theil–Sen) across
+//    the window's weigh-ins, not "last smoothed weight minus first", so one
+//    salty-dinner spike or a fluky first weigh-in can't swing the result;
+//  - a logged day far below the user's own typical day is treated as an
+//    unfinished diary (breakfast logged, then life happened), not as
+//    having eaten that little — left in, each one drags estimated
+//    maintenance down, which lowers the target, which pushes the user to
+//    under-eat, which the next window reads as lower still;
+//  - and an estimate nobody could believe is withheld rather than turned
+//    into a calorie target.
+const MIN_WEIGH_INS = 4;
+// Pairs of weigh-ins closer than this give a slope that is mostly noise.
+const MIN_PAIR_GAP_DAYS = 3;
+// A logged day is "incomplete" below this fraction of the window's median
+// logged day, or below the absolute floor, whichever is higher.
+const INCOMPLETE_DAY_FRACTION = 0.5;
+const INCOMPLETE_DAY_FLOOR_KCAL = 500;
+// Outside this range the data is more likely wrong than the person.
+const PLAUSIBLE_TDEE_MIN = 1200;
+const PLAUSIBLE_TDEE_MAX = 5500;
+
 // Exported so any UI plotting raw + trend weight together (Progress.jsx)
 // converts both through the same conversion, instead of the chart
 // plotting whatever unit each row happened to be logged in.
@@ -75,34 +99,76 @@ export function computeTrendWeight(weightLogs) {
   return points;
 }
 
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+// Median of every pairwise slope (kg/day) between weigh-ins at least
+// MIN_PAIR_GAP_DAYS apart. Up to half the pairs can be wrecked by outliers
+// before the answer moves. Returns null if no pair is far enough apart.
+function robustSlopeKgPerDay(points) {
+  const slopes = [];
+  for (let i = 0; i < points.length; i++) {
+    for (let j = i + 1; j < points.length; j++) {
+      const dt = daysBetween(points[i].date, points[j].date);
+      if (dt >= MIN_PAIR_GAP_DAYS) slopes.push((points[j].raw - points[i].raw) / dt);
+    }
+  }
+  return slopes.length ? median(slopes) : null;
+}
+
 // dailyCalories: array of { date, calories } (one row per day, 0 for
 // days with nothing logged — the caller decides which days "count" by
 // only including days that actually have calories > 0, since a day with
 // calories:0 usually means "didn't log", not "ate nothing").
-export function estimateTDEE(trendPoints, dailyCalories) {
-  if (trendPoints.length < 2) return null;
+//
+// Says *why* when it can't produce an estimate, so the UI can tell the
+// user what to do next. estimateTDEE below is the estimate-or-null form.
+export function assessTDEE(trendPoints, dailyCalories) {
+  if (trendPoints.length < 2) return { ok: false, reason: 'not-enough-span', daysNeeded: MIN_TREND_SPAN_DAYS };
 
   const endPoint = trendPoints[trendPoints.length - 1];
   const spanDays = daysBetween(trendPoints[0].date, endPoint.date);
-  if (spanDays < MIN_TREND_SPAN_DAYS) return null;
+  if (spanDays < MIN_TREND_SPAN_DAYS) return { ok: false, reason: 'not-enough-span', daysNeeded: MIN_TREND_SPAN_DAYS - spanDays };
 
-  const loggedDays = dailyCalories.filter(d => d.calories > 0 && d.date >= trendPoints[0].date && d.date <= endPoint.date);
-  if (loggedDays.length < MIN_LOGGED_CALORIE_DAYS) return null;
+  if (trendPoints.length < MIN_WEIGH_INS) return { ok: false, reason: 'not-enough-weigh-ins', daysNeeded: MIN_WEIGH_INS - trendPoints.length };
+
+  const loggedInSpan = dailyCalories.filter(d => d.calories > 0 && d.date >= trendPoints[0].date && d.date <= endPoint.date);
+  const dayFloor = Math.max(INCOMPLETE_DAY_FLOOR_KCAL, INCOMPLETE_DAY_FRACTION * (loggedInSpan.length ? median(loggedInSpan.map(d => d.calories)) : 0));
+  const loggedDays = loggedInSpan.filter(d => d.calories >= dayFloor);
+  if (loggedDays.length < MIN_LOGGED_CALORIE_DAYS) {
+    return { ok: false, reason: 'not-enough-logged-days', daysNeeded: MIN_LOGGED_CALORIE_DAYS - loggedDays.length };
+  }
+
+  const slope = robustSlopeKgPerDay(trendPoints);
+  if (slope == null) return { ok: false, reason: 'not-enough-weigh-ins', daysNeeded: 1 };
 
   const avgCalIn = loggedDays.reduce((s, d) => s + d.calories, 0) / loggedDays.length;
-  const weightChangeKg = endPoint.trend - trendPoints[0].trend;
-  const dailyEnergyStored = (weightChangeKg * KCAL_PER_KG) / spanDays;
+  const dailyEnergyStored = slope * KCAL_PER_KG;
   const tdee = avgCalIn - dailyEnergyStored;
+  if (!(tdee >= PLAUSIBLE_TDEE_MIN && tdee <= PLAUSIBLE_TDEE_MAX)) return { ok: false, reason: 'implausible-estimate' };
 
   return {
-    tdee: Math.round(tdee),
-    avgCalIn: Math.round(avgCalIn),
-    weightChangeKg: Math.round(weightChangeKg * 10) / 10,
-    spanDays,
-    loggedDayCount: loggedDays.length,
-    startTrend: Math.round(trendPoints[0].trend * 10) / 10,
-    endTrend: Math.round(endPoint.trend * 10) / 10,
+    ok: true,
+    estimate: {
+      tdee: Math.round(tdee),
+      avgCalIn: Math.round(avgCalIn),
+      weightChangeKg: Math.round(slope * spanDays * 10) / 10,
+      spanDays,
+      loggedDayCount: loggedDays.length,
+      excludedDayCount: loggedInSpan.length - loggedDays.length,
+      weighInCount: trendPoints.length,
+      startTrend: Math.round(trendPoints[0].trend * 10) / 10,
+      endTrend: Math.round(endPoint.trend * 10) / 10,
+    },
   };
+}
+
+export function estimateTDEE(trendPoints, dailyCalories) {
+  const result = assessTDEE(trendPoints, dailyCalories);
+  return result.ok ? result.estimate : null;
 }
 
 // Top-level entry point: given raw weight_logs + a date->calories map,
@@ -114,19 +180,15 @@ export function computeAdaptiveTarget(weightLogs, dailyCalories, goal) {
   if (trendPoints.length === 0) {
     return { ready: false, reason: 'no-weight-logs' };
   }
-  const spanDays = daysBetween(trendPoints[0].date, trendPoints[trendPoints.length - 1].date);
-  if (spanDays < MIN_TREND_SPAN_DAYS) {
-    return { ready: false, reason: 'not-enough-span', daysNeeded: MIN_TREND_SPAN_DAYS - spanDays };
+
+  const assessed = assessTDEE(trendPoints, dailyCalories);
+  if (!assessed.ok) {
+    const { ok, ...blocked } = assessed;
+    return { ready: false, ...blocked };
   }
 
-  const estimate = estimateTDEE(trendPoints, dailyCalories);
-  if (!estimate) {
-    const loggedDays = dailyCalories.filter(d => d.calories > 0 && d.date >= trendPoints[0].date).length;
-    return { ready: false, reason: 'not-enough-logged-days', daysNeeded: MIN_LOGGED_CALORIE_DAYS - loggedDays };
-  }
-
-  const target = Math.round(estimate.tdee + (GOAL_ADJUSTMENTS[goal] ?? 0));
-  return { ready: true, estimate, target, computedAt: todayLocalDate() };
+  const target = Math.round(assessed.estimate.tdee + (GOAL_ADJUSTMENTS[goal] ?? 0));
+  return { ready: true, estimate: assessed.estimate, target, computedAt: todayLocalDate() };
 }
 
 // A time series of TDEE re-estimates (a rolling 3-week window, stepping
