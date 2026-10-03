@@ -3192,3 +3192,14 @@ $$;
 
 revoke all on function public.start_free_trial() from public, anon;
 grant execute on function public.start_free_trial() to authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Brand on logged food items (schema update — run against an existing DB;
+-- safe to re-run).
+-- ═══════════════════════════════════════════════════════════════════════════
+-- custom_foods and favourite_foods already carry a brand column — food_logs
+-- never did, so a branded item (from a barcode scan, a custom food, or a
+-- favourite) lost its brand the moment it was actually logged, even though
+-- the search results it came from showed one. Nullable, like those tables'
+-- own brand columns.
+alter table public.food_logs add column if not exists brand text;

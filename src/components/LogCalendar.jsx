@@ -1,14 +1,5 @@
 import { todayLocalDate } from '../lib/patterns';
-
-// How "full" a day looks in the calendar — calories logged as a share of
-// the calorie target (capped at 100%, since the point is showing progress
-// toward the goal, not how far over it someone went). With no target set,
-// any logging at all just shows as full.
-function dayFillPct(day, calorieTarget) {
-  if (!day || !day.calories) return 0;
-  if (!calorieTarget) return day.loggedMeals > 0 ? 100 : 0;
-  return Math.min(100, Math.round((day.calories / calorieTarget) * 100));
-}
+import { dayFillPct, dayIsOver } from '../lib/logCalendar';
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -64,21 +55,23 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
             if (!dateStr) return <div key={`empty-${i}`} />;
             const day = byDate.get(dateStr);
             // A number, or a function of the date (rest days can have their own target).
-            const pct = dayFillPct(day, typeof calorieTarget === 'function' ? calorieTarget(dateStr) : calorieTarget);
+            const dayTarget = typeof calorieTarget === 'function' ? calorieTarget(dateStr) : calorieTarget;
+            const pct = dayFillPct(day, dayTarget);
+            const over = dayIsOver(day, dayTarget);
             const isToday = dateStr === today;
             const isFuture = dateStr > today;
             return (
               <div
                 key={dateStr}
                 onClick={() => !isFuture && onSelectDay(dateStr)}
-                title={day?.calories ? `${Math.round(day.calories)} kcal logged` : 'Nothing logged'}
+                title={day?.calories ? `${Math.round(day.calories)} kcal logged${over ? ' — over target' : ''}` : 'Nothing logged'}
                 style={{
                   position: 'relative', aspectRatio: '1', borderRadius: 6, overflow: 'hidden',
                   background: 'var(--bg-subtle)', border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border-default)'}`,
                   cursor: isFuture ? 'default' : 'pointer', opacity: isFuture ? 0.35 : 1,
                 }}
               >
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: 'color-mix(in srgb, var(--accent) 31%, transparent)', transition: 'height 0.4s ease' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: over ? 'color-mix(in srgb, var(--danger) 45%, transparent)' : 'color-mix(in srgb, var(--accent) 31%, transparent)', transition: 'height 0.4s ease, background 0.2s ease' }} />
                 <div style={{ position: 'relative', fontSize: 10, color: pct > 55 ? 'var(--text-primary)' : 'var(--text-muted)', padding: compact ? 2 : 3 }}>{Number(dateStr.slice(-2))}</div>
               </div>
             );

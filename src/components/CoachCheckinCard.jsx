@@ -1,10 +1,32 @@
 import { useState } from 'react';
 import { useMyCheckinForms } from '../hooks/useCheckinForms';
+import { useVoiceTranscription } from '../hooks/useVoiceTranscription';
 import { blankAnswers, dueState, validateAnswers, MAX_TEXT_ANSWER } from '../lib/checkinForms';
+import VoiceMicButton from './VoiceMicButton';
 
 const card = { background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 };
 const heading = { fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' };
 const fmt = (d) => new Date(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+
+// Its own component (not inlined in the questions.map below) so each text
+// question gets its own useVoiceTranscription call — one recording/
+// transcribing state per question, not one shared across however many text
+// questions a form happens to have.
+function TextAnswerField({ labelledBy, value, onChange }) {
+  const { recording, transcribing, error, start, stop } = useVoiceTranscription((text) => {
+    onChange(value.trim() ? `${value.trim()} ${text}` : text);
+  });
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 5 }}>
+        <VoiceMicButton recording={recording} transcribing={transcribing} onStart={start} onStop={stop} title="Speak your answer" />
+      </div>
+      <textarea aria-labelledby={labelledBy} value={value} maxLength={MAX_TEXT_ANSWER} rows={3} onChange={e => onChange(e.target.value)}
+        style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical' }} />
+      {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '6px 0 0' }}>{error}</p>}
+    </>
+  );
+}
 
 function FormCard({ form, onSubmit }) {
   const [answers, setAnswers] = useState(() => blankAnswers(form.questions));
@@ -77,8 +99,7 @@ function FormCard({ form, onSubmit }) {
             </div>
           )}
           {item.type === 'text' && (
-            <textarea aria-labelledby={`q-${form.id}-${item.id}`} value={answers[item.id]} maxLength={MAX_TEXT_ANSWER} rows={3} onChange={e => set(item.id, e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical' }} />
+            <TextAnswerField labelledBy={`q-${form.id}-${item.id}`} value={answers[item.id]} onChange={v => set(item.id, v)} />
           )}
         </div>
       ))}

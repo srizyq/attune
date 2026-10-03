@@ -9,6 +9,7 @@ export function mapRow(row) {
   return {
     id: row.id,
     name: row.food_name,
+    brand: row.brand || null,
     meal: row.meal,
     cal: Number(row.calories) || 0,
     protein: Number(row.protein_g) || 0,
@@ -114,6 +115,7 @@ export function useFoodLogs(date) {
       loggedAt: loggedAt || null,
       slotId: slotId ?? null,
       name: food.name,
+      brand: food.brand || null,
       cal: food.cal,
       protein: food.protein || 0,
       carbs: food.carbs || 0,

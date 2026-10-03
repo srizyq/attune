@@ -2,11 +2,17 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mealFromDate } from '../lib/mealTime';
 import { useClosingTransition } from '../hooks/useClosingTransition';
+import { useVoiceTranscription } from '../hooks/useVoiceTranscription';
+import { useProfile } from '../hooks/useProfile';
+import { useFoodLogs } from '../hooks/useFoodLogs';
+import { targetsForDate } from '../lib/dayTargets';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
 import DragSheet from './DragSheet';
 import SegmentedControl from './SegmentedControl';
 import MacroBreakdown from './MacroBreakdown';
+import DayBudgetImpact from './DayBudgetImpact';
+import VoiceMicButton from './VoiceMicButton';
 
 const SCAN_TABS = [
   { id: 'goal', label: 'For your goal', icon: 'ti-sparkles' },
@@ -47,7 +53,7 @@ function MacroGrid({ pick }) {
   return <MacroBreakdown values={{ cal: pick.cal, protein: pick.protein, carbs: pick.carbs, fat: pick.fat }} />;
 }
 
-export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchManually }) {
+export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchManually, selectedDate }) {
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -68,6 +74,21 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
   // near the comment box instead.
   const [correctionError, setCorrectionError] = useState(null);
   const { closing, close } = useClosingTransition(onClose);
+
+  // Speaking a correction instead of typing it — same record/upload
+  // plumbing as PhotoScanModal's correction box, appending to (rather than
+  // replacing) anything already typed.
+  const { recording: voiceRecording, transcribing: voiceTranscribing, error: voiceError, start: startVoice, stop: stopVoice } = useVoiceTranscription((text) => {
+    setComment(prev => (prev.trim() ? `${prev.trim()} ${text}` : text));
+  });
+
+  // Read-only here — today's logs for the day-budget-impact preview, not
+  // wired to onAddFood (that already goes through the parent's own
+  // useFoodLogs via onAddFood). Mirrors PhotoScanModal's identical wiring.
+  const { profile } = useProfile();
+  const { logs: todaysLogs } = useFoodLogs(selectedDate);
+  const dailyTarget = targetsForDate(profile, selectedDate);
+  const consumedToday = todaysLogs.reduce((s, l) => s + (Number(l.calories) || 0), 0);
 
   // Clears any correction UI left over from a previous pick — picking a
   // different item (or going back to pick again) shouldn't carry a stale
@@ -359,9 +380,19 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
             )}
             <MacroGrid pick={picked.data} />
           </div>
+          {picked.data.confidence && (
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <i aria-hidden="true" className="ti ti-sparkles" /> AI estimate — {picked.data.confidence} confidence
+            </p>
+          )}
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
             This is an AI estimate based on the menu photo, not verified nutrition data — review before adding.
           </p>
+          {dailyTarget.calories > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={picked.data.cal} />
+            </div>
+          )}
 
           {/* Always visible, not gated behind a "this is wrong" toggle —
               correcting is free (doesn't cost a scan) and can be done as
@@ -371,7 +402,10 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
               comment box either way, since both just re-estimate this
               one pick's macros from the same menu photo plus the note. */}
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, display: 'block' }}>Get something different, or want to note a change? Tell it here</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+              <label style={{ fontSize: 11, color: 'var(--text-muted)' }}>Get something different, or want to note a change? Tell it here</label>
+              <VoiceMicButton recording={voiceRecording} transcribing={voiceTranscribing} onStart={startVoice} onStop={stopVoice} title="Speak your correction" />
+            </div>
             <textarea
               value={comment}
               onChange={e => setComment(e.target.value)}
@@ -380,6 +414,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
               rows={3}
               style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 8 }}
             />
+            {voiceError && <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--danger)' }}>{voiceError}</div>}
             <button
               onClick={handleCorrect}
               disabled={!comment.trim() || correcting}

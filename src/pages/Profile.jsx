@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
@@ -12,6 +12,7 @@ import AppNav from '../components/AppNav';
 import { Card, SectionLabel, FieldRow } from '../components/settings/primitives';
 import PageHeader from '../components/PageHeader';
 import SegmentedControl from '../components/SegmentedControl';
+import Toast from '../components/Toast';
 
 const THEME_OPTIONS = [
   { id: 'dark', label: 'Dark', icon: 'ti-moon' },
@@ -24,13 +25,17 @@ const UNIT_OPTIONS = [
 ];
 
 // ─── Reusable bits ──────────────────────────────────────────────────────────────
-function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) {
+// `onBlur` is optional and additional to the border-color reset below — the
+// profile page uses it to flush a pending autosave the moment you tap away,
+// instead of waiting out the debounce.
+function TextInput({ value, onChange, onBlur, type = 'text', suffix, width = '120px', ariaLabel }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <input
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
+        aria-label={ariaLabel}
         style={{
           width,
           padding: '9px 12px',
@@ -43,7 +48,7 @@ function TextInput({ value, onChange, type = 'text', suffix, width = '120px' }) 
           outline: 'none',
         }}
         onFocus={e => (e.target.style.borderColor = 'var(--accent-dark)')}
-        onBlur={e => (e.target.style.borderColor = 'var(--border-default)')}
+        onBlur={e => { e.target.style.borderColor = 'var(--border-default)'; onBlur?.(); }}
       />
       {suffix && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{suffix}</span>}
     </div>
@@ -170,22 +175,78 @@ export default function Profile() {
   const { user, signOut } = useAuth();
   const { profile, save: saveProfile, refetch: refetchProfile } = useProfile();
   const { theme, setTheme } = useTheme();
-  const [saved, setSaved] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { closing: logoutConfirmClosing, close: closeLogoutConfirm } = useClosingTransition(() => setShowLogoutConfirm(false));
+  const [toast, setToast] = useState(null);
 
   const [form, setForm] = useState({ name: '', unit: 'metric', age: 30, weight: 70, height: 170 });
+  // The last form snapshot that's either freshly loaded from `profile` or
+  // already saved — compared against `form` to know whether there's
+  // actually anything new to autosave, so loading the page (or a save that
+  // just completed) never re-triggers itself.
+  const baselineRef = useRef(null);
+  const saveTimerRef = useRef(null);
 
   useEffect(() => {
     if (!profile) return;
-    setForm({
+    const next = {
       name: profile.name || '',
       unit: profile.unit || 'metric',
       age: profile.age || 30,
       weight: profile.weight || 70,
       height: profile.height || 170,
-    });
+    };
+    setForm(next);
+    baselineRef.current = next;
   }, [profile]);
+
+  // Name/unit/age/weight/height all autosave now — no Save button. Debounced
+  // (so typing a two-digit age doesn't fire a save per keystroke), flushed
+  // immediately on blur (so tapping away from a field doesn't wait out the
+  // debounce), and flushed once more on unmount (so navigating away right
+  // after an edit, before the debounce has fired, doesn't lose it).
+  async function flushSave(snapshot) {
+    if (!profile || !baselineRef.current) return;
+    if (JSON.stringify(snapshot) === JSON.stringify(baselineRef.current)) return;
+    const fields = { name: snapshot.name, unit: snapshot.unit, age: Number(snapshot.age), weight: Number(snapshot.weight), height: Number(snapshot.height) };
+    // Mid-typing (a cleared number field) — wait for a real value rather than
+    // saving NaN, or — Number('') is 0, not NaN — silently saving a 0.
+    const isRealNumber = (raw, n) => String(raw).trim() !== '' && Number.isFinite(n);
+    if (!isRealNumber(snapshot.age, fields.age) || !isRealNumber(snapshot.weight, fields.weight) || !isRealNumber(snapshot.height, fields.height)) return;
+    try {
+      await saveProfile(fields);
+      baselineRef.current = snapshot;
+      setToast({ message: 'Saved' });
+    } catch (err) {
+      console.error('Failed to autosave profile:', err);
+      setToast({ message: "Couldn't save — try again.", error: true });
+    }
+  }
+  // Always points at a flush of the CURRENT form — read by the blur handler
+  // and the unmount cleanup below, both of which need this render's values,
+  // not whatever was captured when the component first mounted. Updated in
+  // an effect (runs after render, every render) rather than during render
+  // itself, since refs aren't meant to be written while rendering.
+  const flushNowRef = useRef(() => {});
+  useEffect(() => {
+    flushNowRef.current = () => {
+      if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
+      flushSave(form);
+    };
+  });
+
+  useEffect(() => {
+    if (!profile || !baselineRef.current) return;
+    if (JSON.stringify(form) === JSON.stringify(baselineRef.current)) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => flushSave(form), 700);
+    return () => clearTimeout(saveTimerRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, profile]);
+
+  // Unmount-only flush — a pending edit from right before navigating away
+  // (inside the debounce window, before it fired) still gets saved.
+  useEffect(() => () => flushNowRef.current(), []);
 
   // Landed here from Stripe Checkout (Settings hands off `pro=success`
   // since Pro's billing status now lives on this page) — the webhook
@@ -219,18 +280,6 @@ export default function Profile() {
   const pendingConfirmation = !!user?.is_anonymous && !!user?.new_email;
   const initials = (form.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
 
-  const handleSave = async () => {
-    await saveProfile({
-      name: form.name,
-      unit: form.unit,
-      age: Number(form.age),
-      weight: Number(form.weight),
-      height: Number(form.height),
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2200);
-  };
-
   const handleLogout = async () => {
     await signOut();
     navigate('/');
@@ -252,22 +301,6 @@ export default function Profile() {
           subtitle="Your personal details and body stats"
           onBack={() => navigate('/settings')}
           backLabel="Back to Settings"
-          right={
-            <button
-              onClick={handleSave}
-              style={{
-                padding: '9px 16px',
-                background: saved ? 'var(--accent-bg)' : 'var(--accent)',
-                border: `1px solid ${saved ? 'var(--border-active)' : 'var(--accent)'}`,
-                borderRadius: '10px',
-                color: saved ? 'var(--accent)' : 'var(--accent-contrast)',
-                fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-                fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
-              }}
-            >
-              {saved ? '✓ Saved' : 'Save'}
-            </button>
-          }
         />
 
         {/* Content */}
@@ -346,7 +379,7 @@ export default function Profile() {
             <Card style={{ marginBottom: 0 }}>
               <SectionLabel>Your details</SectionLabel>
               <FieldRow label="Name">
-                <TextInput value={form.name} onChange={v => set('name', v)} width="180px" />
+                <TextInput value={form.name} onChange={v => set('name', v)} onBlur={() => flushNowRef.current()} width="180px" ariaLabel="Name" />
               </FieldRow>
               <FieldRow label="Units">
                 <SegmentedControl options={UNIT_OPTIONS} value={form.unit} onChange={v => set('unit', v)} fill={false} />
@@ -356,13 +389,13 @@ export default function Profile() {
             <Card style={{ marginBottom: 0 }}>
               <SectionLabel>Body stats</SectionLabel>
               <FieldRow label="Age">
-                <TextInput value={form.age} onChange={v => set('age', v)} type="number" suffix="years" width="90px" />
+                <TextInput value={form.age} onChange={v => set('age', v)} onBlur={() => flushNowRef.current()} type="number" suffix="years" width="90px" ariaLabel="Age" />
               </FieldRow>
               <FieldRow label="Weight">
-                <TextInput value={form.weight} onChange={v => set('weight', v)} type="number" suffix={form.unit === 'imperial' ? 'lb' : 'kg'} width="90px" />
+                <TextInput value={form.weight} onChange={v => set('weight', v)} onBlur={() => flushNowRef.current()} type="number" suffix={form.unit === 'imperial' ? 'lb' : 'kg'} width="90px" ariaLabel="Weight" />
               </FieldRow>
               <FieldRow label="Height">
-                <TextInput value={form.height} onChange={v => set('height', v)} type="number" suffix={form.unit === 'imperial' ? 'in' : 'cm'} width="90px" />
+                <TextInput value={form.height} onChange={v => set('height', v)} onBlur={() => flushNowRef.current()} type="number" suffix={form.unit === 'imperial' ? 'in' : 'cm'} width="90px" ariaLabel="Height" />
               </FieldRow>
               <p style={{ color: 'var(--text-hint)', fontSize: '12px', margin: '14px 0 0' }}>
                 These feed your calculated calorie target on the Goals tab in Settings.
@@ -399,6 +432,8 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {toast && <Toast message={toast.message} error={toast.error} onDone={() => setToast(null)} />}
     </div>
   );
 }
