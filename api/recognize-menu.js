@@ -12,6 +12,7 @@ import { withCompGrants } from '../src/lib/compGrants.js';
 import { withTrial } from '../src/lib/trial.js';
 import { withCoachProAccess } from '../src/lib/proAccess.js';
 import { targetsForDate } from '../src/lib/dayTargets.js';
+import { detailPrompt, sanitizeDetail } from './_menuDetail.js';
 
 // Constructed lazily, after the config check below, rather than at module
 // load — the SDK throws immediately if ANTHROPIC_API_KEY is missing, which
@@ -140,19 +141,24 @@ export default async function handler(req, res) {
   Object.assign(profile, withCompGrants(profile, userData.user.email));
   Object.assign(profile, withCoachProAccess(profile));
 
-  const { image, mediaType, correction, previousItem } = req.body || {};
+  const { image, mediaType, correction, previousItem, detail, pick } = req.body || {};
 
   // A correction re-analyzes an item from a menu already paid a
   // cap-count for, so it doesn't cost another one — the cap check/
   // increment below is skipped entirely for correction calls, same as
   // recognize-food.js's isCorrection branch.
   const isCorrection = typeof correction === 'string' && correction.trim().length > 0;
+  // The confirm step's follow-up for a dish that's already been picked
+  // (portion sizes, quick tweaks, allergens — see _menuDetail.js). Free for
+  // the same reason a correction is: it belongs to a scan already counted.
+  const isDetail = !isCorrection && detail === true && !!pick && typeof pick === 'object';
+  const isFollowUp = isCorrection || isDetail;
 
   const today = new Date().toISOString().slice(0, 10);
   const inSamePeriod = samePeriod(profile.menu_scans_period_start, today);
   const usedSoFar = inSamePeriod ? profile.menu_scans_used : 0;
 
-  if (!isCorrection && !profile.is_premium && usedSoFar >= FREE_MONTHLY_SCAN_LIMIT) {
+  if (!isFollowUp && !profile.is_premium && usedSoFar >= FREE_MONTHLY_SCAN_LIMIT) {
     res.status(403).json({
       error: `You've used all ${FREE_MONTHLY_SCAN_LIMIT} free menu scans this month — upgrade to Pro for unlimited scans.`,
       limitReached: true,
@@ -173,7 +179,7 @@ export default async function handler(req, res) {
   // correction re-estimates one already-picked item and doesn't touch it,
   // so skip the extra query entirely on that path.
   let remaining = null;
-  if (!isCorrection) {
+  if (!isFollowUp) {
     // Sum what's already logged today and subtract from target. Clamped
     // at 0 rather than going negative; a person who's already over target
     // still gets sane recommendations instead of a nonsense negative-
@@ -219,7 +225,7 @@ export default async function handler(req, res) {
       // A correction only re-estimates one item, so it needs far less —
       // still generous, not tightened to the old 512-ish size, since
       // there's no cost benefit to shaving it further.
-      max_tokens: isCorrection ? 1024 : 4096,
+      max_tokens: isFollowUp ? 1024 : 4096,
       // This model's adaptive thinking is on by default and its budget
       // comes out of max_tokens — on a menu photo dense enough to need real
       // effort to read, thinking alone can consume the entire budget and
@@ -236,7 +242,7 @@ export default async function handler(req, res) {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
-            { type: 'text', text: isCorrection ? correctionPrompt(previousItem, correction) : buildPrompt(profile.goal, remaining) },
+            { type: 'text', text: isDetail ? detailPrompt(pick) : isCorrection ? correctionPrompt(previousItem, correction) : buildPrompt(profile.goal, remaining) },
           ],
         },
       ],
@@ -245,7 +251,7 @@ export default async function handler(req, res) {
     // Counts against the cap the moment we've actually spent the money on
     // an Anthropic call, not counted if this is a free correction
     // re-analysis of an item from a menu that already counted.
-    if (!isCorrection && !profile.is_premium) {
+    if (!isFollowUp && !profile.is_premium) {
       await supabase.from('profiles')
         .update({ menu_scans_used: usedSoFar + 1, menu_scans_period_start: today })
         .eq('id', userId);
@@ -298,7 +304,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    res.status(200).json(parsed);
+    res.status(200).json(isDetail ? sanitizeDetail(parsed) : parsed);
   } catch (err) {
     console.error('Menu recognition error:', err);
     res.status(502).json({ error: 'Menu recognition is temporarily unavailable.' });

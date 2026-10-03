@@ -13,6 +13,9 @@ import SegmentedControl from './SegmentedControl';
 import MacroBreakdown from './MacroBreakdown';
 import DayBudgetImpact from './DayBudgetImpact';
 import VoiceMicButton from './VoiceMicButton';
+import { SourcePill, CropViewer, PortionRow, PortionSkeleton, IncludesRow, QuickTweaks } from './MenuPickDetails';
+import { useMenuPickDetail } from '../hooks/useMenuPickDetail';
+import { adjustPick, loggedName } from '../lib/menuTweaks';
 
 const SCAN_TABS = [
   { id: 'goal', label: 'For your goal', icon: 'ti-sparkles' },
@@ -73,6 +76,11 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
   // away the perfectly good pick already on screen — it shows inline
   // near the comment box instead.
   const [correctionError, setCorrectionError] = useState(null);
+  // Confirm-step fine-tuning: which portion size is chosen (index into the
+  // detail's portions, 0 = as listed) and which quick tweaks are on.
+  const [portionIdx, setPortionIdx] = useState(0);
+  const [activeTweaks, setActiveTweaks] = useState(() => new Set());
+  const [cropOpen, setCropOpen] = useState(false);
   const { closing, close } = useClosingTransition(onClose);
 
   // Speaking a correction instead of typing it — same record/upload
@@ -99,7 +107,31 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     setPicked(next);
     setComment('');
     setCorrectionError(null);
+    setPortionIdx(0);
+    setActiveTweaks(new Set());
+    setCropOpen(false);
   }
+
+  function toggleTweak(i) {
+    setActiveTweaks((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  }
+
+  // Portion, tweaks and the dish's own extras, folded into the numbers that
+  // actually get shown, budgeted and logged.
+  const { detail, loading: detailLoading } = useMenuPickDetail(preview, picked?.data);
+  const portions = detail?.portions || [];
+  const tweaks = detail?.tweaks || [];
+  const chosenPortion = portions[portionIdx] || null;
+  const chosenTweaks = tweaks.filter((_, i) => activeTweaks.has(i));
+  const adjusted = useMemo(
+    () => (picked ? adjustPick(picked.data, chosenPortion, chosenTweaks, detail) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [picked, detail, portionIdx, activeTweaks],
+  );
 
   async function handleFile(file) {
     if (!file) return;
@@ -166,18 +198,21 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     try {
       const now = new Date();
       const food = {
-        name: picked.data.name,
-        cal: picked.data.cal,
-        protein: picked.data.protein,
-        carbs: picked.data.carbs,
-        fat: picked.data.fat,
+        name: loggedName(picked.data.name, chosenTweaks),
+        cal: adjusted.cal,
+        protein: adjusted.protein,
+        carbs: adjusted.carbs,
+        fat: adjusted.fat,
+        ...(adjusted.fibre != null ? { fibre: adjusted.fibre } : {}),
+        ...(adjusted.sodium != null ? { sodium: adjusted.sodium } : {}),
+        ...(adjusted.sugar != null ? { sugar: adjusted.sugar } : {}),
         source: 'menu',
         // No servingGrams — same reasoning as photo scan: this is an AI
         // estimate off a menu photo, not a measured weight. servingLabel
         // is just "1 serving" (both a recommendation and a menu item are
         // already single-serving as ordered/printed) so Recent/Frequent
         // show that instead of a generic "Logged before".
-        servingLabel: '1 serving',
+        servingLabel: chosenPortion?.label || '1 serving',
       };
       const meal = mealFromDate(now);
       const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
@@ -218,6 +253,10 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
       }
       setPicked(prev => ({ ...prev, data: { ...prev.data, ...data } }));
       setComment('');
+      // A re-estimate replaces the base numbers, so a portion/tweaks chosen
+      // against the old ones no longer mean what they did.
+      setPortionIdx(0);
+      setActiveTweaks(new Set());
     } catch (err) {
       console.error(err);
       setCorrectionError("Couldn't apply that correction. Check your connection and try again.");
@@ -287,7 +326,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{adding ? 'Adding…' : 'Confirm & log'}</span>
         {!adding && (
           <span style={{ flexShrink: 0, background: 'rgba(0,0,0,0.18)', borderRadius: 99, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
-            +{Math.round(Number(picked.data.cal) || 0)} kcal
+            +{adjusted.cal} kcal
           </span>
         )}
       </button>
@@ -344,7 +383,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
                 {recommendations.map((pick, i) => (
                   <button
                     key={i}
-                    onClick={() => choosePick({ kind: 'recommendation', data: pick })}
+                    onClick={() => choosePick({ kind: 'recommendation', data: pick, index: i })}
                     style={{ textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: 14, cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -374,7 +413,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
                       {items.map((item, i) => (
                         <button
                           key={i}
-                          onClick={() => choosePick({ kind: 'item', data: item })}
+                          onClick={() => choosePick({ kind: 'item', data: item, index: menuItems.indexOf(item) })}
                           style={{ textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
                         >
                           <div style={{ minWidth: 0 }}>
@@ -403,6 +442,12 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
       {/* Review — the picked recommendation or menu item, confirm before logging */}
       {picked && (
         <div style={{ marginTop: 0 }}>
+          {/* Where on the photo this came from — "Menu Item #4 • "Mixed wrap"". */}
+          <SourcePill
+            label={picked.kind === 'recommendation' ? `Pick #${picked.index + 1}` : `Menu Item #${picked.index + 1}`}
+            quote={detail?.source?.quote}
+            onInspect={detail?.source?.box ? () => setCropOpen(true) : undefined}
+          />
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
             <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 4 }}>{picked.data.name}</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: hasModification(picked.data.modifications) ? 2 : 10, lineHeight: 1.4 }}>
@@ -411,7 +456,15 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
             {picked.kind === 'recommendation' && hasModification(picked.data.modifications) && (
               <div style={{ fontSize: 11, color: 'var(--gold)', marginBottom: 10 }}>Modified: {picked.data.modifications}</div>
             )}
-            <MacroGrid pick={picked.data} />
+            {portions.length > 1 ? (
+              <PortionRow portions={portions} value={portionIdx} onChange={setPortionIdx} />
+            ) : detailLoading ? (
+              <PortionSkeleton />
+            ) : null}
+            <MacroGrid pick={adjusted} />
+            {detail && (
+              <IncludesRow allergens={detail.allergens} sodiumMg={adjusted.sodium} sodium={adjusted.sodium} fibre={adjusted.fibre} sugar={adjusted.sugar} />
+            )}
           </div>
           {picked.data.confidence && (
             <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -423,7 +476,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
           </p>
           {dailyTarget.calories > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={picked.data.cal} />
+              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={adjusted.cal} />
             </div>
           )}
 
@@ -448,6 +501,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
               style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 8 }}
             />
             {voiceError && <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--danger)' }}>{voiceError}</div>}
+            {tweaks.length > 0 && <QuickTweaks tweaks={tweaks} active={activeTweaks} onToggle={toggleTweak} />}
             <button
               onClick={handleCorrect}
               disabled={!comment.trim() || correcting}
@@ -469,6 +523,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
           </div>
         </div>
       )}
+      {cropOpen && detail?.source?.box && <CropViewer photo={preview} box={detail.source.box} onClose={() => setCropOpen(false)} />}
     </DragSheet>
   );
 }

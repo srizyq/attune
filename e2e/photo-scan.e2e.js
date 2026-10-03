@@ -52,13 +52,24 @@ test('photo-scan-result-pinned-actions', async ({ page, context }, testInfo) => 
 });
 
 const MENU = {
-  recommendations: [{ name: 'Regular Mixed Meats Wrap', items: 'Flour tortilla grilled and folded around a filling of french fries, sauces, cheese and mixed meats', cal: 700, protein: 30, carbs: 58, fat: 40, confidence: 'medium' }],
+  recommendations: [{ name: 'Regular Mixed Meats Wrap', items: 'Flour tortilla grilled and folded around a filling of french fries, sauces, cheese and mixed meats', cal: 1500, protein: 30, carbs: 58, fat: 40, confidence: 'medium' }],
   items: [],
+};
+
+// The confirm step's follow-up request (portions, tweaks, allergens, crop).
+const DETAIL = {
+  portions: [{ label: '1 regular wrap (~380g)', scale: 1 }, { label: 'Half wrap', scale: 0.5 }, { label: 'Large wrap (~520g)', scale: 1.35 }],
+  tweaks: [{ label: 'No cheese', cal: -90, protein: -5, carbs: 0, fat: -7 }, { label: 'Sauce on side', cal: -40, protein: 0, carbs: -2, fat: -4 }, { label: 'Swap fries for salad', cal: -220, protein: -3, carbs: -30, fat: -10 }],
+  allergens: ['Dairy', 'Gluten'], sodium_mg: 1180, fibre_g: 4, sugar_g: 6,
+  source: { quote: 'Mixed wrap w/ frites', box: [300, 100, 360, 800] },
 };
 
 test('menu-scan-confirm-pinned-actions', async ({ page, context }, testInfo) => {
   const ctx = await openApp({ page, context }, testInfo);
-  await page.route('**/api/recognize-menu', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MENU) }));
+  await page.route('**/api/recognize-menu', (route) => {
+    const isDetail = JSON.parse(route.request().postData() || '{}').detail === true;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(isDetail ? DETAIL : MENU) });
+  });
   await page.goto('/dashboard');
   await settle(page);
   await page.evaluate(() => {
@@ -79,10 +90,28 @@ test('menu-scan-confirm-pinned-actions', async ({ page, context }, testInfo) => 
     const hit = await btn.evaluate((el) => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); });
     expect(hit, 'nothing covers the button').toBe(true);
   }
-  await expect(confirm).toContainText('+700 kcal');
+  await expect(page.getByLabel('Portion serving')).toBeVisible();
+  await expect(confirm).toContainText('+1500 kcal');
+  // A quick tweak moves the number in the pinned button.
+  await page.getByRole('button', { name: /No cheese/ }).click();
+  await expect(confirm).toContainText('+1410 kcal');
+  // Over budget: the bar's red part and the tick are drawn.
+  await expect(page.getByTestId('budget-over')).toBeVisible();
   const before = await confirm.boundingBox();
   await page.getByPlaceholder(/extra sauce/i).scrollIntoViewIfNeeded();
   expect((await confirm.boundingBox()).y).toBe(before.y);
 
   await assertLayout(page, testInfo, 'x-menu-scan-confirm', ctx);
+
+  // "Inspect crop" cuts the dish's line out of the captured photo.
+  await page.getByRole('button', { name: 'Inspect crop' }).click();
+  const crop = page.getByRole('img', { name: /part of the menu photo/ });
+  await crop.waitFor();
+  const box = await crop.boundingBox();
+  expect(box.width).toBeGreaterThan(100);
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize().width);
+  await page.screenshot({ path: `e2e/screens/${testInfo.project.name}/x-menu-scan-crop.png` });
+  await page.getByRole('button', { name: 'Close' }).last().click();
+  await expect(crop).toHaveCount(0);
 });
