@@ -17,7 +17,7 @@ import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
 import { slotFromTime } from '../lib/daySlots';
-import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit } from '../lib/foodMath';
+import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit, caloriesLookInconsistent } from '../lib/foodMath';
 import { ausnutExtraMicros } from '../lib/ausnutFood';
 import { mapRestaurantItemRow } from '../lib/restaurantFood';
 import { loggedRowToFood, favouriteRowToFood } from '../lib/foodRows';
@@ -649,6 +649,9 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   // panel rarely carries a clean marketing name.
   const [scannedBarcode, setScannedBarcode] = useState(null);
   const [addingProduct, setAddingProduct] = useState(false);
+  // Set when the product we're showing has calories that don't match its own
+  // macros and no other source had a consistent answer.
+  const [calorieWarning, setCalorieWarning] = useState(false);
   const [newProduct, setNewProduct] = useState(BLANK_NEW_PRODUCT);
   const [labelAnalyzing, setLabelAnalyzing] = useState(false);
   const [labelError, setLabelError] = useState(null);
@@ -792,7 +795,13 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       const candidates = [fs, off, shared]
         .filter(Boolean)
         .filter(f => !looksImplausiblyDenseLiquid(f, f.serving));
-      const found = candidates.find(f => !looksLikeEmptyNutrition(f)) || candidates[0] || null;
+      // Among sources with real numbers, prefer one whose calories agree with
+      // its own macros — databases get a field wrong now and then (a stale or
+      // mistyped energy value), and a second source usually has it right.
+      const usable = candidates.filter(f => !looksLikeEmptyNutrition(f));
+      const consistent = usable.find(f => !caloriesLookInconsistent(f));
+      const found = consistent || usable[0] || candidates[0] || null;
+      setCalorieWarning(!!found && !consistent && caloriesLookInconsistent(found));
       if (!found) {
         setResult(null);
         setError(`Product not found for barcode ${barcode}. Try searching manually, or add it yourself.`);
@@ -825,7 +834,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   }
 
   function reset() {
-    setResult(null); setError(null); setScanning(false); setAddingProduct(false);
+    setResult(null); setError(null); setScanning(false); setAddingProduct(false); setCalorieWarning(false);
     setNewProduct(BLANK_NEW_PRODUCT); setLabelError(null); setLabelPreview(null);
     startScanner();
   }
@@ -1203,6 +1212,12 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             {unit !== servingUnit && `≈${gramsEquivalent}${servingUnit} · `}label serving: {result.serving}
           </div>
           {dailyTarget.calories > 0 && (
+          {calorieWarning && (
+            <div role="alert" style={{ display: "flex", gap: 8, alignItems: "flex-start", background: "var(--bg-card)", border: "1px solid var(--gold)", borderRadius: 10, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>
+              <i aria-hidden="true" className="ti ti-alert-triangle" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0, marginTop: 1 }} />
+              <span>The calories here don't match this product's protein, carbs and fat, so one of them may be wrong. Check the pack's nutrition panel before logging.</span>
+            </div>
+          )}
             <div style={{ marginBottom: 12 }}>
               <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={scaled.cal} />
             </div>

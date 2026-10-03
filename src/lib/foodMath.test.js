@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   amountToServings, gramsPerServing, initialEditState, editUnitsFor, editServings,
-  formatAmountUnit, scaleFood,
+  formatAmountUnit, scaleFood, caloriesLookInconsistent,
 } from './foodMath';
 
 const base = { cal: 200, protein: 10, carbs: 20, fat: 5 };
@@ -127,5 +127,34 @@ describe('helpers', () => {
     expect(formatAmountUnit(2, 'serving')).toBe('2 servings');
     expect(formatAmountUnit(250, 'g')).toBe('250g');
     expect(formatAmountUnit(3, 'nope')).toBe('3');
+  });
+});
+
+describe('caloriesLookInconsistent', () => {
+  const food = (cal, protein, carbs, fat, fibre = 0) => ({ cal, protein, carbs, fat, fibre });
+
+  it('flags the McCain entry whose calories were 17% under its macros', () => {
+    expect(caloriesLookInconsistent(food(126, 2.1, 22, 5.7))).toBe(true);
+  });
+
+  it('accepts the same product as printed on the pack', () => {
+    expect(caloriesLookInconsistent(food(151, 2.1, 22, 5.7))).toBe(false);
+  });
+
+  it('accepts a protein drink with ordinary label rounding', () => {
+    expect(caloriesLookInconsistent(food(251, 30, 18.3, 6.4))).toBe(false);
+  });
+
+  it('does not flag zero-calorie or tiny items on a few kcal of drift', () => {
+    expect(caloriesLookInconsistent(food(0, 0, 0, 0))).toBe(false);
+    expect(caloriesLookInconsistent(food(2, 0.1, 0.2, 0))).toBe(false);
+  });
+
+  it('counts fibre at about 2 kcal/g so high-fibre foods are not flagged', () => {
+    expect(caloriesLookInconsistent(food(210, 8, 40, 3, 12))).toBe(false);
+  });
+
+  it('flags calories that are far too high as well as too low', () => {
+    expect(caloriesLookInconsistent(food(300, 2.1, 22, 5.7))).toBe(true);
   });
 });

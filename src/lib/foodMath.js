@@ -126,6 +126,28 @@ export function sumFoodItems(items) {
   return totals;
 }
 
+// Calories a food's own macros add up to (Atwater factors; fibre counted at
+// ~2 kcal/g since it's inside the carb figure). Labels land within a few
+// percent of this, so a stored calorie figure far from it means one of the
+// numbers is wrong — as happened with a scanned McCain product whose macros
+// matched the pack but whose calories were 17% low.
+export function impliedCalories(f) {
+  const fibre = Math.min(f.fibre || 0, f.carbs || 0);
+  return 4 * (f.protein || 0) + 4 * ((f.carbs || 0) - fibre) + 2 * fibre + 9 * (f.fat || 0);
+}
+
+// True when the calories disagree with the macros by more than label
+// rounding, fibre, polyols or a little alcohol can explain. Needs both a
+// relative gap and an absolute one so low-calorie items aren't flagged on
+// a handful of kcal.
+const CAL_MISMATCH_RATIO = 0.12;
+const CAL_MISMATCH_MIN_KCAL = 15;
+export function caloriesLookInconsistent(f) {
+  const implied = impliedCalories(f);
+  const gap = Math.abs((f.cal || 0) - implied);
+  return gap >= CAL_MISMATCH_MIN_KCAL && gap / Math.max(implied, f.cal || 0, 1) > CAL_MISMATCH_RATIO;
+}
+
 // Scales every macro/micronutrient field on a food object by a servings
 // multiplier — shared between the search/add flow (scaling a food before
 // logging it) and the daily-log edit flow (scaling an already-logged item
