@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { hasProAccess } from '../lib/proAccess';
@@ -23,6 +23,10 @@ import { round1, withBrand } from '../lib/format';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import PageHeader from '../components/PageHeader';
+import PullIndicator from '../components/PullIndicator';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { useDaySwipe } from '../hooks/useDaySwipe';
+import { shiftDate } from '../lib/gestures';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
 
@@ -55,10 +59,28 @@ export default function DailyLog() {
     if (requested && requested <= today) setSelectedDate(requested);
   }, [location.state, today]);
   const isToday = selectedDate === today;
+
   const { note: nutritionCoachNote, dismiss: dismissNutritionCoachNote } = useCoachNote('nutrition', selectedDate);
   const { meals, daySlots, slotTimeline, loading, deleteFood, updateFood, addFood, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
+
+  // Pull down to refresh; swipe right/left for the previous/next day.
+  // `swipeKey` remounts the page body on a swipe so it slides in from the
+  // side the new day came from.
+  const [swipe, setSwipe] = useState({ key: 0, from: null });
+  const goDay = useCallback((delta) => {
+    setSelectedDate((d) => {
+      const next = shiftDate(d, delta);
+      return next > today ? d : next;
+    });
+    setExpandedId(null);
+    setSwipe((s) => ({ key: s.key + 1, from: delta > 0 ? 'right' : 'left' }));
+  }, [today]);
+  const swipeRef = useDaySwipe({ onPrev: () => goDay(-1), onNext: isToday ? null : () => goDay(1) });
+  const [pullRef, pullState] = usePullToRefresh(() => refetch());
+  // One ref for the scroll container, shared by both gestures.
+  const setScrollEl = useCallback((el) => { pullRef.current = el; swipeRef.current = el; }, [pullRef, swipeRef]);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [showCopyMenu, setShowCopyMenu] = useState(false);
   const [showPasteSlotModal, setShowPasteSlotModal] = useState(false);
@@ -126,7 +148,8 @@ export default function DailyLog() {
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
       <AppNav active="log" initials={initials} />
 
-      <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+      <div ref={setScrollEl} className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        <PullIndicator {...pullState} />
         <PageHeader
           title="Daily log"
           onBack={() => navigate('/dashboard')}
@@ -160,7 +183,7 @@ export default function DailyLog() {
           )}
         </PageHeader>
 
-        <div className="page-pad" style={{ maxWidth: 700 }}>
+        <div key={swipe.key} className={`page-pad${swipe.from ? ` day-slide-from-${swipe.from}` : ''}`} style={{ maxWidth: 700 }}>
           <div style={{ marginBottom: 20 }}>
             <DaySelector selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setExpandedId(null); }} />
             <div style={{ textAlign: 'center', marginTop: 14 }}>

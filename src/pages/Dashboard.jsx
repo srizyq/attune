@@ -33,6 +33,9 @@ import { targetsForDate } from '../lib/dayTargets';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import TrialBanner from '../components/TrialBanner';
+import InstallPrompt from '../components/InstallPrompt';
+import PullIndicator from '../components/PullIndicator';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { round1, withBrand } from '../lib/format';
 import FormRow from '../components/FormRow';
 import ListRow from '../components/ListRow';
@@ -879,7 +882,7 @@ export default function Dashboard() {
   // nav ceiling) stay anchored to real `today`.
   const viewedDate = location.state?.date || today;
   const isViewingToday = viewedDate === today;
-  const { profile, save: saveProfile } = useProfile();
+  const { profile, save: saveProfile, refetch: refetchProfile } = useProfile();
   const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   // Same default/derivation as DailyLog.jsx — reading the same profile
   // field is what keeps a choice made on either page in sync with the
@@ -898,12 +901,12 @@ export default function Dashboard() {
   // their own 5-day-per-bucket minimum, not just the broadest ones — and
   // so the calorie hero's 1M/3M views can be sliced from data already in
   // hand instead of a second fetch.
-  const { dailyData } = useHistory(dateNDaysAgo(90), today);
+  const { dailyData, refetch: refetchHistory } = useHistory(dateNDaysAgo(90), today);
   const weightUnit = profile?.unit === 'imperial' ? 'lb' : 'kg';
-  const { logs: weightLogs, latest: latestWeight, logWeight } = useWeightLogs(dateNDaysAgo(89), today);
+  const { logs: weightLogs, latest: latestWeight, logWeight, refetch: refetchWeights } = useWeightLogs(dateNDaysAgo(89), today);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const { closing: weightModalClosing, close: closeWeightModal } = useClosingTransition(() => setShowWeightModal(false));
-  const { workouts, totalCaloriesBurned, create: createWorkout, remove: removeWorkout } = useWorkoutLogs(viewedDate);
+  const { workouts, totalCaloriesBurned, create: createWorkout, remove: removeWorkout, refetch: refetchWorkouts } = useWorkoutLogs(viewedDate);
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const { closing: workoutModalClosing, close: closeWorkoutModal } = useClosingTransition(() => setShowWorkoutModal(false));
   const [toast, setToast] = useState(null);
@@ -1051,6 +1054,12 @@ export default function Dashboard() {
   // what was actually burned *that* day, not today's total applied to
   // every day. See DashboardHero's per-bar target computation below.
   const { burnedByDate, refetch: refetchBurnedByDate } = useWorkoutLogsRange(chartStartDate, viewedDate);
+
+  // Pull down from the top to re-fetch everything on the page (e.g. after
+  // logging on another device).
+  const [pullRef, pullState] = usePullToRefresh(() => Promise.all([
+    refetchFoodLogs(), refetchHistory(), refetchWeights(), refetchWorkouts(), refetchBurnedByDate(), refetchProfile(),
+  ]));
   const chartDays = dateRange(chartStartDate, viewedDate).map(date => ({
     ...(byDate.get(date) || { date, calories: 0 }),
     caloriesBurned: burnedByDate.get(date) || 0,
@@ -1086,7 +1095,8 @@ export default function Dashboard() {
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <AppNav active="dashboard" initials={initials} />
 
-      <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+      <div ref={pullRef} className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        <PullIndicator {...pullState} />
         <div className="page-pad-top" style={{ minHeight: 40, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 12px', paddingTop: 10, paddingBottom: 4, position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
           <div>
             <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -1107,6 +1117,7 @@ export default function Dashboard() {
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
           {pendingConfirmation && <ConfirmEmailBanner email={user?.new_email} />}
+          <InstallPrompt />
           <TrialBanner profile={profile} userId={user?.id} />
           {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} onClick={() => setCoachChatOpen(true)} style={{ marginBottom: 16 }} />}
           {coachChatOpen && (

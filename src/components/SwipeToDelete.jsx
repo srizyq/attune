@@ -90,7 +90,7 @@ export default function SwipeToDelete({ children, onDelete, disabled = false }) 
   }
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden' }}>
+    <div data-no-gesture style={{ position: 'relative', overflow: 'hidden' }}>
       {!disabled && (
         <button
           type="button"
