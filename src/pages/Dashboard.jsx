@@ -32,7 +32,7 @@ import { targetsForDate } from '../lib/dayTargets';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import TrialBanner from '../components/TrialBanner';
-import { round1 } from '../lib/format';
+import { round1, withBrand } from '../lib/format';
 import FormRow from '../components/FormRow';
 import ListRow from '../components/ListRow';
 import Card from '../components/Card';
@@ -631,7 +631,7 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
             {items.length === 0 && yesterdayByMeal?.[key]?.length > 0 && (
               <YesterdayMealPrompt
                 mealLabel={label}
-                names={yesterdayByMeal[key].map(r => r.food_name).join(', ')}
+                names={yesterdayByMeal[key].map(r => withBrand(r.food_name, r.brand)).join(', ')}
                 kcal={Math.round(yesterdayByMeal[key].reduce((sum, r) => sum + (Number(r.calories) || 0), 0))}
                 onCommit={() => onCopyYesterday(key)}
                 disabled={copyingYesterday}
