@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import ModalPortal from './ModalPortal';
 
 // Full-screen sheet, dismissed by dragging down from the handle/header
 // (like a native iOS sheet) instead of a centered card over a backdrop —
@@ -40,6 +41,7 @@ export default function DragSheet({ title, onClose, closing, children, headerRig
   }
 
   return (
+    <ModalPortal>
     <div
       className={`sheet-panel${closing ? ' is-closing' : ''}`}
       style={{
@@ -77,5 +79,6 @@ export default function DragSheet({ title, onClose, closing, children, headerRig
         </div>
       )}
     </div>
+    </ModalPortal>
   );
 }

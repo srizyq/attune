@@ -10,6 +10,7 @@ import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTimeFromDate } f
 import AppNav from '../components/AppNav';
 import Toast from '../components/Toast';
 import { Card, SectionLabel } from '../components/settings/primitives';
+import ModalPortal from '../components/ModalPortal';
 import PageHeader from '../components/PageHeader';
 import FormRow from '../components/FormRow';
 import ListRow from '../components/ListRow';
@@ -63,6 +64,7 @@ function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, log
         onClick={onToggle}
       />
       {isExpanded && (
+        <ModalPortal>
         <div onClick={onToggle} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 300 }}>
           <div
             onClick={e => e.stopPropagation()}
@@ -126,6 +128,7 @@ function RecipeCard({ recipe, isExpanded, onToggle, onEdit, onDelete, onLog, log
             </FormRow>
           </div>
         </div>
+        </ModalPortal>
       )}
     </>
   );

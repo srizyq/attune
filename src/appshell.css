@@ -104,12 +104,11 @@
    fixed bottom nav on mobile/tablet so it never covers content. */
 .app-content-pad {
   padding-bottom: 0;
-  /* Without this, a nested `overflow: auto` div on iOS has zero momentum
-     — it stops dead the instant your finger lifts instead of gliding on,
-     which is what "rigid"/"stuck" scrolling actually is. Native full-page
-     scroll gets this for free; a scrollable div nested inside the app
-     shell (every page uses this class) does not, unless told to. */
-  -webkit-overflow-scrolling: touch;
+  /* No `-webkit-overflow-scrolling: touch` here, on purpose. It used to give
+     nested scroll areas momentum on old iOS, but iOS 13+ does that natively —
+     and on iOS it also makes the element a stacking context, which trapped
+     every bottom sheet rendered inside this container UNDER the floating nav
+     bar, hiding their Save / Log / Edit buttons. */
 }
 
 @media (max-width: 860px) {
@@ -388,7 +387,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 .stagger-item {
-  animation: stagger-in 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation: stagger-in 320ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
 }
 
 /* A small pop for momentary confirmation states (e.g. "copied") —
@@ -398,7 +397,7 @@
   to { opacity: 1; transform: scale(1); }
 }
 .pop-in {
-  animation: pop-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation: pop-in 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
 }
 
 /* ── Page header (see components/PageHeader.jsx) ────────────────────────── */

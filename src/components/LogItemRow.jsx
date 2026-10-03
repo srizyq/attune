@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import ModalPortal from './ModalPortal';
 import { round1 } from '../lib/format';
 import { scaleFood, formatAmountUnit, initialEditState, editUnitsFor, editServings } from '../lib/foodMath';
 import { dateToHHMM, timeStringToDate } from '../lib/mealTime';
@@ -166,15 +166,16 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
           onClick={onToggle}
         />
       </SwipeToDelete>
-      {isExpanded && createPortal(
-        // Rendered into document.body, not in place: this row lives inside
-        // cards with entrance animations (transform/opacity), and each of those
-        // traps the sheet's z-index in its own stacking context — which left
-        // the floating bottom nav painting over the Save/Delete buttons.
+      {isExpanded && (
+        // Rendered through ModalPortal, not in place: this row lives inside
+        // scroll containers and animated cards, and any of those can trap the
+        // sheet's z-index in its own stacking context — which left the
+        // floating bottom nav painting over the Save/Delete buttons.
         // A bottom sheet rather than the old inline accordion — the edit
         // form (amount, meal/time, macro preview) is real content now, not
         // a quick inline tweak, so it gets its own focused surface instead
         // of pushing every row below it down the page while open.
+        <ModalPortal>
         <div onClick={onToggle} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 300 }}>
           <div
             onClick={e => e.stopPropagation()}
@@ -255,8 +256,8 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
               </>
             )}
           </div>
-        </div>,
-        document.body
+        </div>
+        </ModalPortal>
       )}
       {recalcOpen && (
         <RecalculatePhotoModal

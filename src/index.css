@@ -4,15 +4,11 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  /* Universal, not just on .app-content-pad/.modal-panel — a single SPA
-     bundle can't explain "fixed on some pages, not others" (it's the same
-     loaded CSS everywhere in one session), so a page that still feels
-     rigid almost certainly has its own extra nested scroll container this
-     property hadn't reached yet. Applying it everywhere is a no-op on
-     anything that doesn't actually scroll, so it's a safe way to close
-     off that whole class of bug at once instead of hunting container by
-     container. */
-  -webkit-overflow-scrolling: touch;
+  /* No `-webkit-overflow-scrolling: touch` on `*` (it used to be here): iOS 13+
+     gives every scroll area momentum natively, and on iOS that property also
+     turns the element into its own stacking context — applied to everything,
+     it trapped every bottom sheet under the floating nav bar and hid its
+     buttons. See appshell.css.test.js. */
 }
 
 :root {
@@ -474,11 +470,14 @@ button:not(:disabled):active {
 }
 
 /* The daily log's body slides in from the side the new day came from after a
-   day-swipe (see DailyLog.jsx's goDay). Reduced-motion users get a plain swap. */
+   day-swipe (see DailyLog.jsx's goDay). `backwards`, not `both`: once it ends
+   the page must not keep a transform/opacity animation filling, which would
+   leave a stacking context that traps sheets under the bottom nav. Reduced-
+   motion users get a plain swap. */
 @keyframes day-slide-from-right { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @keyframes day-slide-from-left { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
-.day-slide-from-right { animation: day-slide-from-right 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
-.day-slide-from-left { animation: day-slide-from-left 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.day-slide-from-right { animation: day-slide-from-right 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+.day-slide-from-left { animation: day-slide-from-left 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
 @media (prefers-reduced-motion: reduce) {
   .day-slide-from-right, .day-slide-from-left { animation: none; }
 }
