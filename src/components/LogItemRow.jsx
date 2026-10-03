@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { round1 } from '../lib/format';
 import { scaleFood, formatAmountUnit, initialEditState, editUnitsFor, editServings } from '../lib/foodMath';
 import { dateToHHMM, timeStringToDate } from '../lib/mealTime';
@@ -165,7 +166,11 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
           onClick={onToggle}
         />
       </SwipeToDelete>
-      {isExpanded && (
+      {isExpanded && createPortal(
+        // Rendered into document.body, not in place: this row lives inside
+        // cards with entrance animations (transform/opacity), and each of those
+        // traps the sheet's z-index in its own stacking context — which left
+        // the floating bottom nav painting over the Save/Delete buttons.
         // A bottom sheet rather than the old inline accordion — the edit
         // form (amount, meal/time, macro preview) is real content now, not
         // a quick inline tweak, so it gets its own focused surface instead
@@ -177,7 +182,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
             aria-modal="true"
             aria-label={item.name}
             className="modal-panel"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '16px 16px 0 0', padding: 20, width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto' }}
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '16px 16px 0 0', padding: 20, width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto', paddingBottom: 'calc(20px + var(--safe-bottom, 0px))' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
               <div style={{ minWidth: 0, overflow: 'hidden' }}>
@@ -250,7 +255,8 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {recalcOpen && (
         <RecalculatePhotoModal
