@@ -50,10 +50,61 @@ export function calcGoalAdjustment(goal, paceKgPerWeek) {
   return goal === 'lose' ? -dailyKcal : goal === 'build' ? dailyKcal : 0;
 }
 
+// Never hand someone a target below this: a steep pace on a small or
+// sedentary person can otherwise compute to something genuinely unsafe.
+export const MIN_CALORIES = 1200;
+
+export function clampToFloor(calories) {
+  return calories < MIN_CALORIES ? { calories: MIN_CALORIES, clamped: true } : { calories, clamped: false };
+}
+
 export function calcCalories(form) {
   const bmr = calcBMR(form.weight, form.height, form.age, form.unit, form.sex);
   const tdee = bmr * (activityMultipliers[form.activity] || 1.55);
-  return Math.round(tdee + calcGoalAdjustment(form.goal, form.paceKgPerWeek));
+  return clampToFloor(Math.round(tdee + calcGoalAdjustment(form.goal, form.paceKgPerWeek))).calories;
+}
+
+// ── Weekly goal rate ────────────────────────────────────────────────────────
+// The rate is the user's choice (kg of body weight per week); the calorie
+// offset is derived from it, never the other way round.
+export const PACE_MIN_KG = 0.1;
+export const PACE_MAX_KG = 1;
+const DEFAULT_PACE_KG = { lose: 0.35, build: 0.25 };
+
+export function defaultPace(goal) {
+  return DEFAULT_PACE_KG[goal] ?? null;
+}
+
+// Rates past these fractions of body weight per week are where losses start
+// coming out of muscle (cutting) or mostly out of fat gain (bulking).
+const FAST_LOSS_PCT_PER_WEEK = 1;
+const FAST_GAIN_PCT_PER_WEEK = 0.5;
+
+export function paceWarning(goal, paceKg, weightKg) {
+  if (!paceKg || !weightKg || (goal !== 'lose' && goal !== 'build')) return null;
+  const pct = (paceKg / weightKg) * 100;
+  if (goal === 'lose' && pct > FAST_LOSS_PCT_PER_WEEK) {
+    return `That's ${pct.toFixed(1)}% of your body weight a week — past about 1%, more of the loss tends to come from muscle and it's hard to sustain.`;
+  }
+  if (goal === 'build' && pct > FAST_GAIN_PCT_PER_WEEK) {
+    return `That's ${pct.toFixed(1)}% of your body weight a week — past about 0.5%, more of the gain tends to be fat rather than muscle.`;
+  }
+  return null;
+}
+
+// When, at a steady rate, the user reaches their target weight. `status`
+// is 'on-track' (with weeks + date), 'reached' (already at or past it), or
+// 'wrong-direction' (target is on the other side of where the goal heads).
+export function projectFinish(goal, currentKg, targetKg, paceKg, from = new Date()) {
+  if (!(currentKg > 0) || !(targetKg > 0) || !(paceKg > 0) || (goal !== 'lose' && goal !== 'build')) return null;
+  const diff = goal === 'lose' ? currentKg - targetKg : targetKg - currentKg;
+  if (Math.abs(diff) <= 0.05) return { status: 'reached' };
+  // A target on the wrong side of where the goal heads (lose-to-a-heavier-
+  // weight) can't be reached by following the goal — say so, don't project.
+  if (diff < 0) return { status: 'wrong-direction' };
+  const weeks = diff / paceKg;
+  const date = new Date(from.getFullYear(), from.getMonth(), from.getDate() + Math.ceil(weeks * 7));
+  return { status: 'on-track', weeks, date };
 }
 
 // Build a full targets object from a calorie number + macro % split

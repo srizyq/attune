@@ -126,3 +126,26 @@ describe('computeExpenditureHistory', () => {
     for (const p of history) expect(Math.abs(p.tdee - 2500)).toBeLessThan(250);
   });
 });
+
+describe('computeAdaptiveTarget with a weekly rate', () => {
+  it('offsets maintenance by the chosen rate, same as Calculated mode would', () => {
+    const { weights, calories } = scenario();
+    const r = computeAdaptiveTarget(weights, calories, 'lose', 0.5);
+    expect(r.target).toBe(r.estimate.tdee - 550);
+    const b = computeAdaptiveTarget(weights, calories, 'build', 0.25);
+    expect(b.target).toBe(b.estimate.tdee + 275);
+  });
+
+  it('holds at the safe minimum and says so, rather than targeting something unsafe', () => {
+    const { weights, calories } = scenario({ tdee: 1500, intake: 1500, start: 55 });
+    const r = computeAdaptiveTarget(weights, calories, 'lose', 1);
+    expect(r.target).toBe(1200);
+    expect(r.clamped).toBe(true);
+  });
+
+  it('reports the actual weekly rate so the UI can compare it with the goal', () => {
+    const { weights, calories } = scenario(); // 500 kcal/day deficit = 0.455 kg/week down
+    const r = computeAdaptiveTarget(weights, calories, 'lose', 0.5);
+    expect(r.estimate.weeklyRateKg).toBeCloseTo(-0.45, 1);
+  });
+});

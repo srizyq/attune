@@ -17,7 +17,7 @@ export function useAdaptiveTarget() {
   // 60-day window: gives the trend-weight/TDEE math room to look back
   // further than its own minimum (14-day span, 10 logged days) without
   // fetching someone's entire history every time this runs.
-  const compute = useCallback(async (goal) => {
+  const compute = useCallback(async (goal, paceKgPerWeek) => {
     if (!user) return { ready: false, reason: 'no-weight-logs' };
     const today = todayLocalDate();
     const start = dateNDaysAgo(59, new Date());
@@ -33,7 +33,7 @@ export function useAdaptiveTarget() {
     }
     const dailyCalories = [...dailyCaloriesMap.entries()].map(([date, calories]) => ({ date, calories }));
 
-    return computeAdaptiveTarget(weightLogs, dailyCalories, goal);
+    return computeAdaptiveTarget(weightLogs, dailyCalories, goal, paceKgPerWeek);
   }, [user]);
 
   return { compute };

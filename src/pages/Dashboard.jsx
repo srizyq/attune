@@ -12,7 +12,7 @@ import { useWeightLogs } from '../hooks/useWeightLogs';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
 import { useWorkoutLogs, useWorkoutLogsRange } from '../hooks/useWorkoutLogs';
 import { todayLocalDate, dateNDaysAgo, dateRange, computeStreak } from '../lib/patterns';
-import { goalMacroSplits, buildTargets } from '../lib/calorieTargets';
+import { goalMacroSplits, buildTargets, defaultPace } from '../lib/calorieTargets';
 import { toKg, fromKg } from '../lib/adaptiveTDEE';
 import { weightInKg, getWorkoutType } from '../lib/workoutMath';
 import { useClosingTransition } from '../hooks/useClosingTransition';
@@ -930,7 +930,11 @@ export default function Dashboard() {
     if (!profile || profile.calorie_mode !== 'adaptive' || adaptiveRefreshedRef.current) return;
     adaptiveRefreshedRef.current = true;
     (async () => {
-      const result = await computeAdaptive(profile.goal || 'maintain');
+      const result = await computeAdaptive(
+        profile.goal || 'maintain',
+        // Same fallback Settings → Goals uses, so both land on one number.
+        profile.goal === 'maintain' ? null : (profile.pace_kg_per_week ?? defaultPace(profile.goal)),
+      );
       if (!result.ready || Math.abs(result.target - (profile.calorie_target || 0)) < 10) return;
       const split = goalMacroSplits[profile.goal] || goalMacroSplits.maintain;
       const built = buildTargets(result.target, split, profile.water_target || 8);

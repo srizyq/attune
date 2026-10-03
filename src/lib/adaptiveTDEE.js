@@ -6,11 +6,7 @@
 // lib/patterns.js: it refuses to guess until there's enough real data.
 
 import { todayLocalDate } from './patterns';
-
-// Same deficit/surplus convention already used by the formula-based
-// "Calculated" mode in Settings.jsx, so switching between modes doesn't
-// change what a given goal means.
-const GOAL_ADJUSTMENTS = { lose: -400, maintain: 0, build: 300 };
+import { calcGoalAdjustment, clampToFloor } from './calorieTargets';
 
 // Body-composition energy density: ~7700 kcal stored/released per kg of
 // body-mass change (a standard approximation covering mixed fat/lean
@@ -156,6 +152,7 @@ export function assessTDEE(trendPoints, dailyCalories) {
       tdee: Math.round(tdee),
       avgCalIn: Math.round(avgCalIn),
       weightChangeKg: Math.round(slope * spanDays * 10) / 10,
+      weeklyRateKg: Math.round(slope * 7 * 100) / 100,
       spanDays,
       loggedDayCount: loggedDays.length,
       excludedDayCount: loggedInSpan.length - loggedDays.length,
@@ -175,7 +172,11 @@ export function estimateTDEE(trendPoints, dailyCalories) {
 // returns either a full result (estimate + resulting target) or a
 // `blocked` result explaining what's still needed, so the UI always has
 // something honest to show instead of a silent gap.
-export function computeAdaptiveTarget(weightLogs, dailyCalories, goal) {
+// `paceKgPerWeek` is the user's chosen weekly rate (same field Calculated
+// mode uses) — the target is estimated maintenance plus the offset that
+// rate implies, so the two modes mean the same thing by "lose 0.5 kg/week".
+// Without one it falls back to the old flat offset.
+export function computeAdaptiveTarget(weightLogs, dailyCalories, goal, paceKgPerWeek) {
   const trendPoints = computeTrendWeight(weightLogs);
   if (trendPoints.length === 0) {
     return { ready: false, reason: 'no-weight-logs' };
@@ -183,12 +184,12 @@ export function computeAdaptiveTarget(weightLogs, dailyCalories, goal) {
 
   const assessed = assessTDEE(trendPoints, dailyCalories);
   if (!assessed.ok) {
-    const { ok, ...blocked } = assessed;
-    return { ready: false, ...blocked };
+    const { reason, daysNeeded } = assessed;
+    return daysNeeded === undefined ? { ready: false, reason } : { ready: false, reason, daysNeeded };
   }
 
-  const target = Math.round(assessed.estimate.tdee + (GOAL_ADJUSTMENTS[goal] ?? 0));
-  return { ready: true, estimate: assessed.estimate, target, computedAt: todayLocalDate() };
+  const { calories, clamped } = clampToFloor(Math.round(assessed.estimate.tdee + calcGoalAdjustment(goal, paceKgPerWeek)));
+  return { ready: true, estimate: assessed.estimate, target: calories, clamped, computedAt: todayLocalDate() };
 }
 
 // A time series of TDEE re-estimates (a rolling 3-week window, stepping

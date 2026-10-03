@@ -4,7 +4,11 @@ import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { hasProAccess } from '../lib/proAccess';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
-import { goalMacroSplits, calcCalories, buildTargets, splitFromGrams } from '../lib/calorieTargets';
+import { goalMacroSplits, calcCalories, buildTargets, splitFromGrams, calcGoalAdjustment, defaultPace, clampToFloor, MIN_CALORIES } from '../lib/calorieTargets';
+import { useWeightLogs } from '../hooks/useWeightLogs';
+import { toKg } from '../lib/adaptiveTDEE';
+import { todayLocalDate } from '../lib/patterns';
+import GoalRateCard from '../components/settings/GoalRateCard';
 import { MICRO_NUTRIENTS } from '../lib/microNutrients';
 import { dayTargetsToInputs, parseDayTargetInputs } from '../lib/dayTargets';
 import RestDayTargetsCard from '../components/settings/RestDayTargetsCard';
@@ -15,10 +19,19 @@ import MacroPreviewBar from '../components/MacroPreviewBar';
 import { Card, SectionLabel, FieldRow, Select, Segmented } from '../components/settings/primitives';
 import PageHeader from '../components/PageHeader';
 
+const LB_PER_KG = 2.20462;
+// "−0.4 kg/week" / "+0.3 lb/week", or "holding steady" near zero.
+function formatRate(kgPerWeek, unit) {
+  const v = unit === 'imperial' ? kgPerWeek * LB_PER_KG : kgPerWeek;
+  const rounded = Math.round(v * 10) / 10;
+  if (rounded === 0) return 'holding steady';
+  return `${rounded > 0 ? '+' : '−'}${Math.abs(rounded)} ${unit === 'imperial' ? 'lb' : 'kg'}/week`;
+}
+
 // Shows the adaptive-target estimate, or an honest explanation of what's
 // still needed — mirrors the pattern engine's "log N more days" gating
 // rather than silently falling back to a guess.
-function AdaptiveTargetPanel({ loading, result, goal, onRefresh }) {
+function AdaptiveTargetPanel({ loading, result, goal, paceKg, unit, onRefresh }) {
   if (loading) {
     return <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', margin: 0 }}>Crunching your weight and food logs…</p>;
   }
@@ -54,6 +67,16 @@ function AdaptiveTargetPanel({ loading, result, goal, onRefresh }) {
         over {estimate.spanDays} days while averaging {estimate.avgCalIn.toLocaleString()} kcal/day ({estimate.loggedDayCount} logged days).
         Adjusted for your "{goalLabel}" goal to {result.target.toLocaleString()} kcal — this updates as you keep logging.
       </p>
+      {goal !== 'maintain' && (
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 8px' }} data-testid="adaptive-rate">
+          Your trend is {formatRate(estimate.weeklyRateKg, unit)}{paceKg ? ` — you're aiming for ${formatRate(goal === 'lose' ? -paceKg : paceKg, unit)}` : ''}.
+        </p>
+      )}
+      {result.clamped && (
+        <p style={{ color: 'var(--gold)', fontSize: '12px', margin: '0 0 8px' }}>
+          Held at {MIN_CALORIES.toLocaleString()} kcal, the lowest target we'll set — your chosen rate would go lower.
+        </p>
+      )}
       <button
         onClick={onRefresh}
         style={{ background: 'none', border: '1px solid var(--border-default)', borderRadius: '7px', padding: '5px 12px', color: 'var(--accent)', fontSize: '11px', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -96,7 +119,9 @@ function UpgradeProButton({ pendingConfirmation, onGoToProfile, onGoToPricing })
   );
 }
 
-const DEFAULT_FORM = { unit: 'metric', age: 30, weight: 70, height: 170, goal: 'maintain', activity: 'moderate' };
+// `sex` isn't editable here but the formula needs it (Mifflin–St Jeor differs by
+// ~166 kcal); `pace` is the weekly goal rate in kg, null = not chosen yet.
+const DEFAULT_FORM = { unit: 'metric', age: 30, weight: 70, height: 170, goal: 'maintain', activity: 'moderate', sex: 'unspecified', pace: null, targetWeight: '' };
 
 export default function SettingsGoals() {
   const navigate = useNavigate();
@@ -108,6 +133,7 @@ export default function SettingsGoals() {
   // without an account".
   const pendingConfirmation = !!user?.is_anonymous;
   const [saving, setSaving] = useState(false);
+  const { latest: latestWeight } = useWeightLogs(todayLocalDate(), todayLocalDate());
 
   const [form, setForm] = useState(DEFAULT_FORM);
   const [calMode, setCalMode] = useState('calculated');
@@ -134,6 +160,7 @@ export default function SettingsGoals() {
     form.unit !== baseline.unit || Number(form.age) !== baseline.age ||
     Number(form.weight) !== baseline.weight || Number(form.height) !== baseline.height ||
     form.goal !== baseline.goal || form.activity !== baseline.activity ||
+    form.pace !== baseline.pace || form.targetWeight !== baseline.targetWeight ||
     calMode !== baseline.calMode || customCal !== baseline.customCal ||
     proteinPct !== baseline.proteinPct || fatPct !== baseline.fatPct ||
     JSON.stringify(microTargets) !== JSON.stringify(baseline.microTargets) ||
@@ -158,10 +185,10 @@ export default function SettingsGoals() {
   const [adaptiveResult, setAdaptiveResult] = useState(null);
   const [adaptiveLoading, setAdaptiveLoading] = useState(false);
 
-  const refreshAdaptive = async (goal) => {
+  const refreshAdaptive = async (goal, pace) => {
     setAdaptiveLoading(true);
     try {
-      setAdaptiveResult(await computeAdaptive(goal));
+      setAdaptiveResult(await computeAdaptive(goal, pace));
     } finally {
       setAdaptiveLoading(false);
     }
@@ -181,6 +208,9 @@ export default function SettingsGoals() {
       height: profile.height || 170,
       goal: profile.goal || 'maintain',
       activity: profile.activity || 'moderate',
+      sex: profile.sex || 'unspecified',
+      pace: profile.pace_kg_per_week != null ? Number(profile.pace_kg_per_week) : null,
+      targetWeight: profile.target_weight != null ? String(profile.target_weight) : '',
     };
     setForm(syncedForm);
     let syncedCal = customCal, syncedProtein = proteinPct, syncedFat = fatPct;
@@ -197,7 +227,7 @@ export default function SettingsGoals() {
     if (profile.calorie_mode) {
       syncedMode = profile.calorie_mode;
       setCalMode(syncedMode);
-      if (syncedMode === 'adaptive') refreshAdaptive(profile.goal || 'maintain');
+      if (syncedMode === 'adaptive') refreshAdaptive(profile.goal || 'maintain', syncedForm.goal === 'maintain' ? null : (syncedForm.pace ?? defaultPace(syncedForm.goal)));
     }
     const syncedMicroTargets = Object.fromEntries(
       Object.entries(profile.micro_targets || {}).map(([k, v]) => [k, String(v)])
@@ -222,9 +252,20 @@ export default function SettingsGoals() {
   // formula while the real estimate is loading or isn't ready yet, so
   // the rest of the page (macro split, save button) always has a sane
   // number to work with instead of needing its own separate null-state.
-  const calculatedCal = calcCalories(form);
+  // The weekly rate that applies right now: the chosen one, else the default
+  // for the goal. Maintain has none.
+  const paceFor = (goal) => (goal === 'maintain' ? null : (form.pace ?? defaultPace(goal)));
+  const effectivePace = paceFor(form.goal);
+  const calculatedCal = calcCalories({ ...form, paceKgPerWeek: effectivePace });
+  // The adaptive estimate (maintenance) is fetched once; the goal's offset is
+  // applied here, so dragging the rate slider or switching goal moves the
+  // target live instead of re-querying a couple of months of logs per tick.
+  const adaptiveView = adaptiveResult?.ready
+    ? { ...adaptiveResult, ...(() => { const c = clampToFloor(Math.round(adaptiveResult.estimate.tdee + calcGoalAdjustment(form.goal, effectivePace))); return { target: c.calories, clamped: c.clamped }; })() }
+    : adaptiveResult;
+  const currentKg = latestWeight ? toKg(latestWeight.weight, latestWeight.unit) : toKg(form.weight, form.unit === 'imperial' ? 'lb' : 'kg');
   const calories = calMode === 'calculated' ? calculatedCal
-    : calMode === 'adaptive' ? (adaptiveResult?.ready ? adaptiveResult.target : calculatedCal)
+    : calMode === 'adaptive' ? (adaptiveView?.ready ? adaptiveView.target : calculatedCal)
     : customCal;
   const split = { protein: proteinPct / 100, carbs: carbPct / 100, fat: fatPct / 100 };
   const preview = buildTargets(calories, split, profile?.water_target || 8);
@@ -239,7 +280,7 @@ export default function SettingsGoals() {
     const s = goalMacroSplits[goal];
     setProteinPct(Math.round(s.protein * 100));
     setFatPct(Math.round(s.fat * 100));
-    if (calMode === 'adaptive') refreshAdaptive(goal);
+    if (calMode === 'adaptive') refreshAdaptive(goal, paceFor(goal));
   };
 
   const handleSave = async () => {
@@ -274,6 +315,9 @@ export default function SettingsGoals() {
         height: Number(form.height),
         goal: form.goal,
         activity: form.activity,
+        // Maintain has no rate, so it leaves whatever was chosen for lose/build alone.
+        pace_kg_per_week: form.goal === 'maintain' ? form.pace : effectivePace,
+        ...(form.goal !== 'maintain' ? { target_weight: Number(form.targetWeight) > 0 ? Number(form.targetWeight) : null } : {}),
         calorie_mode: calMode,
         calorie_target: preview.calories,
         protein_g: preview.protein.g,
@@ -306,11 +350,22 @@ export default function SettingsGoals() {
               value={form.goal}
               onChange={applyGoalSplit}
               options={[
-                { value: 'lose',     icon: 'ti-trending-down', label: 'Lose weight',  desc: '−400 kcal/day' },
+                { value: 'lose',     icon: 'ti-trending-down', label: 'Lose weight',  desc: `−${Math.abs(calcGoalAdjustment('lose', paceFor('lose'))).toLocaleString()} kcal/day` },
                 { value: 'maintain', icon: 'ti-scale',         label: 'Maintain',     desc: 'At maintenance' },
-                { value: 'build',    icon: 'ti-barbell',       label: 'Build muscle', desc: '+300 kcal/day' },
+                { value: 'build',    icon: 'ti-barbell',       label: 'Build muscle', desc: `+${Math.abs(calcGoalAdjustment('build', paceFor('build'))).toLocaleString()} kcal/day` },
               ]}
             />
+            {form.goal !== 'maintain' && (
+              <GoalRateCard
+                goal={form.goal}
+                unit={form.unit}
+                paceKg={effectivePace}
+                onPaceChange={(kg) => set('pace', kg)}
+                targetWeight={form.targetWeight}
+                onTargetWeightChange={(v) => set('targetWeight', v)}
+                currentKg={currentKg}
+              />
+            )}
             <div style={{ marginTop: '16px' }}>
               <FieldRow label="Activity level" hint="Used to estimate your daily energy use">
                 <Select
@@ -344,7 +399,7 @@ export default function SettingsGoals() {
                     onClick={() => {
                       setCalMode(m.value);
                       if (m.value === 'custom') setCustomCal(calculatedCal);
-                      if (m.value === 'adaptive' && !adaptiveResult) refreshAdaptive(form.goal);
+                      if (m.value === 'adaptive' && !adaptiveResult) refreshAdaptive(form.goal, effectivePace);
                     }}
                     style={{
                       flex: 1, padding: '10px',
@@ -388,7 +443,7 @@ export default function SettingsGoals() {
                 </div>
               </>
             ) : calMode === 'adaptive' ? (
-              <AdaptiveTargetPanel loading={adaptiveLoading} result={adaptiveResult} goal={form.goal} onRefresh={() => refreshAdaptive(form.goal)} />
+              <AdaptiveTargetPanel loading={adaptiveLoading} result={adaptiveView} goal={form.goal} paceKg={effectivePace} unit={form.unit} onRefresh={() => refreshAdaptive(form.goal, effectivePace)} />
             ) : (
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', margin: 0 }}>
                 Calculated from your stats, goal and activity level. Switch to Custom to set it manually.
