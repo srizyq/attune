@@ -15,6 +15,7 @@ const SCENARIOS = [
   { name: 'dashboard-expand-log-item', path: '/dashboard', act: async (p) => { await p.getByRole('button', { name: 'Meals' }).first().click(); await p.getByText('Breakfast').first().click(); } },
   { name: 'daily-log-copy-menu', path: '/log', act: (p) => p.getByRole('button', { name: 'Copy meals' }).click() },
   { name: 'daily-log-copy-modal', path: '/log', act: async (p) => { await p.getByRole('button', { name: 'Copy meals' }).click(); await p.getByText('Copy from another day').click(); } },
+  { name: 'daily-log-copy-modal-picked', path: '/log', act: async (p) => { await p.getByRole('button', { name: 'Copy meals' }).click(); await p.getByText('Copy from another day').click(); await p.getByRole('radio', { name: 'Dinner' }).click(); await p.getByRole('checkbox', { name: /Lunch/ }).first().click(); } },
   // 'Meals' also substring-matches this page's "Copy meals" header button,
   // and its icon glyph's CSS ::before content is folded into the computed
   // accessible name, so `exact: true` never matches literally "Meals"

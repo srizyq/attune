@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getFoodLogsForDate, copyFoodLogs, getDaySlots, copyDaySlots } from '../lib/db';
+import { toggleGroup, rowsToCopy, COPY_DEST_SAME } from '../lib/copyMeals';
 import { mapRow } from '../hooks/useFoodLogs';
 import { mapSlotRow, formatSlotTime } from '../lib/daySlots';
 import { useClosingTransition } from '../hooks/useClosingTransition';
@@ -17,11 +18,40 @@ function shiftDateStr(dateStr, days) {
   return todayLocalDate(d);
 }
 
-// Copies a whole day's food onto destDate (whatever day DailyLog is
+// Full-width tappable row (44px tall) — the whole line toggles, not just
+// the tiny checkbox, which matters on a phone.
+const ROW_BUTTON = {
+  width: '100%', minHeight: 44, display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0',
+  background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'inherit',
+};
+
+// on = ticked, some = partly ticked (a meal header with only some items on).
+function CheckMark({ state }) {
+  const filled = state !== 'off';
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: filled ? 'var(--accent)' : 'transparent',
+        border: `1.5px solid ${filled ? 'var(--accent)' : 'var(--border-strong)'}`,
+        color: 'var(--accent-contrast)', fontSize: 13, lineHeight: 1,
+      }}
+    >
+      {state === 'on' && <i className="ti ti-check" />}
+      {state === 'some' && <i className="ti ti-minus" />}
+    </span>
+  );
+}
+
+// Copies food from another day onto destDate (whatever day DailyLog is
 // showing): pick the source day on the week strip (starts on yesterday),
-// see what's on it, tap once. copyFoodLogs re-inserts the raw rows as new
-// rows (fresh ids), so this never touches or moves the source day's own
-// entries.
+// then choose what to bring over. Everything starts ticked, so copying the
+// whole day is still one tap; a meal header ticks/unticks that whole meal,
+// and each item can be toggled on its own. "Put in" optionally files the
+// ticked items under a different meal (Tuesday's lunch → today's dinner).
+// copyFoodLogs re-inserts the raw rows as new rows (fresh ids), so this
+// never touches or moves the source day's own entries.
 //
 // mode="slots" (Slots view) previews and copies the source day's day_slots
 // instead of its meal groups, via copyDaySlots (which also recreates the
@@ -35,6 +65,8 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
   const [loading, setLoading] = useState(true);
   const [copying, setCopying] = useState(false);
   const [error, setError] = useState(null);
+  const [selected, setSelected] = useState(() => new Set());
+  const [destMeal, setDestMeal] = useState(COPY_DEST_SAME);
 
   useEffect(() => {
     if (!user) return;
@@ -58,6 +90,13 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
   }, [items]);
   const slots = useMemo(() => slotRows.map(mapSlotRow), [slotRows]);
 
+  // A new source day means a new list — start with all of it ticked again,
+  // so the default stays "copy the whole day".
+  useEffect(() => { setSelected(new Set(items.map((i) => i.id))); }, [items]);
+
+  const selectedItems = items.filter((i) => selected.has(i.id));
+  const selectedCal = selectedItems.reduce((sum, i) => sum + i.cal, 0);
+
   async function handleCopy() {
     if (copying) return;
     if (mode === 'slots') {
@@ -74,11 +113,11 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
       }
       return;
     }
-    if (!rows.length) return;
+    if (!selectedItems.length) return;
     setCopying(true);
     setError(null);
     try {
-      const created = await copyFoodLogs(user.id, rows, destDate);
+      const created = await copyFoodLogs(user.id, rowsToCopy(rows, selected, destMeal), destDate);
       onCopied(created);
       close();
     } catch {
@@ -87,10 +126,8 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
     }
   }
 
-  const totalCal = mode === 'slots'
-    ? 0 // slot totals aren't relevant here — the preview shows per-slot kcal instead
-    : items.reduce((sum, i) => sum + i.cal, 0);
   const hasSource = mode === 'slots' ? slotRows.length > 0 : rows.length > 0;
+  const canCopy = mode === 'slots' ? slotRows.length > 0 : selectedItems.length > 0;
   const today = todayLocalDate();
   const destLabel = destDate === today
     ? 'today'
@@ -128,33 +165,97 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
               </div>
             ))
           ) : (
-            MEAL_ORDER.filter(m => grouped[m].length > 0).map(mealKey => (
-              <div key={mealKey} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>{MEAL_LABELS[mealKey]}</div>
-                {grouped[mealKey].map(item => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-                    <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{withBrand(item.name, item.brand)}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>{Math.round(item.cal)} kcal</div>
-                  </div>
-                ))}
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{selectedItems.length} of {items.length} selected</span>
+                <button
+                  type="button"
+                  onClick={() => setSelected(selectedItems.length === items.length ? new Set() : new Set(items.map((i) => i.id)))}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '8px 0 8px 12px', minHeight: 32, fontFamily: 'inherit' }}
+                >
+                  {selectedItems.length === items.length ? 'Clear all' : 'Select all'}
+                </button>
               </div>
-            ))
+              {MEAL_ORDER.filter(m => grouped[m].length > 0).map(mealKey => {
+                const ids = grouped[mealKey].map((i) => i.id);
+                const onCount = ids.filter((id) => selected.has(id)).length;
+                return (
+                  <div key={mealKey} style={{ marginBottom: 10 }}>
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={onCount === ids.length ? true : onCount === 0 ? false : 'mixed'}
+                      onClick={() => setSelected((prev) => toggleGroup(prev, ids))}
+                      style={ROW_BUTTON}
+                    >
+                      <CheckMark state={onCount === ids.length ? 'on' : onCount === 0 ? 'off' : 'some'} />
+                      <span style={{ flex: 1, textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{MEAL_LABELS[mealKey]}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-hint)', flexShrink: 0 }}>{onCount}/{ids.length}</span>
+                    </button>
+                    {grouped[mealKey].map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={selected.has(item.id)}
+                        onClick={() => setSelected((prev) => toggleGroup(prev, [item.id]))}
+                        style={{ ...ROW_BUTTON, paddingLeft: 16 }}
+                      >
+                        <CheckMark state={selected.has(item.id) ? 'on' : 'off'} />
+                        <span style={{ flex: 1, minWidth: 0, textAlign: 'left', fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{withBrand(item.name, item.brand)}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>{Math.round(item.cal)} kcal</span>
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
+
+        {mode === 'meals' && hasSource && !loading && (
+          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-default)', flexShrink: 0 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Put in</div>
+            <div role="radiogroup" aria-label="Put copied items in" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {[[COPY_DEST_SAME, 'Same meal'], ...MEAL_ORDER.map((m) => [m, MEAL_LABELS[m]])].map(([value, label]) => {
+                const on = destMeal === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setDestMeal(value)}
+                    style={{
+                      padding: '7px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                      background: on ? 'var(--accent-bg)' : 'transparent',
+                      border: `1px solid ${on ? 'var(--border-active)' : 'var(--border-default)'}`,
+                      color: on ? 'var(--accent)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {error && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', padding: '0 20px 8px', flexShrink: 0 }}>{error}</p>}
 
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-default)', flexShrink: 0 }}>
           <button
             onClick={handleCopy}
-            disabled={!hasSource || copying}
-            style={{ width: '100%', background: !hasSource || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !hasSource || copying ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: !hasSource || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            disabled={!canCopy || copying}
+            style={{ width: '100%', background: !canCopy || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !canCopy || copying ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: !canCopy || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
           >
             {copying
               ? 'Copying…'
               : mode === 'slots'
                 ? (slotRows.length ? `Copy ${slotRows.length} slot${slotRows.length === 1 ? '' : 's'}` : 'Copy')
-                : (rows.length ? `Copy ${rows.length} item${rows.length === 1 ? '' : 's'} · ${Math.round(totalCal)} kcal` : 'Copy')}
+                : selectedItems.length
+                  ? `Copy ${selectedItems.length} item${selectedItems.length === 1 ? '' : 's'} · ${Math.round(selectedCal)} kcal`
+                  : hasSource ? 'Select something to copy' : 'Copy'}
           </button>
         </div>
       </div>
