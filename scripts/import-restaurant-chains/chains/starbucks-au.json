@@ -290,7 +290,9 @@
       "saturated_fat_g": 0.0,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/iced-hibiscus-tea-lemonade/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 142 kcal but its macros add up to about 275"
     },
     {
       "id": "starbucks-au_lemon-meringue-tart",
@@ -442,7 +444,9 @@
       "saturated_fat_g": 1.5,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/brown-sugar-iced-shaken-espresso/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 208 kcal but its macros add up to about 109"
     },
     {
       "id": "starbucks-au_brown-sugar-iced-shaken-espresso-grande-cold",
@@ -1905,7 +1909,9 @@
       "saturated_fat_g": 0.3,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/salted-caramel-iced-shaken-espresso/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 276 kcal but its macros add up to about 159"
     },
     {
       "id": "starbucks-au_salted-caramel-iced-shaken-espresso-venti-cold",
@@ -4508,7 +4514,9 @@
       "saturated_fat_g": 8.7,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/brown-sugar-cream-cold-brew-2/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 129 kcal but its macros add up to about 242"
     },
     {
       "id": "starbucks-au_brown-sugar-cream-cold-brew-grande-cold",
@@ -4527,7 +4535,9 @@
       "saturated_fat_g": 10.0,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/brown-sugar-cream-cold-brew-2/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 161 kcal but its macros add up to about 294"
     },
     {
       "id": "starbucks-au_brown-sugar-cream-cold-brew-venti-cold",
@@ -4546,7 +4556,9 @@
       "saturated_fat_g": 9.6,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/brown-sugar-cream-cold-brew-2/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 194 kcal but its macros add up to about 301"
     },
     {
       "id": "starbucks-au_caramel-mocha-short-hot",
@@ -4945,7 +4957,9 @@
       "saturated_fat_g": 7.9,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/brown-sugar-cream-cold-brew/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 130 kcal but its macros add up to about 221"
     },
     {
       "id": "starbucks-au_brown-sugar-cream-nitro-cold-brew-grande-cold",
@@ -4964,7 +4978,9 @@
       "saturated_fat_g": 8.7,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/brown-sugar-cream-cold-brew/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 163 kcal but its macros add up to about 243"
     },
     {
       "id": "starbucks-au_brown-sugar-cream-nitro-cold-brew-venti-cold",
@@ -4983,7 +4999,9 @@
       "saturated_fat_g": 10.0,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/brown-sugar-cream-cold-brew/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 196 kcal but its macros add up to about 296"
     },
     {
       "id": "starbucks-au_chicken-avocado-panini",
@@ -6180,7 +6198,9 @@
       "saturated_fat_g": 0.3,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/dirty-chai-iced-shaken-espresso/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 273 kcal but its macros add up to about 144"
     },
     {
       "id": "starbucks-au_dirty-chai-iced-shaken-espresso-venti-cold",
@@ -8080,7 +8100,9 @@
       "saturated_fat_g": 6.2,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/iced-matcha-with-strawberry-cold-foam/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 231 kcal but its macros add up to about 644"
     },
     {
       "id": "starbucks-au_iced-matcha-with-strawberry-cold-foam-grande-cold",
@@ -8099,7 +8121,9 @@
       "saturated_fat_g": 7.9,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/iced-matcha-with-strawberry-cold-foam/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 280 kcal but its macros add up to about 778"
     },
     {
       "id": "starbucks-au_iced-matcha-with-strawberry-cold-foam-venti-cold",
@@ -8118,7 +8142,9 @@
       "saturated_fat_g": 9.6,
       "trans_fat_g": null,
       "source_url": "https://www.starbucks.com.au/product/iced-matcha-with-strawberry-cold-foam/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 327 kcal but its macros add up to about 911"
     },
     {
       "id": "starbucks-au_butter-croissant-short-hot",

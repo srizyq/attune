@@ -291,6 +291,25 @@
       "trans_fat_g": 0,
       "source_url": "https://www.calorieking.com/au/en/foods/f/calories-in-drinks-hot-tea-all-flavours/6BHQA81tTr-7q7nZnJNkXw",
       "verified_date": "2026-09-29"
+    },
+    {
+      "id": "hudsons-coffee-au_coffee-espresso",
+      "name": "Coffee, Espresso",
+      "category": "Hot Drinks",
+      "size_label": null,
+      "serving_label": "1 small (30mL)",
+      "serving_grams": 30,
+      "calories": 0,
+      "protein_g": 0.0,
+      "carbs_g": 0.0,
+      "fat_g": 0.0,
+      "fibre_g": null,
+      "sodium_mg": 1,
+      "sugar_g": 0.0,
+      "saturated_fat_g": 0.0,
+      "trans_fat_g": null,
+      "source_url": "https://www.calorieking.com/au/en/foods/f/calories-in-food/xFVn7fNOS5uXcuo6QYEi5w",
+      "verified_date": "2026-10-04"
     }
   ],
   "components": []

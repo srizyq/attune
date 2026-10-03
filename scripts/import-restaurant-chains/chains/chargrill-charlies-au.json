@@ -100,7 +100,9 @@
       "fat_g": 0.0,
       "sodium_mg": 1035,
       "sugar_g": 0.0,
-      "saturated_fat_g": 6.8
+      "saturated_fat_g": 6.8,
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 790 kcal but its macros add up to about 184"
     },
     {
       "id": "chargrill-charlies-au_double-decker-beef-burger",
@@ -309,7 +311,9 @@
       "fat_g": 0.0,
       "sodium_mg": 2435,
       "sugar_g": 0.0,
-      "saturated_fat_g": 16.0
+      "saturated_fat_g": 16.0,
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 870 kcal but its macros add up to about 208"
     },
     {
       "id": "chargrill-charlies-au_old-fashioned-roll",
@@ -442,7 +446,9 @@
       "fat_g": 0.0,
       "sodium_mg": 155,
       "sugar_g": 0.0,
-      "saturated_fat_g": 6.0
+      "saturated_fat_g": 6.0,
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 300 kcal but its macros add up to about 25"
     },
     {
       "id": "chargrill-charlies-au_salted-caramel-milkshake",
@@ -3786,7 +3792,9 @@
       "fat_g": 0.0,
       "sodium_mg": 5,
       "sugar_g": 0.0,
-      "saturated_fat_g": 0.8
+      "saturated_fat_g": 0.8,
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 300 kcal but its macros add up to about 26"
     },
     {
       "id": "chargrill-charlies-au_brown-rice-medium",
@@ -4014,7 +4022,9 @@
       "fat_g": 0.0,
       "sodium_mg": 470,
       "sugar_g": 0.0,
-      "saturated_fat_g": 20.3
+      "saturated_fat_g": 20.3,
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 630 kcal but its macros add up to about 120"
     },
     {
       "id": "chargrill-charlies-au_chicken-macaroni-cheese-medium",
@@ -7301,7 +7311,9 @@
       "fat_g": 0.0,
       "sodium_mg": 195,
       "sugar_g": 0.0,
-      "saturated_fat_g": 4.4
+      "saturated_fat_g": 4.4,
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 380 kcal but its macros add up to about 16"
     },
     {
       "id": "chargrill-charlies-au_salted-caramel-thick-shake",

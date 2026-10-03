@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readdirSync } from 'node:fs';
 import { matchChains, normalizeChainText, groupByCategory, CHAIN_ALIASES } from './restaurantChains';
 
 const chains = [
@@ -68,8 +69,23 @@ describe('matchChains', () => {
   });
 });
 
-describe('aliases', () => {
-  it('are only defined for chains that exist in the data', () => {
+describe('aliases and the chain data', () => {
+  const dataIds = readdirSync(new URL('../../scripts/import-restaurant-chains/chains', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => f.replace('.json', ''));
+  it('every nickname list belongs to a chain that has a data file', () => {
+    for (const id of Object.keys(CHAIN_ALIASES)) expect(dataIds, id).toContain(id);
+  });
+  it('finds the newly added chains by the names people use', () => {
+    const real = dataIds.map((id) => ({ id, name: id.replace(/-au$/, '').replace(/-/g, ' ') }));
+    const first = (q) => matchChains(q, real)[0]?.id;
+    expect(first('rolled')).toBe('rolld-au');
+    expect(first('sumo')).toBe('sumo-salad-au');
+    expect(first('mccafe')).toBe('mccafe-au');
+    expect(first('maccas')).toBe('mcdonalds-au');
+    expect(first('banjos')).toBe('banjos-bakery-cafe-au');
+    expect(first('wok in a box')).toBe('wok-in-a-box-au');
+    expect(first('chatime')).toBe('chatime-au');
+  });
+  it('nicknames are stored already normalised', () => {
     expect(Object.keys(CHAIN_ALIASES).length).toBeGreaterThan(20);
     for (const aliases of Object.values(CHAIN_ALIASES)) for (const a of aliases) expect(normalizeChainText(a)).toBe(a);
   });

@@ -18,6 +18,13 @@ const baseRow = {
 };
 
 describe('mapRestaurantItemRow', () => {
+  it('marks an item with no published weight so it is only counted in servings', () => {
+    expect(mapRestaurantItemRow(baseRow).noWeight).toBe(false);
+    const got = mapRestaurantItemRow({ ...baseRow, serving_grams: null, serving_label: '1 burger' });
+    expect(got.noWeight).toBe(true);
+    expect(got.servingGrams).toBe(100); // internal maths only; never shown or logged
+  });
+
   it('does not suffix the name when there is no size variant', () => {
     const got = mapRestaurantItemRow(baseRow);
     expect(got.name).toBe('Big Mac');

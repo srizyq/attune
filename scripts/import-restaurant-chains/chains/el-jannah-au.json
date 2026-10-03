@@ -583,7 +583,9 @@
       "saturated_fat_g": null,
       "trans_fat_g": null,
       "source_url": "https://eljannah.com.au/our-menu/charcoal-chicken/family-feast/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 8954 kcal"
     },
     {
       "id": "el-jannah-au_family-xxl",
@@ -602,7 +604,9 @@
       "saturated_fat_g": null,
       "trans_fat_g": null,
       "source_url": "https://eljannah.com.au/our-menu/charcoal-chicken/family-xxl-meal/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 14793 kcal"
     },
     {
       "id": "el-jannah-au_half-1-2-chicken-deluxe-meal",
@@ -659,7 +663,9 @@
       "saturated_fat_g": null,
       "trans_fat_g": null,
       "source_url": "https://eljannah.com.au/our-menu/charcoal-chicken/mixed-chicken-meal/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 7611 kcal"
     },
     {
       "id": "el-jannah-au_og-with-the-faves",
@@ -678,7 +684,9 @@
       "saturated_fat_g": null,
       "trans_fat_g": null,
       "source_url": "https://eljannah.com.au/our-menu/charcoal-chicken/og-with-the-faves/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 5871 kcal"
     },
     {
       "id": "el-jannah-au_quarter-1-4-chicken-deluxe-meal",
@@ -735,7 +743,9 @@
       "saturated_fat_g": null,
       "trans_fat_g": null,
       "source_url": "https://eljannah.com.au/our-menu/charcoal-chicken/whole-chicken/",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 5403 kcal"
     },
     {
       "id": "el-jannah-au_tawouk-pieces",

@@ -879,7 +879,9 @@
       "saturated_fat_g": 22.8,
       "trans_fat_g": 0,
       "source_url": "https://www.bettysburgers.com.au/nutritional-and-allergens",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 765 kcal but its macros add up to about 457"
     },
     {
       "id": "bettys-burgers-au_strawberry",
@@ -1202,7 +1204,9 @@
       "saturated_fat_g": 13.2,
       "trans_fat_g": 0,
       "source_url": "https://www.bettysburgers.com.au/nutritional-and-allergens",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 339 kcal but its macros add up to about 811; macros (142g) exceed the 100g serving"
     },
     {
       "id": "bettys-burgers-au_bettys-breakie-wrap",
@@ -1259,7 +1263,9 @@
       "saturated_fat_g": 3.4,
       "trans_fat_g": 0,
       "source_url": "https://www.bettysburgers.com.au/nutritional-and-allergens",
-      "verified_date": "2026-09-29"
+      "verified_date": "2026-09-29",
+      "_unverified": true,
+      "_unverified_reason": "Flagged in the October 2026 audit: 319 kcal but its macros add up to about 152"
     },
     {
       "id": "bettys-burgers-au_sunny-stack",

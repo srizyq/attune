@@ -34,5 +34,8 @@ export function mapRestaurantItemRow(row) {
     ...ausnutExtraMicros(row),
     source: 'restaurant-chain',
     servingGrams: row.serving_grams || 100,
+    // The chain published this per serving with no weight. Gram/oz units would
+    // be a made-up conversion, so the add card offers "serving" only (see FoodCard).
+    noWeight: !row.serving_grams,
   };
 }

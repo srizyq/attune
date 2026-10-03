@@ -1557,7 +1557,10 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   // loggedUnit are what's actually typed/selected, kept separately so next
   // time's quick-add can remember it without redefining what "1 serving"
   // means for the food itself.
-  const scaled = { ...scaleFood(food, servings || 0), servingGrams: gramsEquivalent, loggedAmount: Number(amount) || null, loggedUnit: unit };
+  // A food with no published weight is only ever counted in servings, and no weight is recorded for it.
+  const logsWeight = !food.noWeight;
+  const cardUnits = logsWeight ? unitsFor(servingUnit) : UNITS.filter(u => u.id === "serving");
+  const scaled = { ...scaleFood(food, servings || 0), servingGrams: logsWeight ? gramsEquivalent : null, loggedAmount: Number(amount) || null, loggedUnit: unit };
   const catStyle = getCategoryStyle(food);
 
   // Deliberately NOT derived from the live `amount`/`unit`/`meal`/`time`
@@ -1568,7 +1571,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   // defaultUnit, not whatever's currently typed into the (hidden) field.
   const defaultServings = amountToServings(defaultAmount, defaultUnit, servingGrams);
   const defaultGramsEquivalent = Math.round(defaultServings * servingGrams);
-  const defaultScaled = { ...scaleFood(food, defaultServings), servingGrams: defaultGramsEquivalent, loggedAmount: defaultAmount, loggedUnit: defaultUnit };
+  const defaultScaled = { ...scaleFood(food, defaultServings), servingGrams: logsWeight ? defaultGramsEquivalent : null, loggedAmount: defaultAmount, loggedUnit: defaultUnit };
   const quickAddLabel = formatAmountUnit(defaultAmount, defaultUnit);
   function handleQuickAdd(e) {
     e.stopPropagation();
@@ -1637,7 +1640,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
           <AddControls
             amount={amount} setAmount={setAmount}
             unit={unit} setUnit={setUnit}
-            units={unitsFor(servingUnit)}
+            units={cardUnits}
             meal={meal} setMeal={setMeal}
             time={time} setTime={setTime}
             showSlots={showSlots}

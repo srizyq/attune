@@ -22,9 +22,15 @@
 // Requires the "Restaurant chains" block in supabase/schema.sql to already
 // be applied in the Supabase SQL editor.
 //
+// An `_unverified` row is only ever skipped — a row of that id already in the
+// database stays there. Pass --prune-unverified to ALSO delete, from the
+// database, every row the files currently mark `_unverified` (use it after a
+// data audit flags rows that were imported earlier and turned out to be wrong).
+//
 // Usage:
-//   node scripts/import-restaurant-chains/commit-to-db.mjs --dry-run   (prints a summary, writes nothing)
-//   node scripts/import-restaurant-chains/commit-to-db.mjs             (the real run — safe to rerun, upserts on id)
+//   node scripts/import-restaurant-chains/commit-to-db.mjs --dry-run                       (prints a summary, writes nothing)
+//   node scripts/import-restaurant-chains/commit-to-db.mjs                                 (the real run — safe to rerun, upserts on id)
+//   node scripts/import-restaurant-chains/commit-to-db.mjs --prune-unverified [--dry-run]  (also removes flagged rows already in the database)
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +61,7 @@ function loadDotEnvLocal() {
 loadDotEnvLocal();
 
 const DRY_RUN = process.argv.includes('--dry-run');
+const PRUNE = process.argv.includes('--prune-unverified');
 const BATCH_SIZE = 200;
 
 // Strips any underscore-prefixed key (draft-only annotations like
@@ -108,6 +115,8 @@ async function main() {
   const itemRows = [];
   const componentRows = [];
   const skippedUnverified = [];
+  const unverifiedItemIds = [];
+  const unverifiedComponentIds = [];
 
   for (const file of files) {
     const data = JSON.parse(readFileSync(join(chainsDir, file), 'utf-8'));
@@ -121,6 +130,7 @@ async function main() {
     for (const item of items) {
       if (item._unverified) {
         skippedUnverified.push(`${chain.name} — ${item.name} (restaurant_items)`);
+        unverifiedItemIds.push(item.id);
         continue;
       }
       itemRows.push(stripDraftKeys({ ...item, chain_id: chain.id, chain_name: chain.name }));
@@ -128,6 +138,7 @@ async function main() {
     for (const c of components) {
       if (c._unverified) {
         skippedUnverified.push(`${chain.name} — ${c.name} (restaurant_components)`);
+        unverifiedComponentIds.push(c.id);
         continue;
       }
       componentRows.push(stripDraftKeys({ ...c, chain_id: chain.id }));
@@ -144,6 +155,8 @@ async function main() {
     for (const s of skippedUnverified) console.log(`  - ${s}`);
   }
 
+  if (PRUNE) console.log(`\n--prune-unverified: ${unverifiedItemIds.length} flagged item(s) and ${unverifiedComponentIds.length} flagged component(s) will be deleted from the database if present.`);
+
   if (DRY_RUN) {
     console.log('\n--dry-run: writing nothing. First chain and first item/component that would be committed:');
     console.log(JSON.stringify(chainRows[0], null, 2));
@@ -158,6 +171,16 @@ async function main() {
   await upsertBatched(supabase, 'restaurant_chains', chainRows);
   await upsertBatched(supabase, 'restaurant_items', itemRows);
   await upsertBatched(supabase, 'restaurant_components', componentRows);
+
+  if (PRUNE) {
+    for (const [table, ids] of [['restaurant_items', unverifiedItemIds], ['restaurant_components', unverifiedComponentIds]]) {
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const { error, count } = await supabase.from(table).delete({ count: 'exact' }).in('id', ids.slice(i, i + BATCH_SIZE));
+        if (error) { console.error(`${table} prune failed:`, error.message); process.exit(1); }
+        console.log(`  ${table}: removed ${count ?? '?'} flagged row(s) in this batch`);
+      }
+    }
+  }
 
   for (const table of ['restaurant_chains', 'restaurant_items', 'restaurant_components']) {
     const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true });
