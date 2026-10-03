@@ -2636,6 +2636,7 @@ export default function FoodSearch() {
         <MenuScanModal
           onClose={() => setMenuScanOpen(false)}
           showSlots={showSlots}
+          selectedDate={selectedDate}
           onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${food.name} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
           onSearchManually={() => { setMenuScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />

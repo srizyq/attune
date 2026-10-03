@@ -1021,7 +1021,7 @@ export default function Dashboard() {
         <div className="page-pad-top" style={{ minHeight: 40, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 12px', paddingTop: 10, paddingBottom: 4, position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
           <div>
             <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {isViewingToday ? `${greeting}, ${name} 👋` : `${name}'s log`}
+              {isViewingToday ? `${greeting}, ${name}` : `${name}'s log`}
             </span>
             <span style={{ color: 'var(--text-hint)', fontSize: '13px', marginLeft: '12px' }}>{dateStr}</span>
             {!isViewingToday && (

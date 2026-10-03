@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useTrainerComments } from '../../hooks/useCoach';
+import { useVoiceTranscription } from '../../hooks/useVoiceTranscription';
 import { Card, SectionLabel } from './shared';
 import { COMMENT_CATEGORIES } from './constants';
 import PrivateNotesCard from './PrivateNotesCard';
 import FormRow from '../FormRow';
 import SegmentedControl from '../SegmentedControl';
+import VoiceMicButton from '../VoiceMicButton';
 
 const VIEWS = [
   { id: 'thread', label: 'Messages to client', icon: 'ti-message-circle' },
@@ -23,6 +25,12 @@ export default function MessagesTab({ client, clientData, d }) {
   // The category picker doubles as a filter tab — only the selected
   // category's thread shows below, matching what its label already implies.
   const commentsInTab = useMemo(() => comments.filter(c => c.category === commentCategory), [comments, commentCategory]);
+
+  // Speaking a note instead of typing it — same record/upload plumbing and
+  // append-don't-replace behaviour as PhotoScanModal's correction box.
+  const { recording: voiceRecording, transcribing: voiceTranscribing, error: voiceError, start: startVoice, stop: stopVoice } = useVoiceTranscription((text) => {
+    setCommentBody(prev => (prev.trim() ? `${prev.trim()} ${text}` : text));
+  });
 
   const handleAddComment = async () => {
     const body = commentBody.trim();
@@ -64,13 +72,19 @@ export default function MessagesTab({ client, clientData, d }) {
             </div>
             <div style={{ marginBottom: 16 }}>
               <FormRow>
-                <input
-                  value={commentBody}
-                  onChange={e => setCommentBody(e.target.value)}
-                  placeholder={`Leave a note for ${clientData.name || 'this client'}…`}
-                  onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }}
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    value={commentBody}
+                    onChange={e => setCommentBody(e.target.value)}
+                    placeholder={`Leave a note for ${clientData.name || 'this client'}…`}
+                    onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '9px 36px 9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+                  />
+                  <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
+                    <VoiceMicButton recording={voiceRecording} transcribing={voiceTranscribing} onStart={startVoice} onStop={stopVoice} title="Speak your note" />
+                  </div>
+                </div>
+                {voiceError && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: 0 }}>{voiceError}</p>}
                 <FormRow.Button icon="ti-send-2" primary onClick={handleAddComment} disabled={!commentBody.trim()}>
                   Post
                 </FormRow.Button>

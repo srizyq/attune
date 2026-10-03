@@ -158,7 +158,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
       <ListRow
         avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
         title={item.name}
-        subtitleParts={[`${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`]}
+        subtitleParts={[item.brand, `${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`]}
         trailing={<ListRow.Chevron />}
         onClick={onToggle}
       />

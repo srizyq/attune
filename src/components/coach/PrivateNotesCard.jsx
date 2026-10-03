@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTrainerNotes } from '../../hooks/useCoach';
+import { useVoiceTranscription } from '../../hooks/useVoiceTranscription';
 import { Card, SectionLabel } from './shared';
+import VoiceMicButton from '../VoiceMicButton';
 
 const iconBtn = { background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 14, padding: 4, lineHeight: 1 };
 
@@ -14,6 +16,12 @@ export default function PrivateNotesCard({ client, clientData }) {
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editBody, setEditBody] = useState('');
+
+  // Speaking a note instead of typing it — same record/upload plumbing and
+  // append-don't-replace behaviour as PhotoScanModal's correction box.
+  const { recording: voiceRecording, transcribing: voiceTranscribing, error: voiceError, start: startVoice, stop: stopVoice } = useVoiceTranscription((text) => {
+    setBody(prev => (prev.trim() ? `${prev.trim()} ${text}` : text));
+  });
 
   const run = async (fn) => {
     setError(null);
@@ -46,6 +54,9 @@ export default function PrivateNotesCard({ client, clientData }) {
       ) : (
         <>
           <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 5 }}>
+              <VoiceMicButton recording={voiceRecording} transcribing={voiceTranscribing} onStart={startVoice} onStop={stopVoice} title="Speak your note" />
+            </div>
             <textarea
               value={body}
               onChange={e => setBody(e.target.value)}
@@ -55,6 +66,7 @@ export default function PrivateNotesCard({ client, clientData }) {
               rows={3}
               style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', marginBottom: 8 }}
             />
+            {voiceError && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 8px' }}>{voiceError}</p>}
             <button
               onClick={handleAdd}
               disabled={!body.trim() || saving}

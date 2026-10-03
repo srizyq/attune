@@ -93,10 +93,11 @@ export async function addFoodLog(userId, entry) {
       serving_label: entry.servingLabel ?? null,
       slot_id: entry.slotId ?? null,
   };
-  // The extended nutrients (B vitamins, selenium, ...) only go in when the food
-  // actually carries them. If the database hasn't had its update yet, retry
-  // without them so logging food never breaks over a nutrient column.
-  const extended = extendedToRow(entry);
+  // The extended nutrients (B vitamins, selenium, ...) and brand only go in
+  // when the food actually carries them. If the database hasn't had its
+  // update yet, retry without them so logging food never breaks over a
+  // missing column.
+  const extended = { ...extendedToRow(entry), ...(entry.brand ? { brand: entry.brand } : {}) };
   const insert = (r) => supabase.from('food_logs').insert(r).select().single();
   let { data, error } = await insert({ ...row, ...extended });
   if (error && Object.keys(extended).length > 0 && isMissingColumnError(error)) ({ data, error } = await insert(row));
