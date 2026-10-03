@@ -102,7 +102,7 @@ export default function Step1() {
                   color: isSelected ? g.color : 'var(--text-hint)',
                   flexShrink: 0,
                   transition: 'all 0.2s ease',
-                  fontWeight: 300,
+                  fontWeight: 400,
                 }}>
                   {g.icon}
                 </div>

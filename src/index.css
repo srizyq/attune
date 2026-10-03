@@ -248,6 +248,10 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: 'Plus Jakarta Sans', sans-serif;
+  /* 600, not the browser-default 400: Plus Jakarta Sans Regular is thin at the
+     11-14px sizes most of the UI uses, especially light-on-dark on a phone
+     screen. Anything that sets its own fontWeight keeps it. */
+  font-weight: 600;
   -webkit-font-smoothing: antialiased;
   /* viewport-fit=cover lets the page draw under the notch/status bar —
      without this, every page's own header would render partly hidden
@@ -264,6 +268,12 @@ body {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Buttons and fields don't inherit weight by default, so without this they'd
+   stay at the browser's thin 400 while the text around them is bolder. */
+button, input, select, textarea {
+  font-weight: inherit;
 }
 
 input, textarea, [contenteditable="true"], .selectable-text {

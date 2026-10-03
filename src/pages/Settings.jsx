@@ -227,7 +227,7 @@ export default function Settings() {
                     >
                       <i className={`ti ${section.icon}`} style={{ fontSize: 16, color: 'var(--accent)', flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 500 }}>{r.label}</div>
+                        <div style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600 }}>{r.label}</div>
                         <div style={{ color: 'var(--text-hint)', fontSize: 11, marginTop: 1 }}>{section.label}</div>
                       </div>
                       <i className="ti ti-arrow-right" style={{ color: 'var(--text-hint)', fontSize: 14 }} />

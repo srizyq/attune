@@ -40,7 +40,7 @@ function ActionTile({ action, onNavigate }) {
       <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-card)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <i className={`ti ${action.icon}`} style={{ fontSize: 19, color: 'var(--accent)' }} />
       </div>
-      <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 500, textAlign: 'center', lineHeight: 1.25 }}>{action.label}</span>
+      <span style={{ fontSize: 11, color: 'var(--text-primary)', fontWeight: 600, textAlign: 'center', lineHeight: 1.25 }}>{action.label}</span>
     </button>
   );
 }
@@ -58,7 +58,7 @@ function ActionRow({ action, onNavigate }) {
       <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--bg-card)', border: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <i className={`ti ${action.icon}`} style={{ fontSize: 17, color: 'var(--accent)' }} />
       </div>
-      <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>{action.label}</span>
+      <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600 }}>{action.label}</span>
     </button>
   );
 }

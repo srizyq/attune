@@ -5,7 +5,7 @@ export default function MacroPreviewBar({ label, grams, calories, pct, color }) 
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500 }}>{label}</span>
+        <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>{label}</span>
         <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
           <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{grams}g</span> · {calories} kcal · {Math.round(pct * 100)}%
         </span>

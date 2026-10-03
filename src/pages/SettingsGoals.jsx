@@ -456,7 +456,7 @@ export default function SettingsGoals() {
 
             <div style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500 }}>Protein</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>Protein</span>
                 <EditableNumber
                   value={proteinPct}
                   min={10}
@@ -472,7 +472,7 @@ export default function SettingsGoals() {
 
             <div style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500 }}>Fat</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>Fat</span>
                 <EditableNumber
                   value={fatPct}
                   min={10}
@@ -488,7 +488,7 @@ export default function SettingsGoals() {
 
             <div style={{ marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500 }}>Carbs</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>Carbs</span>
                 <span style={{ color: 'var(--water-blue)', fontSize: '13px', fontWeight: 600 }}>{carbPct}% (auto)</span>
               </div>
               <div style={{ height: '6px', background: 'var(--border-default)', borderRadius: '99px', overflow: 'hidden' }}>
@@ -594,7 +594,7 @@ export default function SettingsGoals() {
             boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
           }}
         >
-          <span style={{ color: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }}>Unsaved changes</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600 }}>Unsaved changes</span>
           <button
             onClick={handleSave}
             disabled={saving}

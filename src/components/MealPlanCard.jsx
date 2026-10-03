@@ -48,7 +48,7 @@ function Plan({ plan }) {
     return (
       <div key={meal.key} style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{meal.label} <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 12 }}>· {mealTotals(items).calories} kcal</span></span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{meal.label} <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 12 }}>· {mealTotals(items).calories} kcal</span></span>
           {withLog && (
             <button onClick={() => logMeal(meal.key)} disabled={done || busyMeal !== null} className="btn-press" aria-label={done ? `${meal.label} logged` : `Log ${meal.label}`}
               style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: done ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", background: done ? 'transparent' : 'var(--accent-bg)', border: `1px solid ${done ? 'var(--border-default)' : 'var(--border-active)'}`, color: done ? 'var(--text-muted)' : 'var(--accent)' }}>
@@ -96,7 +96,7 @@ function Plan({ plan }) {
         return (
           <details key={d.key} open={d.key === todayKey} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-default)' }}>
             <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-              {d.label}{d.key === todayKey ? ' (today)' : ''} <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 12 }}>· {has ? `${total.calories} kcal` : 'rest / free'}</span>
+              {d.label}{d.key === todayKey ? ' (today)' : ''} <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 12 }}>· {has ? `${total.calories} kcal` : 'rest / free'}</span>
             </summary>
             <div style={{ paddingTop: 10 }}>{has ? meals(d.key, false) : <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: 0 }}>Nothing planned.</p>}</div>
           </details>

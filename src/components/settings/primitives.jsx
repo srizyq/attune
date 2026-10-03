@@ -18,7 +18,7 @@ export function FieldRow({ label, hint, children }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '12px 0', borderBottom: '1px solid var(--border-default)' }}>
       <div>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500 }}>{label}</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>{label}</div>
         {hint && <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>{hint}</div>}
       </div>
       <div style={{ flexShrink: 0 }}>{children}</div>

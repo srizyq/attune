@@ -190,7 +190,7 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
           <div key={label}>
             {groupedClients.length > 1 && (
               <div style={{ color: 'var(--text-hint)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '14px 0 4px' }}>
-                {label} <span style={{ fontWeight: 400 }}>({rows.length})</span>
+                {label} <span style={{ fontWeight: 500 }}>({rows.length})</span>
               </div>
             )}
             {rows.map((row, i) => (

@@ -25,7 +25,7 @@ function MacroRow({ label, value, unit, target, color }) {
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
-            {value}{unit}{target ? <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> / {target}{unit}</span> : null}
+            {value}{unit}{target ? <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}> / {target}{unit}</span> : null}
           </span>
           {pct !== null && <StatBadge color={color} style={{ padding: '2px 7px', fontSize: 11 }}>{Math.round(pct)}%</StatBadge>}
         </div>
@@ -134,7 +134,7 @@ export default function Nutrients() {
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{isToday ? "Today's calories" : 'Calories'}</div>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
                   {Math.round(totals.cal).toLocaleString()}
-                  {dayTargets.calories ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 400 }}> / {dayTargets.calories.toLocaleString()} kcal</span> : ' kcal'}
+                  {dayTargets.calories ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 500 }}> / {dayTargets.calories.toLocaleString()} kcal</span> : ' kcal'}
                 </div>
                 <MacroRow label="Protein" value={round1(totals.protein)} unit="g" target={dayTargets.protein_g} color="var(--accent)" />
                 <MacroRow label="Carbs" value={round1(totals.carbs)} unit="g" target={dayTargets.carbs_g} color="var(--water-blue)" />

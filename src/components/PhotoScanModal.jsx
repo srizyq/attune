@@ -57,7 +57,7 @@ function IngredientRow({ ingredient, onGramsChange, last }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: last ? 'none' : '1px solid var(--border-default)' }}>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ingredient.name}</div>
+        <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ingredient.name}</div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{scaled.cal} kcal · {scaled.protein}g P · {scaled.carbs}g C · {scaled.fat}g F</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>

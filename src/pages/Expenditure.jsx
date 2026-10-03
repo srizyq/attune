@@ -450,13 +450,13 @@ export default function Expenditure() {
                 <div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Average</div>
                   <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {Math.round(avgExpenditure).toLocaleString()}<span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 400 }}> kcal</span>
+                    {Math.round(avgExpenditure).toLocaleString()}<span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}> kcal</span>
                   </div>
                 </div>
                 <div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Difference</div>
                   <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {difference > 0 ? '+' : ''}{difference.toLocaleString()}<span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 400 }}> kcal</span>
+                    {difference > 0 ? '+' : ''}{difference.toLocaleString()}<span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}> kcal</span>
                   </div>
                 </div>
               </div>

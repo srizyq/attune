@@ -512,7 +512,7 @@ function MacroCell({ label, value, target, color, tone, onClick }) {
         <StatBadge tone={tone} style={{ padding: '2px 7px', fontSize: 11 }}>{pct}%</StatBadge>
       </div>
       <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color, whiteSpace: 'nowrap', marginBottom: 8 }}>
-        {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>/{target}g</span>
+        {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>/{target}g</span>
       </div>
       <div style={{ height: 4, borderRadius: 2, background: 'var(--border-default)', overflow: 'hidden' }}>
         <div style={{ width: `${barPct}%`, height: '100%', background: color, borderRadius: 2 }} />
@@ -1111,7 +1111,7 @@ export default function Dashboard() {
           {/* Daily food log */}
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <span onClick={() => navigate('/log')} style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span onClick={() => navigate('/log')} style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 Daily food log <i className="ti ti-chevron-right" style={{ fontSize: 13 }} />
               </span>
               <span style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 600 }}>{Math.round(consumed)} kcal logged</span>

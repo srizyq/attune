@@ -24,7 +24,7 @@ export default function BodyProgressPanel({ client }) {
                 <span style={{ color: 'var(--text-muted)' }}>{kindLabel(kind)} <span style={{ color: 'var(--text-hint)', fontSize: 11 }}>· {entries} {entries === 1 ? 'entry' : 'entries'}</span></span>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
                   {formatMeasurement(l.value, l.unit)}
-                  {delta != null && delta !== 0 && <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 12, marginLeft: 8 }}>{delta > 0 ? '+' : '−'}{Math.abs(delta)} since previous</span>}
+                  {delta != null && delta !== 0 && <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 12, marginLeft: 8 }}>{delta > 0 ? '+' : '−'}{Math.abs(delta)} since previous</span>}
                 </span>
               </div>
             ))}

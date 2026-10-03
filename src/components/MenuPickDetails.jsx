@@ -147,7 +147,7 @@ export function QuickTweaks({ tweaks, active, onToggle }) {
                 background: on ? 'var(--accent-bg)' : 'var(--bg-card)',
                 border: `1px solid ${on ? 'var(--border-active)' : 'var(--border-default)'}`,
                 color: on ? 'var(--accent)' : 'var(--text-secondary)',
-                fontWeight: on ? 600 : 400,
+                fontWeight: on ? 600 : 500,
               }}
             >
               {on ? '✓ ' : ''}{tweakChipLabel(t)}

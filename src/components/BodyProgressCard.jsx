@@ -107,7 +107,7 @@ export default function BodyProgressCard() {
                   <span style={{ color: 'var(--text-muted)' }}>{kindLabel(k)} <span style={{ color: 'var(--text-hint)', fontSize: 11 }}>· {new Date(`${l.logged_date}T00:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span></span>
                   <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
                     {formatMeasurement(l.value, l.unit)}
-                    {delta != null && delta !== 0 && <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 12, marginLeft: 8 }}>{delta > 0 ? '+' : '−'}{Math.abs(delta)}</span>}
+                    {delta != null && delta !== 0 && <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: 12, marginLeft: 8 }}>{delta > 0 ? '+' : '−'}{Math.abs(delta)}</span>}
                   </span>
                 </div>
               ))}

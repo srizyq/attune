@@ -36,7 +36,7 @@ export default function MicroCard({ icon, label, value, unit, guideline, target,
       </div>
       <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', filter: locked ? 'blur(6px)' : 'none', userSelect: locked ? 'none' : 'auto' }}>
         {value}
-        {target ? <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 400 }}> / {target}{unit}</span> : <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 400 }}>{unit}</span>}
+        {target ? <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}> / {target}{unit}</span> : <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}>{unit}</span>}
       </div>
       {pct !== null ? (
         <>

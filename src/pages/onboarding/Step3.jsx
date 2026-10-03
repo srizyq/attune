@@ -43,7 +43,7 @@ function MacroBar({ label, grams, calories, pct, color, delay = 0 }) {
   return (
     <div style={{ marginBottom: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '7px' }}>
-        <span style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500 }}>{label}</span>
+        <span style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>{label}</span>
         <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
           <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{grams}g</span>
           {' '}· {calories} kcal
@@ -237,12 +237,12 @@ export default function Step3() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '20px' }}>💧</span>
             <div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500 }}>Water target</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>Water target</div>
               <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Based on your body weight</div>
             </div>
           </div>
           <div style={{ color: 'var(--water-blue)', fontSize: '20px', fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
-            8 <span style={{ fontSize: '13px', fontWeight: 400, color: 'var(--text-muted)' }}>glasses</span>
+            8 <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>glasses</span>
           </div>
         </div>
 

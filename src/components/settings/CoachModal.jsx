@@ -165,7 +165,7 @@ export default function CoachModal({ onClose, closing }) {
           }}
         >
           <div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Coach tab</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600 }}>Coach tab</div>
             <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>
               {profile?.coach_pass ? 'See your clients’ logged data and leave comments' : 'Your trainer, notes, and coaching tools'}
             </div>
