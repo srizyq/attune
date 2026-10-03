@@ -1513,9 +1513,21 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   const [time, setTime] = useState(defaultTime);
   const [justAdded, setJustAdded] = useState(false);
   const [nameOverflowing, setNameOverflowing] = useState(false);
+  const cardRef = useRef(null);
 
   useEffect(() => { setMeal(defaultMeal); }, [defaultMeal]);
   useEffect(() => { setTime(defaultTime); }, [defaultTime]);
+
+  // The floating bottom nav is `position: fixed` with its own z-index, so it
+  // paints over whatever page content happens to be scrolled to that screen
+  // position — including this card's Add/Delete button, if the card expands
+  // somewhere in the lower part of the viewport. scroll-margin-bottom (on
+  // the card below) makes scrollIntoView leave room for the nav instead of
+  // stopping flush with the viewport edge; 'nearest' only moves the page if
+  // the expanded card actually doesn't fit, not on every toggle.
+  useEffect(() => {
+    if (isExpanded) cardRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+  }, [isExpanded]);
 
   const servingGrams = food.servingGrams || 100;
   const servingUnit = food.servingUnit || "g";
@@ -1549,7 +1561,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
   }
 
   return (
-    <div style={{ background: "var(--bg-card)", border: `1px solid ${isExpanded ? "var(--accent-dark)" : "var(--border-default)"}`, borderRadius: 10, marginBottom: 8, overflow: "hidden", boxShadow: "var(--card-shadow)", transition: "border-color 0.15s", cursor: "pointer" }}>
+    <div ref={cardRef} style={{ background: "var(--bg-card)", border: `1px solid ${isExpanded ? "var(--accent-dark)" : "var(--border-default)"}`, borderRadius: 10, marginBottom: 8, overflow: "hidden", boxShadow: "var(--card-shadow)", transition: "border-color 0.15s", cursor: "pointer", scrollMarginBottom: "calc(var(--bottom-nav-h) + 16px)" }}>
       <div onClick={onToggle} style={{ display: "flex", alignItems: "center", padding: "11px 14px", gap: 12 }}>
         <div style={{ width: 40, height: 40, background: catStyle.color + "22", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, color: catStyle.color }}><i className={`ti ${catStyle.icon}`} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>

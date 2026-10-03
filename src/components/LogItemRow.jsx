@@ -6,6 +6,7 @@ import RecalculatePhotoModal from './RecalculatePhotoModal';
 import SegmentedControl from './SegmentedControl';
 import ListRow from './ListRow';
 import FormRow from './FormRow';
+import SwipeToDelete from './SwipeToDelete';
 
 const MEAL_OPTIONS = [
   { value: 'breakfast', label: 'Breakfast' },
@@ -155,13 +156,15 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
 
   return (
     <>
-      <ListRow
-        avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
-        title={item.name}
-        subtitleParts={[item.brand, `${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`]}
-        trailing={<ListRow.Chevron />}
-        onClick={onToggle}
-      />
+      <SwipeToDelete onDelete={onDelete} disabled={readOnly || !onDelete}>
+        <ListRow
+          avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
+          title={item.name}
+          subtitleParts={[item.brand, `${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`]}
+          trailing={<ListRow.Chevron />}
+          onClick={onToggle}
+        />
+      </SwipeToDelete>
       {isExpanded && (
         // A bottom sheet rather than the old inline accordion — the edit
         // form (amount, meal/time, macro preview) is real content now, not
