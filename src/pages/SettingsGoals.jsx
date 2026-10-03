@@ -181,12 +181,17 @@ export default function SettingsGoals() {
   const [adaptiveResult, setAdaptiveResult] = useState(null);
   const [adaptiveLoading, setAdaptiveLoading] = useState(false);
 
+  // Only the latest request may write its result — switching goals quickly
+  // can otherwise let an older, slower response land last.
+  const adaptiveRequestRef = useRef(0);
   const refreshAdaptive = async (goal, pace) => {
+    const requestId = ++adaptiveRequestRef.current;
     setAdaptiveLoading(true);
     try {
-      setAdaptiveResult(await computeAdaptive(goal, pace));
+      const result = await computeAdaptive(goal, pace);
+      if (requestId === adaptiveRequestRef.current) setAdaptiveResult(result);
     } finally {
-      setAdaptiveLoading(false);
+      if (requestId === adaptiveRequestRef.current) setAdaptiveLoading(false);
     }
   };
 

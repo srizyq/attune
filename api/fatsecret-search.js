@@ -8,6 +8,7 @@
 // origin.
 
 import { getFatSecretToken } from "./_fatsecretAuth.js";
+import { rateLimitByIp, tooManyRequests } from "./_rateLimit.js";
 
 const SCOPE = "basic premier";
 
@@ -24,7 +25,7 @@ function sanitizeRegion(region) {
 
 async function searchFoods(query, region, token) {
   const url = `https://platform.fatsecret.com/rest/foods/search/v5?search_expression=${encodeURIComponent(query)}&format=json&region=${region}&max_results=30`;
-  return fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) });
 }
 
 export default async function handler(req, res) {
@@ -34,6 +35,13 @@ export default async function handler(req, res) {
     return;
   }
   const region = sanitizeRegion(req.query?.region);
+
+  // Unauthenticated proxy, so limit by IP — keeps one caller from burning the
+  // FatSecret quota the whole app shares.
+  if (!(await rateLimitByIp(req, "fatsecret-search", 120))) {
+    tooManyRequests(res);
+    return;
+  }
 
   try {
     let token = await getFatSecretToken(SCOPE);

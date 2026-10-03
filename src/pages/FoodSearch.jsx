@@ -40,6 +40,7 @@ import ServingStepper from '../components/ServingStepper';
 import MacroBreakdown from '../components/MacroBreakdown';
 import DayBudgetImpact from '../components/DayBudgetImpact';
 import { targetsForDate } from '../lib/dayTargets';
+import { fetchWithTimeout } from '../lib/http';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -142,10 +143,10 @@ async function searchOpenFoodFacts(q, region) {
   // that without surfacing a false "unavailable" error to the user.
   let res;
   try {
-    res = await fetch(url);
+    res = await fetchWithTimeout(url, { timeoutMs: 15000 });
   } catch {
     await new Promise(r => setTimeout(r, 500));
-    res = await fetch(url);
+    res = await fetchWithTimeout(url, { timeoutMs: 15000 });
   }
   if (!res.ok) throw new Error(`Open Food Facts search failed: ${res.status}`);
   const data = await res.json();
@@ -265,8 +266,8 @@ function extraMicrosFromFatSecretServing(serving) {
 
 async function searchFatSecret(q, region) {
   const url = `/api/fatsecret-search?q=${encodeURIComponent(q)}&region=${encodeURIComponent(region)}`;
-  let res = await fetch(url);
-  if (!res.ok) res = await fetch(url);
+  let res = await fetchWithTimeout(url, { timeoutMs: 15000 });
+  if (!res.ok) res = await fetchWithTimeout(url, { timeoutMs: 15000 });
   if (!res.ok) throw new Error(`FatSecret search failed: ${res.status}`);
   const data = await res.json();
   if (data.error) throw new Error(data.error.message || "FatSecret search failed");
@@ -446,7 +447,7 @@ function looksImplausiblyDenseLiquid(f, servingDescription) {
 // FatSecret doesn't have (its "No food item detected" response), since
 // OFF's crowdsourced coverage skews better for AU-specific/regional items.
 async function lookupFatSecretBarcode(barcode) {
-  const res = await fetch(`/api/fatsecret-barcode?barcode=${encodeURIComponent(toGtin13(barcode))}`);
+  const res = await fetchWithTimeout(`/api/fatsecret-barcode?barcode=${encodeURIComponent(toGtin13(barcode))}`, { timeoutMs: 15000 });
   if (!res.ok) return null;
   const data = await res.json();
   if (data.error || !data.food) return null;
@@ -524,7 +525,7 @@ async function lookupOpenFoodFactsBarcode(barcode) {
   // country tag — confirmed live, au. and world. return identical results
   // for the same barcode either way — but world. is used here too so
   // there's no AU-specific reference left in an otherwise universal file.
-  const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+  const res = await fetchWithTimeout(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, { timeoutMs: 15000 });
   const data = await res.json();
   if (data.status !== 1 || !data.product) return null;
   const p = data.product; const per100 = p.nutriments || {};
@@ -864,7 +865,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       });
       setLabelPreview(dataUrl);
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("/api/recognize-label", {
+      const res = await fetchWithTimeout("/api/recognize-label", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1881,7 +1882,7 @@ export default function FoodSearch() {
     setAiEstimateResult(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/estimate-food', {
+      const res = await fetchWithTimeout('/api/estimate-food', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

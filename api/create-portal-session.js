@@ -1,7 +1,13 @@
 // Opens the Stripe Billing Portal so a trainer can update payment details
 // or cancel — Stripe hosts this entirely; we never see card data.
+//
+// Also hosts `{ action: 'delete-account' }`: account deletion needs the same
+// Stripe + service-role access, and the project is at Vercel's 12-function
+// cap, so it lives here instead of in a new endpoint (see _deleteAccount.js).
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { deleteAccount } from './_deleteAccount.js';
+import { rateLimit, tooManyRequests } from './_rateLimit.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -28,6 +34,22 @@ export default async function handler(req, res) {
   const { data: userData, error: userError } = await supabase.auth.getUser(token);
   if (userError || !userData?.user) {
     res.status(401).json({ error: 'Sign in required.' });
+    return;
+  }
+
+  if (!(await rateLimit(supabase, `portal:${userData.user.id}`, 10))) {
+    tooManyRequests(res);
+    return;
+  }
+
+  if (req.body?.action === 'delete-account') {
+    try {
+      await deleteAccount({ supabase, stripe, userId: userData.user.id });
+      res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error('Account deletion failed:', err);
+      res.status(500).json({ error: "Couldn't delete your account. Nothing was lost that can't be retried — try again, or contact support." });
+    }
     return;
   }
 

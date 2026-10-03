@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
 import DragSheet from './DragSheet';
 import MacroBreakdown from './MacroBreakdown';
+import { fetchWithTimeout } from '../lib/http';
 
 // Downscale + re-encode before upload — same reasoning as PhotoScanModal's
 // resizeImage.
@@ -53,7 +54,7 @@ export default function RecalculatePhotoModal({ itemName, onClose, onApply }) {
       const { dataUrl, base64 } = await resizeImage(file);
       setPreview(dataUrl);
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/recognize-food', {
+      const res = await fetchWithTimeout('/api/recognize-food', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 import { withCompGrants } from '../src/lib/compGrants.js';
 import { withTrial } from '../src/lib/trial.js';
 import { withCoachProAccess } from '../src/lib/proAccess.js';
+import { rateLimit, AI_REQUESTS_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
 
 // Constructed lazily, after the config check below, rather than at module
 // load — the SDK throws immediately if ANTHROPIC_API_KEY is missing, which
@@ -21,7 +22,7 @@ import { withCoachProAccess } from '../src/lib/proAccess.js';
 // response the config check is supposed to give.
 let client;
 function getClient() {
-  if (!client) client = new Anthropic();
+  if (!client) client = new Anthropic({ timeout: 45000, maxRetries: 1 });
   return client;
 }
 
@@ -76,6 +77,10 @@ export default async function handler(req, res) {
     return;
   }
   const userId = userData.user.id;
+  if (!(await rateLimit(supabase, `ai:${userId}`, AI_REQUESTS_PER_MINUTE))) {
+    tooManyRequests(res);
+    return;
+  }
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')

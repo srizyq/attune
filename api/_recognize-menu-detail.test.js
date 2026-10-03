@@ -87,3 +87,16 @@ describe('recognize-menu detail mode', () => {
     expect(res.code).toBe(403);
   });
 });
+
+describe('recognize-menu rate limit', () => {
+  it('answers 429 and never calls the model when the caller is over the per-minute limit', async () => {
+    sb = fakeSupabase((state) => {
+      if (state.table === 'rpc:rate_limit_hit') return { data: false, error: null };
+      return { data: [], error: null };
+    }, { user: { id: 'u1', email: 'someone@example.test' } });
+    const res = fakeRes();
+    await handler(req({ detail: true, pick: { name: 'Wrap' } }), res);
+    expect(res.code).toBe(429);
+    expect(create).not.toHaveBeenCalled();
+  });
+});

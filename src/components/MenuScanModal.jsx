@@ -16,6 +16,7 @@ import VoiceMicButton from './VoiceMicButton';
 import { SourcePill, CropViewer, PortionRow, PortionSkeleton, IncludesRow, QuickTweaks } from './MenuPickDetails';
 import { useMenuPickDetail } from '../hooks/useMenuPickDetail';
 import { adjustPick, loggedName } from '../lib/menuTweaks';
+import { fetchWithTimeout } from '../lib/http';
 
 const SCAN_TABS = [
   { id: 'goal', label: 'For your goal', icon: 'ti-sparkles' },
@@ -157,7 +158,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     try {
       setPreview(dataUrl);
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/recognize-menu', {
+      const res = await fetchWithTimeout('/api/recognize-menu', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -249,7 +250,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     try {
       const base64 = preview.split(',')[1];
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/recognize-menu', {
+      const res = await fetchWithTimeout('/api/recognize-menu', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

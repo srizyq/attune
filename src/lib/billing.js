@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { fetchWithTimeout } from './http';
 
 // POSTs to one of our own Stripe-backed endpoints (create-checkout-session,
 // create-portal-session) with the current session's access token — shared
@@ -6,7 +7,7 @@ import { supabase } from './supabase';
 // the exact same way.
 export async function authedPost(path, body) {
   const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch(path, {
+  const res = await fetchWithTimeout(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

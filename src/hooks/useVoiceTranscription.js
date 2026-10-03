@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { fetchWithTimeout } from '../lib/http';
 
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
@@ -26,7 +27,7 @@ export function useVoiceTranscription(onResult) {
     try {
       const base64 = await blobToBase64(blob);
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/transcribe-voice', {
+      const res = await fetchWithTimeout('/api/transcribe-voice', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

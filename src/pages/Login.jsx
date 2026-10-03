@@ -7,6 +7,7 @@ import { useResendConfirmation } from '../hooks/useResendConfirmation';
 import { usePasswordResetRequest } from '../hooks/usePasswordResetRequest';
 import PreAuthThemeToggle from '../components/PreAuthThemeToggle';
 import { upsertProfile } from '../lib/db';
+import { getCaptchaToken, captchaOptions } from '../lib/captcha';
 
 // Never reveals whether the email is actually registered — the "sent"
 // state shows regardless (see usePasswordResetRequest's own comment),
@@ -131,7 +132,13 @@ export default function Login() {
     setLoading(true);
     setError(null);
     setUnconfirmedEmail(null);
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    let captchaToken;
+    try { captchaToken = await getCaptchaToken(); } catch (captchaErr) {
+      setLoading(false);
+      setError(captchaErr.message);
+      return;
+    }
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password, ...captchaOptions(captchaToken) });
     if (signInError) {
       setLoading(false);
       if (signInError.message === 'Email not confirmed') {

@@ -24,6 +24,8 @@
 --   14. Retire the Hourly daily-log view
 --   15. Payments freeze switch
 --   16. Brand on logged food items
+--   17. Client error reports
+--   18. API rate limiting
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block).
@@ -2145,3 +2147,75 @@ grant execute on function public.start_free_trial() to authenticated;
 -- the search results it came from showed one. Nullable, like those tables'
 -- own brand columns.
 alter table public.food_logs add column if not exists brand text;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Client error reports (schema update — run against an existing DB; safe to
+-- re-run).
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Crashes caught in the app are written here so they can be read in the
+-- Supabase dashboard — there's no other way to learn that something broke on
+-- someone's phone. Insert-only from the app (no one can read these back through
+-- the API), length-capped so the table can't be used to stash bulk data, and
+-- deleted with the user.
+create table if not exists public.client_errors (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  user_id uuid references auth.users (id) on delete cascade,
+  message text not null check (char_length(message) <= 1000),
+  stack text check (char_length(stack) <= 4000),
+  route text check (char_length(route) <= 300),
+  user_agent text check (char_length(user_agent) <= 300),
+  app_version text check (char_length(app_version) <= 40)
+);
+create index if not exists client_errors_created_at_idx on public.client_errors (created_at desc);
+alter table public.client_errors enable row level security;
+
+drop policy if exists "client_errors: insert own or anonymous" on public.client_errors;
+create policy "client_errors: insert own or anonymous" on public.client_errors
+  for insert to anon, authenticated
+  with check (user_id is null or user_id = auth.uid());
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- API rate limiting (schema update — run against an existing DB; safe to
+-- re-run).
+-- ═══════════════════════════════════════════════════════════════════════════
+-- A fixed-window counter the serverless functions call (service role only) to
+-- cap how often one user or IP can hit an endpoint. Serverless instances share
+-- no memory, so the count has to live in the database. `rate_limit_hit` returns
+-- true while the caller is within `p_max` hits per `p_window_seconds`.
+create table if not exists public.rate_limits (
+  key text primary key,
+  window_start timestamptz not null default now(),
+  hits integer not null default 0
+);
+alter table public.rate_limits enable row level security;
+
+create or replace function public.rate_limit_hit(p_key text, p_max integer, p_window_seconds integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_hits integer;
+begin
+  insert into public.rate_limits as r (key, window_start, hits)
+  values (p_key, now(), 1)
+  on conflict (key) do update set
+    window_start = case when r.window_start < now() - make_interval(secs => p_window_seconds) then now() else r.window_start end,
+    hits = case when r.window_start < now() - make_interval(secs => p_window_seconds) then 1 else r.hits + 1 end
+  returning hits into current_hits;
+
+  -- Housekeeping: now and then, drop windows that ended long ago.
+  if random() < 0.01 then
+    delete from public.rate_limits where window_start < now() - interval '1 day';
+  end if;
+
+  return current_hits <= p_max;
+end;
+$$;
+
+revoke all on function public.rate_limit_hit(text, integer, integer) from public, anon, authenticated;
+grant execute on function public.rate_limit_hit(text, integer, integer) to service_role;

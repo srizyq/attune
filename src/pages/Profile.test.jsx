@@ -97,3 +97,28 @@ describe('Profile — autosave replaces the Save button', () => {
     expect(state.save).toHaveBeenCalledWith(expect.objectContaining({ name: 'Alexandra' }));
   });
 });
+
+describe('Profile — delete account', () => {
+  it('needs DELETE typed before the button works, then calls the server', async () => {
+    const { authedPost } = await import('../lib/billing');
+    authedPost.mockResolvedValue({ ok: true });
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirm = screen.getByRole('button', { name: 'Delete forever' });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/Type DELETE/), { target: { value: 'DELETE' } });
+    expect(confirm).not.toBeDisabled();
+    await act(async () => { fireEvent.click(confirm); });
+    expect(authedPost).toHaveBeenCalledWith('/api/create-portal-session', { action: 'delete-account' });
+  });
+
+  it('shows the error and stays signed in when deletion fails', async () => {
+    const { authedPost } = await import('../lib/billing');
+    authedPost.mockRejectedValue(new Error('Stripe is down'));
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.change(screen.getByLabelText(/Type DELETE/), { target: { value: 'DELETE' } });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Delete forever' })); });
+    expect(screen.getByRole('alert')).toHaveTextContent('Stripe is down');
+  });
+});

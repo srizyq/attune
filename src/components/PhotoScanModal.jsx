@@ -12,6 +12,7 @@ import DragSheet from './DragSheet';
 import MacroBreakdown from './MacroBreakdown';
 import DayBudgetImpact from './DayBudgetImpact';
 import TargetIntervalPicker from './TargetIntervalPicker';
+import { fetchWithTimeout } from '../lib/http';
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
 
@@ -189,7 +190,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     try {
       setPreview(dataUrl);
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/recognize-food', {
+      const res = await fetchWithTimeout('/api/recognize-food', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -225,7 +226,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     try {
       const base64 = preview.split(',')[1];
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/recognize-food', {
+      const res = await fetchWithTimeout('/api/recognize-food', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -262,7 +263,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     try {
       const base64 = preview.split(',')[1];
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/recognize-label', {
+      const res = await fetchWithTimeout('/api/recognize-label', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -62,3 +62,24 @@ describe('create-checkout-session — payments freeze switch', () => {
     expect(sessionsCreate).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('create-checkout-session — duplicate subscriptions', () => {
+  it('refuses a second Pro checkout while one is active', async () => {
+    profileRow = { stripe_customer_id: 'cus_1', stripe_pro_subscription_id: 'sub_1', pro_status: 'active' };
+    const res = await post({ plan: 'pro' });
+    expect(res.code).toBe(409);
+    expect(sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it('refuses a second Coach Pass checkout while a trial is running', async () => {
+    profileRow = { stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_2', coach_pass_status: 'trialing' };
+    expect((await post({ plan: 'coach' })).code).toBe(409);
+  });
+
+  it('allows resubscribing after cancellation, and Pro while holding only a Coach Pass', async () => {
+    profileRow = { stripe_customer_id: 'cus_1', stripe_pro_subscription_id: 'sub_1', pro_status: 'canceled' };
+    expect((await post({ plan: 'pro' })).code).toBe(200);
+    profileRow = { stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_2', coach_pass_status: 'active' };
+    expect((await post({ plan: 'pro' })).code).toBe(200);
+  });
+});

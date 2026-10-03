@@ -23,6 +23,7 @@ export async function getFatSecretToken(scope, forceRefresh = false) {
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: `grant_type=client_credentials&scope=${encodeURIComponent(scope)}`,
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`FatSecret token request failed: ${res.status}`);
   const data = await res.json();

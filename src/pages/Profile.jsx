@@ -177,6 +177,11 @@ export default function Profile() {
   const { theme, setTheme } = useTheme();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { closing: logoutConfirmClosing, close: closeLogoutConfirm } = useClosingTransition(() => setShowLogoutConfirm(false));
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteText, setDeleteText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+  const { closing: deleteClosing, close: closeDelete } = useClosingTransition(() => { setShowDelete(false); setDeleteText(''); setDeleteError(null); });
   const [toast, setToast] = useState(null);
 
   const [form, setForm] = useState({ name: '', unit: 'metric', age: 30, weight: 70, height: 170 });
@@ -285,6 +290,23 @@ export default function Profile() {
     navigate('/');
   };
 
+  // Permanent: the server cancels any subscription, removes stored photos and
+  // deletes the account (every table cascades from it). The session is dead
+  // afterwards, so sign out locally and ignore a failure to tell the server.
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await authedPost('/api/create-portal-session', { action: 'delete-account' });
+    } catch (err) {
+      setDeleteError(err.message);
+      setDeleting(false);
+      return;
+    }
+    try { await signOut(); } catch { /* the account is already gone */ }
+    navigate('/');
+  };
+
   const requestLogout = () => {
     if (pendingConfirmation) setShowLogoutConfirm(true);
     else handleLogout();
@@ -365,6 +387,18 @@ export default function Profile() {
             >
               Log out
             </button>
+            <FieldRow label="Delete account" hint="Permanently removes your account, logs, photos and any subscription">
+              <button
+                onClick={() => setShowDelete(true)}
+                style={{
+                  padding: '9px 16px', background: 'transparent', border: '1px solid #6a2a2a',
+                  borderRadius: '8px', color: '#e89f9f', fontSize: '13px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}
+              >
+                Delete
+              </button>
+            </FieldRow>
           </Card>
 
           <Card>
@@ -427,6 +461,39 @@ export default function Profile() {
                 style={{ flex: 1, padding: '11px', background: '#3a1414', border: '1px solid #6a2a2a', borderRadius: 8, color: '#e89f9f', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Log out anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDelete && (
+        <div onClick={deleting ? undefined : closeDelete} className={`modal-backdrop${deleteClosing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 210, padding: 24 }}>
+          <div onClick={e => e.stopPropagation()} role="dialog" aria-label="Delete account" className={`modal-panel${deleteClosing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
+              Delete your account?
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 14px' }}>
+              This permanently deletes your food logs, weight and body data, progress photos, goals and settings, and cancels any Pro or Coach Pass subscription. It can't be undone.
+            </p>
+            <label htmlFor="delete-confirm" style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, marginBottom: 6 }}>Type DELETE to confirm</label>
+            <input
+              id="delete-confirm" value={deleteText} onChange={e => setDeleteText(e.target.value)} autoCapitalize="characters" autoComplete="off" disabled={deleting}
+              style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', fontFamily: 'inherit', marginBottom: 14 }}
+            />
+            {deleteError && <div role="alert" style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12 }}>{deleteError}</div>}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={closeDelete} disabled={deleting}
+                style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount} disabled={deleting || deleteText.trim() !== 'DELETE'}
+                style={{ flex: 1, padding: '11px', background: '#3a1414', border: '1px solid #6a2a2a', borderRadius: 8, color: '#e89f9f', fontSize: 14, fontWeight: 600, cursor: deleting || deleteText.trim() !== 'DELETE' ? 'not-allowed' : 'pointer', opacity: deleteText.trim() === 'DELETE' ? 1 : 0.5, fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                {deleting ? 'Deleting…' : 'Delete forever'}
               </button>
             </div>
           </div>

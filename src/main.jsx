@@ -4,6 +4,8 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import './appshell.css'
 import App from './App.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { installGlobalErrorReporting } from './lib/reportError'
 
 // The bare `<script>` vite-plugin-pwa injects automatically only calls
 // navigator.serviceWorker.register() — it has no idea a new version ever
@@ -12,9 +14,12 @@ import App from './App.jsx'
 // immediately — see src/sw.js) takes over, which is the piece
 // `registerType: 'autoUpdate'` needs to mean anything in practice.
 registerSW({ immediate: true })
+installGlobalErrorReporting()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )

@@ -16,6 +16,7 @@
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { replyPayload, withinThrottle } from './_coachPush.js';
+import { rateLimit, tooManyRequests } from './_rateLimit.js';
 
 async function sendToSubscriptions(supabase, subs, payload) {
   const body = JSON.stringify(payload);
@@ -71,6 +72,10 @@ export default async function handler(req, res) {
     return;
   }
   const callerId = userData.user.id;
+  if (!(await rateLimit(supabase, `notify:${callerId}`, 30))) {
+    tooManyRequests(res);
+    return;
+  }
   const body = req.body || {};
   const toTrainer = body.direction === 'to-trainer';
 

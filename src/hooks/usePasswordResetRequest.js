@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase, passwordResetRedirectTo } from '../lib/supabase';
+import { getCaptchaToken } from '../lib/captcha';
 
 const DEFAULT_COOLDOWN_S = 30;
 // Same rate-limit message shape as Supabase's other auth emails — see
@@ -37,7 +38,9 @@ export function usePasswordResetRequest(email) {
     if (!email || status === 'sending' || secondsLeft > 0) return;
     setStatus('sending');
     setErrorMessage(null);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: passwordResetRedirectTo });
+    let captchaToken;
+    try { captchaToken = await getCaptchaToken(); } catch { /* Supabase will reject a missing token itself when the check is on */ }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: passwordResetRedirectTo, ...(captchaToken ? { captchaToken } : {}) });
     if (error) {
       setStatus('error');
       setErrorMessage(error.message || 'Could not send that — try again.');

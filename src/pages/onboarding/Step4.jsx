@@ -5,6 +5,7 @@ import OnboardingLayout from '../../components/OnboardingLayout';
 import { supabase, emailRedirectTo } from '../../lib/supabase';
 import { getProfile, upsertProfile, upsertWeightLog } from '../../lib/db';
 import { todayLocalDate } from '../../lib/patterns';
+import { getCaptchaToken, captchaOptions } from '../../lib/captcha';
 
 // Writing to `profiles` immediately after a fresh signInAnonymously()
 // can occasionally hit "new row violates row-level security policy"
@@ -116,7 +117,8 @@ export default function Step4() {
         const { data: { session } } = await supabase.auth.getSession();
         let userId = session?.user?.id;
         if (!userId) {
-          const { data, error: anonError } = await supabase.auth.signInAnonymously();
+          const captchaToken = await getCaptchaToken();
+          const { data, error: anonError } = await supabase.auth.signInAnonymously(captchaOptions(captchaToken));
           if (anonError) throw anonError;
           userId = data.user.id;
         }

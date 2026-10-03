@@ -4,7 +4,8 @@
 // recognize-food.js keeping the Anthropic key off the browser.
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { coachTrialDays } from './_stripeState.js';
+import { coachTrialDays, grantsAccess } from './_stripeState.js';
+import { rateLimit, tooManyRequests } from './_rateLimit.js';
 
 const PLANS = {
   coach: { priceEnv: 'STRIPE_COACH_PRICE_ID', successParam: 'coach_pass' },
@@ -65,12 +66,26 @@ export default async function handler(req, res) {
     return;
   }
   const userId = userData.user.id;
+  if (!(await rateLimit(supabase, `checkout:${userId}`, 5))) {
+    tooManyRequests(res);
+    return;
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('stripe_customer_id, stripe_subscription_id, coach_pass_status')
+    .select('stripe_customer_id, stripe_subscription_id, coach_pass_status, stripe_pro_subscription_id, pro_status')
     .eq('id', userId)
     .maybeSingle();
+
+  // A second tap, a second tab or a second device would otherwise start a
+  // second live subscription and bill twice for the same plan.
+  const alreadySubscribed = plan === 'pro'
+    ? !!profile?.stripe_pro_subscription_id && grantsAccess(profile?.pro_status)
+    : !!profile?.stripe_subscription_id && grantsAccess(profile?.coach_pass_status);
+  if (alreadySubscribed) {
+    res.status(409).json({ error: "You're already subscribed to this plan. Manage it from Profile → Manage billing." });
+    return;
+  }
 
   const origin = req.headers.origin || `https://${req.headers.host}`;
   const trialDays = coachTrialDays(plan, profile);

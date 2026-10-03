@@ -11,6 +11,7 @@ import {
 } from '../lib/db';
 import { extractInviteCode } from '../lib/coachInvite';
 import { mapRow } from './useFoodLogs';
+import { fetchWithTimeout } from '../lib/http';
 
 export function useMyClients() {
   const { user } = useAuth();
@@ -204,7 +205,7 @@ export function useTrainerComments(clientId) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
-        await fetch('/api/notify-trainer-comment', {
+        await fetchWithTimeout('/api/notify-trainer-comment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
           body: JSON.stringify({ clientId }),
@@ -303,7 +304,7 @@ export function useGeneralThread(trainerId) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
-        await fetch('/api/notify-trainer-comment', {
+        await fetchWithTimeout('/api/notify-trainer-comment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
           body: JSON.stringify({ direction: 'to-trainer', trainerId }),

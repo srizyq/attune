@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { fetchWithTimeout } from '../lib/http';
 
 // The extras for a picked menu dish (portion sizes, quick tweaks, allergens,
 // where on the photo it is) come from one extra, free request per dish
@@ -28,7 +29,7 @@ export function useMenuPickDetail(preview, pick) {
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const res = await fetch('/api/recognize-menu', {
+        const res = await fetchWithTimeout('/api/recognize-menu', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
