@@ -1902,6 +1902,7 @@ export default function FoodSearch() {
     customId: row.id,
     category: "custom",
     name: row.name,
+    brand: row.brand || null,
     meta: (row.brand ? row.brand + " · " : "") + (row.serving_label || "1 serving"),
     cuisine: "all",
     cal: Number(row.calories) || 0,

@@ -80,6 +80,16 @@ describe('loggedRowToFood (Recent / Frequent cards)', () => {
     const food = loggedRowToFood(row, { idPrefix: 'recent_', meta: 'm' });
     for (const key of EXTENDED_KEYS) expect(food[key], key).toBeNull();
   });
+
+  it('carries the brand through, not just into the display caption (the reported bug — re-adding a Recent/Frequent branded item silently dropped its brand)', () => {
+    const food = loggedRowToFood({ ...row, brand: 'Sanitarium' }, { idPrefix: 'recent_', meta: 'Sanitarium · Logged before' });
+    expect(food.brand).toBe('Sanitarium');
+  });
+
+  it('is null, not missing, when the row has no brand', () => {
+    const food = loggedRowToFood(row, { idPrefix: 'recent_', meta: 'm' });
+    expect(food.brand).toBeNull();
+  });
 });
 
 describe('favouriteRowToFood', () => {
@@ -95,6 +105,12 @@ describe('favouriteRowToFood', () => {
     const food = favouriteRowToFood({ id: 'f2', name: 'Milk', calories: 60, calcium_mg: 120 }, { meta: 'x', last: undefined });
     expect(food).toMatchObject({ lastAmount: null, lastUnit: null, servingGrams: 100, calcium: 120, vitaminA: 0 });
     expect(food.thiamin).toBeNull();
+    expect(food.brand).toBeNull();
+  });
+
+  it('carries the brand through, not just into the display caption (the reported bug — logging a favourite silently dropped its brand)', () => {
+    const food = favouriteRowToFood({ ...row, brand: 'Uncle Tobys' }, { meta: '1 serving', last: undefined });
+    expect(food.brand).toBe('Uncle Tobys');
   });
 });
 
