@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { timeStringToDate, formatTime12h } from '../lib/mealTime';
 import { useClosingTransition } from '../hooks/useClosingTransition';
@@ -121,6 +121,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   const [time, setTime] = useState(defaultTime);
   const [adding, setAdding] = useState(false);
   const [comment, setComment] = useState('');
+  const commentRef = useRef(null);
   const [correcting, setCorrecting] = useState(false);
   const [hasCorrected, setHasCorrected] = useState(false);
   // Separate from the main `error`/`limitReached` pair so a failed
@@ -303,6 +304,18 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     setLabelError(null);
   }
 
+  // Recalculate lives in the pinned bar, but the box it reads from is down
+  // in the scrolling content — with nothing typed yet, take the user there
+  // instead of sitting disabled with no hint why.
+  function handleRecalculateClick() {
+    if (!comment.trim()) {
+      commentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      commentRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    handleCorrect();
+  }
+
   async function handleAdd() {
     if (!result || scaledIngredients.length === 0) return;
     setAdding(true);
@@ -371,8 +384,50 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     );
   }
 
+  const footer = result && !analyzing ? (
+    <div style={{ display: 'flex', gap: 10 }}>
+      <button
+        onClick={handleRecalculateClick}
+        disabled={correcting}
+        aria-label="Recalculate"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexShrink: 0,
+          minHeight: 52, padding: '0 14px', borderRadius: 14,
+          background: 'var(--bg-card)', border: '1px solid var(--border-default)',
+          color: 'var(--text-primary)', fontSize: 13, fontWeight: 600,
+          cursor: correcting ? 'not-allowed' : 'pointer', opacity: correcting ? 0.6 : 1,
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        <i className="ti ti-refresh" style={{ fontSize: 16 }} />
+        <span className="scan-bar-label">{correcting ? 'Fixing…' : 'Recalculate'}</span>
+      </button>
+      <button
+        onClick={handleAdd}
+        disabled={adding}
+        style={{
+          flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          minHeight: 52, padding: '0 12px', borderRadius: 14, border: 'none',
+          background: adding ? 'var(--border-default)' : 'var(--accent)',
+          color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)',
+          fontSize: 14, fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {adding ? 'Logging…' : `Log ${showSlots ? `at ${formatTime12h(time)}` : `to ${meal}`}`}
+        </span>
+        {!adding && (
+          <span style={{ flexShrink: 0, background: 'rgba(0,0,0,0.18)', borderRadius: 99, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
+            +{Math.round(totals.cal)} kcal
+          </span>
+        )}
+      </button>
+    </div>
+  ) : null;
+
   return (
-    <DragSheet title="Scan food photo" onClose={close} closing={closing}>
+    <DragSheet title="Scan food photo" onClose={close} closing={closing} footer={footer}>
       <img src={preview} alt="" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
 
       {analyzing && (
@@ -415,7 +470,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
             <MacroBreakdown values={totals} />
             <button
               onClick={() => setShowMicros(s => !s)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', marginTop: 12, padding: '6px 0 0' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, padding: '8px 0', minHeight: 32 }}
             >
               {showMicros ? 'Hide' : 'Show'} fibre, sodium & sugar
               <i className={`ti ti-chevron-${showMicros ? 'up' : 'down'}`} style={{ fontSize: 12 }} />
@@ -479,6 +534,10 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
             </div>
           )}
 
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14, alignItems: 'stretch' }}>
+            <TargetIntervalPicker showSlots={showSlots} meal={meal} setMeal={setMeal} time={time} setTime={setTime} meals={MEALS} />
+            <button onClick={reset} style={{ background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}>Retake</button>
+          </div>
           {/* Always visible, not gated behind a "this is wrong" toggle —
               correcting is free (doesn't cost a scan) and can be done
               as many times as needed; each correction re-sends the
@@ -508,44 +567,17 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
               placeholder="e.g. it's chicken not fish, or it's 1.5 servings, or it's a 3 egg omelette with 170g rice"
               disabled={correcting}
               rows={3}
+              ref={commentRef}
               style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 8 }}
             />
             {voiceError && <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--danger)' }}>{voiceError}</div>}
-            <button
-              onClick={handleCorrect}
-              disabled={!comment.trim() || correcting}
-              style={{
-                width: '100%',
-                background: !comment.trim() || correcting ? 'var(--border-default)' : 'var(--accent-bg)',
-                border: `1px solid ${!comment.trim() || correcting ? 'var(--border-default)' : 'var(--border-active)'}`,
-                borderRadius: 7, padding: '9px 14px', fontSize: 13, fontWeight: 600,
-                color: !comment.trim() || correcting ? 'var(--text-muted)' : 'var(--accent)',
-                cursor: !comment.trim() || correcting ? 'not-allowed' : 'pointer',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              {correcting ? 'Fixing…' : 'Recalculate'}
-            </button>
             {correctionError && (
               <div style={{ marginTop: 8, fontSize: 12, color: 'var(--danger)' }}>{correctionError}</div>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'stretch' }}>
-            <TargetIntervalPicker showSlots={showSlots} meal={meal} setMeal={setMeal} time={time} setTime={setTime} meals={MEALS} />
-            <button onClick={reset} style={{ background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}>Retake</button>
-          </div>
-          <button
-            onClick={handleAdd}
-            disabled={adding}
-            style={{ width: '100%', background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            {adding
-              ? 'Adding…'
-              : `+ Add ${scaledIngredients.length > 1 ? `${scaledIngredients.length} items` : scaledIngredients[0]?.name || 'item'} ${showSlots ? `at ${formatTime12h(time)}` : `to ${meal}`}`}
-          </button>
           {onCreateCustom && (
-            <button onClick={() => onCreateCustom({ name: result.name, portion: result.portion, cal: totals.cal, protein: totals.protein, carbs: totals.carbs, fat: totals.fat })} style={{ width: '100%', marginTop: 8, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <button onClick={() => onCreateCustom({ name: result.name, portion: result.portion, cal: totals.cal, protein: totals.protein, carbs: totals.carbs, fat: totals.fat })} style={{ width: '100%', marginTop: 4, padding: '8px 0', minHeight: 32, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {hasCorrected
                 // Once you've corrected it, saving it as a custom food
                 // means this exact dish never needs an AI guess again —

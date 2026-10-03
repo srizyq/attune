@@ -261,8 +261,41 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     );
   }
 
+  // Pinned under the scrolling review (see DragSheet's `footer`) so Back and
+  // Confirm are always reachable, however tall the estimate + comment box get.
+  const footer = picked ? (
+    <div style={{ display: 'flex', gap: 10 }}>
+      <button
+        onClick={() => choosePick(null)}
+        aria-label={picked.kind === 'recommendation' ? 'Back to options' : 'Back to menu'}
+        style={{ flexShrink: 0, minHeight: 52, padding: '0 14px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+      >
+        Back<span className="scan-bar-label"> to {picked.kind === 'recommendation' ? 'options' : 'menu'}</span>
+      </button>
+      <button
+        onClick={handleLog}
+        disabled={adding}
+        style={{
+          flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          minHeight: 52, padding: '0 12px', borderRadius: 14, border: 'none',
+          background: adding ? 'var(--border-default)' : 'var(--accent)',
+          color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)',
+          fontSize: 14, fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{adding ? 'Adding…' : 'Confirm & log'}</span>
+        {!adding && (
+          <span style={{ flexShrink: 0, background: 'rgba(0,0,0,0.18)', borderRadius: 99, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
+            +{Math.round(Number(picked.data.cal) || 0)} kcal
+          </span>
+        )}
+      </button>
+    </div>
+  ) : null;
+
   return (
-    <DragSheet title={picked ? 'Confirm pick' : 'Scan a menu'} onClose={close} closing={closing}>
+    <DragSheet title={picked ? 'Confirm pick' : 'Scan a menu'} onClose={close} closing={closing} footer={footer}>
       {preview && !picked && (
         <img src={preview} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
       )}
@@ -433,19 +466,6 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
             {correctionError && (
               <div style={{ marginTop: 8, fontSize: 12, color: 'var(--danger)' }}>{correctionError}</div>
             )}
-          </div>
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => choosePick(null)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '11px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              {picked.kind === 'recommendation' ? 'Back to options' : 'Back to menu'}
-            </button>
-            <button
-              onClick={handleLog}
-              disabled={adding}
-              style={{ flex: 2, background: adding ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 14, fontWeight: 600, color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: adding ? 'not-allowed' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              {adding ? 'Adding…' : 'Confirm & log'}
-            </button>
           </div>
         </div>
       )}

@@ -6,8 +6,9 @@ import { useRef, useState } from 'react';
 // small, dark-hardcoded cards regardless of the app's actual light/dark
 // theme. The drag region is deliberately just the handle+header, not the
 // whole sheet — dragging inside the content (macros, a comment textarea)
-// needs to scroll normally, not fight a dismiss gesture.
-export default function DragSheet({ title, onClose, closing, children, headerRight }) {
+// needs to scroll normally, not fight a dismiss gesture. `footer` is an
+// optional action bar pinned under the scrolling content.
+export default function DragSheet({ title, onClose, closing, children, headerRight, footer }) {
   const [dragY, setDragY] = useState(0);
   const [releasing, setReleasing] = useState(false);
   const drag = useRef({ startY: 0, dy: 0, dragging: false });
@@ -68,6 +69,13 @@ export default function DragSheet({ title, onClose, closing, children, headerRig
       <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: 20 }}>
         {children}
       </div>
+      {/* Pinned under the scrolling content (not inside it), so primary
+          actions stay reachable however long the content above gets. */}
+      {footer && (
+        <div style={{ flexShrink: 0, padding: '12px 20px calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border-default)', background: 'var(--bg-primary)' }}>
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

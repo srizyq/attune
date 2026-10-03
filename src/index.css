@@ -444,3 +444,9 @@ button:not(:disabled):active {
   @keyframes route-slide-in-right { from { opacity: 0; } to { opacity: 1; } }
   @keyframes route-slide-in-left { from { opacity: 0; } to { opacity: 1; } }
 }
+/* Scan sheets' pinned action bar: on narrow phones Recalculate drops to its
+   icon and "Back to menu" to "Back", so the primary Log/Confirm button and
+   its kcal chip aren't squeezed into an ellipsis. */
+@media (max-width: 380px) {
+  .scan-bar-label { display: none; }
+}
