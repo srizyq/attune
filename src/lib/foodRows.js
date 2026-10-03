@@ -26,6 +26,7 @@ export function loggedRowToFood(row, { idPrefix, meta, cuisine }) {
   return {
     id: idPrefix + row.id,
     name: row.food_name,
+    brand: row.brand || null,
     meta,
     ...(cuisine ? { cuisine } : {}),
     ...foodNutrientsFromRow(row),
@@ -43,6 +44,7 @@ export function favouriteRowToFood(row, { meta, last }) {
   return {
     id: 'fav_' + row.id,
     name: row.name,
+    brand: row.brand || null,
     meta,
     ...foodNutrientsFromRow(row),
     servingGrams: row.serving_grams || 100,
