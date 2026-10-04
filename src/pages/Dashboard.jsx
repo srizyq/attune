@@ -32,6 +32,8 @@ import { bucketWeeks } from '../lib/chartWeeks';
 import { targetsForDate } from '../lib/dayTargets';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
+import { useDaySwipe } from '../hooks/useDaySwipe';
+import { weekDays, shiftWeek } from '../lib/weekStrip';
 import TrialBanner from '../components/TrialBanner';
 import InstallPrompt from '../components/InstallPrompt';
 import CalorieLimitBanner from '../components/CalorieLimitBanner';
@@ -816,16 +818,22 @@ function DayRing({ fraction, over, children }) {
 
 function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
   const today = todayLocalDate();
-  const weekStart = new Date(today + 'T00:00:00');
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + i);
-    return todayLocalDate(d);
-  });
+  // The strip shows the week of the day being viewed, so picking a day from an
+  // earlier week keeps that week on screen; a swipe moves one week and lands
+  // on the same weekday there (never past today).
+  const days = weekDays(viewedDate);
+  const [slide, setSlide] = useState({ key: days[0], from: null });
+  const goWeek = (dir) => {
+    const target = shiftWeek(viewedDate, dir, today);
+    if (!target) return;
+    setSlide({ key: weekDays(target)[0], from: dir < 0 ? 'left' : 'right' });
+    onSelectDay(target);
+  };
+  const swipeRef = useDaySwipe({ onPrev: () => goWeek(-1), onNext: () => goWeek(1) });
 
   return (
-    <div style={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
+    <div ref={swipeRef} data-testid="day-strip" style={{ touchAction: 'pan-y', overflow: 'hidden' }}>
+    <div key={days[0]} className={slide.from && slide.key === days[0] ? `day-slide-from-${slide.from}` : undefined} style={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
       {days.map((dateStr) => {
         const isFuture = dateStr > today;
         const isSelected = dateStr === viewedDate;
@@ -862,6 +870,7 @@ function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
           </button>
         );
       })}
+    </div>
     </div>
   );
 }
@@ -1047,6 +1056,11 @@ export default function Dashboard() {
   const consumedFat     = allItems.reduce((s, i) => s + i.fat,     0);
 
   const byDate = new Map(dailyData.map(d => [d.date, d]));
+  // The day strip can be swiped back past the 90 days loaded above, so it
+  // reads its own week; the week the strip is showing always wins.
+  const stripWeek = weekDays(viewedDate);
+  const { dailyData: stripData } = useHistory(stripWeek[0], stripWeek[6]);
+  const stripByDate = new Map([...byDate, ...stripData.map(d => [d.date, d])]);
 
   const [chartRange, setChartRange] = useState('1W');
   const chartRangeDays = { '1W': 7, '1M': 30, '3M': 90 }[chartRange];
@@ -1114,7 +1128,7 @@ export default function Dashboard() {
         </div>
 
         <div className="page-pad-top" style={{ paddingBottom: 12, borderBottom: '1px solid var(--border-default)' }}>
-          <StreakStrip byDate={byDate} viewedDate={viewedDate} targetFor={calorieTargetFor} onSelectDay={(date) => navigate('/dashboard', { state: { date } })} />
+          <StreakStrip byDate={stripByDate} viewedDate={viewedDate} targetFor={calorieTargetFor} onSelectDay={(date) => navigate('/dashboard', { state: { date } })} />
         </div>
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>

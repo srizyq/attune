@@ -127,3 +127,44 @@ test('no install prompt for someone who has just arrived', async ({ page, contex
   await settle(page);
   await expect(page.getByRole('region', { name: 'Install Attune' })).toHaveCount(0);
 });
+
+test('swiping the dashboard day strip moves a week at a time, back and forward', async ({ page, context }, testInfo) => {
+  test.skip(!testInfo.project.use.hasTouch, 'touch gestures only');
+  const ctx = await openApp({ page, context }, testInfo);
+  await page.goto('/dashboard');
+  await settle(page);
+  const strip = '[data-testid="day-strip"]';
+  const state = () => page.evaluate(() => {
+    const tabs = [...document.querySelectorAll('[data-testid="day-tab"]')];
+    return { first: tabs[0].getAttribute('aria-label'), selected: tabs.findIndex((t) => t.getAttribute('aria-pressed') === 'true'), count: tabs.length };
+  });
+  const thisWeek = await state();
+  expect(thisWeek.count).toBe(7);
+  expect(thisWeek.selected).toBeGreaterThanOrEqual(0);
+
+  // Nothing after this week: swiping left leaves it alone.
+  await touchDrag(page, strip, [300, 10], [90, 12]);
+  await page.waitForTimeout(400);
+  expect(await state()).toEqual(thisWeek);
+
+  // Swipe right: last week, same weekday selected.
+  await touchDrag(page, strip, [90, 10], [300, 12]);
+  await page.waitForTimeout(500);
+  const lastWeek = await state();
+  expect(lastWeek.first).not.toBe(thisWeek.first);
+  expect(lastWeek.selected).toBe(thisWeek.selected);
+
+  // And again, two weeks back — past anything the page loads up front is fine.
+  await touchDrag(page, strip, [90, 10], [300, 12]);
+  await page.waitForTimeout(500);
+  const twoBack = await state();
+  expect(twoBack.first).not.toBe(lastWeek.first);
+
+  // Swipe left twice: back to this week.
+  await touchDrag(page, strip, [300, 10], [90, 12]);
+  await page.waitForTimeout(500);
+  await touchDrag(page, strip, [300, 10], [90, 12]);
+  await page.waitForTimeout(500);
+  expect(await state()).toEqual(thisWeek);
+  await assertLayout(page, testInfo, 'x-gesture-strip-swipe', ctx);
+});
