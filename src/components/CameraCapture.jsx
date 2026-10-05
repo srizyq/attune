@@ -176,6 +176,9 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
               top: fullScreen ? 'calc(24px + env(safe-area-inset-top))' : 10,
               left: 0, right: 0, textAlign: 'center',
               fontSize: fullScreen ? 13 : 11, color: '#ccc', textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+              // The hint spans the full width above the close button; without
+              // this it swallowed taps meant for the ✕.
+              pointerEvents: 'none',
             }}>{hint}</div>
           )}
           {captureError && (

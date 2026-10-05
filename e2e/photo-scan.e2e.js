@@ -130,7 +130,8 @@ test('barcode-add-product-fits', async ({ page, context }, testInfo) => {
   await page.getByRole('button', { name: /Enter barcode manually/ }).click();
   await page.getByPlaceholder(/barcode/i).fill('9310232962474');
   await page.getByRole('button', { name: 'Look up' }).click();
-  await page.getByRole('button', { name: /Add this product for everyone/ }).click();
+  // A product nobody has added opens the label camera; close it for the plain form.
+  await page.getByRole('button', { name: 'Close camera' }).click();
   await page.getByPlaceholder('Product name').waitFor();
   await page.getByPlaceholder('Calories').fill('285');
   await page.waitForTimeout(400);

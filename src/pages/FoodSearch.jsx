@@ -41,33 +41,12 @@ import MacroBreakdown from '../components/MacroBreakdown';
 import DayBudgetImpact from '../components/DayBudgetImpact';
 import { targetsForDate } from '../lib/dayTargets';
 import { fetchWithTimeout } from '../lib/http';
+import { rankFoods, foodMatchRank } from '../lib/foodRank';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
 
-function escapeRegExp(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-// Combining custom foods + AUSNUT + FatSecret by source (custom, then
-// AUSNUT, then FatSecret) used to mean AUSNUT's up-to-15 matches — returned
-// in whatever order Postgres happens to store them, with no relevance
-// ranking of its own — sat above FatSecret's already relevance-sorted
-// list regardless of which was the better match for what was actually
-// typed. A search for something AUSNUT had 10 loose partial matches for
-// could bury the one exact FatSecret hit below all of them. Scoring by
-// how closely each result's name matches the query — exact match, then
-// starts-with, then "contains every word typed" — and sorting by that
-// first (falling back to each source's own original order as a
-// tiebreak) fixes that without needing to touch either source.
-function foodMatchRank(name, queryLower, queryWords) {
-  const n = name.toLowerCase();
-  if (n === queryLower) return 0;
-  if (n.startsWith(queryLower)) return 1;
-  if (queryWords.every(w => new RegExp(`\\b${escapeRegExp(w)}`, "i").test(n))) return 2;
-  return 3;
-}
 
 
 
@@ -329,8 +308,11 @@ async function searchFatSecret(q, region) {
 // enough for AUSNUT to contribute its real strength — genuine Australian
 // foods the other two miss — without dominating the list.
 async function searchAusnut(q) {
-  const rows = await searchAusnutFoods(q, 5);
-  return rows.map(row => ({
+  // The database orders by shortest name, which puts "Starch, potato" and
+  // "Potato, dehydrated" ahead of "Potato, peeled, raw" — so pull a wide set of
+  // candidates and let rankFoods pick the few worth showing.
+  const rows = await searchAusnutFoods(q, 80);
+  const mapped = rows.map(row => ({
     id: "ausnut_" + row.id,
     name: row.name,
     meta: "100g · AUSNUT",
@@ -357,6 +339,7 @@ async function searchAusnut(q) {
     source: "ausnut",
     servingGrams: 100,
   }));
+  return rankFoods(mapped, q).slice(0, 8);
 }
 
 // Seeded cache of AI-estimated nutrition for common composite/prepared
@@ -658,6 +641,10 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const [labelAnalyzing, setLabelAnalyzing] = useState(false);
   const [labelError, setLabelError] = useState(null);
   const [labelPreview, setLabelPreview] = useState(null);
+  // The label camera opens by itself for a product nobody has added yet; this
+  // is set once the person skips it (or a photo couldn't be read) so they get
+  // the plain form instead.
+  const [labelSkipped, setLabelSkipped] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
 
   async function startScanner() {
@@ -785,10 +772,12 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       // that isn't, but is still kept as a fallback so a genuinely
       // 0-calorie product (which trips that same heuristic) still gets a
       // result instead of a false "not found".
+      let failedLookups = 0;
+      const attempt = (p) => p.catch(() => { failedLookups += 1; return null; });
       const [fs, off, shared] = await Promise.all([
-        lookupFatSecretBarcode(barcode).catch(() => null),
-        lookupOpenFoodFactsBarcode(barcode).catch(() => null),
-        lookupSharedBarcodeProduct(barcode).catch(() => null),
+        attempt(lookupFatSecretBarcode(barcode)),
+        attempt(lookupOpenFoodFactsBarcode(barcode)),
+        attempt(lookupSharedBarcodeProduct(barcode)),
       ]);
       // Unlike looksLikeEmptyNutrition below, an implausibly-dense liquid
       // is never legitimate data (nothing real trips it), so it's a hard
@@ -806,7 +795,18 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       setCalorieWarning(!!found && !consistent && caloriesLookInconsistent(found));
       if (!found) {
         setResult(null);
+        // Every source erroring is a connection problem, not a missing product —
+        // don't send someone off to add a product that may well exist.
+        if (failedLookups === 3) {
+          setError("Couldn't look up this product. Check your connection and try again.");
+          return;
+        }
+        // Nobody has this barcode yet. Go straight to photographing its label
+        // (see the add-product form) so it's added for everyone in one step;
+        // the error is kept underneath for if they back out.
         setError(`Product not found for barcode ${barcode}. Try searching manually, or add it yourself.`);
+        setNewProduct(BLANK_NEW_PRODUCT); setLabelError(null); setLabelPreview(null); setLabelSkipped(false);
+        setAddingProduct(true);
         return;
       }
       setError(null);
@@ -837,7 +837,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
   function reset() {
     setResult(null); setError(null); setScanning(false); setAddingProduct(false); setCalorieWarning(false);
-    setNewProduct(BLANK_NEW_PRODUCT); setLabelError(null); setLabelPreview(null);
+    setNewProduct(BLANK_NEW_PRODUCT); setLabelError(null); setLabelPreview(null); setLabelSkipped(false);
     startScanner();
   }
 
@@ -876,6 +876,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       const data = await res.json();
       if (!res.ok || data.error) {
         setLabelError(data.error || "Couldn't read this label. Try again or enter the numbers yourself.");
+        setLabelPreview(null); setLabelSkipped(true);
         return;
       }
       setNewProduct(p => ({
@@ -894,6 +895,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
     } catch (err) {
       console.error(err);
       setLabelError("Couldn't read this label. Check your connection and try again.");
+      setLabelPreview(null); setLabelSkipped(true);
     } finally {
       setLabelAnalyzing(false);
     }
@@ -1053,6 +1055,20 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
     );
   }
 
+  // A product nobody has added yet: the label camera opens straight away, same
+  // full-screen treatment as the barcode camera. Closing it falls back to the
+  // plain form (type the numbers in); a photo that can't be read does too.
+  if (addingProduct && !labelPreview && !labelAnalyzing && !labelSkipped) {
+    return (
+      <CameraCapture
+        onCapture={handleLabelPhoto}
+        hint="Not in our database yet — photograph the nutrition label"
+        fullScreen
+        onClose={() => setLabelSkipped(true)}
+      />
+    );
+  }
+
   return (
     <DragSheet title={addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"} onClose={close} closing={closing}>
       {error && !addingProduct && (
@@ -1104,6 +1120,9 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
             Add product — barcode {scannedBarcode}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>
+            Nobody has added this product yet. Add it once and it's here for everyone who scans it.
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
             <input type="text" placeholder="Product name" value={newProduct.name} onChange={e => updateNewProduct("name", e.target.value)}
@@ -1169,7 +1188,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           </div>
 
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { setAddingProduct(false); setLabelError(null); setLabelPreview(null); setNewProduct(BLANK_NEW_PRODUCT); }}
+            <button onClick={() => { setAddingProduct(false); setLabelError(null); setLabelPreview(null); setLabelSkipped(false); setNewProduct(BLANK_NEW_PRODUCT); }}
               style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Cancel
             </button>
@@ -1979,7 +1998,13 @@ export default function FoodSearch() {
     return customAsFoods.filter(f => f.name.toLowerCase().includes(q));
   }, [customAsFoods, query]);
 
+  // Bumped on every new search (and when the box is cleared) so a slow answer
+  // to an earlier search can't overwrite the results of a later one.
+  const searchSeq = useRef(0);
+
   const runLiveSearch = useCallback(async (q) => {
+    const seq = ++searchSeq.current;
+    const isCurrent = () => seq === searchSeq.current;
     setLiveLoading(true);
     setLiveError(null);
     // Slang like "maccas" or "hsp" won't literally appear in any of these
@@ -1987,54 +2012,53 @@ export default function FoodSearch() {
     // ("mcdonalds", "halal snack pack") when the query is recognised.
     const searchQuery = expandFoodSlang(q) || q;
     const region = detectRegion();
-    // Five independent sources — run them together instead of one after
-    // another, so a search takes as long as the slowest of the five
-    // rather than the sum of all five.
-    const [offResult, fatSecretResult, ausnutResult, commonDishResult, restaurantResult] = await Promise.allSettled([
-      searchOpenFoodFacts(searchQuery, region),
-      searchFatSecret(searchQuery, region),
-      searchAusnut(searchQuery),
-      searchCommonDish(searchQuery),
-      searchRestaurant(searchQuery),
-    ]);
-    let off = [], fatSecretResults = [], ausnut = [], commonDishes = [], restaurant = [];
-    if (offResult.status === "fulfilled") {
-      off = offResult.value;
-    } else {
-      console.error("Open Food Facts search error:", offResult.reason);
-      setLiveError("Packaged product search is temporarily unavailable — try again in a moment.");
-    }
-    if (fatSecretResult.status === "fulfilled") {
-      fatSecretResults = fatSecretResult.value;
-    } else {
-      console.error("FatSecret search error:", fatSecretResult.reason);
-    }
-    if (ausnutResult.status === "fulfilled") {
-      ausnut = ausnutResult.value;
-    } else {
-      console.error("AUSNUT search error:", ausnutResult.reason);
-    }
-    if (commonDishResult.status === "fulfilled") {
-      commonDishes = commonDishResult.value;
-    } else {
-      console.error("Common dishes search error:", commonDishResult.reason);
-    }
-    if (restaurantResult.status === "fulfilled") {
-      restaurant = restaurantResult.value;
-    } else {
-      console.error("Restaurant chains search error:", restaurantResult.reason);
-    }
-    setGenericResults(fatSecretResults);
-    setPackagedLive(off);
-    setAusnutResults(ausnut);
-    setCommonDishResults(commonDishes);
-    setRestaurantResults(restaurant);
-    setLiveLoading(false);
+    // Our own databases answer in a fraction of a second; FatSecret and Open
+    // Food Facts take a second or more. Waiting for all five before showing
+    // anything made every half-typed word feel slow, so each group fills in
+    // the list as soon as it's back.
+    const local = Promise.allSettled([searchAusnut(searchQuery), searchCommonDish(searchQuery), searchRestaurant(searchQuery)])
+      .then(([ausnutResult, commonDishResult, restaurantResult]) => {
+        if (!isCurrent()) return;
+        const take = (r, label) => {
+          if (r.status === "fulfilled") return r.value;
+          console.error(`${label} search error:`, r.reason);
+          return [];
+        };
+        setAusnutResults(take(ausnutResult, "AUSNUT"));
+        setCommonDishResults(take(commonDishResult, "Common dishes"));
+        setRestaurantResults(take(restaurantResult, "Restaurant chains"));
+      });
+    // The two outside services also wait a beat, so a word still being typed
+    // doesn't fire a request per letter at them.
+    const external = new Promise((resolve) => setTimeout(resolve, 250)).then(async () => {
+      if (!isCurrent()) return;
+      const [offResult, fatSecretResult] = await Promise.allSettled([
+        searchOpenFoodFacts(searchQuery, region),
+        searchFatSecret(searchQuery, region),
+      ]);
+      if (!isCurrent()) return;
+      if (offResult.status === "fulfilled") {
+        setPackagedLive(offResult.value);
+      } else {
+        console.error("Open Food Facts search error:", offResult.reason);
+        setPackagedLive([]);
+        setLiveError("Packaged product search is temporarily unavailable — try again in a moment.");
+      }
+      if (fatSecretResult.status === "fulfilled") {
+        setGenericResults(fatSecretResult.value);
+      } else {
+        console.error("FatSecret search error:", fatSecretResult.reason);
+        setGenericResults([]);
+      }
+    });
+    await Promise.all([local, external]);
+    if (isCurrent()) setLiveLoading(false);
   }, []);
 
   // Trigger search with debounce when query changes
   useEffect(() => {
     clearTimeout(searchTimer.current);
+    searchSeq.current += 1; // anything still in flight is for older text
     // Any change to the search text invalidates a previous AI estimate —
     // it was for different words, so keeping it visible (or its error)
     // would be stale and misleading.
@@ -2044,35 +2068,17 @@ export default function FoodSearch() {
     setAiLimitReached(false);
     if (!query.trim()) { setGenericResults([]); setPackagedLive([]); setAusnutResults([]); setCommonDishResults([]); setRestaurantResults([]); setLiveLoading(false); setLiveError(null); return; }
     setLiveLoading(true);
-    searchTimer.current = setTimeout(() => runLiveSearch(query.trim()), 500);
+    searchTimer.current = setTimeout(() => runLiveSearch(query.trim()), 250);
     return () => clearTimeout(searchTimer.current);
   }, [query, runLiveSearch]);
 
   const foodsResults = useMemo(() => {
     const trimmed = query.trim();
     if (!trimmed) return [];
-    const queryLower = trimmed.toLowerCase();
-    const queryWords = queryLower.split(/\s+/).filter(Boolean);
-    // Custom foods (the user's own data) first among equally-relevant
-    // results, then AUSNUT (Australian government data) and restaurant
-    // chains (both manually-verified against an official source), then
-    // FatSecret's broader generic coverage — but relevance to what was
-    // actually typed wins over which source a result came from. See
-    // foodMatchRank. Within the same relevance tier, the shortest name wins
-    // the tie instead of whichever source happened to load first — surfaces
-    // a clean "Chicken Thigh" over AUSNUT's verbose "Chicken, thigh, lean,
-    // raw" when both are equally valid matches for the words typed.
-    const combined = [...customFiltered, ...commonDishResults, ...ausnutResults, ...restaurantResults, ...genericResults]
-      .map((f, i) => ({ f, i, rank: foodMatchRank(f.name, queryLower, queryWords) }))
-      .sort((a, b) => a.rank - b.rank || a.f.name.length - b.f.name.length || a.i - b.i)
-      .map(x => x.f);
-    const seen = new Set();
-    return combined.filter(f => {
-      const key = f.name.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    // Your own saved foods first, then by how well the name matches and how
+    // basic the food is (raw ingredient before cooked before dishes) — all in
+    // lib/foodRank.js, so it's the same whichever source a result came from.
+    return rankFoods([...customFiltered, ...commonDishResults, ...ausnutResults, ...restaurantResults, ...genericResults], trimmed);
   }, [customFiltered, commonDishResults, ausnutResults, restaurantResults, genericResults, query]);
 
   // Whether the single best database match is only a loose/partial one
