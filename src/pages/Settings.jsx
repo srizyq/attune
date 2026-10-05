@@ -6,6 +6,7 @@ import AppNav from '../components/AppNav';
 import NotificationsModal from '../components/settings/NotificationsModal';
 import CoachModal from '../components/settings/CoachModal';
 import PrivacyModal from '../components/settings/PrivacyModal';
+import ImportDataModal from '../components/settings/ImportDataModal';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 
@@ -57,6 +58,7 @@ const SEARCH_INDEX = [
   { section: 'profile', label: 'Theme', keywords: 'theme dark light appearance' },
   { section: 'profile', label: 'Log out', keywords: 'log out logout sign out exit guest' },
   { section: 'privacy', label: 'Export my data', keywords: 'export data download privacy' },
+  { section: 'privacy', label: 'Import from another app', keywords: 'import myfitnesspal cronometer lose it csv zip switch diary history migrate' },
   { section: 'privacy', label: 'Privacy Policy', keywords: 'privacy policy legal data' },
   { section: 'privacy', label: 'Terms of Service', keywords: 'terms service legal' },
 ];
@@ -68,7 +70,7 @@ export default function Settings() {
   const { profile, refetch: refetchProfile } = useProfile();
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
 
-  const [openModal, setOpenModal] = useState(null); // null | 'notifs' | 'coach' | 'account'
+  const [openModal, setOpenModal] = useState(null); // null | 'notifs' | 'coach' | 'privacy' | 'import'
   const [modalClosing, setModalClosing] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -283,7 +285,8 @@ export default function Settings() {
 
       {openModal === 'notifs' && <NotificationsModal onClose={closeModal} closing={modalClosing} />}
       {openModal === 'coach' && <CoachModal onClose={closeModal} closing={modalClosing} />}
-      {openModal === 'privacy' && <PrivacyModal onClose={closeModal} closing={modalClosing} />}
+      {openModal === 'privacy' && <PrivacyModal onClose={closeModal} closing={modalClosing} onImport={() => setOpenModal('import')} />}
+      {openModal === 'import' && <ImportDataModal onClose={closeModal} closing={modalClosing} />}
     </div>
   );
 }

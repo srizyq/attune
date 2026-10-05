@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { Buffer } from 'node:buffer';
 import { openApp, settle, assertLayout } from './harness.js';
 import { USER_ID } from './fixtures.js';
 
@@ -13,6 +14,8 @@ const RESTAURANT_BACKEND = {
   },
 };
 
+const IMPORT_SAMPLE = ['Date,Meal,Food Name,Calories,Fat (g),Carbohydrates (g),Protein (g)', '2025-01-10,Breakfast,Oats,150,3,27,5', '2025-01-10,Lunch,Chicken salad with a really long descriptive name for wrapping,420,18,12,45', '2025-01-11,Dinner,Pasta,780,24,92,38', ',Lunch,No date,100,1,1,1'].join('\n');
+const openImportModal = async (p) => { await p.getByRole('button', { name: /Privacy/ }).first().click(); await p.getByRole('button', { name: 'Import', exact: true }).click(); };
 const hoursAgo = (h) => new Date(Date.now() - h * 3600000).toISOString();
 const fastRow = (over) => ({ id: 'fast-1', user_id: USER_ID, started_at: hoursAgo(5), target_hours: 16, ended_at: null, end_notified_at: null, created_at: hoursAgo(5), ...over });
 const RUNNING_FAST = { tables: { fasts: [fastRow()] } };
@@ -70,6 +73,8 @@ const SCENARIOS = [
       await p.getByLabel('Protein percent of calories').blur();
     },
   },
+  { name: 'settings-import-pick', path: '/settings', act: openImportModal },
+  { name: 'settings-import-preview', path: '/settings', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByText('What we found').waitFor(); await p.getByText(/Checking|left alone|None of these/).first().waitFor(); } },
   { name: 'dashboard-checkin-mood', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Mood/ }).click() },
   { name: 'dashboard-checkin-energy', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Energy/ }).click() },
   { name: 'dashboard-checkin-sleep', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Sleep/ }).click() },

@@ -477,6 +477,40 @@ export async function deleteFast(id) {
   if (error) throw error;
 }
 
+// ─── importing from another app ────────────────────────────────────────────
+// (see lib/importers/) — a bulk path, since an export can be thousands of rows.
+
+// Every date in the range that already has at least one food entry.
+export async function getFoodLogDatesInRange(userId, startDate, endDate) {
+  const rows = await selectAll(() => supabase
+    .from('food_logs')
+    .select('logged_date')
+    .eq('user_id', userId)
+    .gte('logged_date', startDate)
+    .lte('logged_date', endDate)
+    .order('logged_date', { ascending: true })
+    .order('id', { ascending: true }));
+  return new Set(rows.map((r) => r.logged_date));
+}
+
+export async function insertFoodLogRows(rows) {
+  if (!rows.length) return;
+  const { error } = await supabase.from('food_logs').insert(rows);
+  if (error) throw error;
+}
+
+// Dates that already have a weigh-in are left exactly as they are
+// (ignoreDuplicates), and the number actually added is returned.
+export async function insertWeightLogRows(rows) {
+  if (!rows.length) return 0;
+  const { data, error } = await supabase
+    .from('weight_logs')
+    .upsert(rows, { onConflict: 'user_id,logged_date', ignoreDuplicates: true })
+    .select('id');
+  if (error) throw error;
+  return (data || []).length;
+}
+
 // ─── checkins ──────────────────────────────────────────────────────────────
 
 export async function getCheckinForDate(userId, date) {

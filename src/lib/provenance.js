@@ -14,6 +14,7 @@ export const PROVENANCE = {
   community: { label: 'Community-submitted', short: 'Community', tone: 'fair', description: 'Crowd-sourced (Open Food Facts, community barcodes) — accuracy varies' },
   ai: { label: 'AI estimate', short: 'AI estimate', tone: 'ai', description: 'Estimated by AI from a photo, menu or description — treat as approximate' },
   custom: { label: 'Client-entered', short: 'Custom', tone: 'fair', description: 'A food the client created themselves' },
+  imported: { label: 'Imported from another app', short: 'Imported', tone: 'fair', description: 'Brought in from another tracker — the numbers are whatever that app recorded' },
   plan: { label: 'Coach plan', short: 'Coach plan', tone: 'none', description: 'From a meal plan your coach set — the values are the coach\'s own' },
   recipe: { label: 'Recipe', short: 'Recipe', tone: 'none', description: 'Calculated from the recipe\'s ingredients' },
   unknown: { label: 'Unspecified', short: 'Unspecified', tone: 'none', description: 'Logged before sources were recorded' },
@@ -32,6 +33,7 @@ export const BY_SOURCE = {
   custom: 'custom',
   recipe: 'recipe',
   plan: 'plan',
+  import: 'imported',
 };
 
 // Older rows and re-logged items carry these generic values instead of a real

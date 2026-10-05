@@ -69,7 +69,7 @@ function ExportDataButton() {
   );
 }
 
-export default function PrivacyModal({ onClose, closing }) {
+export default function PrivacyModal({ onClose, closing, onImport }) {
   return (
     <SettingsModal title="Privacy" onClose={onClose} closing={closing}>
       <Card style={{ marginBottom: 16 }}>
@@ -77,6 +77,19 @@ export default function PrivacyModal({ onClose, closing }) {
         <FieldRow label="Export my data" hint="Download everything you've logged — food, weight, mood check-ins — as a file">
           <ExportDataButton />
         </FieldRow>
+        {onImport && (
+          <FieldRow label="Import from another app" hint="Bring in your food diary and weight history from MyFitnessPal, Cronometer, Lose It and similar apps">
+            <button
+              onClick={onImport}
+              style={{
+                padding: '9px 16px', background: 'var(--accent-bg)', border: '1px solid var(--border-active)',
+                borderRadius: 8, color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              Import
+            </button>
+          </FieldRow>
+        )}
       </Card>
 
       <Card style={{ marginBottom: 0 }}>
