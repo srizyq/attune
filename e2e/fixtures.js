@@ -83,7 +83,7 @@ export function buildProfile(overrides = {}) {
     coach_invite_code: null, theme: 'dark', reminder_enabled: false, reminder_time: '18:00', reminder_timezone: 'Australia/Sydney',
     photo_scans_used: 3, photo_scans_period_start: ymd(daysAgo(5)), menu_scans_used: 1, menu_scans_period_start: ymd(daysAgo(5)),
     micro_targets: null, daily_log_view: 'meals', trial_ends_at: null, pro_status: 'active',
-    stripe_customer_id: 'cus_fake', stripe_pro_subscription_id: 'sub_fake', notify_trainer_comments: false, notify_client_activity: false,
+    stripe_customer_id: 'cus_fake', stripe_pro_subscription_id: 'sub_fake', notify_trainer_comments: false, notify_client_activity: false, net_carbs: false,
     created_at: daysAgo(120).toISOString(), updated_at: new Date().toISOString(), ...overrides,
   };
 }

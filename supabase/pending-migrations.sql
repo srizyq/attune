@@ -28,6 +28,7 @@
 --   18. API rate limiting
 --   19. Temporary calorie limits
 --   20. Sleep check-ins + fasting timer
+--   21. Net carbs setting
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block).
@@ -2330,3 +2331,14 @@ create policy "fasts: delete own" on public.fasts for delete using (auth.uid() =
 
 -- Opt-in for the push when a fast reaches its goal.
 alter table public.profiles add column if not exists notify_fast_end boolean not null default false;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Net carbs setting (schema update — run against an existing DB; safe to
+-- re-run).
+-- ═══════════════════════════════════════════════════════════════════════════
+-- When on, the app measures carbs as net carbs (total carbs minus fibre) against
+-- the carb target on the Dashboard and Nutrients page. Logged foods are stored
+-- exactly as before — it only changes how the day's carbs are counted — so
+-- switching it on or off never rewrites any history.
+alter table public.profiles add column if not exists net_carbs boolean not null default false;

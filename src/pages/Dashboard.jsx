@@ -26,6 +26,7 @@ import LogCalendar from '../components/LogCalendar';
 import SlotTimeline from '../components/SlotTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import DayCheckinTiles from '../components/DayCheckinTiles';
+import { carbsToShow, carbsLabel } from '../lib/dietStyles';
 import SegmentedControl from '../components/SegmentedControl';
 import Toast from '../components/Toast';
 import { targetLineSegments } from '../lib/chartTarget';
@@ -1056,7 +1057,7 @@ export default function Dashboard() {
   const allItems = Object.values(meals).flat();
   const consumed        = allItems.reduce((s, i) => s + i.cal,     0);
   const consumedProtein = allItems.reduce((s, i) => s + i.protein, 0);
-  const consumedCarbs   = allItems.reduce((s, i) => s + i.carbs,   0);
+  const consumedCarbs   = allItems.reduce((s, i) => s + carbsToShow(i.carbs, i.fibre, profile?.net_carbs), 0);
   const consumedFat     = allItems.reduce((s, i) => s + i.fat,     0);
 
   const byDate = new Map(dailyData.map(d => [d.date, d]));
@@ -1192,7 +1193,7 @@ export default function Dashboard() {
 
           <div className="grid-3-fixed" style={{ gap: 8, marginBottom: '20px' }}>
             <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={ACCENT} tone="accent" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-            <MacroCell label="Carbs" value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} tone="carbs" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label={carbsLabel(profile?.net_carbs)} value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} tone="carbs" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
             <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} tone="fat" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
           </div>
 

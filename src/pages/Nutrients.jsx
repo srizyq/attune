@@ -13,6 +13,7 @@ import PageHeader from '../components/PageHeader';
 import DateStepper from '../components/DateStepper';
 import Card from '../components/Card';
 import StatBadge from '../components/StatBadge';
+import { carbsToShow, carbsLabel } from '../lib/dietStyles';
 
 const DEFAULT_TARGETS = Object.fromEntries(MICRO_NUTRIENTS.map(m => [m.key, m.defaultTarget]));
 
@@ -137,7 +138,7 @@ export default function Nutrients() {
                   {dayTargets.calories ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 500 }}> / {dayTargets.calories.toLocaleString()} kcal</span> : ' kcal'}
                 </div>
                 <MacroRow label="Protein" value={round1(totals.protein)} unit="g" target={dayTargets.protein_g} color="var(--accent)" />
-                <MacroRow label="Carbs" value={round1(totals.carbs)} unit="g" target={dayTargets.carbs_g} color="var(--water-blue)" />
+                <MacroRow label={carbsLabel(profile?.net_carbs)} value={round1(logs.reduce((sum, r) => sum + carbsToShow(r.carbs_g, r.fibre_g, profile?.net_carbs), 0))} unit="g" target={dayTargets.carbs_g} color="var(--water-blue)" />
                 <MacroRow label="Fat" value={round1(totals.fat)} unit="g" target={dayTargets.fat_g} color="var(--ai-purple)" />
               </Card>
 

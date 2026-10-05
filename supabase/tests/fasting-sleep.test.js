@@ -83,3 +83,15 @@ describe('checkins sleep columns', () => {
     expect((await db.query(`select notify_fast_end from public.profiles where id = $1`, [me])).rows[0].notify_fast_end).toBe(false);
   }, 60000);
 });
+
+describe('profiles.net_carbs', () => {
+  it('is off by default and can be switched on and off by its owner', async () => {
+    const db = await createDb();
+    const me = await addUser(db, 'Keto');
+    expect((await db.query(`select net_carbs from public.profiles where id = $1`, [me])).rows[0].net_carbs).toBe(false);
+    await as(db, me, `update public.profiles set net_carbs = true where id = $1`, [me]);
+    expect((await as(db, me, `select net_carbs from public.profiles where id = $1`, [me])).rows[0].net_carbs).toBe(true);
+    await as(db, me, `update public.profiles set net_carbs = false where id = $1`, [me]);
+    expect((await as(db, me, `select net_carbs from public.profiles where id = $1`, [me])).rows[0].net_carbs).toBe(false);
+  }, 60000);
+});

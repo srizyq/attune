@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
@@ -234,5 +234,91 @@ describe('Settings → Goals: adaptive mode applies the chosen rate', () => {
     await act(async () => { pending.resolve({ ready: true, target: 0, estimate: estimate() }); });
     await waitFor(() => expect(state.save).toHaveBeenCalledTimes(1), SLOW);
     expect(state.save.mock.calls[0][0]).toMatchObject({ calorie_mode: 'adaptive', calorie_target: 2600 - 550 });
+  });
+});
+
+describe('Settings → Goals: diet style and net carbs', () => {
+  const styleBtn = (name) => screen.getByRole('button', { name: new RegExp(`^${name}`) });
+  // The % figures are tap-to-edit buttons labelled "<Macro> percent of calories".
+  const pct = (label) => parseInt(screen.getByLabelText(label).textContent, 10);
+  const fatSlider = (container) => container.querySelector('input[type="range"][max="80"]');
+  const netToggle = () => within(screen.getByText('Count net carbs').parentElement.parentElement).getByRole('button');
+
+  it('offers three styles and reads a goal-default split as Balanced', () => {
+    setup({ goal: 'lose', protein_g: 158, carbs_g: 158, fat_g: 60 }); // 35 / 35 / 30 of 1800 kcal
+    expect(styleBtn('Balanced')).toHaveAttribute('aria-pressed', 'true');
+    expect(styleBtn('Low carb')).toHaveAttribute('aria-pressed', 'false');
+    expect(styleBtn('Keto')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('Keto snaps the sliders to 25% protein / 70% fat and leaves 5% carbs', async () => {
+    setup({ net_carbs: false });
+    await userEvent.click(styleBtn('Keto'));
+    expect(pct('Protein percent of calories')).toBe(25);
+    expect(pct('Fat percent of calories')).toBe(70);
+    expect(screen.getByText('5% (auto)')).toBeInTheDocument();
+    expect(styleBtn('Keto')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/isn't right for everyone/)).toBeInTheDocument();
+  });
+
+  it('Keto turns net carbs on and saves it with the new split', async () => {
+    setup({ net_carbs: false });
+    await userEvent.click(styleBtn('Keto'));
+    await waitFor(() => expect(state.save).toHaveBeenCalled(), SLOW);
+    const saved = state.save.mock.calls.at(-1)[0];
+    expect(saved.net_carbs).toBe(true);
+    const kcal = saved.calorie_target;
+    expect(saved.protein_g).toBe(Math.round((kcal * 0.25) / 4));
+    expect(saved.carbs_g).toBe(Math.round((kcal * 0.05) / 4));
+    expect(saved.fat_g).toBe(Math.round((kcal * 0.70) / 9));
+  });
+
+  it('Low carb does not touch the net carbs setting', async () => {
+    setup({ net_carbs: false });
+    await userEvent.click(styleBtn('Low carb'));
+    expect(pct('Protein percent of calories')).toBe(30);
+    expect(pct('Fat percent of calories')).toBe(45);
+    await waitFor(() => expect(state.save).toHaveBeenCalled(), SLOW);
+    expect(state.save.mock.calls.at(-1)[0].net_carbs).toBe(false);
+  });
+
+  it('dragging a slider off a preset reads as Custom, and Balanced goes back to the goal split', async () => {
+    const { container } = setup({ net_carbs: false });
+    await userEvent.click(styleBtn('Keto'));
+    fireEvent.change(fatSlider(container), { target: { value: '65' } });
+    expect(screen.getByText(/Custom split/)).toBeInTheDocument();
+    expect(styleBtn('Keto')).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(styleBtn('Balanced'));
+    expect(pct('Protein percent of calories')).toBe(35); // lose's recommended split
+    expect(pct('Fat percent of calories')).toBe(30);
+  });
+
+  it('the fat slider reaches 80% so keto is possible', () => {
+    const { container } = setup({});
+    expect(fatSlider(container)).not.toBeNull();
+  });
+
+  it('the toggle switches net carbs on, saves it, and relabels carbs', async () => {
+    setup({ net_carbs: false });
+    expect(screen.queryByText('Net carbs')).toBeNull();
+    await userEvent.click(netToggle());
+    await waitFor(() => expect(state.save).toHaveBeenCalled(), SLOW);
+    expect(state.save.mock.calls.at(-1)[0].net_carbs).toBe(true);
+    expect(screen.getAllByText('Net carbs').length).toBeGreaterThan(0);
+  });
+
+  it('can be switched off again after Keto turned it on', async () => {
+    setup({ net_carbs: false });
+    await userEvent.click(styleBtn('Keto'));
+    await userEvent.click(netToggle());
+    await waitFor(() => expect(state.save.mock.calls.at(-1)[0].net_carbs).toBe(false), SLOW);
+  });
+
+  it('hides the toggle — and never writes net_carbs — until the database has the column', async () => {
+    setup({}); // a profile row with no net_carbs field at all
+    expect(screen.queryByText('Count net carbs')).toBeNull();
+    await userEvent.click(styleBtn('Keto'));
+    await waitFor(() => expect(state.save).toHaveBeenCalled(), SLOW);
+    expect('net_carbs' in state.save.mock.calls.at(-1)[0]).toBe(false);
   });
 });

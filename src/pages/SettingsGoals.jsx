@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import { hasProAccess } from '../lib/proAccess';
 import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
+import { DIET_STYLES, FAT_PCT_RANGE, PROTEIN_PCT_RANGE, dietStyleFor, splitForStyle } from '../lib/dietStyles';
 import { goalMacroSplits, calcCalories, buildTargets, splitFromGrams, calcGoalAdjustment, defaultPace, clampToFloor, MIN_CALORIES } from '../lib/calorieTargets';
 import { useWeightLogs } from '../hooks/useWeightLogs';
 import { toKg } from '../lib/adaptiveTDEE';
@@ -17,7 +18,7 @@ import AppNav from '../components/AppNav';
 import Slider from '../components/Slider';
 import EditableNumber from '../components/EditableNumber';
 import MacroPreviewBar from '../components/MacroPreviewBar';
-import { Card, SectionLabel, FieldRow, Select, Segmented } from '../components/settings/primitives';
+import { Card, SectionLabel, FieldRow, Select, Segmented, Toggle } from '../components/settings/primitives';
 import PageHeader from '../components/PageHeader';
 
 const LB_PER_KG = 2.20462;
@@ -152,6 +153,10 @@ export default function SettingsGoals() {
   const [customCal, setCustomCal] = useState(2000);
   const [proteinPct, setProteinPct] = useState(30);
   const [fatPct, setFatPct] = useState(30);
+  // Count carbs as net (minus fibre). Only offered once the database has the
+  // column — an un-updated profile row simply has no such field.
+  const supportsNetCarbs = !!profile && 'net_carbs' in profile;
+  const [netCarbs, setNetCarbs] = useState(false);
   // Pro-only custom micronutrient targets. Kept as strings (not numbers)
   // so an input can sit genuinely empty — a nutrient absent here means
   // "use the default guideline" (see Nutrients.jsx's MicroCard), not "0".
@@ -174,7 +179,7 @@ export default function SettingsGoals() {
     form.goal !== baseline.goal || form.activity !== baseline.activity ||
     form.pace !== baseline.pace || form.targetWeight !== baseline.targetWeight ||
     calMode !== baseline.calMode || customCal !== baseline.customCal ||
-    proteinPct !== baseline.proteinPct || fatPct !== baseline.fatPct ||
+    proteinPct !== baseline.proteinPct || fatPct !== baseline.fatPct || netCarbs !== baseline.netCarbs ||
     JSON.stringify(microTargets) !== JSON.stringify(baseline.microTargets) ||
     JSON.stringify(restDay) !== JSON.stringify(baseline.restDay)
   );
@@ -241,6 +246,8 @@ export default function SettingsGoals() {
     const syncedMicroTargets = Object.fromEntries(
       Object.entries(profile.micro_targets || {}).map(([k, v]) => [k, String(v)])
     );
+    const syncedNetCarbs = !!profile.net_carbs;
+    if (!keepDraft) setNetCarbs(syncedNetCarbs);
     if (!keepDraft) setMicroTargets(syncedMicroTargets);
     const syncedRestDay = { inputs: dayTargetsToInputs(profile).inputs, trainingDays: dayTargetsToInputs(profile).trainingDays };
     if (!keepDraft) {
@@ -249,7 +256,7 @@ export default function SettingsGoals() {
     }
     setBaseline({
       ...syncedForm, age: Number(syncedForm.age), weight: Number(syncedForm.weight), height: Number(syncedForm.height),
-      calMode: syncedMode, customCal: syncedCal, proteinPct: syncedProtein, fatPct: syncedFat,
+      calMode: syncedMode, customCal: syncedCal, proteinPct: syncedProtein, fatPct: syncedFat, netCarbs: syncedNetCarbs,
       microTargets: syncedMicroTargets,
       restDay: syncedRestDay,
     });
@@ -294,9 +301,22 @@ export default function SettingsGoals() {
     if (calMode === 'adaptive') refreshAdaptive(goal, paceFor(goal));
   };
 
+  // Diet style presets just move the two sliders (carbs fill the rest); keto also
+  // turns net carbs on, since that's how keto is counted. The chip shown is
+  // derived from the sliders, so dragging one off a preset reads as "Custom".
+  const goalSplit = goalMacroSplits[form.goal];
+  const dietStyle = dietStyleFor(proteinPct, fatPct, goalSplit);
+  const applyDietStyle = (id) => {
+    const target = splitForStyle(id, goalSplit);
+    if (!target) return;
+    setProteinPct(target.protein);
+    setFatPct(target.fat);
+    if (DIET_STYLES.find((d) => d.id === id)?.netCarbs && supportsNetCarbs) setNetCarbs(true);
+  };
+
   // Everything the draft would write, as one string: what autosave compares to
   // decide "has anything changed since the last save".
-  const draftKey = JSON.stringify({ form, calMode, customCal, proteinPct, fatPct, microTargets, restDay, calories: preview.calories });
+  const draftKey = JSON.stringify({ form, calMode, customCal, proteinPct, fatPct, netCarbs, microTargets, restDay, calories: preview.calories });
   // Adaptive's number isn't known until its estimate arrives; saving the
   // placeholder first would write the wrong target for a moment.
   const adaptivePending = calMode === 'adaptive' && (adaptiveLoading || !adaptiveResult);
@@ -350,6 +370,7 @@ export default function SettingsGoals() {
         fat_g: preview.fat.g,
         water_target: preview.water,
         micro_targets: cleanedMicroTargets,
+        ...(supportsNetCarbs ? { net_carbs: netCarbs } : {}),
         ...dayFields,
       });
       // saveProfile updates `profile`, which re-runs the sync effect above and
@@ -510,19 +531,56 @@ export default function SettingsGoals() {
             <SectionLabel>Macro split</SectionLabel>
 
             <div style={{ marginBottom: '20px' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Diet style</div>
+              <div style={{ display: 'flex', gap: 8 }} role="group" aria-label="Diet style">
+                {DIET_STYLES.map((d) => {
+                  const active = dietStyle === d.id;
+                  return (
+                    <button
+                      key={d.id} type="button" className="btn-press" aria-pressed={active} onClick={() => applyDietStyle(d.id)}
+                      style={{
+                        flex: 1, minWidth: 0, padding: '9px 6px', borderRadius: 10, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        background: active ? 'var(--accent-bg)' : 'transparent',
+                        border: `1px solid ${active ? 'var(--border-active)' : 'var(--border-default)'}`,
+                        color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      <span style={{ display: 'block', fontSize: 13, fontWeight: 600 }}>{d.label}</span>
+                      <span style={{ display: 'block', fontSize: 10, color: 'var(--text-hint)', marginTop: 2 }}>{d.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {dietStyle === 'custom' && <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '8px 0 0' }}>Custom split — set with the sliders below.</p>}
+              {dietStyle === 'keto' && (
+                <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '8px 0 0', lineHeight: 1.5 }}>
+                  Very low carb, high fat. It isn't right for everyone — check with a doctor first if you have a medical condition, are pregnant, or take medication.
+                </p>
+              )}
+            </div>
+
+            {supportsNetCarbs && (
+              <div style={{ marginBottom: '20px' }}>
+                <FieldRow label="Count net carbs" hint="Carbs minus fibre — your carb target and totals use net carbs">
+                  <Toggle on={netCarbs} onChange={setNetCarbs} />
+                </FieldRow>
+              </div>
+            )}
+
+            <div style={{ marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>Protein</span>
                 <EditableNumber
                   value={proteinPct}
-                  min={10}
-                  max={60}
+                  min={PROTEIN_PCT_RANGE.min}
+                  max={PROTEIN_PCT_RANGE.max}
                   suffix="%"
                   onChange={v => setProteinPct(Math.min(v, 100 - fatPct))}
                   ariaLabel="Protein percent of calories"
                   style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 600, width: '3.5ch' }}
                 />
               </div>
-              <Slider value={proteinPct} min={10} max={60} onChange={v => setProteinPct(Math.min(v, 100 - fatPct))} color="var(--accent)" />
+              <Slider value={proteinPct} min={PROTEIN_PCT_RANGE.min} max={PROTEIN_PCT_RANGE.max} onChange={v => setProteinPct(Math.min(v, 100 - fatPct))} color="var(--accent)" />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
@@ -530,20 +588,20 @@ export default function SettingsGoals() {
                 <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>Fat</span>
                 <EditableNumber
                   value={fatPct}
-                  min={10}
-                  max={50}
+                  min={FAT_PCT_RANGE.min}
+                  max={FAT_PCT_RANGE.max}
                   suffix="%"
                   onChange={v => setFatPct(Math.min(v, 100 - proteinPct))}
                   ariaLabel="Fat percent of calories"
                   style={{ color: 'var(--ai-purple)', fontSize: '13px', fontWeight: 600, width: '3.5ch' }}
                 />
               </div>
-              <Slider value={fatPct} min={10} max={50} onChange={v => setFatPct(Math.min(v, 100 - proteinPct))} color="var(--ai-purple)" />
+              <Slider value={fatPct} min={FAT_PCT_RANGE.min} max={FAT_PCT_RANGE.max} onChange={v => setFatPct(Math.min(v, 100 - proteinPct))} color="var(--ai-purple)" />
             </div>
 
             <div style={{ marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>Carbs</span>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>{netCarbs ? 'Net carbs' : 'Carbs'}</span>
                 <span style={{ color: 'var(--water-blue)', fontSize: '13px', fontWeight: 600 }}>{carbPct}% (auto)</span>
               </div>
               <div style={{ height: '6px', background: 'var(--border-default)', borderRadius: '99px', overflow: 'hidden' }}>
@@ -558,7 +616,7 @@ export default function SettingsGoals() {
                 Daily breakdown
               </p>
               <MacroPreviewBar label="Protein" grams={preview.protein.g} calories={preview.protein.cal} pct={preview.protein.pct} color="var(--accent)" />
-              <MacroPreviewBar label="Carbs"   grams={preview.carbs.g}   calories={preview.carbs.cal}   pct={preview.carbs.pct}   color="var(--water-blue)" />
+              <MacroPreviewBar label={netCarbs ? 'Net carbs' : 'Carbs'} grams={preview.carbs.g}   calories={preview.carbs.cal}   pct={preview.carbs.pct}   color="var(--water-blue)" />
               <MacroPreviewBar label="Fat"     grams={preview.fat.g}     calories={preview.fat.cal}     pct={preview.fat.pct}     color="var(--ai-purple)" />
             </div>
           </Card>
