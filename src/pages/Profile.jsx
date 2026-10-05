@@ -50,7 +50,8 @@ function TextInput({ value, onChange, onBlur, type = 'text', suffix, width = '12
         onFocus={e => (e.target.style.borderColor = 'var(--accent-dark)')}
         onBlur={e => { e.target.style.borderColor = 'var(--border-default)'; onBlur?.(); }}
       />
-      {suffix && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{suffix}</span>}
+      {/* Same-width unit column so the Age / Weight / Height boxes line up. */}
+      {suffix && <span style={{ color: 'var(--text-muted)', fontSize: '13px', width: '40px' }}>{suffix}</span>}
     </div>
   );
 }
@@ -376,17 +377,20 @@ export default function Profile() {
             >
               <ProBillingButton profile={profile} pendingConfirmation={pendingConfirmation} onGoToPricing={() => navigate('/pricing')} />
             </FieldRow>
-            <button
-              onClick={requestLogout}
-              style={{
-                marginTop: '16px',
-                padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)',
-                borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              Log out
-            </button>
+            {/* A row like the ones around it (label left, button right), not a bare
+                left-hugging button between two right-aligned ones. */}
+            <FieldRow label="Sign out" hint="Leaves this device signed out until you log in again">
+              <button
+                onClick={requestLogout}
+                style={{
+                  padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)',
+                  borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}
+              >
+                Log out
+              </button>
+            </FieldRow>
             <FieldRow label="Delete account" hint="Permanently removes your account, logs, photos and any subscription">
               <button
                 onClick={() => setShowDelete(true)}

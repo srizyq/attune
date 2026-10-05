@@ -63,7 +63,7 @@ export default function ResetPassword() {
       minHeight: 'var(--app-h)', background: 'var(--bg-primary)', display: 'flex',
       flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>
-      <div style={{ padding: '20px 32px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link to="/" style={{
           fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '20px',
           color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none',

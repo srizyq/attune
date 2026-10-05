@@ -1611,11 +1611,11 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
           <i className={`ti ${justAdded ? "ti-check" : "ti-plus"}`} />
         </button>
         {onToggleFavourite && (
-          <button onClick={(e) => { e.stopPropagation(); onToggleFavourite(); }} className="hit-slop" title={isFavourite ? "Remove favourite" : "Add favourite"} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0, color: isFavourite ? "var(--gold)" : "var(--text-hint)", fontSize: 16, display: "flex" }}>
+          <button onClick={(e) => { e.stopPropagation(); onToggleFavourite(); }} className="hit-slop" title={isFavourite ? "Remove favourite" : "Add favourite"} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: isFavourite ? "var(--gold)" : "var(--text-hint)", fontSize: 16 }}>
             <i className={isFavourite ? "ti ti-star-filled" : "ti ti-star"} />
           </button>
         )}
-        <span style={{ fontSize: 13, color: "var(--text-hint)", marginLeft: 4 }}>{isExpanded ? "▲" : "▼"}</span>
+        <span style={{ fontSize: 13, color: "var(--text-hint)", width: 26, textAlign: "center", flexShrink: 0 }}>{isExpanded ? "▲" : "▼"}</span>
       </div>
       {isExpanded && (
         <div style={{ borderTop: "1px solid var(--border-default)", padding: "14px", background: "var(--bg-subtle)" }}>
@@ -2284,7 +2284,7 @@ export default function FoodSearch() {
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <DateStepper selectedDate={selectedDate} isToday={isToday} onShift={shiftDate} />
             {showSlots ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "4px 10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 22, padding: "0 16px", minHeight: 42, boxSizing: "border-box" }}>
                 <span style={{ fontSize: 12, color: "var(--accent)" }}>Logging at</span>
                 <input
                   type="time" value={activeTime} onChange={e => setActiveTime(e.target.value)}
@@ -2293,7 +2293,7 @@ export default function FoodSearch() {
               </div>
             ) : (
               <div style={{ position: "relative" }}>
-                <button onClick={() => setMealDropdownOpen(o => !o)} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "4px 10px", fontSize: 12, color: "var(--accent)", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
+                <button onClick={() => setMealDropdownOpen(o => !o)} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 22, padding: "0 16px", minHeight: 42, boxSizing: "border-box", fontSize: 12, color: "var(--accent)", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
                   Adding to: {activeMeal} ▾
                 </button>
                 {mealDropdownOpen && (

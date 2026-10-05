@@ -158,13 +158,17 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   return (
     <>
       <SwipeToDelete onDelete={onDelete} disabled={readOnly || !onDelete}>
-        <ListRow
-          avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
-          title={item.name}
-          subtitleParts={[item.brand, `${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`]}
-          trailing={<ListRow.Chevron />}
-          onClick={onToggle}
-        />
+        {/* Every meal card around this row indents its own content ~16-18px; the
+            bare ListRow sat against the card's left border instead. */}
+        <div style={{ padding: '0 16px' }}>
+          <ListRow
+            avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
+            title={item.name}
+            subtitleParts={[item.brand, `${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`]}
+            trailing={<ListRow.Chevron />}
+            onClick={onToggle}
+          />
+        </div>
       </SwipeToDelete>
       {isExpanded && (
         // Rendered through ModalPortal, not in place: this row lives inside

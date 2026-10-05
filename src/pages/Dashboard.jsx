@@ -539,10 +539,12 @@ function MacroCell({ label, value, target, color, tone, onClick }) {
   const pct = target > 0 ? Math.round((value / target) * 100) : 0;
   const barPct = Math.min(100, pct);
   return (
-    <Card style={{ padding: '12px 10px', marginBottom: 0, cursor: 'pointer' }} onClick={onClick}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 8, gap: 4 }}>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{label.toUpperCase()}</span>
-        <StatBadge tone={tone} style={{ padding: '2px 7px', fontSize: 11 }}>{pct}%</StatBadge>
+    <Card style={{ padding: '12px 8px', marginBottom: 0, cursor: 'pointer' }} onClick={onClick}>
+      {/* One line, always: if the badge wrapped under a long label (PROTEIN) the
+          three cards' numbers and bars would sit at different heights. */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'nowrap', marginBottom: 8, gap: 3 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.02em', minWidth: 0 }}>{label.toUpperCase()}</span>
+        <StatBadge tone={tone} style={{ padding: '2px 6px', fontSize: 11 }}>{pct}%</StatBadge>
       </div>
       <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color, whiteSpace: 'nowrap', marginBottom: 8 }}>
         {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>/{target}g</span>
@@ -1186,7 +1188,7 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="grid-3-fixed" style={{ gap: 12, marginBottom: '20px' }}>
+          <div className="grid-3-fixed" style={{ gap: 8, marginBottom: '20px' }}>
             <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={ACCENT} tone="accent" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
             <MacroCell label="Carbs" value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} tone="carbs" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
             <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} tone="fat" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />

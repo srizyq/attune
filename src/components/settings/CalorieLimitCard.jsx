@@ -82,7 +82,7 @@ export default function CalorieLimitCard({ profile, today, onSave, onUpgrade, pe
   }
 
   const heading = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
       <SectionLabel>Temporary calorie limit</SectionLabel>
       <ProPill />
     </div>

@@ -586,7 +586,7 @@ export default function SettingsGoals() {
           )}
 
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
               <SectionLabel>Micronutrient targets</SectionLabel>
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>PRO</span>
             </div>
@@ -627,7 +627,8 @@ export default function SettingsGoals() {
                           placeholder="Default"
                           style={{ width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '8px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
                         />
-                        <span style={{ fontSize: 12, color: 'var(--text-hint)', flexShrink: 0 }}>{n.unit}</span>
+                        {/* Fixed-width unit column so g / mg / mcg don't make some inputs narrower than others. */}
+                        <span style={{ fontSize: 12, color: 'var(--text-hint)', flexShrink: 0, width: 28, textAlign: 'right' }}>{n.unit}</span>
                       </div>
                     </div>
                   ))}

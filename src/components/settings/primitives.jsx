@@ -75,6 +75,10 @@ export function Segmented({ value, onChange, options }) {
               cursor: 'pointer',
               textAlign: 'left',
               transition: 'all 0.15s',
+              // Buttons centre their content vertically, which dropped the icon
+              // lower in a one-line tile than in a wrapped one. Top-align so
+              // the three icons and labels start level.
+              display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'stretch',
             }}
           >
             <i className={`ti ${o.icon}`} style={{ fontSize: '20px', marginBottom: '4px', display: 'block', color: sel ? 'var(--accent)' : 'var(--text-muted)' }} />
