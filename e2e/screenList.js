@@ -9,6 +9,7 @@ export const SCREENS = [
   { name: 'recipes', path: '/recipes' },
   { name: 'nutrients', path: '/nutrients' },
   { name: 'expenditure', path: '/expenditure' },
+  { name: 'fasting', path: '/fasting', wait: 'Start a fast' },
   { name: 'settings', path: '/settings' },
   { name: 'settings-goals', path: '/settings/goals' },
   { name: 'coach', path: '/coach' },

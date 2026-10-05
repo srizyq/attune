@@ -25,6 +25,7 @@ import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
 import SlotTimeline from '../components/SlotTimeline';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
+import DayCheckinTiles from '../components/DayCheckinTiles';
 import SegmentedControl from '../components/SegmentedControl';
 import Toast from '../components/Toast';
 import { targetLineSegments } from '../lib/chartTarget';
@@ -1046,10 +1047,11 @@ export default function Dashboard() {
 
   const initials = (name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
 
-  const mood = checkin?.mood ?? null;
-  const energy = checkin?.energy ?? 6;
   const glasses = checkin?.water_glasses ?? 0;
-  const setGlasses = (n) => saveCheckin({ mood, energy, water_glasses: n });
+  // Only the water column: the save is an upsert onto the day's check-in row, so
+  // mood / energy / sleep already on it are left alone. (It used to resend them,
+  // and wrote a made-up energy of 6 onto days where nobody had set one.)
+  const setGlasses = (n) => saveCheckin({ water_glasses: n });
 
   const allItems = Object.values(meals).flat();
   const consumed        = allItems.reduce((s, i) => s + i.cal,     0);
@@ -1243,6 +1245,8 @@ export default function Dashboard() {
               />
             )}
           </div>
+
+          <DayCheckinTiles key={viewedDate} checkin={checkin} onSave={saveCheckin} />
 
         </div>
       </div>

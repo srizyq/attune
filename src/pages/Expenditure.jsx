@@ -25,6 +25,8 @@ import PageHeader from '../components/PageHeader';
 import SegmentedControl from '../components/SegmentedControl';
 import FormRow from '../components/FormRow';
 import Card from '../components/Card';
+import ThisWeekCard from '../components/ThisWeekCard';
+import { weeklySummary } from '../lib/weeklySummary';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
@@ -275,6 +277,14 @@ export default function Expenditure() {
     [filledDays]
   );
   const hasAnyLogs = loggedDaysInRange.length > 0;
+  // A fixed rolling week, whatever range is picked below (the fetch above always
+  // covers at least the last two weeks).
+  const thisWeek = useMemo(
+    () => weeklySummary({ dailyData, weightLogs, today, targetFor: calorieTargetFor, unit: weightUnit }),
+    // calorieTargetFor is rebuilt from the profile each render; the profile is the real input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dailyData, weightLogs, today, profile, weightUnit]
+  );
   const avgIntake = avg(loggedDaysInRange.map(d => d.calories));
   const avgExpenditure = avg(displayHistory.map(p => p.tdee));
   const difference = Math.round(avgExpenditure - avgIntake);
@@ -421,6 +431,8 @@ export default function Expenditure() {
               </button>
             </div>
           )}
+
+          {!loading && <ThisWeekCard summary={thisWeek} />}
 
           {/* range toggle */}
           <div style={{ marginBottom: 24 }}>

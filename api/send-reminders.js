@@ -12,6 +12,7 @@
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { digestDue, digestPayload, pickInactive, checkinPayload, pickDueForms, withinWakingHours } from './_coachPush.js';
+import { pickFinishedFasts, fastEndPayload } from './_fastPush.js';
 
 function localDateAndTime(timezone) {
   const now = new Date();
@@ -195,6 +196,50 @@ async function runFreeMonthReminder(supabase) {
   return { checked: (candidates || []).length, sent };
 }
 
+// Tells someone their fast has reached its goal. Same isolation as the other
+// extras (runs inside this cron because the project is at Vercel's 12-function
+// cap; failures are logged and never touch the reminder pushes), and a no-op
+// before the fasting table exists. Opt-in via profiles.notify_fast_end. The
+// fast is stamped as notified *before* sending, so a crash can only skip the
+// nudge, never repeat it. A fast that finishes outside 08:00–21:00 in the
+// person's own timezone is left unstamped and picked up on the first run after
+// they'd plausibly be awake — unless they've ended it themselves by then. The
+// cron only runs every ~15 minutes, so the push can land that much late.
+async function runFastEndNudges(supabase, nowMs = Date.now()) {
+  const { data: fasts, error } = await supabase
+    .from('fasts')
+    .select('id, user_id, target_hours, started_at, ended_at, end_notified_at')
+    .is('ended_at', null)
+    .is('end_notified_at', null);
+  if (error || !fasts || fasts.length === 0) return { checked: 0, sent: 0 };
+
+  let sent = 0;
+  for (const fast of pickFinishedFasts(fasts, nowMs)) {
+    const { data: profile } = await supabase
+      .from('profiles').select('notify_fast_end, reminder_timezone').eq('id', fast.user_id).maybeSingle();
+    if (!profile?.notify_fast_end) continue;
+    if (profile.reminder_timezone && !withinWakingHours(localDateAndTime(profile.reminder_timezone).time)) continue;
+
+    await supabase.from('fasts').update({ end_notified_at: new Date(nowMs).toISOString() }).eq('id', fast.id);
+
+    const { data: subs } = await supabase.from('push_subscriptions').select('id, endpoint, subscription').eq('user_id', fast.user_id);
+    const payload = JSON.stringify(fastEndPayload(fast.target_hours));
+    for (const sub of subs || []) {
+      try {
+        await webpush.sendNotification(sub.subscription, payload);
+        sent++;
+      } catch (err) {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+        } else {
+          console.error('Fast-end push failed:', sub.endpoint, err.message);
+        }
+      }
+    }
+  }
+  return { checked: fasts.length, sent };
+}
+
 export default async function handler(req, res) {
   // This is an action endpoint (it sends real pushes and mutates
   // notification-sent state), not content — a shared cache serving a
@@ -319,5 +364,12 @@ export default async function handler(req, res) {
     console.error('Free-month reminder failed:', err);
   }
 
-  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest, checkins, freeMonth });
+  let fastEnds = { checked: 0, sent: 0 };
+  try {
+    fastEnds = await runFastEndNudges(supabase);
+  } catch (err) {
+    console.error('Fast-end nudges failed:', err);
+  }
+
+  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest, checkins, freeMonth, fastEnds });
 }

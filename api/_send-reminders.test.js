@@ -19,6 +19,8 @@ const resolver = (s) => {
   if (table === 'checkin_forms' && op === 'select') return db.checkinError ? { data: null, error: { message: 'relation does not exist' } } : { data: db.forms, error: null };
   if (table === 'checkin_responses') return { data: db.checkinResponses };
   if (table === 'trainer_clients' && filters.trainer_id === 'coach' && filters.client_id) return { data: db.checkinLink ? { id: 'l' } : null };
+  if (table === 'fasts' && op === 'select') return db.fastsError ? { data: null, error: { message: 'relation does not exist' } } : { data: db.fasts, error: null };
+  if (table === 'profiles' && filters.id === 'faster') return { data: db.faster };
   if (table === 'profiles' && filters.id === 'client1') return { data: db.checkinClient };
   if (table === 'profiles' && filters.id === 'coach') return { data: { name: 'Jordan Lee' } };
   if (table === 'profiles' && 'free_month_reminder_sent_at' in filters) {
@@ -43,6 +45,7 @@ beforeEach(() => {
   sendNotification.mockReset().mockResolvedValue(undefined);
   db = {
     reminderProfiles: [], updates: [], digestError: false,
+    fasts: [], fastsError: false, faster: { notify_fast_end: true, reminder_timezone: 'UTC' },
     freeMonthCandidates: [], freeMonthError: false,
     forms: [], checkinResponses: [], checkinLink: true, checkinError: false, checkinClient: { notify_trainer_comments: true, reminder_timezone: null },
     trainers: [{ id: 'trainer', reminder_timezone: 'UTC', activity_alert_last_sent_date: null }],
@@ -219,3 +222,47 @@ describe('free-month reminder', () => {
   });
 });
 
+describe('fast-end push', () => {
+  // 10:00 UTC on the 20th (see beforeEach). Started 18:00 the day before, 16h goal → ended at 10:00.
+  const finished = { id: 'f1', user_id: 'faster', target_hours: 16, started_at: '2026-09-19T18:00:00Z', ended_at: null, end_notified_at: null };
+
+  it('notifies someone whose fast has reached its goal, and stamps it first', async () => {
+    db.fasts = [finished];
+    const res = await run();
+    expect(res.body.fastEnds).toEqual({ checked: 1, sent: 1 });
+    expect(JSON.parse(sendNotification.mock.calls.at(-1)[1])).toMatchObject({ url: '/fasting' });
+    expect(db.updates.find((u) => u.table === 'fasts')).toMatchObject({ filters: { id: 'f1' } });
+    expect(db.updates.find((u) => u.table === 'fasts').payload.end_notified_at).toBeTruthy();
+  });
+
+  it('leaves a fast that is still running alone', async () => {
+    db.fasts = [{ ...finished, started_at: '2026-09-20T02:00:00Z' }];
+    const res = await run();
+    expect(res.body.fastEnds.sent).toBe(0);
+    expect(db.updates.some((u) => u.table === 'fasts')).toBe(false);
+  });
+
+  it('sends nothing when the person has not opted in', async () => {
+    db.fasts = [finished];
+    db.faster = { notify_fast_end: false, reminder_timezone: 'UTC' };
+    const res = await run();
+    expect(res.body.fastEnds.sent).toBe(0);
+    expect(db.updates.some((u) => u.table === 'fasts')).toBe(false);
+  });
+
+  it('holds the push until they are plausibly awake, without losing it', async () => {
+    vi.setSystemTime(new Date('2026-09-20T03:00:00Z')); // 03:00 in UTC
+    db.fasts = [{ ...finished, started_at: '2026-09-19T10:00:00Z' }];
+    const res = await run();
+    expect(res.body.fastEnds.sent).toBe(0);
+    expect(db.updates.some((u) => u.table === 'fasts')).toBe(false); // not stamped, so a later run still sends it
+  });
+
+  it('does nothing — and breaks nothing else — before the fasts table exists', async () => {
+    db.fastsError = true;
+    const res = await run();
+    expect(res.code).toBe(200);
+    expect(res.body.fastEnds).toEqual({ checked: 0, sent: 0 });
+    expect(res.body.digest).toBeDefined();
+  });
+});

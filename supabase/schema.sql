@@ -3332,3 +3332,51 @@ $$;
 alter table public.profiles drop constraint if exists profiles_calorie_limit_periods_valid;
 alter table public.profiles add constraint profiles_calorie_limit_periods_valid
   check (public.valid_calorie_limit_periods(calorie_limit_periods));
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Sleep check-ins + fasting timer (schema update — run against an existing DB;
+-- safe to re-run).
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Sleep rides on the existing daily check-in row (one row per user per day,
+-- alongside mood, energy and water): hours slept (half-hour steps in the UI) and
+-- a 1–5 quality rating, both optional.
+alter table public.checkins add column if not exists sleep_hours numeric(3,1)
+  check (sleep_hours >= 0 and sleep_hours <= 24);
+alter table public.checkins add column if not exists sleep_quality smallint
+  check (sleep_quality between 1 and 5);
+
+-- Until recently every water tap also wrote energy = 6 (the old check-in card's
+-- default) onto the day's row, so a 6 with no mood and no note is that artefact,
+-- not something anyone chose. Clear it so averages and the energy tile start
+-- from real answers only.
+update public.checkins set energy = null where energy = 6 and mood is null and note is null;
+
+-- Fasting: one row per fast. A fast is "running" while ended_at is null, and the
+-- partial unique index keeps that to one per person (a second device starting one
+-- gets a conflict instead of a duplicate). end_notified_at makes the "your fast
+-- has ended" push (api/send-reminders.js) at-most-once per fast.
+create table if not exists public.fasts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  started_at timestamptz not null default now(),
+  target_hours numeric(4,1) not null check (target_hours >= 1 and target_hours <= 72),
+  ended_at timestamptz,
+  end_notified_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (ended_at is null or ended_at >= started_at)
+);
+create unique index if not exists fasts_one_running_per_user on public.fasts (user_id) where ended_at is null;
+create index if not exists fasts_user_started_idx on public.fasts (user_id, started_at desc);
+alter table public.fasts enable row level security;
+
+drop policy if exists "fasts: select own" on public.fasts;
+create policy "fasts: select own" on public.fasts for select using (auth.uid() = user_id);
+drop policy if exists "fasts: insert own" on public.fasts;
+create policy "fasts: insert own" on public.fasts for insert with check (auth.uid() = user_id);
+drop policy if exists "fasts: update own" on public.fasts;
+create policy "fasts: update own" on public.fasts for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "fasts: delete own" on public.fasts;
+create policy "fasts: delete own" on public.fasts for delete using (auth.uid() = user_id);
+
+-- Opt-in for the push when a fast reaches its goal.
+alter table public.profiles add column if not exists notify_fast_end boolean not null default false;

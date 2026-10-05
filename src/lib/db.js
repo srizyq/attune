@@ -421,6 +421,62 @@ export async function deleteWorkoutLog(id) {
   if (error) throw error;
 }
 
+// ─── fasts ─────────────────────────────────────────────────────────────────
+// One row per fast; "running" while ended_at is null (at most one per user —
+// the database enforces it with a partial unique index).
+
+export async function getRunningFast(userId) {
+  const { data, error } = await supabase
+    .from('fasts')
+    .select('*')
+    .eq('user_id', userId)
+    .is('ended_at', null)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getFinishedFasts(userId, limit = 10) {
+  const { data, error } = await supabase
+    .from('fasts')
+    .select('*')
+    .eq('user_id', userId)
+    .not('ended_at', 'is', null)
+    .order('started_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function startFast(userId, targetHours) {
+  const { data, error } = await supabase
+    .from('fasts')
+    .insert({ user_id: userId, target_hours: targetHours })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Only ever closes a fast that is still running, so ending twice (two
+// devices, a double tap) can't move an already-recorded end time.
+export async function endFast(id) {
+  const { data, error } = await supabase
+    .from('fasts')
+    .update({ ended_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('ended_at', null)
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteFast(id) {
+  const { error } = await supabase.from('fasts').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ─── checkins ──────────────────────────────────────────────────────────────
 
 export async function getCheckinForDate(userId, date) {

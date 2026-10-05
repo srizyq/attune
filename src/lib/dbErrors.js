@@ -10,3 +10,14 @@ export function isMissingColumnError(error) {
     || /could not find the '[^']+' column/i.test(error.message || '')
     || /column "[^"]+" of relation "[^"]+" does not exist/i.test(error.message || '');
 }
+
+// A whole table isn't in the database yet (same cause as above — the app was
+// deployed before its SQL update was run). PostgREST: PGRST205 ("Could not find
+// the table 'public.x' in the schema cache"); Postgres: 42P01 (undefined_table).
+export function isMissingTableError(error) {
+  if (!error) return false;
+  return error.code === 'PGRST205'
+    || error.code === '42P01'
+    || /could not find the table '[^']+'/i.test(error.message || '')
+    || /relation "[^"]+" does not exist/i.test(error.message || '');
+}

@@ -35,7 +35,7 @@ function emptyDay(date) {
   return {
     date, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fibre_g: 0, sugar_g: 0,
     proteinBeforeNoon_g: 0, mood: null, energy: null, loggedMeals: 0,
-    waterGlasses: null, breakfastLogged: false,
+    waterGlasses: null, breakfastLogged: false, sleepHours: null, sleepQuality: null,
   };
 }
 
@@ -66,6 +66,8 @@ export function joinDailyData(foodLogs, checkins) {
     row.energy = c.energy;
     row.moodScore = MOOD_SCORE[c.mood] ?? null;
     row.waterGlasses = c.water_glasses ?? null;
+    row.sleepHours = c.sleep_hours != null ? Number(c.sleep_hours) : null;
+    row.sleepQuality = c.sleep_quality ?? null;
   }
 
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));

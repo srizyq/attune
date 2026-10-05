@@ -189,3 +189,59 @@ export function useClientActivityNotifications() {
 
   return { enabled: !!profile?.notify_client_activity, busy, error, enable, disable };
 }
+
+// The Fasting page's "tell me when my fast ends" toggle: a push sent by
+// api/send-reminders.js once a running fast reaches its goal. Same single push
+// subscription as the hooks above, so it reuses one that already exists and only
+// tears it down if nothing else on the profile still needs it. The server
+// compares times in the person's own timezone, so enabling records it if
+// reminders haven't already.
+export function useFastEndNotifications() {
+  const { user } = useAuth();
+  const { profile, save } = useProfile();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const enable = useCallback(async () => {
+    if (!user) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (!pushSupported()) throw new Error('Push notifications are not supported in this browser.');
+      const permission = await requestNotificationPermission();
+      if (permission !== 'granted') throw new Error('Notification permission was not granted.');
+      const subscription = await subscribeToPush();
+      await savePushSubscription(user.id, subscription.toJSON());
+      await save({
+        notify_fast_end: true,
+        ...(profile?.reminder_timezone ? {} : { reminder_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      });
+    } catch (err) {
+      console.error('Failed to enable fast-end notifications:', err);
+      setError(err.message || "Couldn't turn this on — try again.");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [user, save, profile]);
+
+  const disable = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      if (!stillNeedsPush(profile, 'notify_fast_end')) {
+        const existing = await unsubscribeFromPush();
+        if (existing) await deletePushSubscriptionByEndpoint(existing.endpoint);
+      }
+      await save({ notify_fast_end: false });
+    } catch (err) {
+      console.error('Failed to disable fast-end notifications:', err);
+      setError("Couldn't turn this off — try again.");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [save, profile]);
+
+  return { enabled: !!profile?.notify_fast_end, busy, error, enable, disable };
+}

@@ -26,6 +26,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const Nutrients = lazy(() => import('./pages/Nutrients'));
 const Expenditure = lazy(() => import('./pages/Expenditure'));
+const Fasting = lazy(() => import('./pages/Fasting'));
 const Coach = lazy(() => import('./pages/Coach'));
 const JoinCoach = lazy(() => import('./pages/JoinCoach'));
 const DashboardRedesignHarness = lazy(() => import('./prototypes/dashboard-redesign/Harness'));
@@ -87,6 +88,7 @@ function AnimatedRoutes() {
         <Route path="/progress" element={<Navigate to="/expenditure" replace />} />
         <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
         <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />
+        <Route path="/fasting" element={<RequireAuth><Fasting /></RequireAuth>} />
         <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
         <Route path="/settings/goals" element={<RequireAuth><SettingsGoals /></RequireAuth>} />

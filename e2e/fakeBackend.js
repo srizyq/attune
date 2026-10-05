@@ -68,7 +68,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     saved_meals: SAVED_MEALS,
     trainer_clients: [], trainer_comments: [], trainer_notes: [], coach_invites: [], push_subscriptions: [],
     barcode_products: [], common_dishes: [], afcd_foods: [], ausnut_foods: [], meal_plans: [], body_measurements: [], progress_photos: [],
-    day_slots: [],
+    day_slots: [], fasts: [],
     restaurant_chains: [], restaurant_items: [],
     ...tables,
   };
@@ -104,7 +104,9 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
       if (req.method() === 'GET' || req.method() === 'HEAD') {
         for (const [key, spec] of url.searchParams) {
           if (['select', 'order', 'limit', 'offset', 'columns', 'on_conflict'].includes(key)) continue;
-          if (key === 'or' || key === 'and' || spec.startsWith('not.')) continue;
+          if (key === 'or' || key === 'and') continue;
+          // `col=not.is.null` etc. — the same test, negated.
+          if (spec.startsWith('not.')) { rows = rows.filter((row) => !matches(row, key, spec.slice(4))); continue; }
           rows = rows.filter((row) => matches(row, key, spec));
         }
         const order = url.searchParams.get('order');

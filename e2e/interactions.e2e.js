@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { openApp, settle, assertLayout } from './harness.js';
+import { USER_ID } from './fixtures.js';
 
 // Layout bugs love modals, sheets, menus and expanded rows — the parts of the
 // app you only see after tapping something. Each scenario opens one and runs
@@ -11,6 +12,11 @@ const RESTAURANT_BACKEND = {
       .concat([{ id: 'mcdonalds-au_f', chain_id: 'mcdonalds-au', chain_name: "McDonald's", name: 'Medium Fries', category: 'Sides', size_label: null, serving_label: '1 serve', serving_grams: 111, calories: 337, protein_g: 4, carbs_g: 41, fat_g: 17, fibre_g: 4, sodium_mg: 200, sugar_g: 0 }]),
   },
 };
+
+const hoursAgo = (h) => new Date(Date.now() - h * 3600000).toISOString();
+const fastRow = (over) => ({ id: 'fast-1', user_id: USER_ID, started_at: hoursAgo(5), target_hours: 16, ended_at: null, end_notified_at: null, created_at: hoursAgo(5), ...over });
+const RUNNING_FAST = { tables: { fasts: [fastRow()] } };
+const FAST_WITH_HISTORY = { tables: { fasts: [fastRow(), fastRow({ id: 'fast-0', started_at: hoursAgo(48), ended_at: hoursAgo(30), target_hours: 16 }), fastRow({ id: 'fast--1', started_at: hoursAgo(80), ended_at: hoursAgo(70), target_hours: 16 })] } };
 
 const SCENARIOS = [
   { name: 'quick-add-sheet', path: '/dashboard', mobileOnly: true, act: (p) => p.getByRole('button', { name: 'Quick add' }).click() },
@@ -64,6 +70,14 @@ const SCENARIOS = [
       await p.getByLabel('Protein percent of calories').blur();
     },
   },
+  { name: 'dashboard-checkin-mood', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Mood/ }).click() },
+  { name: 'dashboard-checkin-energy', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Energy/ }).click() },
+  { name: 'dashboard-checkin-sleep', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Sleep/ }).click() },
+  { name: 'fasting-custom-length', path: '/fasting', act: async (p) => { await p.getByRole('button', { name: 'Custom', exact: true }).click(); await p.getByLabel('Fast length in hours').fill('20.5'); } },
+  { name: 'fasting-running', path: '/fasting', backend: FAST_WITH_HISTORY, act: (p) => p.getByText('of your 16h goal').waitFor() },
+  { name: 'fasting-goal-reached', path: '/fasting', backend: { tables: { fasts: [fastRow({ started_at: hoursAgo(17.5) })] } }, act: (p) => p.getByText('Goal reached').first().waitFor() },
+  { name: 'fasting-end-confirm', path: '/fasting', backend: RUNNING_FAST, act: (p) => p.getByRole('button', { name: 'End fast' }).click() },
+  { name: 'fasting-discard-confirm', path: '/fasting', backend: RUNNING_FAST, act: (p) => p.getByRole('button', { name: /Discard/ }).click() },
   {
     // Explicit click into Meals view, same reasoning as daily-log-edit-item
     // above.

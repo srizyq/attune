@@ -12,7 +12,8 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 // or a cramped popup. Log weight goes to Expenditure (Progress's old
 // weight chart lives there now) — that's the only place a new weight
 // entry can be logged from since the dashboard's inline weight form was
-// replaced by a glance-tile there.
+// replaced by a glance-tile there. Fasting opens its own page (timer, goal and
+// history), where a fast is started and ended.
 const TOP_ACTIONS = [
   { id: 'log-food', label: 'Log food', icon: 'ti-search', to: '/food' },
   { id: 'barcode', label: 'Scan barcode', icon: 'ti-barcode', to: '/food', state: { openScan: true } },
@@ -21,6 +22,7 @@ const TOP_ACTIONS = [
 ];
 const BOTTOM_ACTIONS = [
   { id: 'weight', label: 'Log weight', icon: 'ti-scale', to: '/expenditure' },
+  { id: 'fasting', label: 'Fasting', icon: 'ti-hourglass-high', to: '/fasting' },
   { id: 'recipes', label: 'Recipes', icon: 'ti-bookmark', to: '/recipes' },
   { id: 'custom-food', label: 'Custom food', icon: 'ti-plus', to: '/food', state: { openCreateFood: true } },
 ];
@@ -85,8 +87,10 @@ export default function QuickActionSheet({ onClose }) {
   }
 
   function handlePointerDown(e) {
+    // No pointer capture here: capturing on press makes Chrome send the pointerup
+    // *and the click* to the panel instead of the tile/row that was pressed, so
+    // none of the sheet's buttons would fire. Capture starts with a real drag.
     drag.current = { startY: e.clientY, active: false, y: 0 };
-    e.currentTarget.setPointerCapture?.(e.pointerId);
   }
 
   function handlePointerMove(e) {
@@ -98,6 +102,7 @@ export default function QuickActionSheet({ onClose }) {
       // an action tile/row) must keep working as a normal click.
       if (delta < 8) return;
       d.active = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
       if (panelRef.current) panelRef.current.style.transition = 'none';
     }
     const clamped = Math.max(0, delta);
