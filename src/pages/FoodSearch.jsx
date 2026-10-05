@@ -578,7 +578,7 @@ const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', 
 //    chrome (no separate ScanModal wrapper) since it needs to switch
 //    between a full-screen camera step and a normal modal card depending
 //    on internal state. ─────────────────────────────────────────────────
-function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, showSlots, onCreateCustom, onSearchManually }) {
+function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, showSlots }) {
   const { user } = useAuth();
   const { profile } = useProfile();
   // Read-only here — logs for today's day-budget-impact preview, not
@@ -1074,16 +1074,8 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       {error && !addingProduct && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <button onClick={onSearchManually} style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <i className="ti ti-search" style={{ fontSize: 14 }} /> Search manually
-            </button>
-            <button onClick={onCreateCustom} style={{ flex: 1, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <i className="ti ti-plus" style={{ fontSize: 14 }} /> Create custom food
-            </button>
-          </div>
           {scannedBarcode && (
-            <button onClick={() => setAddingProduct(true)} style={{ width: "100%", background: "transparent", border: "1px dashed var(--border-default)", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <button onClick={() => { setLabelSkipped(false); setAddingProduct(true); }} style={{ width: "100%", marginBottom: 8, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
               <i className="ti ti-barcode" style={{ fontSize: 14 }} /> Add this product for everyone
             </button>
           )}
@@ -2702,8 +2694,6 @@ export default function FoodSearch() {
           defaultTime={activeTime}
           showSlots={showSlots}
           onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
-          onCreateCustom={() => { setScanOpen(false); setCreateFoodPrefill(null); setCreateFoodOpen(true); }}
-          onSearchManually={() => { setScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
       )}
 

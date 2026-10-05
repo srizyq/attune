@@ -60,8 +60,11 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
           // torch button just stays hidden, same as unsupported.
         }
       } catch (err) {
+        // Closed before the preview started playing: play() rejects with an
+        // AbortError as the video element is removed — nothing went wrong.
+        if (cancelled) return;
         console.error('Camera unavailable:', err);
-        if (!cancelled) setError("Couldn't access your camera — you can still choose a photo instead.");
+        setError("Couldn't access your camera — you can still choose a photo instead.");
       }
     })();
     return () => {

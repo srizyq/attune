@@ -100,6 +100,12 @@ test('closing the label camera falls back to the plain form; backing out shows t
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByText(/Product not found for barcode/)).toBeVisible();
   await expect(page.getByRole('button', { name: /Add this product for everyone/ })).toBeVisible();
+  // The two buttons that only closed the sheet or duplicated this one are gone.
+  await expect(page.getByRole('button', { name: /Search manually/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Create custom food/ })).toHaveCount(0);
+  // ...and Add this product goes back to the label camera.
+  await page.getByRole('button', { name: /Add this product for everyone/ }).click();
+  await expect(page.getByRole('button', { name: 'Take photo' })).toBeVisible();
 });
 
 test('every lookup failing is a connection problem, not a missing product', async ({ page, context }, testInfo) => {
