@@ -75,6 +75,8 @@ const SCENARIOS = [
   },
   { name: 'settings-import-pick', path: '/settings', act: openImportModal },
   { name: 'settings-import-preview', path: '/settings', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByText('What we found').waitFor(); await p.getByText(/Checking|left alone|None of these/).first().waitFor(); } },
+  { name: 'settings-import-done', path: '/settings', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByRole('button', { name: /^Import 3 entries/ }).click(); await p.getByText('Import complete').waitFor(); } },
+  { name: 'settings-import-undo-confirm', path: '/settings', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByRole('button', { name: /^Import 3 entries/ }).click(); await p.getByText('Import complete').waitFor(); await p.getByRole('button', { name: 'Undo this import' }).click(); await p.getByRole('button', { name: 'Yes, remove them' }).waitFor(); } },
   { name: 'dashboard-checkin-mood', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Mood/ }).click() },
   { name: 'dashboard-checkin-energy', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Energy/ }).click() },
   { name: 'dashboard-checkin-sleep', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Sleep/ }).click() },

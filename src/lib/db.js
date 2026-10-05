@@ -493,22 +493,60 @@ export async function getFoodLogDatesInRange(userId, startDate, endDate) {
   return new Set(rows.map((r) => r.logged_date));
 }
 
+// Both return the server's own created_at for what was added, which is how an
+// import is later recognised for undo (see lib/importers/undo.js) — the browser's
+// clock can't be trusted to match the database's.
 export async function insertFoodLogRows(rows) {
-  if (!rows.length) return;
-  const { error } = await supabase.from('food_logs').insert(rows);
+  if (!rows.length) return [];
+  const { data, error } = await supabase.from('food_logs').insert(rows).select('created_at');
   if (error) throw error;
+  return data || [];
 }
 
 // Dates that already have a weigh-in are left exactly as they are
-// (ignoreDuplicates), and the number actually added is returned.
+// (ignoreDuplicates); only the rows actually added come back.
 export async function insertWeightLogRows(rows) {
-  if (!rows.length) return 0;
+  if (!rows.length) return [];
   const { data, error } = await supabase
     .from('weight_logs')
     .upsert(rows, { onConflict: 'user_id,logged_date', ignoreDuplicates: true })
+    .select('logged_date, created_at');
+  if (error) throw error;
+  return data || [];
+}
+
+// Undo an import: food entries marked as imported that were created inside the
+// import's own time window. Returns how many were removed.
+export async function deleteImportedFood(userId, fromIso, toIso) {
+  const { data, error } = await supabase
+    .from('food_logs')
+    .delete()
+    .eq('user_id', userId)
+    .eq('source', 'import')
+    .gte('created_at', fromIso)
+    .lte('created_at', toIso)
     .select('id');
   if (error) throw error;
   return (data || []).length;
+}
+
+// Weigh-ins the import added: created inside its window AND on one of the dates
+// it wrote, so a weight logged by hand in the same minute is never caught.
+export async function deleteImportedWeights(userId, dates, fromIso, toIso) {
+  let removed = 0;
+  for (let i = 0; i < dates.length; i += 150) {
+    const { data, error } = await supabase
+      .from('weight_logs')
+      .delete()
+      .eq('user_id', userId)
+      .in('logged_date', dates.slice(i, i + 150))
+      .gte('created_at', fromIso)
+      .lte('created_at', toIso)
+      .select('id');
+    if (error) throw error;
+    removed += (data || []).length;
+  }
+  return removed;
 }
 
 // ─── checkins ──────────────────────────────────────────────────────────────

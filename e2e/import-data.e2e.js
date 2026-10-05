@@ -139,4 +139,105 @@ test.describe('import from another app', () => {
     await expect(page.getByRole('alert')).toContainText('row-level security');
     await expect(page.getByRole('button', { name: 'Choose files again' })).toBeVisible();
   });
+
+  test.describe('undo', () => {
+    const deletes = (page, table) => {
+      const found = [];
+      page.on('request', (req) => {
+        const u = new URL(req.url());
+        if (req.method() === 'DELETE' && u.pathname.endsWith(`/rest/v1/${table}`)) found.push(Object.fromEntries(u.searchParams));
+      });
+      return found;
+    };
+    const importIt = async (page) => {
+      await upload(page, [csv('Food Diary.csv', DIARY), csv('Weight.csv', WEIGHT)]);
+      await expect(page.getByText(/1 day will be left alone/)).toBeVisible();
+      await page.getByRole('button', { name: /^Import 3 entries/ }).click();
+      await expect(page.getByText('Import complete')).toBeVisible();
+    };
+
+    test('asks first, then removes only what the import added', async ({ page, context }, testInfo) => {
+      await openApp({ page, context }, testInfo);
+      const foodDeletes = deletes(page, 'food_logs');
+      const weightDeletes = deletes(page, 'weight_logs');
+      await openImport(page);
+      await importIt(page);
+
+      await page.getByRole('button', { name: 'Undo this import' }).click();
+      await expect(page.getByText(/removes the 3 food entries and 2 weigh-ins that import added/)).toBeVisible();
+      expect(foodDeletes).toHaveLength(0); // nothing is removed until confirmed
+
+      await page.getByRole('button', { name: 'Yes, remove them' }).click();
+      await expect(page.getByText('Import undone')).toBeVisible();
+      await expect(page.getByText('Import complete')).toHaveCount(0);
+
+      expect(foodDeletes).toHaveLength(1);
+      expect(foodDeletes[0]).toMatchObject({ source: 'eq.import' });
+      expect(foodDeletes[0].user_id).toMatch(/^eq\./);
+      expect(foodDeletes[0].created_at).toBeTruthy(); // the time window, as gte/lte
+      expect(weightDeletes).toHaveLength(1);
+      expect(weightDeletes[0].logged_date).toContain(OLD_A);
+      expect(weightDeletes[0].logged_date).toContain(OLD_B);
+    });
+
+    test('"Keep them" backs out without removing anything', async ({ page, context }, testInfo) => {
+      await openApp({ page, context }, testInfo);
+      const foodDeletes = deletes(page, 'food_logs');
+      await openImport(page);
+      await importIt(page);
+      await page.getByRole('button', { name: 'Undo this import' }).click();
+      await page.getByRole('button', { name: 'Keep them' }).click();
+      await expect(page.getByRole('button', { name: 'Undo this import' })).toBeVisible();
+      expect(foodDeletes).toHaveLength(0);
+    });
+
+    test('can still be undone after closing the screen and coming back', async ({ page, context }, testInfo) => {
+      await openApp({ page, context }, testInfo);
+      const foodDeletes = deletes(page, 'food_logs');
+      await openImport(page);
+      await importIt(page);
+      await page.getByRole('button', { name: 'Done' }).click();
+      await page.reload();
+      await settle(page);
+      await page.getByRole('button', { name: /Privacy/ }).first().click();
+      await page.getByRole('button', { name: 'Import', exact: true }).click();
+      await expect(page.getByText(/^Last import — /)).toBeVisible();
+      await expect(page.getByText(/3 food entries and 2 weigh-ins came in from that import/)).toBeVisible();
+      await page.getByRole('button', { name: 'Undo this import' }).click();
+      await page.getByRole('button', { name: 'Yes, remove them' }).click();
+      await expect(page.getByText('Import undone')).toBeVisible();
+      expect(foodDeletes).toHaveLength(1);
+      // and it is gone afterwards — nothing left to undo
+      await page.reload();
+      await settle(page);
+      await page.getByRole('button', { name: /Privacy/ }).first().click();
+      await page.getByRole('button', { name: 'Import', exact: true }).click();
+      await expect(page.getByText('Bring your history with you')).toBeVisible();
+      await expect(page.getByText(/^Last import — /)).toHaveCount(0);
+    });
+
+    test('a failed undo says so and can be retried', async ({ page, context }, testInfo) => {
+      await openApp({ page, context }, testInfo);
+      await openImport(page);
+      await importIt(page);
+      await context.route('**/rest/v1/food_logs*', (route) => route.request().method() === 'DELETE'
+        ? route.fulfill({ status: 400, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ code: '42501', message: 'permission denied' }) })
+        : route.fallback());
+      await page.getByRole('button', { name: 'Undo this import' }).click();
+      await page.getByRole('button', { name: 'Yes, remove them' }).click();
+      await expect(page.getByRole('alert')).toContainText('permission denied');
+      await expect(page.getByRole('button', { name: 'Yes, remove them' })).toBeEnabled();
+      await expect(page.getByText('Import undone')).toHaveCount(0);
+    });
+
+    test('an import that would add nothing cannot be run, and leaves no undo behind', async ({ page, context }, testInfo) => {
+      await openApp({ page, context }, testInfo);
+      await openImport(page);
+      await upload(page, [csv('d.csv', `Date,Food,Calories\n${HAS_FOOD},Apple,95`)]);
+      await expect(page.getByText(/1 day will be left alone/)).toBeVisible();
+      await expect(page.getByRole('button', { name: /^Import/ })).toBeDisabled();
+      await page.getByRole('button', { name: 'Choose different files' }).click();
+      await expect(page.getByRole('button', { name: 'Undo this import' })).toHaveCount(0);
+    });
+  });
 });

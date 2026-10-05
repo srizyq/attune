@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile } from '../../hooks/useProfile';
-import { getFoodLogDatesInRange, insertFoodLogRows, insertWeightLogRows } from '../../lib/db';
+import { getFoodLogDatesInRange, insertFoodLogRows, insertWeightLogRows, deleteImportedFood, deleteImportedWeights } from '../../lib/db';
 import { todayLocalDate } from '../../lib/patterns';
 import { readImportFiles } from '../../lib/importers/readFiles';
 import { parseImportFiles } from '../../lib/importers/diary';
 import { planImport, runImport, MAX_ENTRIES } from '../../lib/importers/run';
+import { saveLastImport, loadLastImport, clearLastImport, undoImport } from '../../lib/importers/undo';
 import FormRow from '../FormRow';
 import { SettingsModal, Card, SectionLabel } from './primitives';
 
@@ -17,6 +18,34 @@ const dayLabel = (ymd) => new Date(`${ymd}T00:00:00`).toLocaleDateString('en-AU'
 const plural = (n, one, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 const muted = { color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 };
+
+// "Undo this import": a two-step confirm, then removes what the import added.
+function UndoSection({ batch, undo, onAsk, onCancel, onConfirm, title }) {
+  const parts = [
+    batch.foodAdded > 0 && plural(batch.foodAdded, 'food entry', 'food entries'),
+    batch.weightAdded > 0 && plural(batch.weightAdded, 'weigh-in'),
+  ].filter(Boolean).join(' and ');
+  return (
+    <Card style={{ marginBottom: 16 }}>
+      <SectionLabel>{title}</SectionLabel>
+      <p style={{ ...muted, margin: '0 0 12px' }}>
+        {undo.phase === 'confirm' || undo.phase === 'working'
+          ? `This removes the ${parts} that import added — including any you've edited since. Anything you logged yourself, and entries copied from them to other days, stay.`
+          : `${parts} came in from that import. Changed your mind? You can take it back out.`}
+      </p>
+      {undo.error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 10px' }}>{undo.error}</p>}
+      <FormRow>
+        {undo.phase === 'idle' && <FormRow.Button icon="ti-arrow-back-up" danger onClick={onAsk}>Undo this import</FormRow.Button>}
+        {(undo.phase === 'confirm' || undo.phase === 'working') && (
+          <>
+            <FormRow.Button icon="ti-trash" danger disabled={undo.phase === 'working'} onClick={onConfirm}>{undo.phase === 'working' ? 'Removing…' : 'Yes, remove them'}</FormRow.Button>
+            <FormRow.Button disabled={undo.phase === 'working'} onClick={onCancel}>Keep them</FormRow.Button>
+          </>
+        )}
+      </FormRow>
+    </Card>
+  );
+}
 
 export default function ImportDataModal({ onClose, closing }) {
   const { user } = useAuth();
@@ -30,6 +59,10 @@ export default function ImportDataModal({ onClose, closing }) {
   const [existing, setExisting] = useState({ status: 'idle', days: new Set(), error: null }); // idle | loading | ready | error
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [result, setResult] = useState(null);
+  // The most recent import on this device (so it can still be undone after the
+  // screen was closed), and the state of an undo in progress.
+  const [lastImport, setLastImport] = useState(() => loadLastImport(user?.id));
+  const [undo, setUndo] = useState({ phase: 'idle', error: null, result: null }); // idle | confirm | working | done
 
   const weightUnit = profile?.unit === 'imperial' ? 'lb' : 'kg';
   const parsed = useMemo(
@@ -57,6 +90,7 @@ export default function ImportDataModal({ onClose, closing }) {
   async function handleFiles(fileList) {
     setStep('reading');
     setResult(null);
+    setUndo({ phase: 'idle', error: null, result: null });
     setDateOrder('auto');
     setExisting({ status: 'loading', days: new Set(), error: null });
     try {
@@ -85,7 +119,25 @@ export default function ImportDataModal({ onClose, closing }) {
       onProgress: setProgress, db: { insertFoodLogRows, insertWeightLogRows },
     });
     setResult(res);
+    setUndo({ phase: 'idle', error: null, result: null });
+    if (res.batch) {
+      saveLastImport(user.id, res.batch);
+      setLastImport(loadLastImport(user.id) || { ...res.batch, at: new Date().toISOString() });
+    }
     setStep('done');
+  }
+
+  async function handleUndo(batch) {
+    setUndo({ phase: 'working', error: null, result: null });
+    const res = await undoImport({ userId: user.id, batch, db: { deleteImportedFood, deleteImportedWeights } });
+    if (res.error) {
+      // Some may have gone: say so, and keep the option to try again.
+      setUndo({ phase: 'confirm', error: `${res.error}${res.foodRemoved + res.weightRemoved > 0 ? ` (${(res.foodRemoved + res.weightRemoved).toLocaleString()} removed before that)` : ''}. Try again.`, result: null });
+      return;
+    }
+    clearLastImport(user.id);
+    setLastImport(null);
+    setUndo({ phase: 'done', error: null, result: res });
   }
 
   function startOver() {
@@ -103,8 +155,28 @@ export default function ImportDataModal({ onClose, closing }) {
         onChange={(e) => { if (e.target.files?.length) handleFiles(e.target.files); }}
       />
 
+      {undo.phase === 'done' && undo.result && (
+        <Card style={{ marginBottom: 16 }}>
+          <SectionLabel>Import undone</SectionLabel>
+          <p style={{ margin: '0 0 4px', color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 }}>
+            {plural(undo.result.foodRemoved, 'food entry', 'food entries')} removed
+            {undo.result.weightRemoved > 0 ? `, ${plural(undo.result.weightRemoved, 'weigh-in')}` : ''}
+          </p>
+          <p style={{ ...muted, margin: 0 }}>Your diary is back to how it was before you imported.</p>
+        </Card>
+      )}
+
       {(step === 'pick' || step === 'reading') && (
         <>
+          {lastImport && undo.phase !== 'done' && (
+            <UndoSection
+              title={`Last import — ${new Date(lastImport.at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`}
+              batch={lastImport} undo={undo}
+              onAsk={() => setUndo({ phase: 'confirm', error: null, result: null })}
+              onCancel={() => setUndo({ phase: 'idle', error: null, result: null })}
+              onConfirm={() => handleUndo(lastImport)}
+            />
+          )}
           <Card style={{ marginBottom: 16 }}>
             <SectionLabel>Bring your history with you</SectionLabel>
             <p style={{ ...muted, margin: '0 0 12px' }}>
@@ -230,23 +302,34 @@ export default function ImportDataModal({ onClose, closing }) {
 
       {step === 'done' && result && (
         <>
-          <Card style={{ marginBottom: 16 }}>
-            <SectionLabel>{result.error ? 'Import stopped' : 'Import complete'}</SectionLabel>
-            {result.error && (
-              <p role="alert" style={{ color: 'var(--danger)', fontSize: 13, margin: '0 0 10px', lineHeight: 1.5 }}>
-                {result.error} What was saved before that is still there; choose the same files again to fill in the rest (days already saved are skipped).
+          {undo.phase !== 'done' && (
+            <Card style={{ marginBottom: 16 }}>
+              <SectionLabel>{result.error ? 'Import stopped' : 'Import complete'}</SectionLabel>
+              {result.error && (
+                <p role="alert" style={{ color: 'var(--danger)', fontSize: 13, margin: '0 0 10px', lineHeight: 1.5 }}>
+                  {result.error} What was saved before that is still there; choose the same files again to fill in the rest (days already saved are skipped).
+                </p>
+              )}
+              <p style={{ margin: '0 0 4px', color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 }}>
+                {plural(result.foodImported, 'food entry', 'food entries')} added across {plural(result.daysImported, 'day')}
               </p>
-            )}
-            <p style={{ margin: '0 0 4px', color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 }}>
-              {plural(result.foodImported, 'food entry', 'food entries')} added across {plural(result.daysImported, 'day')}
-            </p>
-            {result.skippedDays > 0 && <p style={{ ...muted, margin: '0 0 4px' }}>{plural(result.skippedDays, 'day')} left alone — already in your diary.</p>}
-            {(result.weightImported > 0 || result.weightSkipped > 0) && (
-              <p style={{ ...muted, margin: 0 }}>
-                {plural(result.weightImported, 'weigh-in')} added{result.weightSkipped > 0 ? `, ${plural(result.weightSkipped, 'date')} already had one` : ''}.
-              </p>
-            )}
-          </Card>
+              {result.skippedDays > 0 && <p style={{ ...muted, margin: '0 0 4px' }}>{plural(result.skippedDays, 'day')} left alone — already in your diary.</p>}
+              {(result.weightImported > 0 || result.weightSkipped > 0) && (
+                <p style={{ ...muted, margin: 0 }}>
+                  {plural(result.weightImported, 'weigh-in')} added{result.weightSkipped > 0 ? `, ${plural(result.weightSkipped, 'date')} already had one` : ''}.
+                </p>
+              )}
+            </Card>
+          )}
+          {result.batch && undo.phase !== 'done' && (
+            <UndoSection
+              title="Not what you expected?"
+              batch={result.batch} undo={undo}
+              onAsk={() => setUndo({ phase: 'confirm', error: null, result: null })}
+              onCancel={() => setUndo({ phase: 'idle', error: null, result: null })}
+              onConfirm={() => handleUndo(result.batch)}
+            />
+          )}
           <FormRow>
             <FormRow.Button primary onClick={onClose}>Done</FormRow.Button>
             {result.error && <FormRow.Button onClick={startOver}>Choose files again</FormRow.Button>}

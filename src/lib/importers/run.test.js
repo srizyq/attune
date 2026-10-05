@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { chunkByDay, planImport, runImport, toFoodLogRow, toWeightLogRow, CHUNK_ROWS } from './run';
+import { chunkByDay, planImport, runImport, makeBatch, toFoodLogRow, toWeightLogRow, CHUNK_ROWS } from './run';
 import { parseImportFiles } from './diary';
 import { provenanceOf, PROVENANCE } from '../provenance';
 
@@ -8,9 +8,11 @@ const parsedOf = (entries, weights = []) => ({
   entries, weights, days: [...new Set(entries.map((e) => e.loggedDate))].sort(),
   firstDate: entries[0]?.loggedDate ?? null, lastDate: entries.at(-1)?.loggedDate ?? null,
 });
+let tick = 0;
+const stamp = () => new Date(Date.UTC(2026, 9, 5, 4, 0, tick++)).toISOString();
 const fakeDb = (over = {}) => ({
-  insertFoodLogRows: vi.fn().mockResolvedValue(undefined),
-  insertWeightLogRows: vi.fn().mockImplementation(async (rows) => rows.length),
+  insertFoodLogRows: vi.fn().mockImplementation(async (rows) => rows.map(() => ({ created_at: stamp() }))),
+  insertWeightLogRows: vi.fn().mockImplementation(async (rows) => rows.map((r) => ({ logged_date: r.logged_date, created_at: stamp() }))),
   ...over,
 });
 
@@ -83,7 +85,7 @@ describe('runImport', () => {
     const db = fakeDb();
     const progress = vi.fn();
     const r = await runImport({ userId: 'u1', parsed, existingDays: new Set(), onProgress: progress, db });
-    expect(r).toEqual({ foodImported: 3, daysImported: 2, skippedDays: 0, weightImported: 2, weightSkipped: 0, error: null });
+    expect(r).toMatchObject({ foodImported: 3, daysImported: 2, skippedDays: 0, weightImported: 2, weightSkipped: 0, error: null });
     expect(db.insertFoodLogRows.mock.calls.flatMap((c) => c[0])).toHaveLength(3);
     expect(db.insertFoodLogRows.mock.calls[0][0].every((row) => row.user_id === 'u1' && row.source === 'import')).toBe(true);
     expect(db.insertWeightLogRows.mock.calls[0][0]).toEqual([
@@ -101,7 +103,7 @@ describe('runImport', () => {
   });
 
   it('counts weigh-ins that were already there as skipped, not added', async () => {
-    const db = fakeDb({ insertWeightLogRows: vi.fn().mockResolvedValue(1) });
+    const db = fakeDb({ insertWeightLogRows: vi.fn().mockResolvedValue([{ logged_date: '2026-03-01', created_at: stamp() }]) });
     const r = await runImport({ userId: 'u1', parsed, existingDays: new Set(), db });
     expect(r).toMatchObject({ weightImported: 1, weightSkipped: 1 });
   });
@@ -138,5 +140,40 @@ describe('runImport', () => {
     const r = await runImport({ userId: 'u1', parsed: p, existingDays: new Set(), db });
     expect(r.foodImported).toBe(2);
     expect(db.insertFoodLogRows.mock.calls[0][0].map((x) => [x.meal, x.food_name, x.calories])).toEqual([['lunch', 'Rice', 200], ['dinner', 'Fish', 300]]);
+  });
+});
+
+describe('the batch a run reports, for undo', () => {
+  const parsed = parsedOf([entry('2026-03-01'), entry('2026-03-02')], [{ date: '2026-03-01', weight: 80, unit: 'kg' }]);
+
+  it('covers every row added, padded by a second each side, in the database\'s own time', async () => {
+    const db = fakeDb({
+      insertFoodLogRows: vi.fn().mockResolvedValue([{ created_at: '2026-10-05T04:00:10.123456+00:00' }, { created_at: '2026-10-05T04:00:12.500000+00:00' }]),
+      insertWeightLogRows: vi.fn().mockResolvedValue([{ logged_date: '2026-03-01', created_at: '2026-10-05T04:00:14.000000+00:00' }]),
+    });
+    const r = await runImport({ userId: 'u1', parsed, existingDays: new Set(), db });
+    expect(r.batch).toEqual({ from: '2026-10-05T04:00:09.123Z', to: '2026-10-05T04:00:15.000Z', weightDates: ['2026-03-01'], foodAdded: 2, weightAdded: 1 });
+  });
+
+  it('is null when nothing was added', async () => {
+    const r = await runImport({ userId: 'u1', parsed: parsedOf([]), existingDays: new Set(), db: fakeDb() });
+    expect(r.batch).toBeNull();
+    const allSkipped = await runImport({ userId: 'u1', parsed, existingDays: new Set(parsed.days), db: fakeDb({ insertWeightLogRows: vi.fn().mockResolvedValue([]) }) });
+    expect(allSkipped.batch).toBeNull();
+  });
+
+  it('still describes what was saved when a later chunk fails, so the part-import can be undone', async () => {
+    const many = parsedOf(Array.from({ length: 700 }, (_, i) => entry(`2026-0${1 + (i % 3)}-${String(1 + Math.floor(i / 30) % 28).padStart(2, '0')}`, `f${i}`)));
+    let calls = 0;
+    const db = fakeDb({ insertFoodLogRows: vi.fn().mockImplementation(async (rows) => { calls++; if (calls === 2) throw new Error('down'); return rows.map(() => ({ created_at: stamp() })); }) });
+    const r = await runImport({ userId: 'u1', parsed: many, existingDays: new Set(), db });
+    expect(r.error).toBe('down');
+    expect(r.batch).not.toBeNull();
+    expect(r.batch.foodAdded).toBe(r.foodImported);
+  });
+
+  it('makeBatch ignores unusable timestamps', () => {
+    expect(makeBatch({ createdAt: ['nope'], weightDates: [], foodAdded: 1, weightAdded: 0 })).toBeNull();
+    expect(makeBatch({ createdAt: ['2026-10-05T04:00:00Z'], weightDates: ['b', 'a', 'a'], foodAdded: 0, weightAdded: 3 }).weightDates).toEqual(['a', 'b']);
   });
 });

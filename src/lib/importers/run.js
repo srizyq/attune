@@ -73,20 +73,26 @@ export function planImport(parsed, existingDays, skipExistingDays) {
   };
 }
 
-// db: { insertFoodLogRows(rows), insertWeightLogRows(rows) → number actually added }
+// db: { insertFoodLogRows(rows) → [{ created_at }], insertWeightLogRows(rows) → the
+// rows actually added [{ logged_date, created_at }] }. `result.batch` describes
+// what was added, so it can be undone later (see undo.js); null if nothing was.
 export async function runImport({ userId, parsed, existingDays, skipExistingDays = true, onProgress, db }) {
   const plan = planImport(parsed, existingDays, skipExistingDays);
   const chunks = chunkByDay(plan.entries);
-  const result = { foodImported: 0, daysImported: 0, skippedDays: plan.skippedDays, weightImported: 0, weightSkipped: 0, error: null };
+  const result = { foodImported: 0, daysImported: 0, skippedDays: plan.skippedDays, weightImported: 0, weightSkipped: 0, error: null, batch: null };
+  const createdAt = [];
+  const weightDates = [];
+  const finish = () => { result.batch = makeBatch({ createdAt, weightDates, foodAdded: result.foodImported, weightAdded: result.weightImported }); return result; };
   const totalRows = plan.entries.length + parsed.weights.length;
   let done = 0;
 
   for (const chunk of chunks) {
     try {
-      await db.insertFoodLogRows(chunk.rows.map((e) => toFoodLogRow(userId, e)));
+      const added = await db.insertFoodLogRows(chunk.rows.map((e) => toFoodLogRow(userId, e)));
+      for (const r of added || []) if (r?.created_at) createdAt.push(r.created_at);
     } catch (err) {
       result.error = err?.message || 'Something went wrong while saving.';
-      return result;
+      return finish();
     }
     result.foodImported += chunk.rows.length;
     result.daysImported += chunk.days;
@@ -96,15 +102,35 @@ export async function runImport({ userId, parsed, existingDays, skipExistingDays
 
   if (parsed.weights.length > 0) {
     try {
-      const added = await db.insertWeightLogRows(parsed.weights.map((w) => toWeightLogRow(userId, w)));
-      result.weightImported = added;
-      result.weightSkipped = parsed.weights.length - added;
+      const added = (await db.insertWeightLogRows(parsed.weights.map((w) => toWeightLogRow(userId, w)))) || [];
+      for (const r of added) {
+        if (r?.created_at) createdAt.push(r.created_at);
+        if (r?.logged_date) weightDates.push(r.logged_date);
+      }
+      result.weightImported = added.length;
+      result.weightSkipped = parsed.weights.length - added.length;
     } catch (err) {
       result.error = err?.message || 'Something went wrong while saving your weight.';
-      return result;
+      return finish();
     }
     done += parsed.weights.length;
     onProgress?.({ done, total: totalRows });
   }
-  return result;
+  return finish();
+}
+
+// The window to look in when undoing: the server timestamps of everything this
+// import added, padded by a second each side (the database's clock, not the
+// browser's, and a chunk's rows share one timestamp). Null if nothing was added.
+const WINDOW_PAD_MS = 1000;
+export function makeBatch({ createdAt, weightDates, foodAdded, weightAdded }) {
+  const times = createdAt.map((t) => new Date(t).getTime()).filter(Number.isFinite);
+  if ((foodAdded === 0 && weightAdded === 0) || times.length === 0) return null;
+  return {
+    from: new Date(Math.min(...times) - WINDOW_PAD_MS).toISOString(),
+    to: new Date(Math.max(...times) + WINDOW_PAD_MS).toISOString(),
+    weightDates: [...new Set(weightDates)].sort(),
+    foodAdded,
+    weightAdded,
+  };
 }
