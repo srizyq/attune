@@ -49,7 +49,7 @@ export function useCommunityPostActions({ list, me, onToast }) {
         { label: 'Edit post', icon: 'ti-pencil', onSelect: () => setEditing(post) },
         { label: 'Delete post', icon: 'ti-trash', danger: true, onSelect: () => setConfirm({
           title: 'Delete this post?', label: 'Delete post',
-          run: async () => { await deletePost(post.id); list.remove(post.id); onToast('Post deleted'); },
+          run: async () => { await deletePost(post.id, post.photo_path); list.remove(post.id); onToast('Post deleted'); },
         }) },
       ];
     }

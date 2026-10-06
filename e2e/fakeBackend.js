@@ -59,7 +59,7 @@ function matches(row, key, spec) {
  * Anything the app asks for that has no fixture is recorded in `unmocked`
  * so a new endpoint can't silently go untested.
  */
-export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true } = {}) {
+export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true, screen = 'approved', storageLog = [] } = {}) {
   const data = {
     profiles: [buildProfile(profile)],
     food_logs: buildFoodLogs(),
@@ -91,6 +91,22 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
       if (url.pathname.endsWith('/token')) return json(sess);
       if (url.pathname.endsWith('/logout')) return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } });
       return json({});
+    }
+
+    // Community photos: a private bucket (uploads, signed links, deletes) and the
+    // screening function. `screen` is what the check answers; `storageLog` records
+    // uploads and deletes for tests that want to look.
+    if (url.pathname.startsWith('/storage/v1/object/sign/')) {
+      if (req.method() === 'POST') return json({ signedURL: `${url.pathname.replace('/storage/v1', '')}?token=t` });
+      return route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64') });
+    }
+    if (url.pathname.startsWith('/storage/v1/object/')) {
+      storageLog.push(`${req.method()} ${url.pathname.replace('/storage/v1/object/', '')}`);
+      return json(req.method() === 'DELETE' ? [] : { Key: url.pathname.replace('/storage/v1/object/', ''), Id: 'obj' });
+    }
+    if (url.pathname.startsWith('/functions/v1/screen-photo')) {
+      storageLog.push(`SCREEN ${req.postData() || ''}`);
+      return json({ status: screen });
     }
 
     if (url.pathname.startsWith('/rest/v1/rpc/')) {

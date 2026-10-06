@@ -2386,6 +2386,10 @@ create table if not exists public.community_profiles (
 );
 create unique index if not exists community_profiles_username_key on public.community_profiles (username);
 create index if not exists community_profiles_name_idx on public.community_profiles using gin (display_name gin_trgm_ops);
+-- A profile photo is checked like a post photo: pending until approved.
+alter table public.community_profiles add column if not exists avatar_status text not null default 'none';
+alter table public.community_profiles drop constraint if exists community_avatar_status_valid;
+alter table public.community_profiles add constraint community_avatar_status_valid check (avatar_status in ('none', 'pending', 'approved', 'rejected'));
 
 create table if not exists public.community_moderators (
   user_id uuid primary key references auth.users (id) on delete cascade,
@@ -2583,10 +2587,16 @@ begin
       if yrs < 16 then raise exception 'community_too_young'; end if;
       new.banned_at := null;
       new.username_changed_at := null;
+      new.avatar_status := case when new.avatar_path is null then 'none' else 'pending' end;
     else
       new.user_id := old.user_id;
       new.created_at := old.created_at;
       new.banned_at := old.banned_at;
+      if new.avatar_path is distinct from old.avatar_path then
+        new.avatar_status := case when new.avatar_path is null then 'none' else 'pending' end;
+      else
+        new.avatar_status := old.avatar_status;
+      end if;
       if new.username is distinct from old.username then
         if old.username_changed_at is not null and old.username_changed_at > now() - interval '30 days' then
           raise exception 'community_username_locked';
@@ -2868,8 +2878,10 @@ returns table (
 )
 language sql stable security definer set search_path = public
 as $$
-  select p.id, p.author_id, cp.username, cp.display_name, cp.avatar_path, coalesce(pr.coach_mode, false),
-    p.kind, p.audience, p.payload, p.note, p.photo_path, p.photo_status,
+  select p.id, p.author_id, cp.username, cp.display_name,
+    case when cp.avatar_status = 'approved' or cp.user_id = auth.uid() then cp.avatar_path end, coalesce(pr.coach_mode, false),
+    p.kind, p.audience, p.payload, p.note,
+    case when p.photo_status = 'approved' or p.author_id = auth.uid() or public.community_is_moderator() then p.photo_path end, p.photo_status,
     p.hidden, p.created_at, p.edited_at,
     (select count(*)::int from public.community_reactions r where r.post_id = p.id and r.kind = 'heart'),
     (select count(*)::int from public.community_reactions r where r.post_id = p.id and r.kind = 'flame'),
@@ -2983,7 +2995,8 @@ returns table (
 )
 language sql stable security definer set search_path = public
 as $$
-  select cp.user_id, cp.username, cp.display_name, cp.bio, cp.avatar_path, cp.is_private, coalesce(pr.coach_mode, false),
+  select cp.user_id, cp.username, cp.display_name, cp.bio,
+    case when cp.avatar_status = 'approved' or cp.user_id = auth.uid() then cp.avatar_path end, cp.is_private, coalesce(pr.coach_mode, false),
     (select count(*)::int from public.community_posts p where p.author_id = cp.user_id and not p.hidden),
     (select count(*)::int from public.community_follows f where f.followee_id = cp.user_id and f.status = 'accepted'),
     (select count(*)::int from public.community_follows f where f.follower_id = cp.user_id and f.status = 'accepted'),
@@ -3015,7 +3028,8 @@ returns table (
 )
 language sql stable security definer set search_path = public
 as $$
-  select cp.user_id, cp.username, cp.display_name, cp.avatar_path, cp.is_private, coalesce(pr.coach_mode, false),
+  select cp.user_id, cp.username, cp.display_name,
+    case when cp.avatar_status = 'approved' or cp.user_id = auth.uid() then cp.avatar_path end, cp.is_private, coalesce(pr.coach_mode, false),
     case when not cp.is_private then pr.goal end,
     case
       when cp.user_id = auth.uid() then 'self'
@@ -3306,3 +3320,54 @@ as $$
 $$;
 revoke all on function public.community_blocked_list() from public, anon;
 grant execute on function public.community_blocked_list() to authenticated;
+
+-- ── Photos (posts and profile pictures) ─────────────────────────────────────
+-- Private bucket; files live under <user id>/. The app shrinks a photo before
+-- uploading; an automatic check then marks it approved or rejected (service
+-- role only — see supabase/functions/screen-photo). Until approved, only the
+-- owner (and moderators) can open it.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('community-photos', 'community-photos', false, 2097152, array['image/jpeg', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+create or replace function public.community_can_view_photo(p_name text)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select auth.uid() is not null and (
+    exists (
+      select 1 from public.community_posts p
+      where p.photo_path = p_name and p.photo_status = 'approved'
+        and public.community_can_view_post(p.author_id, p.audience, p.hidden)
+    )
+    or exists (
+      select 1 from public.community_profiles cp
+      where cp.avatar_path = p_name and cp.avatar_status = 'approved' and cp.banned_at is null
+        and public.community_is_member(auth.uid())
+        and not public.community_blocked_between(auth.uid(), cp.user_id)
+    )
+  )
+$$;
+revoke all on function public.community_can_view_photo(text) from public, anon;
+grant execute on function public.community_can_view_photo(text) to authenticated;
+
+drop policy if exists "community-photos: owner can upload" on storage.objects;
+create policy "community-photos: owner can upload" on storage.objects
+  for insert with check (
+    bucket_id = 'community-photos' and (storage.foldername(name))[1] = auth.uid()::text and public.community_is_member(auth.uid())
+  );
+drop policy if exists "community-photos: read" on storage.objects;
+create policy "community-photos: read" on storage.objects
+  for select using (
+    bucket_id = 'community-photos' and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or public.community_is_moderator()
+      or public.community_can_view_photo(name)
+    )
+  );
+drop policy if exists "community-photos: owner can update" on storage.objects;
+create policy "community-photos: owner can update" on storage.objects
+  for update using (bucket_id = 'community-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "community-photos: owner can delete" on storage.objects;
+create policy "community-photos: owner can delete" on storage.objects
+  for delete using (bucket_id = 'community-photos' and (storage.foldername(name))[1] = auth.uid()::text);

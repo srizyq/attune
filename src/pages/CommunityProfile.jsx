@@ -87,7 +87,7 @@ function ProfileInner({ username }) {
     body = (
       <>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-          <Avatar name={person.display_name} size={84} />
+          <Avatar name={person.display_name} path={person.avatar_path} size={84} />
           <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22, margin: '10px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>{person.display_name}{person.is_coach && <CoachBadge />}</h2>
           <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>@{person.username}</div>
           {person.bio && <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '8px 20px 0', lineHeight: 1.5, overflowWrap: 'anywhere' }}>{person.bio}</p>}

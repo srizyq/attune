@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DragSheet from '../DragSheet';
 import PostCard from './PostCard';
+import CameraCapture from '../CameraCapture';
+import ModalPortal from '../ModalPortal';
 import { useAuth } from '../../hooks/useAuth';
 import { useClosingTransition } from '../../hooks/useClosingTransition';
 import { createPost, friendlyCommunityError } from '../../lib/community';
+import { newPhotoId, removePhoto, resizeToJpeg, screenPhoto, uploadPhoto } from '../../lib/communityPhotos';
 import { NOTE_MAX, validateNote } from '../../lib/communityText';
 import { needsLowCalorieCheck, LOW_CALORIE_DAY } from '../../lib/communityPosts';
 
@@ -40,6 +43,23 @@ export default function ShareSheet({ draft, me, initialNote = '', onClose, onPos
   const [note, setNote] = useState(initialNote);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [photo, setPhoto] = useState(null); // { blob, url }
+  const [capturing, setCapturing] = useState(false);
+  const urlRef = useRef(null);
+  useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
+
+  async function takePhoto(file) {
+    setCapturing(false);
+    setError(null);
+    try {
+      const blob = await resizeToJpeg(file);
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+      urlRef.current = URL.createObjectURL(blob);
+      setPhoto({ blob, url: urlRef.current });
+    } catch (err) {
+      setError(err.message || 'Could not use that photo.');
+    }
+  }
 
   async function post() {
     if (busy) return;
@@ -48,8 +68,26 @@ export default function ShareSheet({ draft, me, initialNote = '', onClose, onPos
     if (problem) { setError(problem); return; }
     setBusy(true);
     try {
-      await createPost(user.id, { kind: draft.kind, payload: draft.payload, audience: me.is_private ? 'followers' : audience, note });
-      onPosted?.('Shared to Community');
+      const fields = { kind: draft.kind, payload: draft.payload, audience: me.is_private ? 'followers' : audience, note };
+      if (!photo) {
+        await createPost(user.id, fields);
+        onPosted?.('Shared to Community');
+      } else {
+        // The file is named after the post so the two can't drift apart.
+        const id = newPhotoId();
+        const path = `${user.id}/${id}.jpg`;
+        await uploadPhoto(path, photo.blob);
+        try {
+          await createPost(user.id, { ...fields, id, photoPath: path });
+        } catch (err) {
+          await removePhoto(path);
+          throw err;
+        }
+        const status = await screenPhoto({ kind: 'post', postId: id });
+        onPosted?.(status === 'approved' ? 'Shared to Community'
+          : status === 'rejected' ? 'Shared, but the photo wasn\'t approved. Only safe food photos can be posted.'
+          : 'Shared. Your photo is being checked.');
+      }
       close();
     } catch (err) {
       console.error('Share failed:', err);
@@ -66,6 +104,7 @@ export default function ShareSheet({ draft, me, initialNote = '', onClose, onPos
   };
 
   return (
+    <>
     <DragSheet
       title="Share to Community"
       onClose={close}
@@ -82,7 +121,7 @@ export default function ShareSheet({ draft, me, initialNote = '', onClose, onPos
       ) : (
         <>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>This is how it will look</div>
-          <PostCard post={preview} mine />
+          <PostCard post={preview} mine photoUrl={photo?.url || null} />
 
           <span style={label} id="share-audience">Who can see this</span>
           {me.is_private ? (
@@ -93,6 +132,19 @@ export default function ShareSheet({ draft, me, initialNote = '', onClose, onPos
               <button type="button" aria-pressed={audience === 'followers'} onClick={() => setAudience('followers')} style={seg(audience === 'followers')}>Followers</button>
             </div>
           )}
+
+          <span style={label}>Photo (optional)</span>
+          {photo ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src={photo.url} alt="Your photo" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 12 }} />
+              <button type="button" onClick={() => setPhoto(null)} style={{ background: 'none', border: '1px solid var(--border-default)', borderRadius: 14, color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: 14, padding: '10px 16px', cursor: 'pointer', minHeight: 40 }}>Remove photo</button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setCapturing(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', border: '1px dashed var(--border-strong)', borderRadius: 14, color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: 14, padding: '11px 16px', cursor: 'pointer', minHeight: 44 }}>
+              <i className="ti ti-camera" aria-hidden="true" />Add a photo
+            </button>
+          )}
+          <p style={{ fontSize: 12, color: 'var(--text-hint)', lineHeight: 1.5, margin: '8px 0 0' }}>Photos are checked before others see them. Only safe photos of food are allowed.</p>
 
           <label htmlFor="share-note" style={label}>Add a note (optional)</label>
           <textarea
@@ -109,5 +161,8 @@ export default function ShareSheet({ draft, me, initialNote = '', onClose, onPos
         </>
       )}
     </DragSheet>
+    {/* After the sheet so it opens above it (both are portalled). */}
+    {capturing && <ModalPortal><CameraCapture onCapture={takePhoto} hint="Frame your meal" fullScreen onClose={() => setCapturing(false)} /></ModalPortal>}
+    </>
   );
 }

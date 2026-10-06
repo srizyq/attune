@@ -14,8 +14,9 @@ export default function ActionSheet({ title, actions, onClose }) {
           role="dialog"
           aria-label={title}
           onClick={(e) => e.stopPropagation()}
+          // sheet-panel gives the slide animation but also a full-screen height; `height: auto` below makes it fit its buttons.
           className={`sheet-panel${closing ? ' is-closing' : ''}`}
-          style={{ width: '100%', maxWidth: 480, background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderBottom: 'none', borderRadius: '24px 24px 0 0', padding: '12px 16px calc(16px + env(safe-area-inset-bottom))', maxHeight: '80vh', overflowY: 'auto' }}
+          style={{ width: '100%', maxWidth: 480, background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderBottom: 'none', borderRadius: '24px 24px 0 0', padding: '12px 16px calc(16px + env(safe-area-inset-bottom))', height: 'auto', maxHeight: '80vh', overflowY: 'auto' }}
         >
           <div style={{ width: 36, height: 5, borderRadius: 99, background: 'var(--border-strong)', margin: '0 auto 12px' }} />
           {title && <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 6 }}>{title}</div>}

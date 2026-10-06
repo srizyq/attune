@@ -37,7 +37,7 @@ function post(body) {
 
 beforeEach(() => {
   profileRow = { stripe_customer_id: 'cus_1' };
-  storage = { 'progress-photos': ['a.jpg', 'b.jpg'], 'coach-logos': ['logo.png'] };
+  storage = { 'progress-photos': ['a.jpg', 'b.jpg'], 'coach-logos': ['logo.png'], 'community-photos': ['p1.jpg', 'avatar-1.jpg'] };
   calls.length = 0;
   subsList.mockReset().mockResolvedValue({ data: [{ id: 'sub_1', status: 'active' }, { id: 'sub_2', status: 'canceled' }, { id: 'sub_3', status: 'trialing' }] });
   subsCancel.mockReset().mockResolvedValue({});
@@ -56,6 +56,7 @@ describe('delete-account', () => {
     expect(subsCancel.mock.calls.map((c) => c[0])).toEqual(['sub_1', 'sub_3']);
     expect(calls).toContainEqual(['remove', 'progress-photos', ['u1/a.jpg', 'u1/b.jpg']]);
     expect(calls).toContainEqual(['remove', 'coach-logos', ['u1/logo.png']]);
+    expect(calls).toContainEqual(['remove', 'community-photos', ['u1/p1.jpg', 'u1/avatar-1.jpg']]);
     expect(deleteUser).toHaveBeenCalledWith('u1');
   });
 

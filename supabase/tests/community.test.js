@@ -653,3 +653,113 @@ describe('the blocked list', () => {
     expect((await as(db, a, `select * from public.community_profile('bea')`)).rows).toHaveLength(1);
   }, 60000);
 });
+
+describe('photos', () => {
+  const upload = (db, uid, name) => as(db, uid, `insert into storage.objects (bucket_id, name, owner) values ('community-photos', $1, $2)`, [name, uid]);
+  const canOpen = async (db, uid, name) => (await as(db, uid, `select name from storage.objects where bucket_id = 'community-photos' and name = $1`, [name])).rows.length === 1;
+  const photoPost = async (db, uid, name, audience = 'public') => {
+    const r = await as(db, uid, `insert into public.community_posts (author_id, kind, audience, payload, photo_path) values ($1, 'meal', $2, $3::jsonb, $4) returning id`, [uid, audience, JSON.stringify(payload()), name]);
+    return r.rows[0].id;
+  };
+
+  it('you can only upload into your own folder, and only as a member', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy', { isPrivate: false });
+    const b = await member(db, 'Bea', { isPrivate: false });
+    const outsider = await addUser(db, 'Outsider');
+    await upload(db, a, `${a}/p1.jpg`);
+    await rejects(upload(db, a, `${b}/p1.jpg`), /row-level security/);
+    await rejects(upload(db, outsider, `${outsider}/p1.jpg`), /row-level security/);
+  }, 60000);
+
+  it('a pending photo is the owner’s (and a moderator’s) alone; approval opens it to whoever can see the post', async () => {
+    const db = await createDb();
+    const author = await member(db, 'Author', { isPrivate: false });
+    const follower = await member(db, 'Follower');
+    const stranger = await member(db, 'Stranger');
+    const mod = await moderator(db, 'Moddy');
+    await follow(db, follower, author);
+    const path = `${author}/p1.jpg`;
+    await upload(db, author, path);
+    const pub = await photoPost(db, author, path, 'public');
+    expect((await db.query(`select photo_status from public.community_posts where id = $1`, [pub])).rows[0].photo_status).toBe('pending');
+    expect(await canOpen(db, author, path)).toBe(true);
+    expect(await canOpen(db, mod, path)).toBe(true);
+    expect(await canOpen(db, follower, path)).toBe(false);
+    expect(await canOpen(db, stranger, path)).toBe(false);
+
+    await db.query(`update public.community_posts set photo_status = 'approved' where id = $1`, [pub]); // the screening step
+    expect(await canOpen(db, follower, path)).toBe(true);
+    expect(await canOpen(db, stranger, path)).toBe(true);
+
+    await db.query(`update public.community_posts set photo_status = 'rejected' where id = $1`, [pub]);
+    expect(await canOpen(db, stranger, path)).toBe(false);
+    expect(await canOpen(db, author, path)).toBe(true);
+  }, 60000);
+
+  it('an approved photo on a followers-only post stays with followers; blocking and hiding close it', async () => {
+    const db = await createDb();
+    const author = await member(db, 'Author', { isPrivate: false });
+    const follower = await member(db, 'Follower');
+    const stranger = await member(db, 'Stranger');
+    await follow(db, follower, author);
+    const path = `${author}/f1.jpg`;
+    await upload(db, author, path);
+    const id = await photoPost(db, author, path, 'followers');
+    await db.query(`update public.community_posts set photo_status = 'approved' where id = $1`, [id]);
+    expect(await canOpen(db, follower, path)).toBe(true);
+    expect(await canOpen(db, stranger, path)).toBe(false);
+    await db.query(`update public.community_posts set hidden = true where id = $1`, [id]);
+    expect(await canOpen(db, follower, path)).toBe(false);
+    await db.query(`update public.community_posts set hidden = false where id = $1`, [id]);
+    await as(db, follower, `insert into public.community_blocks (blocker_id, blocked_id) values ($1, $2)`, [follower, author]);
+    expect(await canOpen(db, follower, path)).toBe(false);
+  }, 60000);
+
+  it('post cards hide an unapproved photo from everyone but its author', async () => {
+    const db = await createDb();
+    const author = await member(db, 'Author', { isPrivate: false });
+    const fan = await member(db, 'Fan');
+    await follow(db, fan, author);
+    const path = `${author}/c1.jpg`;
+    await upload(db, author, path);
+    const id = await photoPost(db, author, path);
+    const seen = async (u) => (await as(db, u, `select photo_path, photo_status from public.community_cards(array[$1]::uuid[])`, [id])).rows[0];
+    expect(await seen(author)).toEqual({ photo_path: path, photo_status: 'pending' });
+    expect(await seen(fan)).toEqual({ photo_path: null, photo_status: 'pending' });
+    await db.query(`update public.community_posts set photo_status = 'approved' where id = $1`, [id]);
+    expect((await seen(fan)).photo_path).toBe(path);
+  }, 60000);
+
+  it('a profile picture works the same way, and a client cannot approve its own', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy', { isPrivate: false });
+    const b = await member(db, 'Bea', { isPrivate: false });
+    const path = `${a}/avatar-1.jpg`;
+    await upload(db, a, path);
+    await as(db, a, `update public.community_profiles set avatar_path = $2, avatar_status = 'approved' where user_id = $1`, [a, path]);
+    const status = async () => (await db.query(`select avatar_status from public.community_profiles where user_id = $1`, [a])).rows[0].avatar_status;
+    expect(await status()).toBe('pending');
+    const shown = async () => (await as(db, b, `select avatar_path from public.community_profile('amy')`)).rows[0].avatar_path;
+    expect(await shown()).toBeNull();
+    expect(await canOpen(db, b, path)).toBe(false);
+    await as(db, a, `update public.community_profiles set avatar_status = 'approved' where user_id = $1`, [a]);
+    expect(await status()).toBe('pending');
+    await db.query(`update public.community_profiles set avatar_status = 'approved' where user_id = $1`, [a]);
+    expect(await shown()).toBe(path);
+    expect(await canOpen(db, b, path)).toBe(true);
+    await as(db, a, `update public.community_profiles set avatar_path = null where user_id = $1`, [a]);
+    expect(await status()).toBe('none');
+  }, 60000);
+
+  it('only the owner can delete a photo', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy', { isPrivate: false });
+    const b = await member(db, 'Bea', { isPrivate: false });
+    await upload(db, a, `${a}/x.jpg`);
+    await as(db, b, `delete from storage.objects where name = $1`, [`${a}/x.jpg`]);
+    expect((await db.query(`select * from storage.objects`)).rows).toHaveLength(1);
+    await as(db, a, `delete from storage.objects where name = $1`, [`${a}/x.jpg`]);
+    expect((await db.query(`select * from storage.objects`)).rows).toHaveLength(0);
+  }, 60000);
+});

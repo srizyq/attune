@@ -81,16 +81,17 @@ export async function declineFollower(myId, followerId) {
 }
 
 // ── Posts ───────────────────────────────────────────────────────────────────
-export async function createPost(userId, { kind, payload, audience, note = '', photoPath = null }) {
+export async function createPost(userId, { id, kind, payload, audience, note = '', photoPath = null }) {
   return need(await supabase.from('community_posts')
-    .insert({ author_id: userId, kind, payload, audience, note: note.trim(), photo_path: photoPath })
+    .insert({ ...(id ? { id } : {}), author_id: userId, kind, payload, audience, note: note.trim(), photo_path: photoPath })
     .select('id').single());
 }
 export async function updatePost(postId, fields) {
   need(await supabase.from('community_posts').update(fields).eq('id', postId));
 }
-export async function deletePost(postId) {
+export async function deletePost(postId, photoPath = null) {
   need(await supabase.from('community_posts').delete().eq('id', postId));
+  if (photoPath) await supabase.storage.from('community-photos').remove([photoPath]).catch(() => {});
 }
 
 // ── Reactions, saves, copies ────────────────────────────────────────────────

@@ -150,6 +150,9 @@ test.describe('sharing from inside Community', () => {
     await expect(page.getByRole('button', { name: 'Today so far' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'A meal from today' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'A recipe' })).toBeVisible();
+    // The menu is as tall as its buttons, not a full-screen sheet with a gap below them.
+    const menu = await page.getByRole('dialog', { name: 'What do you want to share?' }).boundingBox();
+    expect(menu.height).toBeLessThan(page.viewportSize().height * 0.6);
     await assertLayout(page, testInfo, 'x-community-share-chooser', ctx);
 
     await page.getByRole('button', { name: 'Today so far' }).click();

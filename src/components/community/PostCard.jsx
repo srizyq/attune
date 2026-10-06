@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Avatar from './Avatar';
 import CoachBadge from './CoachBadge';
 import { mealLabel, timeAgo } from '../../lib/communityPosts';
+import { useSignedPhotoUrl } from '../../hooks/useSignedPhotoUrl';
 
 const MACROS = [
   { key: 'protein_g', label: 'Protein', short: 'P', color: 'var(--accent)', kcalPer: 4 },
@@ -57,7 +58,7 @@ function GoalRing({ pct }) {
   );
 }
 
-function Body({ post, photoUrl }) {
+function Body({ post, photoUrl, checking }) {
   const p = post.payload;
   const label = post.kind === 'meal' && p.meal ? mealLabel(p.meal) : KIND_LABEL[post.kind];
 
@@ -69,6 +70,7 @@ function Body({ post, photoUrl }) {
           <img src={photoUrl} alt={`${p.title} photo`} style={{ display: 'block', width: '100%', height: 190, objectFit: 'cover' }} />
           <span style={{ position: 'absolute', top: 10, right: 10, fontSize: 12, padding: '4px 9px', borderRadius: 12, background: 'rgba(24,20,18,0.82)', color: '#fff' }}>{label}</span>
           <span style={{ position: 'absolute', left: 10, bottom: 10, fontSize: 13, padding: '5px 10px', borderRadius: 12, background: 'rgba(24,20,18,0.82)', color: '#fff' }}>{fmt(p.calories)} kcal{post.kind === 'recipe' ? ' / serve' : ''}</span>
+          {checking && <span style={{ position: 'absolute', left: 10, top: 10, fontSize: 12, padding: '4px 9px', borderRadius: 12, background: 'rgba(24,20,18,0.82)', color: '#fff' }}>Checking photo…</span>}
         </div>
         <div style={{ fontSize: 17 }}>{p.title}</div>
         {post.kind === 'day' && p.partial && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>So far today</div>}
@@ -117,10 +119,12 @@ const iconBtn = { display: 'inline-flex', alignItems: 'center', gap: 5, backgrou
  */
 export default function PostCard({ post, mine, photoUrl = null, onReact, onSave, onCopy, onMenu, onOpenProfile }) {
   const [now] = useState(() => Date.now());
+  const signedUrl = useSignedPhotoUrl(photoUrl ? null : post.photo_path);
+  const shownPhoto = photoUrl || signedUrl;
   return (
     <article aria-label={`${post.kind} by ${post.username}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: '14px 16px', marginBottom: 12 }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Avatar name={post.display_name || post.username} />
+        <Avatar name={post.display_name || post.username} path={post.avatar_path} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
             {onOpenProfile
@@ -139,7 +143,10 @@ export default function PostCard({ post, mine, photoUrl = null, onReact, onSave,
         )}
       </header>
 
-      <Body post={post} photoUrl={photoUrl} />
+      <Body post={post} photoUrl={shownPhoto} checking={mine && post.photo_status === 'pending'} />
+      {mine && post.photo_status === 'rejected' && (
+        <p role="status" style={{ margin: '10px 0 0', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>Your photo wasn't approved, so it isn't shown. Only safe photos of food can be posted.</p>
+      )}
 
       {post.note && <p style={{ margin: '10px 0 0', fontSize: 14, color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>{post.note}</p>}
 

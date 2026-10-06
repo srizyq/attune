@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import DragSheet from '../DragSheet';
+import Avatar from './Avatar';
+import CameraCapture from '../CameraCapture';
+import ModalPortal from '../ModalPortal';
+import { useAuth } from '../../hooks/useAuth';
+import { removePhoto, resizeToJpeg, screenPhoto, uploadPhoto } from '../../lib/communityPhotos';
 import { useClosingTransition } from '../../hooks/useClosingTransition';
 import { friendlyCommunityError } from '../../lib/community';
 import { normalizeUsername, validateProfileText } from '../../lib/communityText';
@@ -31,6 +36,52 @@ export default function EditProfileSheet({ me, onSave, onClose, onToast }) {
   const [problems, setProblems] = useState({});
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState(null);
+  const { user } = useAuth();
+  const [avatar, setAvatar] = useState({ path: me.avatar_path || null, status: me.avatar_status || (me.avatar_path ? 'approved' : 'none') });
+  const [capturing, setCapturing] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+
+  // A new profile picture applies straight away (it isn't part of Save) and waits for the check.
+  async function changeAvatar(file) {
+    setCapturing(false);
+    setPhotoBusy(true);
+    setFormError(null);
+    try {
+      const blob = await resizeToJpeg(file, { maxEdge: 512 });
+      const path = `${user.id}/avatar-${Date.now()}.jpg`;
+      await uploadPhoto(path, blob);
+      const old = avatar.path;
+      try {
+        await onSave({ avatar_path: path });
+      } catch (err) {
+        await removePhoto(path);
+        throw err;
+      }
+      if (old) await removePhoto(old);
+      setAvatar({ path, status: 'pending' });
+      const status = await screenPhoto({ kind: 'avatar' });
+      setAvatar({ path, status });
+      onToast?.(status === 'approved' ? 'Profile photo updated' : status === 'rejected' ? 'That photo wasn\'t approved. Please choose a different one.' : 'Your photo is being checked');
+    } catch (e) {
+      setFormError(e.message && !/network|fetch/i.test(e.message) ? e.message : friendlyCommunityError(e));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setPhotoBusy(true);
+    try {
+      const old = avatar.path;
+      await onSave({ avatar_path: null });
+      await removePhoto(old);
+      setAvatar({ path: null, status: 'none' });
+    } catch (e) {
+      setFormError(friendlyCommunityError(e));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   async function save() {
     setFormError(null);
@@ -54,6 +105,7 @@ export default function EditProfileSheet({ me, onSave, onClose, onToast }) {
 
   const goingPrivate = isPrivate && !me.is_private;
   return (
+    <>
     <DragSheet
       title="Edit profile"
       onClose={close}
@@ -65,7 +117,20 @@ export default function EditProfileSheet({ me, onSave, onClose, onToast }) {
         </>
       )}
     >
-      <label htmlFor="ep-username" style={{ ...label, marginTop: 0 }}>Username</label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
+        <Avatar name={displayName || me.display_name} path={avatar.status === 'rejected' ? null : avatar.path} size={64} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" disabled={photoBusy} onClick={() => setCapturing(true)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 14, color: 'var(--text-primary)', fontFamily: 'inherit', fontSize: 14, padding: '9px 14px', cursor: 'pointer', minHeight: 40 }}>{avatar.path ? 'Change photo' : 'Add a photo'}</button>
+            {avatar.path && <button type="button" disabled={photoBusy} onClick={removeAvatar} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 14, padding: '9px 8px', cursor: 'pointer', minHeight: 40 }}>Remove</button>}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-hint)', marginTop: 6 }}>
+            {photoBusy ? 'Working…' : avatar.status === 'pending' ? 'Checking your photo…' : avatar.status === 'rejected' ? 'That photo wasn\'t approved.' : 'Others see your initials until a photo is approved.'}
+          </div>
+        </div>
+      </div>
+
+      <label htmlFor="ep-username" style={label}>Username</label>
       <input id="ep-username" style={field} value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={21} />
       <div style={{ fontSize: 12, color: 'var(--text-hint)', marginTop: 6 }}>You can change it once every 30 days.</div>
       {problems.username && <div role="alert" style={err}>{problems.username}</div>}
@@ -84,5 +149,7 @@ export default function EditProfileSheet({ me, onSave, onClose, onToast }) {
         <Switch id="ep-discoverable" checked={discoverable} onChange={setDiscoverable} title="Show me in Explore">Public accounts can appear when people browse for someone to follow. Has no effect on a private account.</Switch>
       </div>
     </DragSheet>
+    {capturing && <ModalPortal><CameraCapture onCapture={changeAvatar} hint="Frame your face or your favourite food" fullScreen onClose={() => setCapturing(false)} /></ModalPortal>}
+    </>
   );
 }

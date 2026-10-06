@@ -11,7 +11,7 @@ export default function PersonRow({ person, onOpen, children }) {
   const label = person.goal_type ? GOAL[person.goal_type] : null;
   const body = (
     <>
-      <Avatar name={person.display_name || person.username} size={42} />
+      <Avatar name={person.display_name || person.username} path={person.avatar_path} size={42} />
       <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
           <span style={{ fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{person.display_name}</span>
