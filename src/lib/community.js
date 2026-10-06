@@ -3,6 +3,7 @@
 // level security and triggers check again — nothing here is trusted on its own.
 import { supabase } from './supabase';
 import { fetchWithTimeout } from './http';
+import { removePhoto } from './communityPhotos';
 
 const need = ({ data, error }) => { if (error) throw error; return data; };
 
@@ -32,7 +33,7 @@ const MESSAGES = {
   community_profiles_username_key: 'That username is taken. Try another.',
   community_bio_no_links: 'Links aren\'t allowed in a bio.',
   community_links_not_allowed: 'Links aren\'t allowed in notes.',
-  community_rate_limited: 'You\'ve shared a lot today. Try again tomorrow.',
+  community_rate_limited: 'You\'ve done a lot today. Try again tomorrow.',
   community_blocked: 'You can\'t follow this person.',
   community_user_not_found: 'That account isn\'t available.',
   community_not_a_member: 'Join Community first.',
@@ -167,7 +168,9 @@ export async function isCommunityModerator() {
 }
 export const getModReports = async (status = 'open') => need(await supabase.rpc('community_mod_reports', { p_status: status, p_limit: 100 })) || [];
 export async function modSetPostHidden(postId, hidden) { need(await supabase.rpc('community_mod_set_post_hidden', { p_post: postId, p_hidden: hidden })); }
-// (The photo file itself stays in storage — only its owner can delete files — but nobody can open it once the post is gone.)
-export async function modDeletePost(postId) { need(await supabase.rpc('community_mod_delete_post', { p_post: postId })); }
+export async function modDeletePost(postId, photoPath = null) {
+  need(await supabase.rpc('community_mod_delete_post', { p_post: postId }));
+  if (photoPath) await removePhoto(photoPath); // moderators may clear the file too; a leftover would be harmless but wasteful
+}
 export async function modSetBanned(userId, banned) { need(await supabase.rpc('community_mod_set_banned', { p_user: userId, p_banned: banned })); }
 export async function modResolveReport(reportId, status) { need(await supabase.rpc('community_mod_resolve_report', { p_report: reportId, p_status: status })); }

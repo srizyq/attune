@@ -83,10 +83,19 @@ test.describe('photo cards', () => {
 
   test('your own photo shows as checking, or a notice when it was not approved', async ({ page, context }, testInfo) => {
     const mine = (id, status, title) => card(id, { author_id: USER_ID, username: 'alex.m', photo_path: PHOTO, photo_status: status, payload: { ...MEAL.payload, title } });
-    await openApp({ page, context }, testInfo, { rpc: { ...ON, community_feed_cards: [mine('a', 'pending', 'Waiting bowl'), mine('b', 'rejected', 'Refused bowl')] }, tables: { community_profiles: [ME] } });
+    // screen: 'pending' = the checker is still unavailable, so the photo keeps waiting.
+    await openApp({ page, context }, testInfo, { screen: 'pending', rpc: { ...ON, community_feed_cards: [mine('a', 'pending', 'Waiting bowl'), mine('b', 'rejected', 'Refused bowl')] }, tables: { community_profiles: [ME] } });
     await page.goto('/community');
     await expect(page.getByText('Checking photo…')).toBeVisible();
     await expect(page.getByText(/Your photo wasn't approved/)).toBeVisible();
+  });
+
+  test('a photo stuck on "checking" is checked again when you next open the feed', async ({ page, context }, testInfo) => {
+    const stuck = card('a', { author_id: USER_ID, username: 'alex.m', photo_path: PHOTO, photo_status: 'pending', payload: { ...MEAL.payload, title: 'Stuck bowl' } });
+    await openApp({ page, context }, testInfo, { screen: 'approved', rpc: { ...ON, community_feed_cards: [stuck] }, tables: { community_profiles: [ME] } });
+    await page.goto('/community');
+    await expect(page.getByRole('article', { name: 'meal by alex.m' }).getByText('Stuck bowl')).toBeVisible();
+    await expect(page.getByText('Checking photo…')).toHaveCount(0);
   });
 
   test('deleting a post with a photo removes the file too', async ({ page, context }, testInfo) => {

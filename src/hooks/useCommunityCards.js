@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAuth } from './useAuth';
+import { recheckPending } from '../lib/communityPhotos';
 
 const PAGE = 20;
 
@@ -50,6 +52,17 @@ export function useCommunityCards(fetchPage, { enabled = true } = {}) {
       setLoadingMore(false);
     }
   }, [cards, loadingMore]);
+
+  // One of your own photos still waiting on its check (it failed last time): try again.
+  const { user } = useAuth();
+  const userId = user?.id || null;
+  useEffect(() => {
+    if (!userId) return;
+    cards.filter((c) => c.author_id === userId && c.photo_status === 'pending' && c.photo_path).forEach(async (c) => {
+      const status = await recheckPending({ kind: 'post', postId: c.id, path: c.photo_path });
+      if (status) setCards((prev) => prev.map((x) => (x.id === c.id ? { ...x, photo_status: status } : x)));
+    });
+  }, [cards, userId]);
 
   const patch = useCallback((id, fields) => setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...fields } : c))), []);
   const remove = useCallback((id) => setCards((prev) => prev.filter((c) => c.id !== id)), []);

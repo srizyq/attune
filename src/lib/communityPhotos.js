@@ -51,6 +51,21 @@ export async function screenPhoto({ kind, postId }) {
   }
 }
 
+// A photo whose check failed (a network blip, the checker being down) stays
+// "pending". Each time the app next sees one of your own, it asks again — once
+// per photo per visit, so a check that keeps failing can't loop.
+const retried = new Set();
+export function forgetRetries() { retried.clear(); }
+
+/** Re-runs the check for a still-pending photo of yours. Resolves to the new status, or null if there was nothing to do. */
+export async function recheckPending({ kind, postId = null, path }) {
+  const key = `${kind}:${postId || ''}:${path || ''}`;
+  if (!path || retried.has(key)) return null;
+  retried.add(key);
+  const status = await screenPhoto({ kind, postId });
+  return status === 'pending' ? null : status;
+}
+
 const URL_TTL = 3600; // seconds a link lives
 const cache = new Map(); // path -> { url, expires }
 const inflight = new Map(); // path -> Promise<string|null>

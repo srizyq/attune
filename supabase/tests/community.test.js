@@ -266,6 +266,35 @@ describe('writing posts', () => {
     await rejects(post(db, author), /community_rate_limited/);
   }, 60000);
 
+  it('limits follows and reports to a day\'s worth per person', async () => {
+    const db = await createDb();
+    const bot = await member(db, 'Bot', { isPrivate: false });
+    const targets = [];
+    for (let i = 0; i < 3; i += 1) targets.push(await member(db, `Target${i}`, { isPrivate: false }));
+    // Shrink the caps so the test doesn't need 100 accounts: the counter is per person and per action.
+    await db.query(`insert into public.rate_limits (key, hits) values ('community:follow:${bot}', 97)`); // 97 used, so 3 are left
+    for (const t of targets) await follow(db, bot, t);
+    const extra = await member(db, 'Extra', { isPrivate: false });
+    await rejects(follow(db, bot, extra), /community_rate_limited/);
+    // Unfollowing doesn't give the follows back.
+    await as(db, bot, `delete from public.community_follows where follower_id = $1 and followee_id = $2`, [bot, targets[0]]);
+    await rejects(follow(db, bot, targets[0]), /community_rate_limited/);
+    // Other people are unaffected.
+    await follow(db, extra, targets[0]);
+
+    const author = await member(db, 'Author2', { isPrivate: false });
+    const posts = [];
+    for (let i = 0; i < 3; i += 1) posts.push(await post(db, author));
+    const reporter = await member(db, 'Reporter', { isPrivate: false });
+    await db.query(`insert into public.rate_limits (key, hits) values ('community:report:${reporter}', 18)`); // 2 left
+    const report = (p) => as(db, reporter, `insert into public.community_reports (reporter_id, post_id, reported_user_id, reason) values ($1, $2, $3, 'spam')`, [reporter, p, author]);
+    await report(posts[0]);
+    await report(posts[1]);
+    await rejects(report(posts[2]), /community_rate_limited/);
+    // A failed attempt doesn't use up the allowance of a different person.
+    await as(db, extra, `insert into public.community_reports (reporter_id, post_id, reported_user_id, reason) values ($1, $2, $3, 'spam')`, [extra, posts[2], author]);
+  }, 60000);
+
   it('a photo starts pending and the author cannot approve it', async () => {
     const db = await createDb();
     const author = await member(db, 'Author', { isPrivate: false });

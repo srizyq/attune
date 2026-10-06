@@ -26,6 +26,7 @@ profile). Off for everyone until `app_settings.community_enabled` is switched on
   moderation page that only moderators can open (Community → shield icon). A
   moderator can hide or delete a post, ban an account, or dismiss a report. A post
   reported by three different people is hidden automatically until reviewed.
+- **Abuse limits.** Per person per day: 20 posts, 100 follows, 20 reports. A photo whose automatic check failed is checked again the next time the app opens it.
 - **Privacy by default.** People choose public or private when they join (the
   database default is private). Private accounts approve followers. Weight is
   never shown. Likes are visible only to the person who posted.

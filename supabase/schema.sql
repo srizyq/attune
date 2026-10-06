@@ -3680,6 +3680,23 @@ drop trigger if exists community_profiles_privacy_trigger on public.community_pr
 create trigger community_profiles_privacy_trigger after update of is_private on public.community_profiles
   for each row execute function public.community_profiles_privacy_changed();
 
+-- A daily cap per person on an action (follows, reports), so one account can't
+-- flood people with requests. It counts actions that went through, including
+-- ones later undone (follow, unfollow, follow again), and uses the shared
+-- rate_limit_hit counter. The key is always the signed-in person's own.
+create or replace function public.community_rate_check(p_action text, p_max integer)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if auth.uid() is not null and not public.rate_limit_hit('community:' || p_action || ':' || auth.uid()::text, p_max, 86400) then
+    raise exception 'community_rate_limited';
+  end if;
+end;
+$$;
+revoke all on function public.community_rate_check(text, integer) from public, anon;
+grant execute on function public.community_rate_check(text, integer) to authenticated;
+
 create or replace function public.community_follows_guard()
 returns trigger
 language plpgsql
@@ -3693,6 +3710,7 @@ begin
       if public.community_blocked_between(new.follower_id, new.followee_id) then
         raise exception 'community_blocked';
       end if;
+      perform public.community_rate_check('follow', 100);
       new.status := case when public.community_is_private(new.followee_id) then 'pending' else 'accepted' end;
       new.created_at := now();
     end if;
@@ -3774,6 +3792,7 @@ returns trigger
 language plpgsql security definer set search_path = public
 as $$
 begin
+  perform public.community_rate_check('report', 20);
   new.status := 'open';
   new.created_at := now();
   if new.post_id is not null then
@@ -4419,6 +4438,10 @@ create policy "community-photos: owner can update" on storage.objects
 drop policy if exists "community-photos: owner can delete" on storage.objects;
 create policy "community-photos: owner can delete" on storage.objects
   for delete using (bucket_id = 'community-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+-- A moderator who deletes a post can also clear its photo file.
+drop policy if exists "community-photos: moderator can delete" on storage.objects;
+create policy "community-photos: moderator can delete" on storage.objects
+  for delete using (bucket_id = 'community-photos' and public.community_is_moderator());
 
 
 -- ── Notifications and report emails ─────────────────────────────────────────

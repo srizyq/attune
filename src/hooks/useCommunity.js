@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
+import { recheckPending } from '../lib/communityPhotos';
 import { getMyCommunityProfile, joinCommunity, leaveCommunity, updateCommunityProfile } from '../lib/community';
 
 // The signed-in person's own Community profile (null until they've joined).
@@ -24,6 +25,15 @@ export function useCommunity({ enabled = true } = {}) {
   }, [userId, enabled]);
 
   useEffect(() => { refetch(); }, [refetch]);
+
+  // A profile picture whose check failed last time: try again.
+  const avatarPath = state.me?.avatar_status === 'pending' ? state.me.avatar_path : null;
+  useEffect(() => {
+    if (!avatarPath) return;
+    recheckPending({ kind: 'avatar', path: avatarPath }).then((status) => {
+      if (status) setState((s) => (s.me?.avatar_path === avatarPath ? { ...s, me: { ...s.me, avatar_status: status } } : s));
+    });
+  }, [avatarPath]);
 
   const join = useCallback(async (fields) => {
     const created = await joinCommunity(userId, fields);

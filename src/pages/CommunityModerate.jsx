@@ -77,7 +77,7 @@ export default function CommunityModerate() {
       {r.status === 'open' ? (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
           {r.post_id && <button type="button" style={btn(r.post_hidden ? 'secondary' : 'primary')} onClick={() => act(() => modSetPostHidden(r.post_id, !r.post_hidden), r.post_hidden ? 'Post restored' : 'Post hidden')}>{r.post_hidden ? 'Unhide post' : 'Hide post'}</button>}
-          {r.post_id && <button type="button" style={btn('danger')} onClick={() => setConfirm({ title: 'Delete this post for good?', label: 'Delete post', run: () => act(() => modDeletePost(r.post_id), 'Post deleted') })}>Delete post</button>}
+          {r.post_id && <button type="button" style={btn('danger')} onClick={() => setConfirm({ title: 'Delete this post for good?', label: 'Delete post', run: () => act(() => modDeletePost(r.post_id, r.post_snapshot?.photo_path), 'Post deleted') })}>Delete post</button>}
           <button type="button" style={btn(r.reported_banned ? 'secondary' : 'danger')} onClick={() => (r.reported_banned
             ? act(() => modSetBanned(r.reported_user_id, false), 'Account restored')
             : setConfirm({ title: `Ban @${r.reported_username}? They lose access to Community and their posts vanish from everyone’s feed.`, label: 'Ban account', run: () => act(() => modSetBanned(r.reported_user_id, true), 'Account banned') }))}>{r.reported_banned ? 'Unban' : 'Ban account'}</button>

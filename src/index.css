@@ -176,6 +176,14 @@
   --card-shadow: 0 1px 2px rgba(24, 20, 18, 0.05), 0 6px 16px rgba(24, 20, 18, 0.06);
 }
 
+/* The themed wrapper sets its own text colour. Without it, anything with no
+   colour of its own inherits <body>'s, which is the dark-theme value even in
+   light mode — so text inside a sheet portalled into this wrapper (like the
+   Community post preview) came out near-white on cream. */
+[data-theme] {
+  color: var(--text-primary);
+}
+
 html {
   scroll-behavior: smooth;
   /* Safari's automatic text-size inflation ("boost small text for
