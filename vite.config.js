@@ -11,7 +11,7 @@ export default defineConfig({
   // component test spins up jsdom, so on a busy machine (or CI) the 5s default
   // fails tests that are merely slow, not broken.
   test: {
-    testTimeout: 30000,
+    testTimeout: 60000, // the database tests build the whole schema; slow when many run at once
     hookTimeout: 120000,
     // Unit tests never talk to a real Supabase project, and a fresh checkout
     // (or CI) has no .env.local — without these, any test that imports

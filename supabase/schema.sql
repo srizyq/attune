@@ -3390,3 +3390,916 @@ alter table public.profiles add column if not exists notify_fast_end boolean not
 -- exactly as before — it only changes how the day's carbs are counted — so
 -- switching it on or off never rewrites any history.
 alter table public.profiles add column if not exists net_carbs boolean not null default false;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Community (schema update — run against an existing DB; safe to re-run).
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Social features: profiles (@username), follows (private accounts approve),
+-- posts of a day / meal / recipe, hearts + flames, copies, saves, blocks,
+-- reports, and a moderator role. Nothing is public by accident: every table has
+-- row level security, posts are readable only through community_can_view_post,
+-- and who-liked-what is visible to the poster alone (everyone else gets counts
+-- from community_post_stats). The app hides the whole feature behind a switch
+-- until it is switched on, so running this changes nothing users can see.
+--
+-- "Privileged" below means the service role, or a SECURITY DEFINER function
+-- (moderator actions, the report auto-hide) — never a normal signed-in client.
+
+create or replace function public.community_privileged()
+returns boolean
+language sql
+stable
+as $$
+  select auth.role() = 'service_role' or current_user not in ('authenticated', 'anon')
+$$;
+
+create table if not exists public.community_profiles (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  username text not null,
+  display_name text not null,
+  bio text not null default '',
+  avatar_path text,
+  is_private boolean not null default true,
+  discoverable boolean not null default true,
+  username_changed_at timestamptz,
+  banned_at timestamptz,
+  created_at timestamptz not null default now(),
+  constraint community_username_format check (username ~ '^[a-z0-9][a-z0-9_.]{1,18}[a-z0-9]$'),
+  constraint community_username_lower check (username = lower(username)),
+  constraint community_display_name_len check (char_length(btrim(display_name)) between 1 and 40),
+  constraint community_bio_len check (char_length(bio) <= 160),
+  constraint community_bio_no_links check (bio !~* '(https?://|www\.|\.com|\.net|\.org|\.io)')
+);
+create unique index if not exists community_profiles_username_key on public.community_profiles (username);
+create index if not exists community_profiles_name_idx on public.community_profiles using gin (display_name gin_trgm_ops);
+
+create table if not exists public.community_moderators (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.community_moderators enable row level security;
+-- No policies: only the service role (and the functions below) can touch this.
+
+create table if not exists public.community_follows (
+  follower_id uuid not null references auth.users (id) on delete cascade,
+  followee_id uuid not null references auth.users (id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending', 'accepted')),
+  created_at timestamptz not null default now(),
+  primary key (follower_id, followee_id),
+  check (follower_id <> followee_id)
+);
+create index if not exists community_follows_followee_idx on public.community_follows (followee_id, status);
+
+create table if not exists public.community_blocks (
+  blocker_id uuid not null references auth.users (id) on delete cascade,
+  blocked_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker_id, blocked_id),
+  check (blocker_id <> blocked_id)
+);
+
+-- Shape of a post's numbers. The app copies these into a diary, so the core
+-- fields are checked; extra keys are allowed so the app can grow.
+create or replace function public.community_valid_post_payload(p_kind text, p jsonb)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  item jsonb;
+  list jsonb;
+begin
+  if p is null or jsonb_typeof(p) <> 'object' then return false; end if;
+  if coalesce(jsonb_typeof(p -> 'title'), '') <> 'string' or char_length(p ->> 'title') not between 1 and 80 then return false; end if;
+  if coalesce(jsonb_typeof(p -> 'calories'), '') <> 'number' or (p ->> 'calories')::numeric not between 0 and 20000 then return false; end if;
+  if coalesce(jsonb_typeof(p -> 'protein_g'), '') <> 'number' or (p ->> 'protein_g')::numeric not between 0 and 2000 then return false; end if;
+  if coalesce(jsonb_typeof(p -> 'carbs_g'), '') <> 'number' or (p ->> 'carbs_g')::numeric not between 0 and 2000 then return false; end if;
+  if coalesce(jsonb_typeof(p -> 'fat_g'), '') <> 'number' or (p ->> 'fat_g')::numeric not between 0 and 2000 then return false; end if;
+  if p ? 'partial' and jsonb_typeof(p -> 'partial') <> 'boolean' then return false; end if;
+  if p ? 'goal_pct' and (jsonb_typeof(p -> 'goal_pct') <> 'number' or (p ->> 'goal_pct')::numeric not between 0 and 1000) then return false; end if;
+  if p_kind = 'recipe' then
+    list := p -> 'ingredients';
+    if coalesce(jsonb_typeof(list), '') <> 'array' or jsonb_array_length(list) not between 1 and 60 then return false; end if;
+  else
+    list := p -> 'items';
+    if list is not null and (jsonb_typeof(list) <> 'array' or jsonb_array_length(list) > 80) then return false; end if;
+  end if;
+  if list is not null then
+    for item in select * from jsonb_array_elements(list) loop
+      if jsonb_typeof(item) <> 'object' or coalesce(jsonb_typeof(item -> 'name'), '') <> 'string' then return false; end if;
+    end loop;
+  end if;
+  return true;
+exception when others then
+  return false;
+end;
+$$;
+
+create table if not exists public.community_posts (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null references auth.users (id) on delete cascade,
+  kind text not null check (kind in ('day', 'meal', 'recipe')),
+  audience text not null default 'followers' check (audience in ('public', 'followers')),
+  payload jsonb not null,
+  note text not null default '' check (char_length(note) <= 200),
+  photo_path text,
+  photo_status text not null default 'none' check (photo_status in ('none', 'pending', 'approved', 'rejected')),
+  hidden boolean not null default false,
+  created_at timestamptz not null default now(),
+  edited_at timestamptz,
+  constraint community_post_payload_valid check (public.community_valid_post_payload(kind, payload))
+);
+create index if not exists community_posts_author_idx on public.community_posts (author_id, created_at desc);
+create index if not exists community_posts_created_idx on public.community_posts (created_at desc);
+
+create table if not exists public.community_reactions (
+  post_id uuid not null references public.community_posts (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  kind text not null check (kind in ('heart', 'flame')),
+  created_at timestamptz not null default now(),
+  primary key (post_id, user_id, kind)
+);
+
+create table if not exists public.community_saves (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  post_id uuid not null references public.community_posts (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, post_id)
+);
+
+create table if not exists public.community_copies (
+  post_id uuid not null references public.community_posts (id) on delete cascade,
+  copier_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (post_id, copier_id)
+);
+
+create table if not exists public.community_reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid not null references auth.users (id) on delete cascade,
+  post_id uuid references public.community_posts (id) on delete set null,
+  reported_user_id uuid not null references auth.users (id) on delete cascade,
+  reason text not null check (reason in ('inappropriate_photo', 'harassment', 'eating_disorder_content', 'spam', 'impersonation', 'other')),
+  details text not null default '' check (char_length(details) <= 500),
+  post_snapshot jsonb,
+  status text not null default 'open' check (status in ('open', 'actioned', 'dismissed')),
+  created_at timestamptz not null default now(),
+  check (reporter_id <> reported_user_id)
+);
+create unique index if not exists community_reports_once_per_post on public.community_reports (reporter_id, post_id) where post_id is not null;
+create index if not exists community_reports_status_idx on public.community_reports (status, created_at desc);
+
+-- ── Small helpers (SECURITY DEFINER so row level security can't hide the answer)
+create or replace function public.community_is_member(p_user uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select p_user is not null and exists (select 1 from public.community_profiles where user_id = p_user and banned_at is null)
+$$;
+
+create or replace function public.community_is_moderator()
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select auth.uid() is not null and exists (select 1 from public.community_moderators where user_id = auth.uid())
+$$;
+
+create or replace function public.community_blocked_between(a uuid, b uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.community_blocks
+    where (blocker_id = a and blocked_id = b) or (blocker_id = b and blocked_id = a)
+  )
+$$;
+
+create or replace function public.community_is_private(p_user uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select coalesce((select is_private from public.community_profiles where user_id = p_user), true)
+$$;
+
+create or replace function public.community_follows_accepted(p_follower uuid, p_followee uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (select 1 from public.community_follows where follower_id = p_follower and followee_id = p_followee and status = 'accepted')
+$$;
+
+-- Can the signed-in user see a post? The one rule every read goes through.
+create or replace function public.community_can_view_post(p_author uuid, p_audience text, p_hidden boolean)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select auth.uid() is not null and (
+    p_author = auth.uid()
+    or public.community_is_moderator()
+    or (
+      not p_hidden
+      and public.community_is_member(auth.uid())
+      and public.community_is_member(p_author)
+      and not public.community_blocked_between(auth.uid(), p_author)
+      and (p_audience = 'public' or public.community_follows_accepted(auth.uid(), p_author))
+    )
+  )
+$$;
+
+-- ── Triggers ────────────────────────────────────────────────────────────────
+create or replace function public.community_profiles_guard()
+returns trigger
+language plpgsql
+as $$
+declare
+  dob date;
+  a int;
+  yrs int;
+begin
+  new.username := lower(btrim(new.username));
+  new.display_name := btrim(new.display_name);
+  if not public.community_privileged() then
+    if new.username in ('attune', 'admin', 'administrator', 'support', 'moderator', 'mod', 'staff', 'official', 'help', 'team', 'root', 'system', 'community') then
+      raise exception 'community_username_reserved';
+    end if;
+    if tg_op = 'INSERT' then
+      select date_of_birth, age into dob, a from public.profiles where id = new.user_id;
+      yrs := case when dob is not null then extract(year from age(current_date, dob))::int else a end;
+      if yrs is null then raise exception 'community_age_required'; end if;
+      if yrs < 16 then raise exception 'community_too_young'; end if;
+      new.banned_at := null;
+      new.username_changed_at := null;
+    else
+      new.user_id := old.user_id;
+      new.created_at := old.created_at;
+      new.banned_at := old.banned_at;
+      if new.username is distinct from old.username then
+        if old.username_changed_at is not null and old.username_changed_at > now() - interval '30 days' then
+          raise exception 'community_username_locked';
+        end if;
+        new.username_changed_at := now();
+      else
+        new.username_changed_at := old.username_changed_at;
+      end if;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists community_profiles_guard_trigger on public.community_profiles;
+create trigger community_profiles_guard_trigger before insert or update on public.community_profiles
+  for each row execute function public.community_profiles_guard();
+
+-- Going private pulls every public post back to followers-only straight away;
+-- going public approves anyone who was waiting.
+create or replace function public.community_profiles_privacy_changed()
+returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if new.is_private and not old.is_private then
+    update public.community_posts set audience = 'followers' where author_id = new.user_id and audience <> 'followers';
+  elsif not new.is_private and old.is_private then
+    update public.community_follows set status = 'accepted' where followee_id = new.user_id and status = 'pending';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists community_profiles_privacy_trigger on public.community_profiles;
+create trigger community_profiles_privacy_trigger after update of is_private on public.community_profiles
+  for each row execute function public.community_profiles_privacy_changed();
+
+create or replace function public.community_follows_guard()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op = 'INSERT' then
+    if not public.community_privileged() then
+      if not public.community_is_member(new.follower_id) or not public.community_is_member(new.followee_id) then
+        raise exception 'community_user_not_found';
+      end if;
+      if public.community_blocked_between(new.follower_id, new.followee_id) then
+        raise exception 'community_blocked';
+      end if;
+      new.status := case when public.community_is_private(new.followee_id) then 'pending' else 'accepted' end;
+      new.created_at := now();
+    end if;
+  elsif not public.community_privileged() then
+    if new.follower_id <> old.follower_id or new.followee_id <> old.followee_id or new.created_at <> old.created_at
+       or not (old.status = 'pending' and new.status = 'accepted') then
+      raise exception 'community_follow_update_not_allowed';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists community_follows_guard_trigger on public.community_follows;
+create trigger community_follows_guard_trigger before insert or update on public.community_follows
+  for each row execute function public.community_follows_guard();
+
+-- Blocking removes any follow between the two, in both directions.
+create or replace function public.community_blocks_applied()
+returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  delete from public.community_follows
+   where (follower_id = new.blocker_id and followee_id = new.blocked_id)
+      or (follower_id = new.blocked_id and followee_id = new.blocker_id);
+  return new;
+end;
+$$;
+drop trigger if exists community_blocks_applied_trigger on public.community_blocks;
+create trigger community_blocks_applied_trigger after insert on public.community_blocks
+  for each row execute function public.community_blocks_applied();
+
+create or replace function public.community_posts_guard()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.note ~* '(https?://|www\.)' then raise exception 'community_links_not_allowed'; end if;
+  if not public.community_privileged() then
+    if tg_op = 'INSERT' then
+      if not public.community_is_member(new.author_id) then raise exception 'community_not_a_member'; end if;
+      if (select count(*) from public.community_posts where author_id = new.author_id and created_at > now() - interval '24 hours') >= 20 then
+        raise exception 'community_rate_limited';
+      end if;
+      new.hidden := false;
+      new.created_at := now();
+      new.edited_at := null;
+      new.photo_status := case when new.photo_path is null then 'none' else 'pending' end;
+      if public.community_is_private(new.author_id) then new.audience := 'followers'; end if;
+    else
+      -- The numbers are a snapshot of what was logged: they never change.
+      new.author_id := old.author_id;
+      new.kind := old.kind;
+      new.payload := old.payload;
+      new.created_at := old.created_at;
+      new.hidden := old.hidden;
+      if new.photo_path is distinct from old.photo_path then
+        new.photo_status := case when new.photo_path is null then 'none' else 'pending' end;
+      else
+        new.photo_status := old.photo_status;
+      end if;
+      if public.community_is_private(new.author_id) then new.audience := 'followers'; end if;
+      if new.note is distinct from old.note or new.photo_path is distinct from old.photo_path or new.audience is distinct from old.audience then
+        new.edited_at := now();
+      else
+        new.edited_at := old.edited_at;
+      end if;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists community_posts_guard_trigger on public.community_posts;
+create trigger community_posts_guard_trigger before insert or update on public.community_posts
+  for each row execute function public.community_posts_guard();
+
+create or replace function public.community_reports_prepare()
+returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  new.status := 'open';
+  new.created_at := now();
+  if new.post_id is not null then
+    select author_id, jsonb_build_object('kind', kind, 'payload', payload, 'note', note, 'photo_path', photo_path, 'created_at', created_at)
+      into new.reported_user_id, new.post_snapshot
+      from public.community_posts where id = new.post_id;
+    if new.reported_user_id is null then raise exception 'community_post_not_found'; end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists community_reports_prepare_trigger on public.community_reports;
+create trigger community_reports_prepare_trigger before insert on public.community_reports
+  for each row execute function public.community_reports_prepare();
+
+-- Three different people reporting the same post hides it until it's reviewed.
+create or replace function public.community_reports_auto_hide()
+returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if new.post_id is not null
+     and (select count(distinct reporter_id) from public.community_reports where post_id = new.post_id and status = 'open') >= 3 then
+    update public.community_posts set hidden = true where id = new.post_id and not hidden;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists community_reports_auto_hide_trigger on public.community_reports;
+create trigger community_reports_auto_hide_trigger after insert on public.community_reports
+  for each row execute function public.community_reports_auto_hide();
+
+-- ── Row level security ──────────────────────────────────────────────────────
+alter table public.community_profiles enable row level security;
+alter table public.community_follows enable row level security;
+alter table public.community_blocks enable row level security;
+alter table public.community_posts enable row level security;
+alter table public.community_reactions enable row level security;
+alter table public.community_saves enable row level security;
+alter table public.community_copies enable row level security;
+alter table public.community_reports enable row level security;
+
+drop policy if exists "community_profiles: select" on public.community_profiles;
+create policy "community_profiles: select" on public.community_profiles
+  for select using (
+    auth.uid() is not null and (
+      user_id = auth.uid()
+      or public.community_is_moderator()
+      or (banned_at is null and public.community_is_member(auth.uid()) and not public.community_blocked_between(auth.uid(), user_id))
+    )
+  );
+drop policy if exists "community_profiles: insert own" on public.community_profiles;
+create policy "community_profiles: insert own" on public.community_profiles
+  for insert with check (user_id = auth.uid());
+drop policy if exists "community_profiles: update own" on public.community_profiles;
+create policy "community_profiles: update own" on public.community_profiles
+  for update using (user_id = auth.uid() and banned_at is null) with check (user_id = auth.uid());
+drop policy if exists "community_profiles: delete own" on public.community_profiles;
+create policy "community_profiles: delete own" on public.community_profiles
+  for delete using (user_id = auth.uid());
+
+drop policy if exists "community_follows: select own" on public.community_follows;
+create policy "community_follows: select own" on public.community_follows
+  for select using (follower_id = auth.uid() or followee_id = auth.uid());
+drop policy if exists "community_follows: insert own" on public.community_follows;
+create policy "community_follows: insert own" on public.community_follows
+  for insert with check (follower_id = auth.uid());
+drop policy if exists "community_follows: approve" on public.community_follows;
+create policy "community_follows: approve" on public.community_follows
+  for update using (followee_id = auth.uid()) with check (followee_id = auth.uid());
+drop policy if exists "community_follows: delete either side" on public.community_follows;
+create policy "community_follows: delete either side" on public.community_follows
+  for delete using (follower_id = auth.uid() or followee_id = auth.uid());
+
+drop policy if exists "community_blocks: own" on public.community_blocks;
+create policy "community_blocks: own" on public.community_blocks
+  for all using (blocker_id = auth.uid()) with check (blocker_id = auth.uid());
+
+drop policy if exists "community_posts: select visible" on public.community_posts;
+create policy "community_posts: select visible" on public.community_posts
+  for select using (public.community_can_view_post(author_id, audience, hidden));
+drop policy if exists "community_posts: insert own" on public.community_posts;
+create policy "community_posts: insert own" on public.community_posts
+  for insert with check (author_id = auth.uid());
+drop policy if exists "community_posts: update own" on public.community_posts;
+create policy "community_posts: update own" on public.community_posts
+  for update using (author_id = auth.uid()) with check (author_id = auth.uid());
+drop policy if exists "community_posts: delete own" on public.community_posts;
+create policy "community_posts: delete own" on public.community_posts
+  for delete using (author_id = auth.uid());
+
+-- Who reacted: you see your own, and the poster sees everyone's on their post.
+drop policy if exists "community_reactions: select" on public.community_reactions;
+create policy "community_reactions: select" on public.community_reactions
+  for select using (
+    user_id = auth.uid()
+    or exists (select 1 from public.community_posts p where p.id = post_id and p.author_id = auth.uid())
+  );
+drop policy if exists "community_reactions: insert" on public.community_reactions;
+create policy "community_reactions: insert" on public.community_reactions
+  for insert with check (
+    user_id = auth.uid()
+    and public.community_is_member(auth.uid())
+    and exists (select 1 from public.community_posts p where p.id = post_id)
+  );
+drop policy if exists "community_reactions: delete own" on public.community_reactions;
+create policy "community_reactions: delete own" on public.community_reactions
+  for delete using (user_id = auth.uid());
+
+drop policy if exists "community_saves: own" on public.community_saves;
+create policy "community_saves: own" on public.community_saves
+  for all using (user_id = auth.uid())
+  with check (user_id = auth.uid() and exists (select 1 from public.community_posts p where p.id = post_id));
+
+drop policy if exists "community_copies: select" on public.community_copies;
+create policy "community_copies: select" on public.community_copies
+  for select using (
+    copier_id = auth.uid()
+    or exists (select 1 from public.community_posts p where p.id = post_id and p.author_id = auth.uid())
+  );
+drop policy if exists "community_copies: insert" on public.community_copies;
+create policy "community_copies: insert" on public.community_copies
+  for insert with check (
+    copier_id = auth.uid()
+    and public.community_is_member(auth.uid())
+    and exists (select 1 from public.community_posts p where p.id = post_id and p.author_id <> auth.uid())
+  );
+
+drop policy if exists "community_reports: insert own" on public.community_reports;
+create policy "community_reports: insert own" on public.community_reports
+  for insert with check (
+    reporter_id = auth.uid()
+    and public.community_is_member(auth.uid())
+    and (post_id is null or exists (select 1 from public.community_posts p where p.id = post_id))
+  );
+drop policy if exists "community_reports: select own" on public.community_reports;
+create policy "community_reports: select own" on public.community_reports
+  for select using (reporter_id = auth.uid());
+
+-- ── Reads the app calls ─────────────────────────────────────────────────────
+-- Posts with their author and counts. Re-checks visibility, so callers can hand
+-- it any ids. Newest first.
+create or replace function public.community_cards(p_ids uuid[])
+returns table (
+  id uuid, author_id uuid, username text, display_name text, avatar_path text, is_coach boolean,
+  kind text, audience text, payload jsonb, note text, photo_path text, photo_status text,
+  hidden boolean, created_at timestamptz, edited_at timestamptz,
+  hearts int, flames int, copies int, my_heart boolean, my_flame boolean, saved boolean
+)
+language sql stable security definer set search_path = public
+as $$
+  select p.id, p.author_id, cp.username, cp.display_name, cp.avatar_path, coalesce(pr.coach_mode, false),
+    p.kind, p.audience, p.payload, p.note, p.photo_path, p.photo_status,
+    p.hidden, p.created_at, p.edited_at,
+    (select count(*)::int from public.community_reactions r where r.post_id = p.id and r.kind = 'heart'),
+    (select count(*)::int from public.community_reactions r where r.post_id = p.id and r.kind = 'flame'),
+    (select count(*)::int from public.community_copies c where c.post_id = p.id),
+    exists (select 1 from public.community_reactions r where r.post_id = p.id and r.user_id = auth.uid() and r.kind = 'heart'),
+    exists (select 1 from public.community_reactions r where r.post_id = p.id and r.user_id = auth.uid() and r.kind = 'flame'),
+    exists (select 1 from public.community_saves s where s.post_id = p.id and s.user_id = auth.uid())
+  from public.community_posts p
+  join public.community_profiles cp on cp.user_id = p.author_id
+  left join public.profiles pr on pr.id = p.author_id
+  where p.id = any (p_ids)
+    and public.community_can_view_post(p.author_id, p.audience, p.hidden)
+  order by p.created_at desc
+$$;
+
+-- Your feed: your own posts and those of people you follow, newest first.
+create or replace function public.community_feed(p_limit int default 20, p_before timestamptz default null)
+returns setof public.community_posts
+language sql stable security definer set search_path = public
+as $$
+  select p.* from public.community_posts p
+  where auth.uid() is not null
+    and not p.hidden
+    and (p.author_id = auth.uid() or public.community_follows_accepted(auth.uid(), p.author_id))
+    and public.community_can_view_post(p.author_id, p.audience, p.hidden)
+    and (p_before is null or p.created_at < p_before)
+  order by p.created_at desc
+  limit least(greatest(coalesce(p_limit, 20), 1), 50)
+$$;
+
+create or replace function public.community_feed_cards(p_limit int default 20, p_before timestamptz default null)
+returns table (
+  id uuid, author_id uuid, username text, display_name text, avatar_path text, is_coach boolean,
+  kind text, audience text, payload jsonb, note text, photo_path text, photo_status text,
+  hidden boolean, created_at timestamptz, edited_at timestamptz,
+  hearts int, flames int, copies int, my_heart boolean, my_flame boolean, saved boolean
+)
+language sql stable security definer set search_path = public
+as $$
+  select * from public.community_cards(array(select f.id from public.community_feed(p_limit, p_before) f))
+$$;
+
+-- One person's posts (what you're allowed to see of them).
+create or replace function public.community_user_cards(p_user uuid, p_limit int default 20, p_before timestamptz default null)
+returns table (
+  id uuid, author_id uuid, username text, display_name text, avatar_path text, is_coach boolean,
+  kind text, audience text, payload jsonb, note text, photo_path text, photo_status text,
+  hidden boolean, created_at timestamptz, edited_at timestamptz,
+  hearts int, flames int, copies int, my_heart boolean, my_flame boolean, saved boolean
+)
+language sql stable security definer set search_path = public
+as $$
+  select * from public.community_cards(array(
+    select p.id from public.community_posts p
+    where auth.uid() is not null
+      and p.author_id = p_user
+      and (not p.hidden or p.author_id = auth.uid())
+      and public.community_can_view_post(p.author_id, p.audience, p.hidden)
+      and (p_before is null or p.created_at < p_before)
+    order by p.created_at desc
+    limit least(greatest(coalesce(p_limit, 20), 1), 50)
+  ))
+$$;
+
+-- Posts you've bookmarked.
+create or replace function public.community_saved_cards(p_limit int default 20, p_before timestamptz default null)
+returns table (
+  id uuid, author_id uuid, username text, display_name text, avatar_path text, is_coach boolean,
+  kind text, audience text, payload jsonb, note text, photo_path text, photo_status text,
+  hidden boolean, created_at timestamptz, edited_at timestamptz,
+  hearts int, flames int, copies int, my_heart boolean, my_flame boolean, saved boolean
+)
+language sql stable security definer set search_path = public
+as $$
+  select * from public.community_cards(array(
+    select s.post_id from public.community_saves s
+    join public.community_posts p on p.id = s.post_id
+    where s.user_id = auth.uid()
+      and not p.hidden
+      and public.community_can_view_post(p.author_id, p.audience, p.hidden)
+      and (p_before is null or s.created_at < p_before)
+    order by s.created_at desc
+    limit least(greatest(coalesce(p_limit, 20), 1), 50)
+  ))
+$$;
+
+-- Days in a row (up to today or yesterday) with at least one food logged.
+create or replace function public.community_streak(p_user uuid, p_today date default current_date)
+returns int
+language sql stable security definer set search_path = public
+as $$
+  with d as (
+    select distinct logged_date from public.food_logs
+    where user_id = p_user and logged_date <= p_today and logged_date > p_today - 400
+  ), r as (
+    select logged_date, (p_today - logged_date) - (row_number() over (order by logged_date desc))::int + 1 as gap from d
+  )
+  select case
+    when not exists (select 1 from d where logged_date >= p_today - 1) then 0
+    else (select count(*)::int from r where gap = (select gap from r order by logged_date desc limit 1))
+  end
+$$;
+
+-- A profile as the signed-in user may see it: private accounts show a stranger
+-- only the photo, @username, bio and counts.
+create or replace function public.community_profile(p_username text, p_today date default current_date)
+returns table (
+  user_id uuid, username text, display_name text, bio text, avatar_path text, is_private boolean, is_coach boolean,
+  posts int, followers int, following int, relation text, follows_you boolean,
+  goal_type text, streak int, discoverable boolean, created_at timestamptz
+)
+language sql stable security definer set search_path = public
+as $$
+  select cp.user_id, cp.username, cp.display_name, cp.bio, cp.avatar_path, cp.is_private, coalesce(pr.coach_mode, false),
+    (select count(*)::int from public.community_posts p where p.author_id = cp.user_id and not p.hidden),
+    (select count(*)::int from public.community_follows f where f.followee_id = cp.user_id and f.status = 'accepted'),
+    (select count(*)::int from public.community_follows f where f.follower_id = cp.user_id and f.status = 'accepted'),
+    case
+      when cp.user_id = auth.uid() then 'self'
+      when public.community_follows_accepted(auth.uid(), cp.user_id) then 'following'
+      when exists (select 1 from public.community_follows f where f.follower_id = auth.uid() and f.followee_id = cp.user_id) then 'requested'
+      else 'none'
+    end,
+    public.community_follows_accepted(cp.user_id, auth.uid()),
+    case when cp.user_id = auth.uid() or not cp.is_private or public.community_follows_accepted(auth.uid(), cp.user_id) then pr.goal end,
+    case when cp.user_id = auth.uid() or not cp.is_private or public.community_follows_accepted(auth.uid(), cp.user_id)
+         then public.community_streak(cp.user_id, p_today) end,
+    cp.discoverable, cp.created_at
+  from public.community_profiles cp
+  left join public.profiles pr on pr.id = cp.user_id
+  where auth.uid() is not null
+    and public.community_is_member(auth.uid())
+    and cp.username = lower(btrim(p_username))
+    and (cp.user_id = auth.uid() or (cp.banned_at is null and not public.community_blocked_between(auth.uid(), cp.user_id)))
+$$;
+
+-- The lightweight row used in every list of people.
+-- relation: self / following / requested / none
+create or replace function public.community_people(p_ids uuid[])
+returns table (
+  user_id uuid, username text, display_name text, avatar_path text, is_private boolean, is_coach boolean,
+  goal_type text, relation text, last_post_at timestamptz, followers int
+)
+language sql stable security definer set search_path = public
+as $$
+  select cp.user_id, cp.username, cp.display_name, cp.avatar_path, cp.is_private, coalesce(pr.coach_mode, false),
+    case when not cp.is_private then pr.goal end,
+    case
+      when cp.user_id = auth.uid() then 'self'
+      when public.community_follows_accepted(auth.uid(), cp.user_id) then 'following'
+      when exists (select 1 from public.community_follows f where f.follower_id = auth.uid() and f.followee_id = cp.user_id) then 'requested'
+      else 'none'
+    end,
+    (select max(p.created_at) from public.community_posts p where p.author_id = cp.user_id and not p.hidden and p.audience = 'public'),
+    (select count(*)::int from public.community_follows f where f.followee_id = cp.user_id and f.status = 'accepted')
+  from public.community_profiles cp
+  left join public.profiles pr on pr.id = cp.user_id
+  where cp.user_id = any (p_ids)
+    and auth.uid() is not null
+    and public.community_is_member(auth.uid())
+    and cp.banned_at is null
+    and not public.community_blocked_between(auth.uid(), cp.user_id)
+  order by array_position(p_ids, cp.user_id)
+$$;
+
+-- A search word made safe for LIKE: lower-cased, with % _ and \ taken literally.
+create or replace function public.community_like_term(p text)
+returns text
+language sql immutable
+as $$
+  select lower(replace(replace(replace(btrim(coalesce(p, '')), '\', '\\'), '%', '\%'), '_', '\_'))
+$$;
+
+-- Find people by @username or display name (anyone who isn't blocked).
+create or replace function public.community_search(p_q text, p_limit int default 20)
+returns table (
+  user_id uuid, username text, display_name text, avatar_path text, is_private boolean, is_coach boolean,
+  goal_type text, relation text, last_post_at timestamptz, followers int
+)
+language sql stable security definer set search_path = public
+as $$
+  select pe.* from public.community_people(array(
+    select cp.user_id from public.community_profiles cp
+    where char_length(btrim(coalesce(p_q, ''))) >= 2
+      and cp.user_id <> auth.uid()
+      and (cp.username like public.community_like_term(p_q) || '%'
+           or lower(cp.display_name) like '%' || public.community_like_term(p_q) || '%')
+    order by (cp.username = lower(btrim(p_q))) desc, cp.username
+    limit least(greatest(coalesce(p_limit, 20), 1), 50)
+  )) pe
+$$;
+
+-- Browse public accounts. Sorted by who posted most recently (default) or by
+-- followers; optionally narrowed to a goal type and/or a search word.
+create or replace function public.community_explore(
+  p_sort text default 'recent', p_goal text default null, p_q text default null, p_limit int default 20, p_offset int default 0
+)
+returns table (
+  user_id uuid, username text, display_name text, avatar_path text, is_private boolean, is_coach boolean,
+  goal_type text, relation text, last_post_at timestamptz, followers int
+)
+language sql stable security definer set search_path = public
+as $$
+  select pe.* from public.community_people(array(
+    select cp.user_id from public.community_profiles cp
+    left join public.profiles pr on pr.id = cp.user_id
+    where auth.uid() is not null
+      and cp.user_id <> auth.uid()
+      and not cp.is_private and cp.discoverable and cp.banned_at is null
+      and (p_goal is null or pr.goal = p_goal)
+      and (p_q is null or btrim(p_q) = ''
+           or cp.username like public.community_like_term(p_q) || '%'
+           or lower(cp.display_name) like '%' || public.community_like_term(p_q) || '%')
+    order by
+      case when p_sort = 'followed' then (select count(*) from public.community_follows f where f.followee_id = cp.user_id and f.status = 'accepted') end desc nulls last,
+      (select max(p.created_at) from public.community_posts p where p.author_id = cp.user_id and not p.hidden and p.audience = 'public') desc nulls last,
+      cp.created_at desc
+    offset greatest(coalesce(p_offset, 0), 0)
+    limit least(greatest(coalesce(p_limit, 20), 1), 50)
+  )) pe
+$$;
+
+-- A short list of public accounts to follow: people followed by people you
+-- follow come first, then whoever posted recently. Skips anyone you follow.
+create or replace function public.community_suggestions(p_limit int default 10)
+returns table (
+  user_id uuid, username text, display_name text, avatar_path text, is_private boolean, is_coach boolean,
+  goal_type text, relation text, last_post_at timestamptz, followers int
+)
+language sql stable security definer set search_path = public
+as $$
+  select pe.* from public.community_people(array(
+    select cp.user_id from public.community_profiles cp
+    where auth.uid() is not null
+      and cp.user_id <> auth.uid()
+      and not cp.is_private and cp.discoverable and cp.banned_at is null
+      and not exists (select 1 from public.community_follows f where f.follower_id = auth.uid() and f.followee_id = cp.user_id)
+    order by
+      (select count(*) from public.community_follows mine
+         join public.community_follows theirs on theirs.follower_id = mine.followee_id
+         where mine.follower_id = auth.uid() and mine.status = 'accepted' and theirs.followee_id = cp.user_id and theirs.status = 'accepted') desc,
+      (select max(p.created_at) from public.community_posts p where p.author_id = cp.user_id and not p.hidden and p.audience = 'public') desc nulls last,
+      cp.created_at desc
+    limit least(greatest(coalesce(p_limit, 10), 1), 20)
+  )) pe
+$$;
+
+-- People waiting for your approval.
+create or replace function public.community_follow_requests()
+returns table (
+  user_id uuid, username text, display_name text, avatar_path text, is_private boolean, is_coach boolean,
+  goal_type text, relation text, last_post_at timestamptz, followers int
+)
+language sql stable security definer set search_path = public
+as $$
+  select pe.* from public.community_people(array(
+    select f.follower_id from public.community_follows f
+    where f.followee_id = auth.uid() and f.status = 'pending'
+    order by f.created_at desc limit 100
+  )) pe
+$$;
+
+-- Followers / following lists: yours, or an accepted follower's view of theirs.
+create or replace function public.community_follow_list(p_user uuid, p_kind text)
+returns table (
+  user_id uuid, username text, display_name text, avatar_path text, is_private boolean, is_coach boolean,
+  goal_type text, relation text, last_post_at timestamptz, followers int
+)
+language sql stable security definer set search_path = public
+as $$
+  select pe.* from public.community_people(array(
+    select case when p_kind = 'followers' then f.follower_id else f.followee_id end
+    from public.community_follows f
+    where auth.uid() is not null
+      and f.status = 'accepted'
+      and (p_user = auth.uid() or public.community_follows_accepted(auth.uid(), p_user))
+      and ((p_kind = 'followers' and f.followee_id = p_user) or (p_kind = 'following' and f.follower_id = p_user))
+    order by f.created_at desc limit 200
+  )) pe
+$$;
+
+-- ── Moderation (moderators only) ────────────────────────────────────────────
+create or replace function public.community_mod_reports(p_status text default 'open', p_limit int default 50)
+returns table (
+  id uuid, status text, reason text, details text, created_at timestamptz,
+  reporter_username text, reported_user_id uuid, reported_username text, reported_banned boolean,
+  post_id uuid, post_hidden boolean, post_snapshot jsonb
+)
+language sql stable security definer set search_path = public
+as $$
+  select r.id, r.status, r.reason, r.details, r.created_at,
+    rep.username, r.reported_user_id, tgt.username, tgt.banned_at is not null,
+    r.post_id, p.hidden, r.post_snapshot
+  from public.community_reports r
+  left join public.community_profiles rep on rep.user_id = r.reporter_id
+  left join public.community_profiles tgt on tgt.user_id = r.reported_user_id
+  left join public.community_posts p on p.id = r.post_id
+  where public.community_is_moderator() and r.status = coalesce(p_status, 'open')
+  order by r.created_at desc
+  limit least(greatest(coalesce(p_limit, 50), 1), 200)
+$$;
+
+create or replace function public.community_mod_set_post_hidden(p_post uuid, p_hidden boolean)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not public.community_is_moderator() then raise exception 'community_not_a_moderator'; end if;
+  update public.community_posts set hidden = p_hidden where id = p_post;
+  update public.community_reports set status = case when p_hidden then 'actioned' else 'dismissed' end
+    where post_id = p_post and status = 'open';
+end;
+$$;
+
+create or replace function public.community_mod_delete_post(p_post uuid)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not public.community_is_moderator() then raise exception 'community_not_a_moderator'; end if;
+  update public.community_reports set status = 'actioned' where post_id = p_post and status = 'open';
+  delete from public.community_posts where id = p_post;
+end;
+$$;
+
+create or replace function public.community_mod_set_banned(p_user uuid, p_banned boolean)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not public.community_is_moderator() then raise exception 'community_not_a_moderator'; end if;
+  update public.community_profiles set banned_at = case when p_banned then now() end where user_id = p_user;
+  if p_banned then
+    update public.community_reports set status = 'actioned' where reported_user_id = p_user and status = 'open';
+  end if;
+end;
+$$;
+
+create or replace function public.community_mod_resolve_report(p_report uuid, p_status text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not public.community_is_moderator() then raise exception 'community_not_a_moderator'; end if;
+  if p_status not in ('actioned', 'dismissed') then raise exception 'community_bad_status'; end if;
+  update public.community_reports set status = p_status where id = p_report;
+end;
+$$;
+
+-- Only signed-in people may call these; the rules inside decide the rest.
+revoke all on function public.community_cards(uuid[]) from public, anon;
+revoke all on function public.community_feed(int, timestamptz) from public, anon;
+revoke all on function public.community_feed_cards(int, timestamptz) from public, anon;
+revoke all on function public.community_user_cards(uuid, int, timestamptz) from public, anon;
+revoke all on function public.community_saved_cards(int, timestamptz) from public, anon;
+revoke all on function public.community_streak(uuid, date) from public, anon;
+revoke all on function public.community_profile(text, date) from public, anon;
+revoke all on function public.community_people(uuid[]) from public, anon;
+revoke all on function public.community_search(text, int) from public, anon;
+revoke all on function public.community_explore(text, text, text, int, int) from public, anon;
+revoke all on function public.community_suggestions(int) from public, anon;
+revoke all on function public.community_follow_requests() from public, anon;
+revoke all on function public.community_follow_list(uuid, text) from public, anon;
+revoke all on function public.community_mod_reports(text, int) from public, anon;
+revoke all on function public.community_mod_set_post_hidden(uuid, boolean) from public, anon;
+revoke all on function public.community_mod_delete_post(uuid) from public, anon;
+revoke all on function public.community_mod_set_banned(uuid, boolean) from public, anon;
+revoke all on function public.community_mod_resolve_report(uuid, text) from public, anon;
+grant execute on function public.community_cards(uuid[]) to authenticated;
+grant execute on function public.community_feed(int, timestamptz) to authenticated;
+grant execute on function public.community_feed_cards(int, timestamptz) to authenticated;
+grant execute on function public.community_user_cards(uuid, int, timestamptz) to authenticated;
+grant execute on function public.community_saved_cards(int, timestamptz) to authenticated;
+grant execute on function public.community_streak(uuid, date) to authenticated;
+grant execute on function public.community_profile(text, date) to authenticated;
+grant execute on function public.community_people(uuid[]) to authenticated;
+grant execute on function public.community_search(text, int) to authenticated;
+grant execute on function public.community_explore(text, text, text, int, int) to authenticated;
+grant execute on function public.community_suggestions(int) to authenticated;
+grant execute on function public.community_follow_requests() to authenticated;
+grant execute on function public.community_follow_list(uuid, text) to authenticated;
+grant execute on function public.community_mod_reports(text, int) to authenticated;
+grant execute on function public.community_mod_set_post_hidden(uuid, boolean) to authenticated;
+grant execute on function public.community_mod_delete_post(uuid) to authenticated;
+grant execute on function public.community_mod_set_banned(uuid, boolean) to authenticated;
+grant execute on function public.community_mod_resolve_report(uuid, text) to authenticated;
