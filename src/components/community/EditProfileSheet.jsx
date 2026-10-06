@@ -5,6 +5,7 @@ import CameraCapture from '../CameraCapture';
 import ModalPortal from '../ModalPortal';
 import ActionSheet from './ActionSheet';
 import { useAuth } from '../../hooks/useAuth';
+import { askForCommunityPush } from '../../lib/communityPush';
 import { removePhoto, resizeToJpeg, screenPhoto, uploadPhoto } from '../../lib/communityPhotos';
 import { useClosingTransition } from '../../hooks/useClosingTransition';
 import { friendlyCommunityError } from '../../lib/community';
@@ -19,7 +20,7 @@ function Switch({ id, checked, onChange, title, children }) {
     <label htmlFor={id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: '1px solid var(--border-default)', cursor: 'pointer' }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: 'block', fontSize: 15 }}>{title}</span>
-        <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>{children}</span>
+        {children && <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>{children}</span>}
       </span>
       <input id={id} type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ width: 26, height: 26, minWidth: 26, minHeight: 26, flexShrink: 0, accentColor: 'var(--accent)' }} />
     </label>
@@ -44,6 +45,14 @@ export default function EditProfileSheet({ me, onSave, onLeave, onClose, onToast
   const [capturing, setCapturing] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+
+  // Turning a notification on also asks this phone for permission and registers it.
+  async function pushSwitch(set, on) {
+    set(on);
+    if (!on) return;
+    const result = await askForCommunityPush(user.id);
+    if (result === 'denied') onToast?.('Notifications are blocked for Attune. Turn them on in your phone\'s settings.');
+  }
 
   // A new profile picture applies straight away (it isn't part of Save) and waits for the check.
   async function changeAvatar(file) {
@@ -154,8 +163,8 @@ export default function EditProfileSheet({ me, onSave, onLeave, onClose, onToast
       </div>
       <div style={{ ...label, marginTop: 22 }}>Notifications</div>
       <div>
-        <Switch id="ep-notify-follows" checked={notifyFollows} onChange={setNotifyFollows} title="New followers and requests">A push when someone follows you or asks to.</Switch>
-        <Switch id="ep-notify-reactions" checked={notifyReactions} onChange={setNotifyReactions} title="Hearts and flames">One push per post an hour, however many people react. Needs notifications turned on in Settings.</Switch>
+        <Switch id="ep-notify-follows" checked={notifyFollows} onChange={(on) => pushSwitch(setNotifyFollows, on)} title="New followers and requests" />
+        <Switch id="ep-notify-reactions" checked={notifyReactions} onChange={(on) => pushSwitch(setNotifyReactions, on)} title="Hearts and flames" />
       </div>
       {onLeave && (
         <button type="button" onClick={() => setConfirmLeave(true)} style={{ display: 'block', margin: '28px auto 0', background: 'none', border: 'none', color: 'var(--danger)', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', minHeight: 44 }}>Leave Community</button>

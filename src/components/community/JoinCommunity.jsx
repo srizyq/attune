@@ -50,6 +50,8 @@ export default function JoinCommunity({ profile, onJoin }) {
   async function submit(e) {
     e.preventDefault();
     setFormError(null);
+    // Asked right here, in the tap itself (phones refuse to ask later); the phone is registered once the profile exists.
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
     const found = await validateProfileText({ username, displayName, bio });
     if (isPrivate === null) found.audience = 'Choose public or private. You can change it later.';
     setProblems(found);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
 import { recheckPending } from '../lib/communityPhotos';
+import { ensureCommunityPush } from '../lib/communityPush';
 import { getMyCommunityProfile, joinCommunity, leaveCommunity, updateCommunityProfile } from '../lib/community';
 
 // The signed-in person's own Community profile (null until they've joined).
@@ -25,6 +26,10 @@ export function useCommunity({ enabled = true } = {}) {
   }, [userId, enabled]);
 
   useEffect(() => { refetch(); }, [refetch]);
+
+  // Wants follow or heart notifications: make sure this phone is registered for them.
+  const wantsPush = !!state.me && (state.me.notify_follows !== false || state.me.notify_reactions !== false);
+  useEffect(() => { if (wantsPush) ensureCommunityPush(userId); }, [wantsPush, userId]);
 
   // A profile picture whose check failed last time: try again.
   const avatarPath = state.me?.avatar_status === 'pending' ? state.me.avatar_path : null;
