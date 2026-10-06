@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
-import { getMyCommunityProfile, joinCommunity, updateCommunityProfile } from '../lib/community';
+import { getMyCommunityProfile, joinCommunity, leaveCommunity, updateCommunityProfile } from '../lib/community';
 
 // The signed-in person's own Community profile (null until they've joined).
 // `enabled` is false while Community is switched off: nothing is asked then.
@@ -37,6 +37,11 @@ export function useCommunity({ enabled = true } = {}) {
     return updated;
   }, [userId]);
 
+  const leave = useCallback(async () => {
+    await leaveCommunity(userId);
+    setState({ me: null, forUser: userId, error: null });
+  }, [userId]);
+
   const me = state.forUser === userId ? state.me : null;
-  return { me, loading, error: state.error, join, update, refetch };
+  return { me, loading, error: state.error, join, update, leave, refetch };
 }

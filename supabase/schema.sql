@@ -3832,8 +3832,9 @@ drop policy if exists "community_profiles: update own" on public.community_profi
 create policy "community_profiles: update own" on public.community_profiles
   for update using (user_id = auth.uid() and banned_at is null) with check (user_id = auth.uid());
 drop policy if exists "community_profiles: delete own" on public.community_profiles;
+-- A banned account can't delete its profile (that would let it rejoin clean).
 create policy "community_profiles: delete own" on public.community_profiles
-  for delete using (user_id = auth.uid());
+  for delete using (user_id = auth.uid() and banned_at is null);
 
 drop policy if exists "community_follows: select own" on public.community_follows;
 create policy "community_follows: select own" on public.community_follows
@@ -4418,3 +4419,51 @@ create policy "community-photos: owner can update" on storage.objects
 drop policy if exists "community-photos: owner can delete" on storage.objects;
 create policy "community-photos: owner can delete" on storage.objects
   for delete using (bucket_id = 'community-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+
+-- ── Notifications and report emails ─────────────────────────────────────────
+-- Which Community events may buzz your phone (the push itself still needs the
+-- notifications opt-in in Settings), and bookkeeping so a busy post doesn't
+-- send one push per heart and a report is only emailed once.
+alter table public.community_profiles add column if not exists notify_follows boolean not null default true;
+alter table public.community_profiles add column if not exists notify_reactions boolean not null default true;
+alter table public.community_reports add column if not exists emailed_at timestamptz;
+
+create table if not exists public.community_push_log (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  key text not null,
+  sent_at timestamptz not null default now(),
+  primary key (user_id, key)
+);
+alter table public.community_push_log enable row level security;
+-- No policies: only the server (service role) reads or writes this.
+
+
+-- ── Leaving Community ───────────────────────────────────────────────────────
+-- Removes everything of yours here in one go: posts (and with them the hearts,
+-- saves and copies on them), your follows both ways, your blocks, your own
+-- reactions, saves and copies, and the profile. Blocks other people made against
+-- you stay, and so do reports, so leaving can't be used to dodge either.
+create or replace function public.community_leave()
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if exists (select 1 from public.community_profiles where user_id = uid and banned_at is not null) then
+    raise exception 'community_banned';
+  end if;
+  delete from public.community_posts where author_id = uid;
+  delete from public.community_follows where follower_id = uid or followee_id = uid;
+  delete from public.community_blocks where blocker_id = uid;
+  delete from public.community_reactions where user_id = uid;
+  delete from public.community_saves where user_id = uid;
+  delete from public.community_copies where copier_id = uid;
+  delete from public.community_push_log where user_id = uid;
+  delete from public.community_profiles where user_id = uid;
+end;
+$$;
+revoke all on function public.community_leave() from public, anon;
+grant execute on function public.community_leave() to authenticated;

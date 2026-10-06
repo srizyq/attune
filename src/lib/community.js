@@ -2,8 +2,25 @@
 // functions (they apply the privacy rules); writes are plain inserts that row
 // level security and triggers check again — nothing here is trusted on its own.
 import { supabase } from './supabase';
+import { fetchWithTimeout } from './http';
 
 const need = ({ data, error }) => { if (error) throw error; return data; };
+
+// Tells the server something just happened that may deserve a push (a follow,
+// a reaction) or an email (a report). Best-effort: the action already worked,
+// and the server re-checks it before sending anything.
+function notify(event) {
+  (async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    await fetchWithTimeout('/api/notify-trainer-comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(event),
+      timeoutMs: 10000,
+    });
+  })().catch((err) => console.error('Community notification failed:', err));
+}
 
 // What the database says when a rule stops something, in words for people.
 const MESSAGES = {
@@ -50,8 +67,18 @@ export async function updateCommunityProfile(userId, fields) {
 }
 
 export async function leaveCommunity(userId) {
-  need(await supabase.from('community_posts').delete().eq('author_id', userId));
-  need(await supabase.from('community_profiles').delete().eq('user_id', userId));
+  need(await supabase.rpc('community_leave'));
+  // The database part is done; now the photo files (only their owner can delete them).
+  try {
+    for (let pass = 0; pass < 20; pass += 1) {
+      const { data } = await supabase.storage.from('community-photos').list(userId, { limit: 100 });
+      const files = (data || []).filter((f) => f.name);
+      if (!files.length) break;
+      await supabase.storage.from('community-photos').remove(files.map((f) => `${userId}/${f.name}`));
+    }
+  } catch (err) {
+    console.error('Could not remove all photo files:', err);
+  }
 }
 
 // ── Reading ─────────────────────────────────────────────────────────────────
@@ -69,6 +96,7 @@ export const getFollowList = async (userId, kind) => need(await supabase.rpc('co
 // ── Following ───────────────────────────────────────────────────────────────
 export async function followUser(myId, theirId) {
   need(await supabase.from('community_follows').insert({ follower_id: myId, followee_id: theirId }));
+  notify({ community: 'follow', targetId: theirId });
 }
 export async function unfollowUser(myId, theirId) {
   need(await supabase.from('community_follows').delete().eq('follower_id', myId).eq('followee_id', theirId));
@@ -96,7 +124,10 @@ export async function deletePost(postId, photoPath = null) {
 
 // ── Reactions, saves, copies ────────────────────────────────────────────────
 export async function setReaction(userId, postId, kind, on) {
-  if (on) need(await supabase.from('community_reactions').insert({ post_id: postId, user_id: userId, kind }));
+  if (on) {
+    need(await supabase.from('community_reactions').insert({ post_id: postId, user_id: userId, kind }));
+    notify({ community: 'reaction', postId });
+  }
   else need(await supabase.from('community_reactions').delete().eq('post_id', postId).eq('user_id', userId).eq('kind', kind));
 }
 export async function setSaved(userId, postId, on) {
@@ -124,5 +155,19 @@ export const REPORT_REASONS = [
   { id: 'other', label: 'Something else' },
 ];
 export async function reportPost(myId, { postId = null, userId, reason, details = '' }) {
-  need(await supabase.from('community_reports').insert({ reporter_id: myId, post_id: postId, reported_user_id: userId, reason, details: details.trim().slice(0, 500) }));
+  const row = need(await supabase.from('community_reports')
+    .insert({ reporter_id: myId, post_id: postId, reported_user_id: userId, reason, details: details.trim().slice(0, 500) })
+    .select('id').single());
+  if (row?.id) notify({ community: 'report', reportId: row.id });
 }
+
+// ── Moderation (the functions refuse anyone who isn't a moderator) ───────────
+export async function isCommunityModerator() {
+  return !!need(await supabase.rpc('community_is_moderator'));
+}
+export const getModReports = async (status = 'open') => need(await supabase.rpc('community_mod_reports', { p_status: status, p_limit: 100 })) || [];
+export async function modSetPostHidden(postId, hidden) { need(await supabase.rpc('community_mod_set_post_hidden', { p_post: postId, p_hidden: hidden })); }
+// (The photo file itself stays in storage — only its owner can delete files — but nobody can open it once the post is gone.)
+export async function modDeletePost(postId) { need(await supabase.rpc('community_mod_delete_post', { p_post: postId })); }
+export async function modSetBanned(userId, banned) { need(await supabase.rpc('community_mod_set_banned', { p_user: userId, p_banned: banned })); }
+export async function modResolveReport(reportId, status) { need(await supabase.rpc('community_mod_resolve_report', { p_report: reportId, p_status: status })); }

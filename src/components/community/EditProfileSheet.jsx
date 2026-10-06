@@ -3,6 +3,7 @@ import DragSheet from '../DragSheet';
 import Avatar from './Avatar';
 import CameraCapture from '../CameraCapture';
 import ModalPortal from '../ModalPortal';
+import ActionSheet from './ActionSheet';
 import { useAuth } from '../../hooks/useAuth';
 import { removePhoto, resizeToJpeg, screenPhoto, uploadPhoto } from '../../lib/communityPhotos';
 import { useClosingTransition } from '../../hooks/useClosingTransition';
@@ -26,13 +27,15 @@ function Switch({ id, checked, onChange, title, children }) {
 }
 
 /** Your Community profile and privacy settings in one sheet. */
-export default function EditProfileSheet({ me, onSave, onClose, onToast }) {
+export default function EditProfileSheet({ me, onSave, onLeave, onClose, onToast }) {
   const { closing, close } = useClosingTransition(onClose);
   const [username, setUsername] = useState(me.username);
   const [displayName, setDisplayName] = useState(me.display_name);
   const [bio, setBio] = useState(me.bio || '');
   const [isPrivate, setIsPrivate] = useState(!!me.is_private);
   const [discoverable, setDiscoverable] = useState(!!me.discoverable);
+  const [notifyFollows, setNotifyFollows] = useState(me.notify_follows !== false);
+  const [notifyReactions, setNotifyReactions] = useState(me.notify_reactions !== false);
   const [problems, setProblems] = useState({});
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState(null);
@@ -40,6 +43,7 @@ export default function EditProfileSheet({ me, onSave, onClose, onToast }) {
   const [avatar, setAvatar] = useState({ path: me.avatar_path || null, status: me.avatar_status || (me.avatar_path ? 'approved' : 'none') });
   const [capturing, setCapturing] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   // A new profile picture applies straight away (it isn't part of Save) and waits for the check.
   async function changeAvatar(file) {
@@ -88,7 +92,7 @@ export default function EditProfileSheet({ me, onSave, onClose, onToast }) {
     const found = await validateProfileText({ username, displayName, bio });
     setProblems(found);
     if (Object.keys(found).length) return;
-    const fields = { display_name: displayName.trim(), bio: bio.trim(), is_private: isPrivate, discoverable };
+    const fields = { display_name: displayName.trim(), bio: bio.trim(), is_private: isPrivate, discoverable, notify_follows: notifyFollows, notify_reactions: notifyReactions };
     if (normalizeUsername(username) !== me.username) fields.username = normalizeUsername(username);
     setBusy(true);
     try {
@@ -148,7 +152,22 @@ export default function EditProfileSheet({ me, onSave, onClose, onToast }) {
         {goingPrivate && <div style={{ fontSize: 12, color: 'var(--text-secondary)', padding: '8px 0', lineHeight: 1.5 }}>Your public posts will become followers-only.</div>}
         <Switch id="ep-discoverable" checked={discoverable} onChange={setDiscoverable} title="Show me in Explore">Public accounts can appear when people browse for someone to follow. Has no effect on a private account.</Switch>
       </div>
+      <div style={{ ...label, marginTop: 22 }}>Notifications</div>
+      <div>
+        <Switch id="ep-notify-follows" checked={notifyFollows} onChange={setNotifyFollows} title="New followers and requests">A push when someone follows you or asks to.</Switch>
+        <Switch id="ep-notify-reactions" checked={notifyReactions} onChange={setNotifyReactions} title="Hearts and flames">One push per post an hour, however many people react. Needs notifications turned on in Settings.</Switch>
+      </div>
+      {onLeave && (
+        <button type="button" onClick={() => setConfirmLeave(true)} style={{ display: 'block', margin: '28px auto 0', background: 'none', border: 'none', color: 'var(--danger)', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', minHeight: 44 }}>Leave Community</button>
+      )}
     </DragSheet>
+    {confirmLeave && (
+      <ActionSheet
+        title="Leave Community? This deletes your posts, photos, followers, saves and everything else you have here. You can join again later."
+        actions={[{ label: 'Leave and delete everything', icon: 'ti-trash', danger: true, onSelect: async () => { try { await onLeave(); } catch (e) { setFormError(friendlyCommunityError(e)); } } }]}
+        onClose={() => setConfirmLeave(false)}
+      />
+    )}
     {capturing && <ModalPortal><CameraCapture onCapture={changeAvatar} hint="Frame your face or your favourite food" fullScreen onClose={() => setCapturing(false)} /></ModalPortal>}
     </>
   );

@@ -2,7 +2,7 @@ import LegalPageLayout, { Section, P, Ul } from '../components/LegalPageLayout';
 
 export default function Terms() {
   return (
-    <LegalPageLayout title="Terms of Service" updated="18 September 2026">
+    <LegalPageLayout title="Terms of Service" updated="7 October 2026">
       <P>
         These terms govern your use of Attune, currently operated by an individual
         (not a registered company) from Australia. By creating an account, you agree
@@ -66,7 +66,21 @@ export default function Terms() {
         </P>
       </Section>
 
-      <Section title="6. Acceptable use">
+      <Section title="6. Community">
+        <P>
+          Community lets you share days, meals and recipes with other people. It is
+          optional, and only for people aged 16 and over. By posting you agree that:
+        </P>
+        <Ul items={[
+          'You are responsible for what you post. Share only your own food logs, recipes and photos of food, and only photos you have the right to share.',
+          'You keep ownership of what you post, and you give Attune permission to show it to the people your audience setting allows, and to let them copy it into their own diary.',
+          'You will not post anything abusive, hateful, sexual, violent, or that promotes eating disorders or extreme dieting, and you will not advertise, post links, or pretend to be someone else.',
+          'Everything on Community is shared by other users, not checked by us for accuracy. Calories, macros and recipes from other people are not medical or dietary advice (see section 1).',
+          'We may remove content, restrict features, or suspend an account that breaks these rules, with or without notice, and we act on reports. You can report and block anyone from the app.',
+        ]} />
+      </Section>
+
+      <Section title="7. Acceptable use">
         <P>You agree not to:</P>
         <Ul items={[
           'Use the app for anything illegal, or to harm, harass, or impersonate anyone.',
@@ -76,7 +90,7 @@ export default function Terms() {
         ]} />
       </Section>
 
-      <Section title="7. Intellectual property">
+      <Section title="8. Intellectual property">
         <P>
           The Attune name, design, and app content are owned by its operator. Your
           own logged data remains yours — using the app doesn't give us any ownership
@@ -85,7 +99,7 @@ export default function Terms() {
         </P>
       </Section>
 
-      <Section title="8. Disclaimer & limitation of liability">
+      <Section title="9. Disclaimer & limitation of liability">
         <P>
           Attune is provided "as is," without warranties of any kind. To the maximum
           extent permitted by law, we are not liable for any health outcome, injury,
@@ -94,7 +108,7 @@ export default function Terms() {
         </P>
       </Section>
 
-      <Section title="9. Termination">
+      <Section title="10. Termination">
         <P>
           We may suspend or terminate an account that violates these terms. You can
           stop using Attune and request account deletion at any time (see the Privacy
@@ -102,7 +116,7 @@ export default function Terms() {
         </P>
       </Section>
 
-      <Section title="10. Changes to these terms">
+      <Section title="11. Changes to these terms">
         <P>
           We may update these terms as the app changes. Material changes will update
           the date at the top of this page, and where practical, we'll let you know
@@ -110,11 +124,11 @@ export default function Terms() {
         </P>
       </Section>
 
-      <Section title="11. Governing law">
+      <Section title="12. Governing law">
         <P>These terms are governed by the laws of Australia.</P>
       </Section>
 
-      <Section title="12. Contact">
+      <Section title="13. Contact">
         <P>
           Questions about these terms: <b>attun3app@gmail.com</b>
         </P>

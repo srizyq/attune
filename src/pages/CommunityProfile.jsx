@@ -37,7 +37,7 @@ function ProfileInner({ username }) {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { enabled, ready } = useCommunityAccess();
-  const { me, loading: meLoading, update } = useCommunity({ enabled });
+  const { me, loading: meLoading, update, leave } = useCommunity({ enabled });
   const [person, setPerson] = useState(undefined); // undefined = loading, null = not available
   const [tab, setTab] = useState('posts');
   const [toast, setToast] = useState(null);
@@ -145,7 +145,7 @@ function ProfileInner({ username }) {
         <div className="page-pad">{body}</div>
       </div>
       {sheets}
-      {sheet === 'edit' && me && <EditProfileSheet me={me} onSave={async (fields) => { const next = await update(fields); await loadPerson(); if (fields.username && fields.username !== username) navigate(`/community/u/${next.username}`, { replace: true }); }} onClose={() => setSheet(null)} onToast={showToast} />}
+      {sheet === 'edit' && me && <EditProfileSheet me={me} onLeave={async () => { await leave(); navigate('/community', { replace: true }); }} onSave={async (fields) => { const next = await update(fields); await loadPerson(); if (fields.username && fields.username !== username) navigate(`/community/u/${next.username}`, { replace: true }); }} onClose={() => setSheet(null)} onToast={showToast} />}
       {sheet === 'menu' && person && (
         <ActionSheet
           title={`@${person.username}`}

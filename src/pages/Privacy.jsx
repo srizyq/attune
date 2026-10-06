@@ -2,7 +2,7 @@ import LegalPageLayout, { Section, P, Ul } from '../components/LegalPageLayout';
 
 export default function Privacy() {
   return (
-    <LegalPageLayout title="Privacy Policy" updated="3 October 2026">
+    <LegalPageLayout title="Privacy Policy" updated="7 October 2026">
       <P>
         Attune ("Attune", "we", "us") is currently operated by an individual, not a
         registered company, from Australia. This policy explains what data the
@@ -19,8 +19,10 @@ export default function Privacy() {
           <><b>Food logs:</b> what you log — food name, portion, meal, time, and its full nutrition breakdown (calories, macros, and any micronutrients your database source or an AI estimate provides).</>,
           <><b>Weight logs, body measurements and mood/energy check-ins</b> you choose to record. This is health information, which privacy law treats as sensitive. You provide it voluntarily, we use it only to run the features you use, and you can delete it at any time.</>,
           <><b>Progress photos</b> you choose to add. These are stored privately in your account, visible only to you, and deleted when you remove them or delete your account.</>,
+          <><b>Community photos</b> you add to a post or as a profile picture are kept in private storage until you delete them, and are checked automatically before others can see them (see section 8).</>,
           <><b>Photos you submit</b> for photo scan, menu scan, or nutrition label scan. These are sent to our AI provider for one-time analysis and are <b>not stored</b> by us afterward — we keep the resulting nutrition estimate, not the image.</>,
           <><b>Voice recordings</b> when you use voice search or voice corrections. The audio is sent for one-time transcription and is <b>not stored</b> by us afterward.</>,
+          <><b>Community</b>, only if you choose to join: your username, display name, bio and optional profile picture; whether your account is public or private; who you follow, who follows you, and who you block; the days, meals and recipes you choose to share (with their calories and macros, an optional note and an optional photo); hearts, flames and saves; the meals you copy from others; and reports you send. Your weight is never shown in Community.</>,
           <><b>Reminder and notification settings</b>, including the push subscription your browser creates if you turn reminders on.</>,
           <><b>Coach Mode data</b>, if you connect a trainer and client account: the connection itself, comments a trainer leaves, and the nutrition data a client's account shares with their connected trainer.</>,
           <><b>Basic usage metadata</b> needed to run the product, like your monthly AI-scan count (to enforce the free-tier limit) and whether your account is Pro.</>,
@@ -42,9 +44,9 @@ export default function Privacy() {
         <P>We use a small number of third-party services to run Attune. Each only sees the data it needs to do its job:</P>
         <Ul items={[
           <><b>Supabase</b> — hosts our database and handles authentication. All of your account and log data lives here.</>,
-          <><b>Anthropic (Claude)</b> — processes photos you submit for AI food/menu/label recognition. Anthropic receives the image and a description of the task, not your account identity.</>,
+          <><b>Anthropic (Claude)</b> — processes photos you submit for AI food/menu/label recognition, and checks photos added to Community posts and profile pictures for safety. Anthropic receives the image and a description of the task, not your account identity.</>,
           <><b>OpenAI</b> — transcribes voice recordings for voice search and voice corrections. OpenAI receives the audio, not your account identity.</>,
-          <><b>Resend</b> — delivers the account emails we send you, such as email confirmation and password reset. It receives your email address and the message.</>,
+          <><b>Resend</b> — delivers the account emails we send you, such as email confirmation and password reset, and the email that tells the moderator about a Community report. It receives the address and the message.</>,
           <><b>Google Fonts</b> — serves the app's typefaces. Google receives your IP address and device information when the fonts load.</>,
           <><b>Cloudflare Turnstile</b> — a bot check that can run when you sign up or sign in. Cloudflare receives your IP address and browser details to tell people from automated traffic.</>,
           <><b>Browser and phone push services</b> (Apple, Google or Mozilla, depending on your device) — deliver reminder notifications if you turn them on.</>,
@@ -93,14 +95,29 @@ export default function Privacy() {
         </P>
       </Section>
 
-      <Section title="8. Changes to this policy">
+      <Section title="8. Community">
+        <P>
+          Community is optional, and only for people aged 16 and over. Joining creates a
+          Community profile; nothing from your diary is shared unless you press Share
+          and post it.
+        </P>
+        <Ul items={[
+          <><b>Who can see what.</b> A public account's public posts can be seen by any Community member, and the account can appear in Explore (you can turn that off). A private account approves each follower, and only approved followers see its posts. Each post from a public account can also be limited to followers. Posts show calories and macros. Anyone who can see a post can copy it into their own diary, and the post shows how many people have. Only the person who posted can see who reacted to it.</>,
+          <><b>Photos.</b> A photo on a post or profile picture is stored privately. An automatic check (using Anthropic's Claude) decides whether it is a safe photo of food (a profile picture only has to be safe). Until it is approved only you can see it; a rejected photo is deleted. Approved photos are visible only to people who can see the post or profile.</>,
+          <><b>Reports and moderation.</b> Anyone can report a post or person, and block someone. A report goes by email to the moderator (attun3app@gmail.com) with the reported post, and a post reported by three different people is hidden until it is reviewed. A moderator can hide or delete a post and suspend an account. Reports are kept so repeat problems can be spotted.</>,
+          <><b>Notifications.</b> If you have turned notifications on, Community can notify you of new followers and requests, and of hearts and flames. You can turn each off in Edit profile.</>,
+          <><b>Deleting.</b> You can delete any post at any time, and leaving Community or deleting your account removes your Community profile, posts, photos, follows, saves and reactions.</>,
+        ]} />
+      </Section>
+
+      <Section title="9. Changes to this policy">
         <P>
           If this policy changes materially, we'll update the date at the top of this
           page and, where practical, let you know in the app.
         </P>
       </Section>
 
-      <Section title="9. Contact">
+      <Section title="10. Contact">
         <P>
           For any privacy question or request, contact: <b>attun3app@gmail.com</b>
         </P>

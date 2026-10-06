@@ -17,6 +17,7 @@ import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { replyPayload, withinThrottle } from './_coachPush.js';
 import { rateLimit, tooManyRequests } from './_rateLimit.js';
+import { handleCommunityEvent, resendSender, supabaseStore } from './_communityNotify.js';
 
 async function sendToSubscriptions(supabase, subs, payload) {
   const body = JSON.stringify(payload);
@@ -77,6 +78,23 @@ export default async function handler(req, res) {
     return;
   }
   const body = req.body || {};
+
+  // Community: follows, reactions and report emails (see _communityNotify.js).
+  if (body.community) {
+    webpush.setVapidDetails(vapidSubject || 'mailto:admin@example.com', vapidPublic, vapidPrivate);
+    const result = await handleCommunityEvent({
+      body,
+      callerId,
+      store: supabaseStore(supabase),
+      sendPush: (subs, payload) => sendToSubscriptions(supabase, subs, payload),
+      sendEmail: resendSender(process.env),
+      moderatorEmail: process.env.COMMUNITY_MODERATOR_EMAIL || undefined,
+      appUrl: process.env.APP_URL || `https://${req.headers.host || 'attune.app'}`,
+    });
+    res.status(result.status).json(result.json);
+    return;
+  }
+
   const toTrainer = body.direction === 'to-trainer';
 
   const trainerId = toTrainer ? body.trainerId : callerId;

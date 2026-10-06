@@ -129,8 +129,10 @@ test.describe('profiles', () => {
     await expect(page.getByRole('article', { name: /recipe by/ })).toBeVisible();
     await assertLayout(page, testInfo, 'x-community-profile', ctx);
     const write = page.waitForRequest((r) => r.url().includes('/rest/v1/community_follows') && r.method() === 'POST');
+    const pushed = page.waitForRequest((r) => r.url().includes('/api/notify-trainer-comment'));
     await page.getByRole('button', { name: 'Follow', exact: true }).click();
     expect(bodyOf(await write)).toMatchObject({ follower_id: USER_ID, followee_id: 'u-maya' });
+    expect(bodyOf(await pushed)).toEqual({ community: 'follow', targetId: 'u-maya' });
   });
 
   test('a private account you do not follow shows only the basics', async ({ page, context }, testInfo) => {
@@ -159,8 +161,33 @@ test.describe('profiles', () => {
     await expect(page.getByText('Your public posts will become followers-only.')).toBeVisible();
     const write = page.waitForRequest((r) => r.url().includes('/rest/v1/community_profiles') && r.method() === 'PATCH');
     await page.getByRole('button', { name: 'Save' }).click();
-    expect(bodyOf(await write)).toMatchObject({ bio: 'Cutting to 76kg', is_private: true, discoverable: true });
+    expect(bodyOf(await write)).toMatchObject({ bio: 'Cutting to 76kg', is_private: true, discoverable: true, notify_follows: true, notify_reactions: true });
     await expect(page.getByText('Profile saved')).toBeVisible();
+  });
+
+  test('notifications can be turned off per kind', async ({ page, context }, testInfo) => {
+    const mine = profileRow({ user_id: USER_ID, username: 'alex.m', display_name: 'Alex', relation: 'self' });
+    await openApp({ page, context }, testInfo, { rpc: rpcFor([mine]), tables: { community_profiles: [ME] } });
+    await page.goto('/community/u/alex.m');
+    await page.getByRole('button', { name: 'Edit profile' }).click();
+    await expect(page.getByRole('switch', { name: /Hearts and flames/ })).toBeChecked();
+    await page.getByRole('switch', { name: /Hearts and flames/ }).uncheck();
+    const write = page.waitForRequest((r) => r.url().includes('/rest/v1/community_profiles') && r.method() === 'PATCH');
+    await page.getByRole('button', { name: 'Save' }).click();
+    expect(bodyOf(await write)).toMatchObject({ notify_follows: true, notify_reactions: false });
+  });
+
+  test('leaving Community asks first, then removes everything', async ({ page, context }, testInfo) => {
+    const mine = profileRow({ user_id: USER_ID, username: 'alex.m', display_name: 'Alex', relation: 'self' });
+    await openApp({ page, context }, testInfo, { rpc: rpcFor([mine]), tables: { community_profiles: [ME] } });
+    await page.goto('/community/u/alex.m');
+    await page.getByRole('button', { name: 'Edit profile' }).click();
+    await page.getByRole('button', { name: 'Leave Community' }).click();
+    await expect(page.getByText(/This deletes your posts, photos, followers/)).toBeVisible();
+    const left = page.waitForRequest((r) => r.url().includes('/rest/v1/rpc/community_leave'));
+    await page.getByRole('button', { name: 'Leave and delete everything' }).click();
+    await left;
+    await expect(page).toHaveURL(/\/community$/);
   });
 
   test('a bad bio is refused in the edit sheet', async ({ page, context }, testInfo) => {
@@ -249,6 +276,17 @@ test.describe('saved posts and the post menu', () => {
     await page.getByRole('button', { name: 'Send report' }).click();
     expect(bodyOf(await write)).toMatchObject({ reporter_id: USER_ID, post_id: 'p-meal', reported_user_id: 'author-p-meal', reason: 'spam' });
     await expect(page.getByText(/Thanks/)).toBeVisible();
+  });
+
+  test('a report also asks the server to email it', async ({ page, context }, testInfo) => {
+    await openApp({ page, context }, testInfo, { rpc: { ...ON, community_feed_cards: [MEAL] }, tables: { community_profiles: [ME] } });
+    await page.goto('/community');
+    await page.getByRole('button', { name: 'More' }).click();
+    await page.getByRole('button', { name: 'Report post' }).click();
+    await page.getByRole('radio', { name: 'Harassment or hate' }).check();
+    const pushed = page.waitForRequest((r) => r.url().includes('/api/notify-trainer-comment'));
+    await page.getByRole('button', { name: 'Send report' }).click();
+    expect(bodyOf(await pushed)).toMatchObject({ community: 'report' });
   });
 
   test('a report needs a reason', async ({ page, context }, testInfo) => {

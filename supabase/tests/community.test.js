@@ -763,3 +763,81 @@ describe('photos', () => {
     expect((await db.query(`select * from storage.objects`)).rows).toHaveLength(0);
   }, 60000);
 });
+
+describe('notification settings and bookkeeping', () => {
+  it('both notification switches start on and a member can change them', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy');
+    const row = async () => (await db.query(`select notify_follows, notify_reactions from public.community_profiles where user_id = $1`, [a])).rows[0];
+    expect(await row()).toEqual({ notify_follows: true, notify_reactions: true });
+    await as(db, a, `update public.community_profiles set notify_reactions = false where user_id = $1`, [a]);
+    expect(await row()).toEqual({ notify_follows: true, notify_reactions: false });
+  }, 60000);
+
+  it('the push log is server-only', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy');
+    await db.query(`insert into public.community_push_log (user_id, key) values ($1, 'x')`, [a]);
+    expect((await as(db, a, `select * from public.community_push_log`)).rows).toHaveLength(0);
+    await rejects(as(db, a, `insert into public.community_push_log (user_id, key) values ($1, 'y')`, [a]), /row-level security/);
+  }, 60000);
+
+  it('a report starts un-emailed and a member cannot mark it emailed', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy', { isPrivate: false });
+    const b = await member(db, 'Bea');
+    const p = await post(db, a);
+    await as(db, b, `insert into public.community_reports (reporter_id, post_id, reported_user_id, reason) values ($1, $2, $3, 'spam')`, [b, p, a]);
+    expect((await db.query(`select emailed_at from public.community_reports`)).rows[0].emailed_at).toBeNull();
+    await as(db, b, `update public.community_reports set emailed_at = now()`);
+    expect((await db.query(`select emailed_at from public.community_reports`)).rows[0].emailed_at).toBeNull();
+  }, 60000);
+});
+
+describe('leaving Community', () => {
+  it('removes everything of yours, but keeps blocks against you and reports', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy', { isPrivate: false });
+    const b = await member(db, 'Bea', { isPrivate: false });
+    const c = await member(db, 'Cat', { isPrivate: false });
+    const mine = await post(db, a);
+    const theirs = await post(db, b);
+    await follow(db, a, b); await follow(db, b, a);
+    await as(db, a, `insert into public.community_blocks (blocker_id, blocked_id) values ($1, $2)`, [a, c]);
+    await as(db, c, `insert into public.community_blocks (blocker_id, blocked_id) values ($1, $2)`, [c, a]);
+    await as(db, a, `insert into public.community_reactions (post_id, user_id, kind) values ($1, $2, 'heart')`, [theirs, a]);
+    await as(db, a, `insert into public.community_saves (user_id, post_id) values ($1, $2)`, [a, theirs]);
+    await as(db, a, `insert into public.community_copies (post_id, copier_id) values ($1, $2)`, [theirs, a]);
+    await as(db, a, `insert into public.community_reports (reporter_id, post_id, reported_user_id, reason) values ($1, $2, $3, 'spam')`, [a, theirs, b]);
+    await as(db, b, `insert into public.community_reactions (post_id, user_id, kind) values ($1, $2, 'heart')`, [mine, b]);
+
+    await as(db, a, `select public.community_leave()`);
+    const count = async (t, col, id) => (await db.query(`select count(*)::int n from public.${t} where ${col} = $1`, [id])).rows[0].n;
+    expect(await count('community_profiles', 'user_id', a)).toBe(0);
+    expect(await count('community_posts', 'author_id', a)).toBe(0);
+    expect(await count('community_reactions', 'post_id', mine)).toBe(0); // went with the post
+    expect(await count('community_reactions', 'user_id', a)).toBe(0);
+    expect(await count('community_saves', 'user_id', a)).toBe(0);
+    expect(await count('community_copies', 'copier_id', a)).toBe(0);
+    expect((await db.query(`select * from public.community_follows`)).rows).toHaveLength(0);
+    expect(await count('community_blocks', 'blocker_id', a)).toBe(0);
+    expect(await count('community_blocks', 'blocker_id', c)).toBe(1); // Cat's block of Amy stays
+    expect(await count('community_reports', 'reporter_id', a)).toBe(1);
+    expect(await count('community_posts', 'author_id', b)).toBe(1);
+  }, 60000);
+
+  it('a banned account cannot leave (or delete itself) to come back clean', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy', { isPrivate: false });
+    await db.query(`update public.community_profiles set banned_at = now() where user_id = $1`, [a]);
+    await rejects(as(db, a, `select public.community_leave()`), /community_banned/);
+    await as(db, a, `delete from public.community_profiles where user_id = $1`, [a]);
+    expect((await db.query(`select * from public.community_profiles where user_id = $1`, [a])).rows).toHaveLength(1);
+  }, 60000);
+
+  it('anonymous callers cannot', async () => {
+    const db = await createDb();
+    await db.exec(`set role anon`);
+    try { await expect(db.query(`select public.community_leave()`)).rejects.toThrow(/permission denied/); } finally { await db.exec(`reset role`); }
+  }, 60000);
+});

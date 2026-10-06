@@ -17,7 +17,7 @@ import PostCard from '../components/community/PostCard';
 import FeedEmpty from '../components/community/FeedEmpty';
 import ShareChooser from '../components/community/ShareChooser';
 import ShareSheet from '../components/community/ShareSheet';
-import { getFeed, getFollowRequests } from '../lib/community';
+import { getFeed, getFollowRequests, isCommunityModerator } from '../lib/community';
 
 export default function Community() {
   const navigate = useNavigate();
@@ -27,6 +27,7 @@ export default function Community() {
   const { me, loading: meLoading, join } = useCommunity({ enabled });
   const feed = useCommunityCards(useCallback((before) => getFeed(before), []), { enabled: !!me });
   const [requests, setRequests] = useState(0);
+  const [moderator, setModerator] = useState(false);
   const [choosing, setChoosing] = useState(false);
   const [draft, setDraft] = useState(null);
   const [toast, setToast] = useState(null);
@@ -40,6 +41,7 @@ export default function Community() {
     if (!me) return undefined;
     let cancelled = false;
     getFollowRequests().then((r) => { if (!cancelled) setRequests(r.length); }).catch(() => {});
+    isCommunityModerator().then((m) => { if (!cancelled) setModerator(m); }).catch(() => {});
     return () => { cancelled = true; };
   }, [me]);
 
@@ -84,6 +86,7 @@ export default function Community() {
         {requests > 0 && <span aria-label={`${requests} follow requests`} style={{ position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, background: 'var(--accent)', color: 'var(--accent-contrast)', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{requests}</span>}
       </button>
       <button type="button" className="app-icon-btn" aria-label="Saved" title="Saved" onClick={() => navigate('/community/saved')}><i className="ti ti-bookmark" /></button>
+      {moderator && <button type="button" className="app-icon-btn" aria-label="Moderation" title="Moderation" onClick={() => navigate('/community/moderate')}><i className="ti ti-shield-check" /></button>}
       <button type="button" className="app-icon-btn" aria-label="Your profile" title="Your profile" onClick={() => navigate(`/community/u/${me.username}`)}><i className="ti ti-user" /></button>
     </>
   );

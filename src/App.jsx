@@ -32,6 +32,7 @@ const Community = lazy(() => import('./pages/Community'));
 const CommunityFind = lazy(() => import('./pages/CommunityFind'));
 const CommunitySaved = lazy(() => import('./pages/CommunitySaved'));
 const CommunityProfile = lazy(() => import('./pages/CommunityProfile'));
+const CommunityModerate = lazy(() => import('./pages/CommunityModerate'));
 const JoinCoach = lazy(() => import('./pages/JoinCoach'));
 const DashboardRedesignHarness = lazy(() => import('./prototypes/dashboard-redesign/Harness'));
 const SettingsRedesignHarness = lazy(() => import('./prototypes/settings-redesign/Harness'));
@@ -99,6 +100,7 @@ function AnimatedRoutes() {
         <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
         <Route path="/community" element={<RequireAuth><Community /></RequireAuth>} />
         <Route path="/community/find" element={<RequireAuth><CommunityFind /></RequireAuth>} />
+        <Route path="/community/moderate" element={<RequireAuth><CommunityModerate /></RequireAuth>} />
         <Route path="/community/saved" element={<RequireAuth><CommunitySaved /></RequireAuth>} />
         <Route path="/community/u/:username" element={<RequireAuth><CommunityProfile /></RequireAuth>} />
         <Route path="/join/:code" element={<JoinCoach />} />

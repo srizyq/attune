@@ -18,7 +18,8 @@ const DEFAULT_RPC = {
   start_free_trial: null,
   // Community is switched off unless a test turns it on.
   community_access: false, community_feed_cards: [], community_user_cards: [], community_saved_cards: [], community_suggestions: [],
-  community_follow_requests: [], community_follow_list: [], community_blocked_list: [], community_search: [], community_explore: [], community_profile: [],
+  community_follow_requests: [], community_follow_list: [], community_blocked_list: [],
+  community_is_moderator: false, community_leave: null, community_mod_reports: [], community_mod_set_post_hidden: null, community_mod_delete_post: null, community_mod_set_banned: null, community_mod_resolve_report: null, community_search: [], community_explore: [], community_profile: [],
 };
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
@@ -100,6 +101,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
       if (req.method() === 'POST') return json({ signedURL: `${url.pathname.replace('/storage/v1', '')}?token=t` });
       return route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64') });
     }
+    if (url.pathname.startsWith('/storage/v1/object/list/')) return json([]);
     if (url.pathname.startsWith('/storage/v1/object/')) {
       storageLog.push(`${req.method()} ${url.pathname.replace('/storage/v1/object/', '')}`);
       return json(req.method() === 'DELETE' ? [] : { Key: url.pathname.replace('/storage/v1/object/', ''), Id: 'obj' });
