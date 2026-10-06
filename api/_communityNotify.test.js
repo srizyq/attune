@@ -171,6 +171,9 @@ describe('resendSender', () => {
     expect(url).toBe('https://api.resend.com/emails');
     expect(init.headers.authorization).toBe('Bearer rk');
     expect(JSON.parse(init.body)).toEqual({ from: 'Attune <hi@a.test>', to: ['m@x.test'], subject: 'S', text: 'T' });
+    const many = vi.fn().mockResolvedValue({ ok: true });
+    await resendSender({ RESEND_API_KEY: 'rk' }, many)({ to: 'a@x.test, b@x.test ,', subject: 'S', text: 'T' });
+    expect(JSON.parse(many.mock.calls[0][1].body).to).toEqual(['a@x.test', 'b@x.test']);
     expect(await resendSender({ RESEND_API_KEY: 'rk' }, vi.fn().mockResolvedValue({ ok: false }))({ to: 'a', subject: 'b', text: 'c' })).toBe(false);
     expect(await resendSender({ RESEND_API_KEY: 'rk' }, vi.fn().mockRejectedValue(new Error('net')))({ to: 'a', subject: 'b', text: 'c' })).toBe(false);
   });

@@ -160,7 +160,8 @@ export function resendSender(env, fetchImpl = fetch) {
       const res = await fetchImpl('https://api.resend.com/emails', {
         method: 'POST',
         headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ from, to: [to], subject, text }),
+        // `to` may be one address or several separated by commas.
+        body: JSON.stringify({ from, to: String(to).split(',').map((a) => a.trim()).filter(Boolean), subject, text }),
       });
       return res.ok;
     } catch {
