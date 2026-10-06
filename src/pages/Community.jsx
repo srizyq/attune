@@ -15,6 +15,8 @@ import CommunityTabs from '../components/community/CommunityTabs';
 import JoinCommunity from '../components/community/JoinCommunity';
 import PostCard from '../components/community/PostCard';
 import FeedEmpty from '../components/community/FeedEmpty';
+import ShareChooser from '../components/community/ShareChooser';
+import ShareSheet from '../components/community/ShareSheet';
 import { getFeed, getFollowRequests } from '../lib/community';
 
 export default function Community() {
@@ -25,6 +27,8 @@ export default function Community() {
   const { me, loading: meLoading, join } = useCommunity({ enabled });
   const feed = useCommunityCards(useCallback((before) => getFeed(before), []), { enabled: !!me });
   const [requests, setRequests] = useState(0);
+  const [choosing, setChoosing] = useState(false);
+  const [draft, setDraft] = useState(null);
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
   const showToast = (message, isError = false) => { setToast(message); setToastError(isError); };
@@ -56,7 +60,7 @@ export default function Community() {
       </div>
     );
   } else if (!feed.cards.length) {
-    content = <FeedEmpty me={me} onToast={showToast} />;
+    content = <FeedEmpty me={me} onToast={showToast} onShare={() => setChoosing(true)} />;
   } else {
     content = (
       <>
@@ -74,6 +78,7 @@ export default function Community() {
 
   const headerButtons = me && (
     <>
+      <button type="button" className="app-icon-btn" aria-label="Share to Community" title="Share to Community" onClick={() => setChoosing(true)} style={{ background: 'var(--accent)', color: 'var(--accent-contrast)', borderColor: 'var(--accent)' }}><i className="ti ti-plus" /></button>
       <button type="button" className="app-icon-btn" aria-label="Find people" title="Find people" onClick={() => navigate('/community/find')} style={{ position: 'relative' }}>
         <i className="ti ti-user-plus" />
         {requests > 0 && <span aria-label={`${requests} follow requests`} style={{ position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, background: 'var(--accent)', color: 'var(--accent-contrast)', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{requests}</span>}
@@ -95,6 +100,8 @@ export default function Community() {
         </div>
       </div>
       {sheets}
+      {choosing && me && <ShareChooser profile={profile} onClose={() => setChoosing(false)} onPick={(d) => { setChoosing(false); setDraft(d); }} />}
+      {draft && me && <ShareSheet key={draft.kind + draft.payload.title} draft={draft} me={me} onClose={() => setDraft(null)} onPosted={(m) => { showToast(m); feed.refetch(); }} />}
       {toast && <Toast message={toast} error={toastError} onDone={() => setToast(null)} />}
     </div>
   );

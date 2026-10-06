@@ -15,7 +15,7 @@ export default function ActionSheet({ title, actions, onClose }) {
           aria-label={title}
           onClick={(e) => e.stopPropagation()}
           className={`sheet-panel${closing ? ' is-closing' : ''}`}
-          style={{ width: '100%', maxWidth: 480, background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderBottom: 'none', borderRadius: '24px 24px 0 0', padding: '12px 16px calc(16px + env(safe-area-inset-bottom))' }}
+          style={{ width: '100%', maxWidth: 480, background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderBottom: 'none', borderRadius: '24px 24px 0 0', padding: '12px 16px calc(16px + env(safe-area-inset-bottom))', maxHeight: '80vh', overflowY: 'auto' }}
         >
           <div style={{ width: 36, height: 5, borderRadius: 99, background: 'var(--border-strong)', margin: '0 auto 12px' }} />
           {title && <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 6 }}>{title}</div>}
@@ -23,7 +23,7 @@ export default function ActionSheet({ title, actions, onClose }) {
             <button
               key={a.label}
               type="button"
-              onClick={() => { close(); setTimeout(a.onSelect, 170); }}
+              onClick={() => { if (a.keepOpen) { a.onSelect(); return; } close(); setTimeout(a.onSelect, 170); }}
               style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 48, background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', color: a.danger ? 'var(--danger)' : 'var(--text-primary)', fontSize: 15, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', padding: '0 4px' }}
             >
               {a.icon && <i className={`ti ${a.icon}`} aria-hidden="true" style={{ fontSize: 19 }} />}{a.label}

@@ -8,7 +8,7 @@ import { followUser, unfollowUser, getSuggestions, friendlyCommunityError } from
  * A feed with nothing in it yet: how to find people, your invite link, and a
  * short list of public accounts worth following.
  */
-export default function FeedEmpty({ me, onToast }) {
+export default function FeedEmpty({ me, onToast, onShare }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [people, setPeople] = useState(null);
@@ -48,7 +48,12 @@ export default function FeedEmpty({ me, onToast }) {
         <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18 }}>Your feed is empty</div>
         <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.55, margin: '6px 0 14px' }}>Follow people to see the meals, days and recipes they share. Send friends your link so they can find you.</p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" onClick={invite} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>
+          {onShare && (
+            <button type="button" onClick={onShare} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>
+              <i className="ti ti-plus" aria-hidden="true" />Share something
+            </button>
+          )}
+          <button type="button" onClick={invite} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: onShare ? 'transparent' : 'var(--accent)', color: onShare ? 'var(--text-secondary)' : 'var(--accent-contrast)', border: onShare ? '1px solid var(--border-default)' : 'none', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>
             <i className="ti ti-share" aria-hidden="true" />Share your invite link
           </button>
           <button type="button" onClick={() => navigate('/community/find')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-default)', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>

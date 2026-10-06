@@ -139,3 +139,53 @@ test('your own posts have no copy button', async ({ page, context }, testInfo) =
   await expect(page.getByRole('button', { name: /Copy to my log/ })).toHaveCount(0);
   await expect(page.getByText('Copied 2×')).toBeVisible();
 });
+
+test.describe('sharing from inside Community', () => {
+  const post = (page) => page.waitForRequest((r) => r.url().includes('/rest/v1/community_posts') && r.method() === 'POST');
+
+  test('the + offers today, a meal or a recipe — and Post shares it', async ({ page, context }, testInfo) => {
+    const ctx = await openApp({ page, context }, testInfo, { rpc: { ...ON, community_feed_cards: [MEAL] }, tables: { community_profiles: [ME] } });
+    await page.goto('/community');
+    await page.getByRole('button', { name: 'Share to Community' }).click();
+    await expect(page.getByRole('button', { name: 'Today so far' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'A meal from today' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'A recipe' })).toBeVisible();
+    await assertLayout(page, testInfo, 'x-community-share-chooser', ctx);
+
+    await page.getByRole('button', { name: 'Today so far' }).click();
+    const write = post(page);
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    const body = JSON.parse((await write).postData());
+    expect(body).toMatchObject({ kind: 'day', author_id: USER_ID });
+    await expect(page.getByText('Shared to Community')).toBeVisible();
+  });
+
+  test('pick a meal from today', async ({ page, context }, testInfo) => {
+    await openApp({ page, context }, testInfo, { rpc: { ...ON, community_feed_cards: [MEAL] }, tables: { community_profiles: [ME] } });
+    await page.goto('/community');
+    await page.getByRole('button', { name: 'Share to Community' }).click();
+    await page.getByRole('button', { name: 'A meal from today' }).click();
+    await page.getByRole('button', { name: /^Lunch · / }).click();
+    const write = post(page);
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    expect(JSON.parse((await write).postData())).toMatchObject({ kind: 'meal' });
+  });
+
+  test('pick a recipe', async ({ page, context }, testInfo) => {
+    await openApp({ page, context }, testInfo, { rpc: { ...ON, community_feed_cards: [MEAL] }, tables: { community_profiles: [ME] } });
+    await page.goto('/community');
+    await page.getByRole('button', { name: 'Share to Community' }).click();
+    await page.getByRole('button', { name: 'A recipe' }).click();
+    await page.getByRole('button', { name: 'Big breakfast' }).click();
+    const write = post(page);
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    expect(JSON.parse((await write).postData())).toMatchObject({ kind: 'recipe' });
+  });
+
+  test('an empty feed has a Share something button too; with nothing logged it says what to do', async ({ page, context }, testInfo) => {
+    await openApp({ page, context }, testInfo, { rpc: ON, tables: { community_profiles: [ME], food_logs: [], saved_meals: [] } });
+    await page.goto('/community');
+    await page.getByRole('button', { name: 'Share something' }).click();
+    await expect(page.getByText(/Nothing to share yet/)).toBeVisible();
+  });
+});
