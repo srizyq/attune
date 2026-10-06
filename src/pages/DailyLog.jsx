@@ -27,6 +27,9 @@ import PullIndicator from '../components/PullIndicator';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { useDaySwipe } from '../hooks/useDaySwipe';
 import { shiftDate } from '../lib/gestures';
+import { useCommunityShare } from '../hooks/useCommunityShare';
+import { buildDayPost, buildMealPost } from '../lib/communityPosts';
+import { targetsForDate } from '../lib/dayTargets';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
 
@@ -97,6 +100,12 @@ export default function DailyLog() {
 
   const { byMeal: yesterdayByMeal, copy: copyFromYesterday, copying: copyingYesterday } = useCopyYesterday(selectedDate, refetch, showToast);
 
+  // "Share to Community" — only offered once Community is switched on.
+  const community = useCommunityShare((m) => showToast(m));
+  const allItems = Object.values(meals).flat();
+  const shareDay = () => community.share(buildDayPost({ date: selectedDate, today, items: allItems, targetCalories: targetsForDate(profile, selectedDate)?.calories }));
+  const shareMeal = (mealKey, items) => community.share(buildMealPost({ meal: mealKey, date: selectedDate, items }));
+
   // deleteFood had no error handling anywhere it was used — a failed
   // delete (network blip, RLS hiccup) just silently did nothing, no toast,
   // no console hint. LogItemRow already catches and inline-surfaces its
@@ -155,7 +164,12 @@ export default function DailyLog() {
           onBack={() => navigate('/dashboard')}
           backLabel="Back to Dashboard"
           right={
-            <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
+            <div style={{ position: 'relative', display: 'flex', flexShrink: 0, gap: 8 }}>
+            {community.canShare && allItems.length > 0 && (
+              <button onClick={shareDay} title="Share this day to Community" aria-label="Share this day" className="app-icon-btn">
+                <i className="ti ti-share-3" />
+              </button>
+            )}
             <button onClick={() => setShowCopyMenu(v => !v)} title="Copy meals" aria-label="Copy meals" className="app-icon-btn">
               <i className="ti ti-copy" />
             </button>
@@ -263,6 +277,11 @@ export default function DailyLog() {
                         <button onClick={() => navigate('/food', { state: { openMeal: mealKey, date: selectedDate } })} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '12px 18px', textAlign: 'left' }}>
                           + Add food
                         </button>
+                        {community.canShare && items.length > 0 && (
+                          <button onClick={() => shareMeal(mealKey, items)} aria-label={`Share ${MEAL_LABELS[mealKey]} to Community`} style={{ width: '100%', background: 'none', border: 'none', borderTop: '1px solid var(--border-default)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', padding: '12px 18px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            <i className="ti ti-share-3" aria-hidden="true" /> Share this meal
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -294,6 +313,7 @@ export default function DailyLog() {
           onSubmit={(food) => addFood(food, undefined, new Date(), slotFromTime(daySlots)?.id ?? null)}
         />
       )}
+      {community.sheet}
       {toast && <Toast message={toast} error={toastError} action={toastAction} duration={toastAction ? 5000 : 2200} onDone={() => setToast(null)} />}
     </div>
   );

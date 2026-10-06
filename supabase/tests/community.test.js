@@ -610,3 +610,46 @@ describe('leaving', () => {
     expect((await db.query(`select * from public.community_posts`)).rows).toHaveLength(0);
   }, 60000);
 });
+
+describe('the on/off switch', () => {
+  it('is off for everyone until switched on, except listed testers', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Ann');
+    const b = await member(db, 'Bob');
+    const access = async (u) => (await as(db, u, `select public.community_access() v`)).rows[0].v;
+    expect(await access(a)).toBe(false);
+    await db.query(`insert into public.community_testers (user_id) values ($1)`, [b]);
+    expect(await access(a)).toBe(false);
+    expect(await access(b)).toBe(true);
+    await db.query(`update public.app_settings set community_enabled = true`);
+    expect(await access(a)).toBe(true);
+    expect((await as(db, a, `select * from public.community_testers`)).rows).toHaveLength(0);
+    const kid = await addUser(db, 'Kid');
+    await db.query(`update public.profiles set age = 15 where id = $1`, [kid]);
+    expect(await access(kid)).toBe(false);
+    await db.query(`update public.profiles set age = null, date_of_birth = '2012-01-01' where id = $1`, [kid]);
+    expect(await access(kid)).toBe(false);
+    await db.query(`update public.profiles set age = null, date_of_birth = null where id = $1`, [kid]);
+    expect(await access(kid)).toBe(true); // unknown age: the join screen asks
+    await db.exec(`set role anon`);
+    try { await expect(db.query(`select public.community_access()`)).rejects.toThrow(/permission denied/); } finally { await db.exec(`reset role`); }
+  }, 60000);
+});
+
+describe('the blocked list', () => {
+  it('shows only your own blocks, newest first, and survives the block hiding their profile', async () => {
+    const db = await createDb();
+    const a = await member(db, 'Amy');
+    const b = await member(db, 'Bea');
+    const c = await member(db, 'Cat');
+    await as(db, a, `insert into public.community_blocks (blocker_id, blocked_id) values ($1, $2)`, [a, b]);
+    await db.query(`update public.community_blocks set created_at = now() - interval '1 day'`);
+    await as(db, a, `insert into public.community_blocks (blocker_id, blocked_id) values ($1, $2)`, [a, c]);
+    expect((await as(db, a, `select username from public.community_blocked_list()`)).rows.map((r) => r.username)).toEqual(['cat', 'bea']);
+    expect((await as(db, b, `select * from public.community_blocked_list()`)).rows).toHaveLength(0);
+    // Unblocking is a plain delete, and the person is back in the world.
+    await as(db, a, `delete from public.community_blocks where blocked_id = $1`, [b]);
+    expect((await as(db, a, `select username from public.community_blocked_list()`)).rows.map((r) => r.username)).toEqual(['cat']);
+    expect((await as(db, a, `select * from public.community_profile('bea')`)).rows).toHaveLength(1);
+  }, 60000);
+});

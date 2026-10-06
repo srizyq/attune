@@ -7,6 +7,9 @@ export default defineConfig({
   server: {
     port: Number(process.env.PORT) || 5183,
   },
+  // Loaded on demand (Community's word filter); pre-bundling it stops the dev
+  // server discovering it mid-session and reloading the page under a test.
+  optimizeDeps: { include: ['obscenity'] },
   // Generous timeouts: the SQL tests boot an in-process Postgres and every
   // component test spins up jsdom, so on a busy machine (or CI) the 5s default
   // fails tests that are merely slow, not broken.

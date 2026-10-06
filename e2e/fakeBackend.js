@@ -16,6 +16,9 @@ const DEFAULT_RPC = {
   search_ausnut_foods_fuzzy: [], search_ausnut_foods_ranked: [], search_common_dishes_fuzzy: [],
   search_restaurant_items_ranked: [], search_restaurant_items_fuzzy: [],
   start_free_trial: null,
+  // Community is switched off unless a test turns it on.
+  community_access: false, community_feed_cards: [], community_user_cards: [], community_saved_cards: [], community_suggestions: [],
+  community_follow_requests: [], community_follow_list: [], community_blocked_list: [], community_search: [], community_explore: [], community_profile: [],
 };
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
@@ -70,6 +73,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     barcode_products: [], common_dishes: [], afcd_foods: [], ausnut_foods: [], meal_plans: [], body_measurements: [], progress_photos: [],
     day_slots: [], fasts: [],
     restaurant_chains: [], restaurant_items: [],
+    community_profiles: [], community_posts: [], community_follows: [], community_reactions: [], community_saves: [], community_copies: [], community_blocks: [], community_reports: [],
     ...tables,
   };
   const unmocked = [];

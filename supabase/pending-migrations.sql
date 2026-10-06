@@ -3256,3 +3256,53 @@ grant execute on function public.community_mod_set_post_hidden(uuid, boolean) to
 grant execute on function public.community_mod_delete_post(uuid) to authenticated;
 grant execute on function public.community_mod_set_banned(uuid, boolean) to authenticated;
 grant execute on function public.community_mod_resolve_report(uuid, text) to authenticated;
+
+
+-- ── The on/off switch ───────────────────────────────────────────────────────
+-- Community stays hidden until `update app_settings set community_enabled =
+-- true` is run (everyone at once). Until then only people listed in
+-- community_testers can see it, so it can be tried on a real phone first.
+alter table public.app_settings add column if not exists community_enabled boolean not null default false;
+
+create table if not exists public.community_testers (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.community_testers enable row level security;
+-- No policies: only the SQL editor / service role can add or list testers.
+
+create or replace function public.community_access()
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select auth.uid() is not null
+    and (
+      coalesce((select community_enabled from public.app_settings limit 1), false)
+      or exists (select 1 from public.community_testers where user_id = auth.uid())
+    )
+    -- Under 16 (when we know) never sees it. An unknown age is let through so
+    -- the join screen can ask for it.
+    and not exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid()
+        and coalesce(case when p.date_of_birth is not null then extract(year from age(current_date, p.date_of_birth))::int else p.age end, 99) < 16
+    )
+$$;
+revoke all on function public.community_access() from public, anon;
+grant execute on function public.community_access() to authenticated;
+
+
+-- People you've blocked (their profiles are hidden from you by the block itself,
+-- so the list has to come from here).
+create or replace function public.community_blocked_list()
+returns table (user_id uuid, username text, display_name text, avatar_path text)
+language sql stable security definer set search_path = public
+as $$
+  select cp.user_id, cp.username, cp.display_name, cp.avatar_path
+  from public.community_blocks b
+  join public.community_profiles cp on cp.user_id = b.blocked_id
+  where b.blocker_id = auth.uid()
+  order by b.created_at desc
+$$;
+revoke all on function public.community_blocked_list() from public, anon;
+grant execute on function public.community_blocked_list() to authenticated;
