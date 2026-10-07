@@ -5,9 +5,8 @@
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  /* The bottom nav floats as a pill, inset from the screen's side edges by
-     this much rather than sitting flush against them. */
-  --bottom-nav-gap: 8px;
+  /* The bottom nav is a flat bar fixed to the bottom edge. */
+  --bottom-nav-gap: 0px;
   /* Vertical clearance above the bottom edge, ON TOP OF the home-indicator
      inset (--safe-bottom) rather than stacked with the full side gap — the
      side gap alone was landing ~42px above the physical bottom on notched
@@ -20,7 +19,7 @@
      icon+label tabs, plus the gap it floats above the bottom edge/home-
      indicator inset by. Page content (and anything else fixed above the
      nav) reserves this much so nothing can end up trapped beneath it. */
-  --bottom-nav-h: calc(62px + var(--bottom-nav-gap-v) + var(--safe-bottom));
+  --bottom-nav-h: calc(64px + var(--bottom-nav-gap-v) + var(--safe-bottom));
   /* One screen, minus the top inset body pads itself by. Full-screen page
      roots use this instead of 100vh: with the inset added on top of a
      100vh root the page is taller than the screen, so its bottom edge (and
@@ -119,28 +118,25 @@
   .app-bottom-nav {
     display: flex;
     position: fixed;
-    /* Floats clear of every edge — including above the home indicator, not
-       padded above it like an edge-attached bar would be — instead of
-       spanning flush corner-to-corner. */
-    left: var(--bottom-nav-gap);
-    right: var(--bottom-nav-gap);
-    bottom: calc(var(--safe-bottom) + var(--bottom-nav-gap-v));
-    height: 62px;
+    /* A flat bar along the bottom edge with rounded top corners; the home
+       indicator's inset is padding inside it, so the bar's own colour runs
+       to the very bottom of the screen. */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 64px;
+    padding-bottom: var(--safe-bottom);
     box-sizing: content-box;
     background: var(--bg-card, #221d1a);
-    border: 1px solid var(--border-default, #332c27);
-    border-radius: 999px;
-    /* Definition against whatever's scrolled underneath — an edge-attached
-       bar only needed a top border since the screen edge did the rest; a
-       floating one needs a real shadow to read as raised above the page. */
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    border-top: 1px solid var(--border-default, #332c27);
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.18);
     z-index: 100;
   }
 
-  /* Outer tap target — full slot width/height, unstyled. The filled pill on
-     the active tab lives on .app-bottom-icon-content (below), sized to just
-     the icon+label, not the whole slot — a background that size would read
-     as a big rectangle rather than a capsule. */
+  /* Outer tap target — full slot width/height, unstyled. The tinted pill on
+     the active tab lives on .app-bottom-icon-pill (below), around the icon
+     only; the label sits under it. */
   .app-bottom-icon {
     flex: 1;
     display: flex;
@@ -164,26 +160,33 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 4px;
     max-width: 100%;
-    padding: 7px 5px;
-    border-radius: 16px;
     color: var(--text-muted, #666);
-    transition: color 150ms ease, background 150ms ease,
-      transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: color 150ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .app-bottom-icon:active .app-bottom-icon-content {
-    transform: scale(0.9);
+    transform: scale(0.92);
+  }
+
+  .app-bottom-icon-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 30px;
+    border-radius: 15px;
+    transition: background 150ms ease;
   }
 
   .app-bottom-icon-content i {
-    font-size: 20px;
+    font-size: 21px;
     line-height: 1;
   }
 
   .app-bottom-icon-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     line-height: 1;
     max-width: 100%;
@@ -192,23 +195,28 @@
     white-space: nowrap;
   }
 
-  /* Active tab: a solid filled capsule around icon+label together — not
-     just a tinted background on the icon — so it reads as a clear, single
-     "you are here" pill rather than a subtle colour change. Light text/icon
-     on the accent fill for contrast (--accent-contrast, fixed in both
-     themes — this amber accent wants light text whether the app is in
-     light or dark mode), the same pairing the "+" button below uses. */
+  /* Active tab: a soft accent-tinted pill behind the icon, the icon in the
+     accent colour, and the label turns bold and dark. */
   .app-bottom-icon-content.is-active {
-    color: var(--accent-contrast);
-    background: var(--accent, #e87a48);
+    color: var(--text-primary);
+  }
+  .app-bottom-icon-content.is-active .app-bottom-icon-pill {
+    background: color-mix(in srgb, var(--accent) 18%, var(--bg-card));
+    color: var(--accent);
+  }
+  .app-bottom-icon-content.is-active .app-bottom-icon-label {
+    font-weight: 800;
   }
 
+  /* Quick add: a round button raised above the bar, ringed in the bar's
+     colour so it looks cut out of it. */
   .app-bottom-add {
     flex: 0 0 auto;
-    width: 56px;
-    align-self: stretch;
-    margin: 5px 4px;
-    border-radius: 999px;
+    width: 58px;
+    height: 58px;
+    align-self: flex-start;
+    margin: -20px 6px 0;
+    border-radius: 50%;
     background: var(--accent, #e87a48);
     border: none;
     color: var(--accent-contrast);
@@ -217,12 +225,13 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    box-shadow: 0 0 0 6px var(--bg-card, #221d1a), 0 8px 16px rgba(232, 122, 72, 0.35);
     transition: transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
     animation: none !important;
   }
 
   .app-bottom-add:active {
-    transform: scale(0.9);
+    transform: scale(0.92);
   }
 
   .app-content-pad {
@@ -330,7 +339,7 @@
 
 /* Meal builder's floating "Building meal" bar (FoodSearch.jsx) — fixed to
    the bottom of the viewport. On phones the app-bottom-nav is ALSO fixed
-   to the bottom (floating pill, z-index 100), so a flat `bottom: 16px`
+   to the bottom (a flat bar, z-index 100), so a flat `bottom: 16px`
    put this bar mostly underneath the nav: its text and buttons were
    clipped by/behind the tab bar with no way to reach Cancel. Clearing the
    nav's full floating footprint (--bottom-nav-h) on mobile, capping the
@@ -482,14 +491,11 @@
   background: var(--bg-primary) !important;
 }
 
-/* Bottom nav: more translucent than the page header (65% vs. 84%) — it
-   floats over content rather than sitting at the top of it, so it should
-   read as glass, not a near-solid bar; explicit feedback called the first
-   pass "not as translucent as I asked". */
+/* Bottom nav: a lightly frosted bar — mostly solid so the labels stay easy to read. */
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   @media (max-width: 860px) {
     .app-bottom-nav {
-      background: color-mix(in srgb, var(--bg-card) 65%, transparent);
+      background: color-mix(in srgb, var(--bg-card) 92%, transparent);
       -webkit-backdrop-filter: blur(20px) saturate(160%);
       backdrop-filter: blur(20px) saturate(160%);
     }

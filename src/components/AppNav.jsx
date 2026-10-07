@@ -40,7 +40,7 @@ function MobileNavButton({ isActive, label, icon, onClick }) {
       onClick={onClick}
     >
       <span className={`app-bottom-icon-content${isActive ? ' is-active' : ''}`}>
-        <i className={`ti ${icon}`} />
+        <span className="app-bottom-icon-pill"><i className={`ti ${icon}`} /></span>
         <span className="app-bottom-icon-label">{label}</span>
       </span>
     </button>
