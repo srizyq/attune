@@ -5,6 +5,11 @@
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* How far the bottom nav's contents sit above the screen's bottom edge: a
+     little under half of the home indicator's inset. The indicator is a thin
+     line near the very bottom, so the full inset left a big empty strip under
+     the icons. */
+  --bottom-nav-pad: calc(var(--safe-bottom) * 0.35);
   /* The bottom nav is a flat bar fixed to the bottom edge. */
   --bottom-nav-gap: 0px;
   /* Vertical clearance above the bottom edge, ON TOP OF the home-indicator
@@ -19,7 +24,7 @@
      icon+label tabs, plus the gap it floats above the bottom edge/home-
      indicator inset by. Page content (and anything else fixed above the
      nav) reserves this much so nothing can end up trapped beneath it. */
-  --bottom-nav-h: calc(64px + var(--bottom-nav-gap-v) + var(--safe-bottom));
+  --bottom-nav-h: calc(64px + var(--bottom-nav-gap-v) + var(--bottom-nav-pad));
   /* One screen, minus the top inset body pads itself by. Full-screen page
      roots use this instead of 100vh: with the inset added on top of a
      100vh root the page is taller than the screen, so its bottom edge (and
@@ -116,16 +121,20 @@
   }
 
   .app-bottom-nav {
-    display: flex;
+    /* Five equal slots, so the icons are evenly spaced and the + is dead centre. */
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    justify-items: stretch;
     position: fixed;
-    /* A flat bar along the bottom edge with rounded top corners; the home
-       indicator's inset is padding inside it, so the bar's own colour runs
-       to the very bottom of the screen. */
+    /* A flat bar along the bottom edge with rounded top corners; a little
+       padding inside it keeps the contents clear of the home indicator, and
+       the bar's own colour runs to the very bottom of the screen. */
     left: 0;
     right: 0;
     bottom: 0;
     height: 64px;
-    padding-bottom: var(--safe-bottom);
+    padding-bottom: var(--bottom-nav-pad);
     box-sizing: content-box;
     background: var(--bg-card, #221d1a);
     border-top: 1px solid var(--border-default, #332c27);
@@ -138,7 +147,7 @@
      the active tab lives on .app-bottom-icon-pill (below), around the icon
      only; the label sits under it. */
   .app-bottom-icon {
-    flex: 1;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,24 +217,20 @@
     font-weight: 800;
   }
 
-  /* Quick add: a round button raised above the bar, ringed in the bar's
-     colour so it looks cut out of it. */
+  /* Quick add: a round button that sits inside the bar, in the middle slot. */
   .app-bottom-add {
-    flex: 0 0 auto;
-    width: 58px;
-    height: 58px;
-    align-self: flex-start;
-    margin: -20px 6px 0;
+    width: 50px;
+    height: 50px;
+    justify-self: center;
     border-radius: 50%;
     background: var(--accent, #e87a48);
     border: none;
     color: var(--accent-contrast);
-    font-size: 28px;
+    font-size: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 0 0 6px var(--bg-card, #221d1a), 0 8px 16px rgba(232, 122, 72, 0.35);
     transition: transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
     animation: none !important;
   }
