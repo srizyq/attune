@@ -320,8 +320,8 @@ export default function Profile() {
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         {/* Top bar */}
         <PageHeader
-          title="Profile"
-          subtitle="Your personal details and body stats"
+          title="Personal details"
+          subtitle="Your name, body stats and account"
           onBack={() => navigate('/settings')}
           backLabel="Back to Settings"
         />

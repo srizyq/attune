@@ -123,7 +123,7 @@ export default function CoachModal({ onClose, closing }) {
 
   const goToProfile = () => {
     onClose();
-    navigate('/profile');
+    navigate('/settings/personal');
   };
   const goToPricing = () => {
     onClose();

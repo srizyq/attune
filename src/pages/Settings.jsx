@@ -18,24 +18,20 @@ import Card from '../components/Card';
 // already work as their own screens instead of a modal.
 //
 // Account (session/subscription management for a plan you already have)
-// isn't a row here — it lives under the Profile card above instead, so
-// session management sits next to the identity it belongs to. Plans &
+// lives under Personal details (name, body stats, sign out, theme). The
+// Profile card above opens the Community-style profile. Plans &
 // Billing is different: it's for *comparing/choosing* a plan, which needs
 // to be reachable even if you aren't already staring at a paywall — hence
 // its own row (a plain route, not a modal/page like the others), rather
 // than only being reachable from an upsell prompt buried elsewhere.
 const SECTIONS = [
+  { id: 'personal', icon: 'ti-id', label: 'Personal details', kind: 'route', path: '/settings/personal' },
   { id: 'goals',   icon: 'ti-target',       label: 'Goals & Targets', kind: 'page' },
   { id: 'notifs',  icon: 'ti-bell',         label: 'Notifications',   kind: 'modal' },
   { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'modal' },
   { id: 'plans',   icon: 'ti-credit-card',  label: 'Plans & Billing', kind: 'route', path: '/pricing' },
   { id: 'privacy', icon: 'ti-shield-lock',  label: 'Privacy',         kind: 'modal' },
 ];
-
-// Only used to resolve icon/label for search results that point at the
-// Profile page (a plain navigate, not a SECTIONS row/modal) — kept out of
-// SECTIONS itself so it doesn't render as a duplicate row in the list.
-const PROFILE_META = { id: 'profile', icon: 'ti-user-circle', label: 'Profile' };
 
 // One entry per individual setting (not per section) so a search like
 // "protein" or "reminder" jumps straight to the right section instead of
@@ -53,10 +49,14 @@ const SEARCH_INDEX = [
   { section: 'coach', label: 'Coach Mode', keywords: 'coach mode client dashboard' },
   { section: 'coach', label: 'My trainer', keywords: 'trainer invite code connect' },
   { section: 'plans', label: 'Compare Pro & Coach Pass', keywords: 'pricing plans pro coach pass subscribe billing upgrade price compare' },
-  { section: 'profile', label: 'Account status', keywords: 'account email guest sign in' },
-  { section: 'profile', label: 'Pro features', keywords: 'pro premium upgrade' },
-  { section: 'profile', label: 'Theme', keywords: 'theme dark light appearance' },
-  { section: 'profile', label: 'Log out', keywords: 'log out logout sign out exit guest' },
+  { section: 'personal', label: 'Name', keywords: 'name personal details' },
+  { section: 'personal', label: 'Units', keywords: 'units metric imperial kg lb cm' },
+  { section: 'personal', label: 'Age, weight and height', keywords: 'age weight height body stats' },
+  { section: 'personal', label: 'Account status', keywords: 'account email guest sign in' },
+  { section: 'personal', label: 'Pro features', keywords: 'pro premium upgrade' },
+  { section: 'personal', label: 'Theme', keywords: 'theme dark light appearance' },
+  { section: 'personal', label: 'Log out', keywords: 'log out logout sign out exit guest' },
+  { section: 'personal', label: 'Delete account', keywords: 'delete account remove' },
   { section: 'privacy', label: 'Export my data', keywords: 'export data download privacy' },
   { section: 'privacy', label: 'Import from another app', keywords: 'import myfitnesspal cronometer lose it csv zip switch diary history migrate' },
   { section: 'privacy', label: 'Privacy Policy', keywords: 'privacy policy legal data' },
@@ -80,7 +80,6 @@ export default function Settings() {
   }
 
   function openSection(id) {
-    if (id === 'profile') { navigate('/profile'); return; }
     const section = SECTIONS.find(s => s.id === id);
     if (!section) return;
     if (section.kind === 'page') navigate('/settings/goals');
@@ -99,7 +98,7 @@ export default function Settings() {
   // has to happen wherever the data is actually read).
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get('pro') === 'success') { navigate('/profile?pro=success', { replace: true }); return; }
+    if (params.get('pro') === 'success') { navigate('/settings/personal?pro=success', { replace: true }); return; }
     if (params.get('coach_pass') !== 'success') return;
     setOpenModal('coach');
     let attempts = 0;
@@ -129,6 +128,7 @@ export default function Settings() {
 
   const goalLabels = { lose: 'Lose weight', maintain: 'Maintain', build: 'Build muscle' };
   const summaries = {
+    personal: 'Name, body stats, account and theme',
     goals: profile?.calorie_target ? `${profile.calorie_target.toLocaleString()} kcal · ${goalLabels[profile.goal] || 'Maintain'}` : 'Not set up yet',
     notifs: profile?.reminder_enabled ? `Daily reminder at ${profile.reminder_time || '19:00'}` : 'All reminders off',
     coach: profile?.coach_pass ? 'Coach Pass active' : 'Not active',
@@ -215,7 +215,7 @@ export default function Settings() {
             ) : (
               <div style={{ marginBottom: 8 }}>
                 {results.map(r => {
-                  const section = SECTIONS.find(s => s.id === r.section) || (r.section === 'profile' ? PROFILE_META : null);
+                  const section = SECTIONS.find(s => s.id === r.section);
                   if (!section) return null;
                   return (
                     <button

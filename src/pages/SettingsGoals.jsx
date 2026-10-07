@@ -629,7 +629,7 @@ export default function SettingsGoals() {
             onSave={(periods) => saveProfile({ calorie_limit_periods: periods })}
             onUpgrade={() => navigate('/pricing')}
             pendingConfirmation={pendingConfirmation}
-            onConfirmEmail={() => navigate('/profile')}
+            onConfirmEmail={() => navigate('/settings/personal')}
           />
 
           {supportsDay && (
@@ -663,7 +663,7 @@ export default function SettingsGoals() {
                   <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 340 }}>
                     Set your own target for every nutrient on the Nutrients page instead of the default guideline — Pro only.
                   </p>
-                  <UpgradeProButton pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} onGoToPricing={() => navigate('/pricing')} />
+                  <UpgradeProButton pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/settings/personal')} onGoToPricing={() => navigate('/pricing')} />
                 </div>
               </div>
             ) : (

@@ -87,7 +87,6 @@ export default function Community() {
       </button>
       <button type="button" className="app-icon-btn" aria-label="Saved" title="Saved" onClick={() => navigate('/community/saved')}><i className="ti ti-bookmark" /></button>
       {moderator && <button type="button" className="app-icon-btn" aria-label="Moderation" title="Moderation" onClick={() => navigate('/community/moderate')}><i className="ti ti-shield-check" /></button>}
-      <button type="button" className="app-icon-btn" aria-label="Your profile" title="Your profile" onClick={() => navigate(`/community/u/${me.username}`)}><i className="ti ti-user" /></button>
     </>
   );
 

@@ -32,7 +32,8 @@ function Stat({ value, label, onClick }) {
     : <div style={{ flex: 1, textAlign: 'center', padding: '4px 0' }}>{inner}</div>;
 }
 
-function ProfileInner({ username }) {
+// `own` = shown as your own profile under Settings → Profile (same screen, different way in).
+export function CommunityProfileView({ username, own = false, onRenamed }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -59,6 +60,8 @@ function ProfileInner({ username }) {
 
   if (ready && !enabled) return <Navigate to="/dashboard" replace />;
   if (!meLoading && ready && !me) return <Navigate to="/community" replace />;
+  // Your own profile lives under Settings; an old link to it comes here.
+  if (!own && person?.relation === 'self') return <Navigate to="/profile" replace />;
 
   async function toggleFollow(follow) {
     setBusy(true);
@@ -139,13 +142,19 @@ function ProfileInner({ username }) {
 
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
-      <AppNav active="community" initials={initials} />
+      <AppNav active={own ? 'profile' : 'community'} initials={initials} />
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <PageHeader title={isSelf ? 'Your profile' : 'Profile'} onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/community'))} backLabel="Back" />
+        <PageHeader title={own ? 'Profile' : isSelf ? 'Your profile' : 'Profile'} onBack={own ? () => navigate('/settings') : () => (window.history.length > 1 ? navigate(-1) : navigate('/community'))} backLabel={own ? 'Back to Settings' : 'Back'} />
         <div className="page-pad">{body}</div>
       </div>
       {sheets}
-      {sheet === 'edit' && me && <EditProfileSheet me={me} onLeave={async () => { await leave(); navigate('/community', { replace: true }); }} onSave={async (fields) => { const next = await update(fields); await loadPerson(); if (fields.username && fields.username !== username) navigate(`/community/u/${next.username}`, { replace: true }); }} onClose={() => setSheet(null)} onToast={showToast} />}
+      {sheet === 'edit' && me && <EditProfileSheet me={me} onLeave={async () => { await leave(); navigate(own ? '/profile' : '/community', { replace: true }); }} onSave={async (fields) => {
+        const next = await update(fields);
+        const renamed = !!fields.username && fields.username !== username;
+        if (renamed && own) { onRenamed?.(); return; } // the page reopens under the new username
+        await loadPerson();
+        if (renamed) navigate(`/community/u/${next.username}`, { replace: true });
+      }} onClose={() => setSheet(null)} onToast={showToast} />}
       {sheet === 'menu' && person && (
         <ActionSheet
           title={`@${person.username}`}
@@ -167,5 +176,5 @@ function ProfileInner({ username }) {
 // Keyed by username so moving from one profile to another starts fresh.
 export default function CommunityProfile() {
   const { username } = useParams();
-  return <ProfileInner key={username} username={username} />;
+  return <CommunityProfileView key={username} username={username} />;
 }

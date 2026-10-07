@@ -192,3 +192,47 @@ test.describe('sharing from inside Community', () => {
     await expect(page.getByText(/Nothing to share yet/)).toBeVisible();
   });
 });
+
+test('Settings → Profile is the Community-style profile; your details moved to Personal details', async ({ page, context }, testInfo) => {
+  const self = { user_id: USER_ID, username: 'alex.m', display_name: 'Alex', avatar_path: null, bio: '', is_private: false, is_coach: false, goal_type: 'lose', posts: 0, followers: 0, following: 0, streak: 3, relation: 'self', follows_you: false };
+  const ctx = await openApp({ page, context }, testInfo, { rpc: { ...ON, community_feed_cards: [], community_user_cards: [], community_profile: [self] }, tables: { community_profiles: [ME] } });
+  await page.goto('/settings');
+  await settle(page);
+  await expect(page.getByRole('button', { name: /Personal details/ })).toBeVisible();
+  await page.getByRole('button', { name: /Personal details/ }).click();
+  await expect(page).toHaveURL(/\/settings\/personal/);
+  await expect(page.getByRole('heading', { name: 'Personal details' })).toBeVisible();
+  await expect(page.getByText('Body stats', { exact: true })).toBeVisible();
+  await expect(page.getByText('Your details', { exact: true })).toBeVisible();
+  await settle(page);
+  await assertLayout(page, testInfo, 'x-personal-details', ctx);
+
+  await page.goto('/profile');
+  await expect(page.getByRole('button', { name: 'Edit profile' })).toBeVisible();
+  await expect(page.getByText('Followers')).toBeVisible();
+  await expect(page.getByText('Body stats', { exact: true })).toHaveCount(0);
+  await settle(page);
+  await assertLayout(page, testInfo, 'x-my-profile', ctx);
+
+  // The Community header no longer has its own profile button.
+  await page.goto('/community');
+  await settle(page);
+  await expect(page.getByRole('button', { name: 'Your profile' })).toHaveCount(0);
+});
+
+test('Profile without Community (switched off, not joined, or too young) still shows the profile layout', async ({ page, context }, testInfo) => {
+  const ctx = await openApp({ page, context }, testInfo, { rpc: { community_access: false } });
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { name: 'Alex Morgan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Join Community' })).toHaveCount(0);
+  await expect(page.getByText('Body stats', { exact: true })).toHaveCount(0);
+  await settle(page);
+  await assertLayout(page, testInfo, 'x-my-profile-basic', ctx);
+});
+
+test('Profile for someone who has not joined Community yet offers to join', async ({ page, context }, testInfo) => {
+  await openApp({ page, context }, testInfo, { rpc: ON });
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Join Community' }).click();
+  await expect(page).toHaveURL(/\/community$/);
+});

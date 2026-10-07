@@ -42,7 +42,7 @@ export default function JoinCommunity({ profile, onJoin }) {
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: 20 }}>
         <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>One thing first</div>
         <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 14px' }}>Community is for people aged 16 and over. Add your age in your profile so we can check.</p>
-        <button type="button" onClick={() => navigate('/profile')} style={{ background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>Open profile</button>
+        <button type="button" onClick={() => navigate('/settings/personal')} style={{ background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>Open profile</button>
       </div>
     );
   }

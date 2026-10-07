@@ -353,8 +353,8 @@ export default function Pricing() {
         <div className="page-pad" style={{ maxWidth: 900 }}>
           {loading || paymentsFrozen === null ? null : (
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <ProCard profile={profile} pendingConfirmation={pendingConfirmation} paymentsFrozen={paymentsFrozen} onGoToProfile={() => navigate('/profile')} refetchProfile={refetch} />
-              <CoachCard profile={profile} pendingConfirmation={pendingConfirmation} paymentsFrozen={paymentsFrozen} onGoToProfile={() => navigate('/profile')} />
+              <ProCard profile={profile} pendingConfirmation={pendingConfirmation} paymentsFrozen={paymentsFrozen} onGoToProfile={() => navigate('/settings/personal')} refetchProfile={refetch} />
+              <CoachCard profile={profile} pendingConfirmation={pendingConfirmation} paymentsFrozen={paymentsFrozen} onGoToProfile={() => navigate('/settings/personal')} />
             </div>
           )}
         </div>

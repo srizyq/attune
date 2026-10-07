@@ -152,7 +152,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
 
   return (
     <div style={{ maxWidth: 900 }}>
-      {showUpsell && <CoachPassUpsell profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/profile')} onGoToPricing={() => navigate('/pricing')} />}
+      {showUpsell && <CoachPassUpsell profile={profile} pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/settings/personal')} onGoToPricing={() => navigate('/pricing')} />}
 
       {arrivalError && (
         <div role="alert" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: 'var(--danger)', fontSize: 13 }}>

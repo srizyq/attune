@@ -22,7 +22,8 @@ import { locationChanged, isPageTransition } from './lib/routeTransition';
 const Recipes = lazy(() => import('./pages/Recipes'));
 const Settings = lazy(() => import('./pages/Settings'));
 const SettingsGoals = lazy(() => import('./pages/SettingsGoals'));
-const Profile = lazy(() => import('./pages/Profile'));
+const Profile = lazy(() => import('./pages/Profile')); // "Personal details" under Settings
+const MyProfile = lazy(() => import('./pages/MyProfile'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const Nutrients = lazy(() => import('./pages/Nutrients'));
 const Expenditure = lazy(() => import('./pages/Expenditure'));
@@ -104,7 +105,8 @@ function AnimatedRoutes() {
         <Route path="/community/saved" element={<RequireAuth><CommunitySaved /></RequireAuth>} />
         <Route path="/community/u/:username" element={<RequireAuth><CommunityProfile /></RequireAuth>} />
         <Route path="/join/:code" element={<JoinCoach />} />
-        <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><MyProfile /></RequireAuth>} />
+        <Route path="/settings/personal" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="/pricing" element={<RequireAuth><Pricing /></RequireAuth>} />
         <Route path="/prototypes/dashboard-redesign" element={<DashboardRedesignHarness />} />
         <Route path="/prototypes/settings-redesign" element={<SettingsRedesignHarness />} />

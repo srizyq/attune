@@ -14,5 +14,6 @@ export const SCREENS = [
   { name: 'settings-goals', path: '/settings/goals' },
   { name: 'coach', path: '/coach' },
   { name: 'profile', path: '/profile' },
+  { name: 'personal-details', path: '/settings/personal' },
 ];
 
