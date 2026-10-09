@@ -27,7 +27,7 @@ export default function Welcome() {
       </div>
 
       <span style={{
-        fontFamily: "'Syne', sans-serif",
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
         fontWeight: 700,
         fontSize: 'clamp(40px, 12vw, 64px)',
         color: 'var(--text-primary)',

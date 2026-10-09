@@ -72,14 +72,14 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 18 }}>
         <ClientAvatar name={clientData.name} pct={todayPct} size={48} />
         <div style={{ flex: 1, minWidth: 160 }}>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{clientData.name || 'Client'}</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{clientData.name || 'Client'}</div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
             {[GOAL_LABELS[clientData.goal], summary?.group_label].filter(Boolean).join(' · ') || 'No goal set'}
           </div>
         </div>
         {score != null && (
           <div title="Logging consistency and target hits over the last 7 days" style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: TONE_COLOR[tone], lineHeight: 1 }}>{score}</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: TONE_COLOR[tone], lineHeight: 1 }}>{score}</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>7-day adherence</div>
           </div>
         )}

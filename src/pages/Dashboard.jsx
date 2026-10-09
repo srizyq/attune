@@ -54,8 +54,8 @@ import StatBadge from '../components/StatBadge';
 
 // Accent/water-blue/ai-purple are the same hex in both themes by design.
 const ACCENT = 'var(--accent)';
-const WATER_BLUE = '#6aabcf';
-const AI_PURPLE = '#9f97e8';
+const WATER_BLUE = 'var(--water-blue)';
+const AI_PURPLE = 'var(--ai-purple)';
 
 // ─── Calorie hero — real weekly/monthly/quarterly trend, no decorative
 // elements without real data behind them (no fake "uncertainty band" —
@@ -82,7 +82,7 @@ function WeightCard({ latest, weightTrendKg, weightUnit, recentWeights, targetWe
             <StatBadge>{trendDisplay >= 0 ? '+' : ''}{round1(trendDisplay)}</StatBadge>
           )}
         </div>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: hasSparkline ? 10 : 0 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: hasSparkline ? 10 : 0 }}>
           {latest ? `${latest.weight}${latest.unit}` : '—'}
         </div>
         {hasSparkline && <WeightSparkline points={recentWeights} color="var(--accent)" />}
@@ -149,7 +149,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
     <div onClick={onClose} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 340, padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Log weight</span>
+          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Log weight</span>
           <button className="hit-slop" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}>×</button>
         </div>
 
@@ -163,7 +163,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
           <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Last logged</span>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
+          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
             {latest ? `${latest.weight}${latest.unit}` : '—'}
           </span>
         </div>
@@ -233,7 +233,7 @@ function WaterCard({ glasses, targetGlasses, setGlasses }) {
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WATER</span>
         <StatBadge>{glasses} / {round1(targetMl / 1000)}L</StatBadge>
       </div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--water-blue)', marginBottom: 12 }}>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--water-blue)', marginBottom: 12 }}>
         {glasses * WATER_ML_PER_GLASS}ml
       </div>
       <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
@@ -340,7 +340,7 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
         <StatBadge>{round1(Math.max(0, target - consumed))} left</StatBadge>
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(consumed).toLocaleString()}</span>
+        <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(consumed).toLocaleString()}</span>
         <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>/ {target.toLocaleString()} kcal</span>
       </div>
 
@@ -552,7 +552,7 @@ function MacroCell({ label, value, target, color, tone, onClick }) {
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.02em', minWidth: 0 }}>{label.toUpperCase()}</span>
         <StatBadge tone={tone} style={{ padding: '2px 6px', fontSize: 11 }}>{pct}%</StatBadge>
       </div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color, whiteSpace: 'nowrap', marginBottom: 8 }}>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color, whiteSpace: 'nowrap', marginBottom: 8 }}>
         {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>/{target}g</span>
       </div>
       <div style={{ height: 4, borderRadius: 2, background: 'var(--border-default)', overflow: 'hidden' }}>
@@ -586,13 +586,13 @@ function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWork
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
             <i className="ti ti-walk" style={{ fontSize: 13 }} /> STEPS
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--text-hint)' }}>—</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--text-hint)' }}>—</div>
         </div>
         <div style={{ padding: '14px 10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
             <i className="ti ti-flame" style={{ fontSize: 13 }} /> BURNED
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: totalCaloriesBurned ? 'var(--accent)' : 'var(--text-hint)' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, fontWeight: 700, color: totalCaloriesBurned ? 'var(--accent)' : 'var(--text-hint)' }}>
             {totalCaloriesBurned ? Math.round(totalCaloriesBurned).toLocaleString() : '—'}
           </div>
           {totalCaloriesBurned > 0 && <div style={{ fontSize: 10, color: 'var(--text-hint)', marginTop: 2 }}>Active burn</div>}
@@ -631,7 +631,7 @@ function WorkoutRow({ workout: w, type, onDelete }) {
           <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={type.label} className="modal-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, padding: 20, width: '100%', maxWidth: 380 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <ListRow.SquareAvatar icon={type.icon} size={48} />
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{type.label}</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{type.label}</div>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
               {w.durationMinutes} min · {Math.round(w.caloriesBurned)} kcal burned
@@ -661,7 +661,7 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
           <div key={key} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '12px', overflow: 'hidden' }}>
             <button onClick={() => setOpen(o => ({ ...o, [key]: !o[key] }))} style={{ width: '100%', background: 'none', border: 'none', padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: '14px', color: 'var(--text-secondary)' }}>{label}</div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: '14px', color: 'var(--text-secondary)' }}>{label}</div>
                 {items.length > 0 && <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: 2 }}>P {protein}g · C {carbs}g · F {fat}g</div>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1126,7 +1126,7 @@ export default function Dashboard() {
         <PullIndicator {...pullState} />
         <div className="page-pad-top" style={{ minHeight: 40, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 12px', paddingTop: 10, paddingBottom: 4, position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
           <div>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
               {isViewingToday ? `${greeting}, ${name}` : `${name}'s log`}
             </span>
             <span style={{ color: 'var(--text-hint)', fontSize: '13px', marginLeft: '12px' }}>{dateStr}</span>

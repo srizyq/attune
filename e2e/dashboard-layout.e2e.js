@@ -6,8 +6,10 @@ import { openApp, settle, assertLayout } from './harness.js';
 // and never wider than the screen — 1M/3M used to push it off the right edge.
 const cardOf = (label) => (page) => page.evaluate((text) => {
   const el = [...document.querySelectorAll('span')].find((e) => e.children.length === 0 && e.textContent.trim() === text);
+  // Cards are found by the shared --card-radius token, not a hardcoded px value.
+  const radius = getComputedStyle(document.querySelector('[data-theme]')).getPropertyValue('--card-radius').trim();
   let card = el;
-  while (card && getComputedStyle(card).borderRadius !== '20px') card = card.parentElement;
+  while (card && getComputedStyle(card).borderRadius !== radius) card = card.parentElement;
   const r = card.getBoundingClientRect();
   return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
 }, label);

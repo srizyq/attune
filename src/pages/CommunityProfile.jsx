@@ -26,7 +26,7 @@ const btn = (primary) => ({ flex: 1, minHeight: 44, padding: '11px 14px', border
 const chip = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '5px 11px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' };
 
 function Stat({ value, label, onClick }) {
-  const inner = (<><span style={{ display: 'block', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20 }}>{value}</span><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</span></>);
+  const inner = (<><span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 20 }}>{value}</span><span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</span></>);
   return onClick
     ? <button type="button" onClick={onClick} style={{ flex: 1, background: 'none', border: 'none', color: 'inherit', fontFamily: 'inherit', cursor: 'pointer', padding: '4px 0', minHeight: 44 }}>{inner}</button>
     : <div style={{ flex: 1, textAlign: 'center', padding: '4px 0' }}>{inner}</div>;
@@ -91,7 +91,7 @@ export function CommunityProfileView({ username, own = false, onRenamed }) {
       <>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <Avatar name={person.display_name} path={person.avatar_path} size={84} />
-          <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22, margin: '10px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>{person.display_name}{person.is_coach && <CoachBadge />}</h2>
+          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 22, margin: '10px 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>{person.display_name}{person.is_coach && <CoachBadge />}</h2>
           <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>@{person.username}</div>
           {person.bio && <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '8px 20px 0', lineHeight: 1.5, overflowWrap: 'anywhere' }}>{person.bio}</p>}
         </div>

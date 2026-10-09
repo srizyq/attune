@@ -37,12 +37,12 @@ export default function CoachConsentCard({ link, variant = 'invite', busy = fals
         {trainer.coach_logo_url ? (
           <img src={trainer.coach_logo_url} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-active)' }} />
         ) : (
-          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border-active)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--accent)', fontFamily: "'Syne', sans-serif" }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border-active)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--accent)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             {initialsOf(name)}
           </div>
         )}
         <div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
             {isInvite ? `${name} invited you to be coached` : `${name} is your coach`}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>

@@ -9,7 +9,7 @@ const goals = [
     label: 'Lose weight',
     desc: 'Burn fat while keeping energy up',
     icon: '↓',
-    color: '#6aabcf',
+    color: 'var(--water-blue)',
   },
   {
     id: 'maintain',
@@ -23,7 +23,7 @@ const goals = [
     label: 'Build muscle',
     desc: 'Fuel growth with the right macros',
     icon: '↑',
-    color: '#9f97e8',
+    color: 'var(--ai-purple)',
   },
 ];
 
@@ -49,7 +49,7 @@ export default function Step1() {
           let's personalise your experience
         </p>
         <h1 style={{
-          fontFamily: "'Syne', sans-serif",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontSize: 'clamp(28px, 5vw, 40px)',
           fontWeight: 700,
           color: 'var(--text-primary)',
@@ -114,7 +114,7 @@ export default function Step1() {
                     fontWeight: 600,
                     fontSize: '16px',
                     marginBottom: '3px',
-                    fontFamily: "'Syne', sans-serif",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                     transition: 'color 0.2s',
                   }}>
                     {g.label}

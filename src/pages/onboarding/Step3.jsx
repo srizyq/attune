@@ -139,7 +139,7 @@ export default function Step3() {
             your targets
           </p>
           <h1 style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontSize: 'clamp(26px, 4vw, 36px)',
             fontWeight: 700,
             color: 'var(--text-primary)',
@@ -166,7 +166,7 @@ export default function Step3() {
             daily calorie target
           </p>
           <div style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontSize: 'clamp(44px, 8vw, 64px)',
             fontWeight: 700,
             color: 'var(--accent)',
@@ -241,7 +241,7 @@ export default function Step3() {
               <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Based on your body weight</div>
             </div>
           </div>
-          <div style={{ color: 'var(--water-blue)', fontSize: '20px', fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>
+          <div style={{ color: 'var(--water-blue)', fontSize: '20px', fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             8 <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>glasses</span>
           </div>
         </div>

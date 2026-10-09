@@ -114,7 +114,7 @@ export default function CalorieLimitCard({ profile, today, onSave, onUpgrade, pe
     return (
       <Card>
         {heading}
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--accent)' }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--accent)' }}>
           {current.calories.toLocaleString()} <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>kcal a day</span>
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>

@@ -141,7 +141,7 @@ export function SettingsModal({ title, onClose, closing, children }) {
         style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 480, maxHeight: 'calc(var(--vvh, 100vh) * 0.85)', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--border-default)', position: 'sticky', top: 0, background: 'var(--bg-subtle)', zIndex: 1 }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{title}</span>
+          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{title}</span>
           <button className="hit-slop" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>

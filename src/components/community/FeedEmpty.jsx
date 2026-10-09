@@ -45,7 +45,7 @@ export default function FeedEmpty({ me, onToast, onShare }) {
   return (
     <>
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: '18px 18px 16px', marginBottom: 16 }}>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18 }}>Your feed is empty</div>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 18 }}>Your feed is empty</div>
         <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.55, margin: '6px 0 14px' }}>Follow people to see the meals, days and recipes they share. Send friends your link so they can find you.</p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {onShare && (

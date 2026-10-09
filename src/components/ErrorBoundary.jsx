@@ -19,7 +19,7 @@ export default class ErrorBoundary extends Component {
     if (!this.state.failed) return this.props.children;
     return (
       <div role="alert" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 32, textAlign: 'center', background: 'var(--bg-primary, #0f0f0f)', color: 'var(--text-primary, #fff)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20 }}>Something went wrong</div>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 20 }}>Something went wrong</div>
         <p style={{ margin: 0, maxWidth: 320, fontSize: 14, lineHeight: 1.6, color: 'var(--text-secondary, #bbb)' }}>
           Attune hit an unexpected problem. Your logged data is safe. Reloading usually fixes it.
         </p>

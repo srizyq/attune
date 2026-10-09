@@ -9,8 +9,8 @@ export default function MacroSplitBar({ protein, carbs, fat }) {
   const total = proteinKcal + carbsKcal + fatKcal || 1;
   const segments = [
     { label: 'Protein', grams: protein, kcal: proteinKcal, color: 'var(--accent)' },
-    { label: 'Carbs', grams: carbs, kcal: carbsKcal, color: '#6aabcf' },
-    { label: 'Fat', grams: fat, kcal: fatKcal, color: '#9f97e8' },
+    { label: 'Carbs', grams: carbs, kcal: carbsKcal, color: 'var(--water-blue)' },
+    { label: 'Fat', grams: fat, kcal: fatKcal, color: 'var(--ai-purple)' },
   ];
 
   return (

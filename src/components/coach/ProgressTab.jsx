@@ -24,7 +24,7 @@ export default function ProgressTab({ client, d }) {
       </div>
       <Card>
         <SectionLabel icon="ti-scale">Weight</SectionLabel>
-        <div style={{ color: 'var(--text-primary)', fontSize: 22, fontWeight: 700, fontFamily: "'Syne', sans-serif", marginBottom: 12 }}>
+        <div style={{ color: 'var(--text-primary)', fontSize: 22, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 12 }}>
           {latestWeight ? `${latestWeight.weight}${latestWeight.unit}` : '—'}
         </div>
         {weightLoading ? null : weightLogs.length > 1 ? (

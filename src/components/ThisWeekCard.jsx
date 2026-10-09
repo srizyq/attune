@@ -11,7 +11,7 @@ function Stat({ label, value, hint }) {
   return (
     <div style={{ minWidth: 0 }}>
       <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1, color: value === '—' ? 'var(--text-hint)' : 'var(--text-primary)', overflowWrap: 'anywhere' }}>{value}</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1, color: value === '—' ? 'var(--text-hint)' : 'var(--text-primary)', overflowWrap: 'anywhere' }}>{value}</div>
       <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 6, lineHeight: 1.4 }}>{hint}</div>
     </div>
   );
@@ -37,7 +37,7 @@ export default function ThisWeekCard({ summary }) {
 
   return (
     <Card style={{ padding: 20, marginBottom: 20 }}>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>This week</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>This week</div>
       <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>The last 7 days, including today</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '18px 16px' }}>
         <Stat label="Avg. calories" value={avgCalories != null ? avgCalories.toLocaleString() : '—'} hint={calorieHint} />

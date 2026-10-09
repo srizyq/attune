@@ -37,7 +37,7 @@ export default function CoachNote({ note, onDismiss, onClick, style }) {
         <div style={{
           width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border-active)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700,
-          color: 'var(--accent)', fontFamily: "'Syne', sans-serif", flexShrink: 0,
+          color: 'var(--accent)', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0,
         }}>
           {initials}
         </div>

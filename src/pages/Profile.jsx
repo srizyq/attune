@@ -336,12 +336,12 @@ export default function Profile() {
               background: 'var(--accent-bg)', border: '1px solid var(--accent-dark)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 22, fontWeight: 700, color: 'var(--accent)', flexShrink: 0,
-              fontFamily: "'Syne', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}>
               {initials}
             </div>
             <div>
-              <div style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, fontFamily: "'Syne', sans-serif", overflowWrap: 'anywhere' }}>
+              <div style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", overflowWrap: 'anywhere' }}>
                 {form.name || 'Your name'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
@@ -447,7 +447,7 @@ export default function Profile() {
       {showLogoutConfirm && (
         <div onClick={closeLogoutConfirm} className={`modal-backdrop${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 210, padding: 24 }}>
           <div onClick={e => e.stopPropagation()} className={`modal-panel${logoutConfirmClosing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
               Log out before confirming your email?
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px', overflowWrap: 'anywhere' }}>
@@ -474,7 +474,7 @@ export default function Profile() {
       {showDelete && (
         <div onClick={deleting ? undefined : closeDelete} className={`modal-backdrop${deleteClosing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 210, padding: 24 }}>
           <div onClick={e => e.stopPropagation()} role="dialog" aria-label="Delete account" className={`modal-panel${deleteClosing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
               Delete your account?
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 14px' }}>

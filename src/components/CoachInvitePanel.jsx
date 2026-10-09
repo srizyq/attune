@@ -128,7 +128,7 @@ export default function CoachInvitePanel({ hasClients }) {
       <div style={card}>
         <SectionLabel icon="ti-user-plus">{hasClients ? 'Invite another client' : 'Invite your first client'}</SectionLabel>
         {profile?.coach_invite_code && (
-          <div style={{ padding: '14px 16px', background: 'var(--bg-primary)', border: '1px solid var(--border-active)', borderRadius: 10, fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 700, letterSpacing: '0.14em', color: 'var(--accent)', textAlign: 'center', marginBottom: 14 }}>
+          <div style={{ padding: '14px 16px', background: 'var(--bg-primary)', border: '1px solid var(--border-active)', borderRadius: 10, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 26, fontWeight: 700, letterSpacing: '0.14em', color: 'var(--accent)', textAlign: 'center', marginBottom: 14 }}>
             {profile.coach_invite_code}
           </div>
         )}
@@ -173,7 +173,7 @@ export default function CoachInvitePanel({ hasClients }) {
                   {daysLeft(invite) <= 1 ? 'expires soon' : `${daysLeft(invite)} days left`}
                 </span>
               </div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, letterSpacing: '0.14em', color: 'var(--accent)', marginBottom: 10 }}>{invite.code}</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 700, letterSpacing: '0.14em', color: 'var(--accent)', marginBottom: 10 }}>{invite.code}</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button onClick={() => copyLink(invite)} className="btn-press" style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}>
                   {copiedId === invite.id ? 'Copied ✓' : 'Copy link'}

@@ -17,7 +17,7 @@ function ForgotPasswordForm({ email, setEmail, inputStyle, status, errorMessage,
   return (
     <div style={{ width: '100%', maxWidth: '400px' }}>
       <h1 style={{
-        fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)',
+        fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)',
         fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center',
       }}>Reset your password</h1>
       <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '28px', textAlign: 'center' }}>
@@ -168,7 +168,7 @@ export default function Login() {
     }}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link to="/" style={{
-          fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '20px',
+          fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: '20px',
           color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none',
         }}>attune</Link>
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -190,7 +190,7 @@ export default function Login() {
         ) : (
         <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px' }}>
           <h1 style={{
-            fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)',
+            fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)',
             fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center',
           }}>Welcome back</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: pendingConfirmation ? '18px' : '28px', textAlign: 'center' }}>

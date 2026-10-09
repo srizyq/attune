@@ -38,7 +38,7 @@ export default function TrialEndedPaywall() {
     <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 24 }}>
       <div className="modal-panel" style={{ width: '100%', maxWidth: 420, background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 16, padding: 28, textAlign: 'center' }}>
         <div style={{ fontSize: 28, marginBottom: 12 }}>⏳</div>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 19, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 19, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
           Your free month has ended
         </div>
         <p style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.6, margin: '0 0 22px' }}>

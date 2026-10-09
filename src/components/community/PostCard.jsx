@@ -35,7 +35,7 @@ function MacroBars({ p }) {
       {MACROS.map((m) => (
         <div key={m.key} style={{ flex: 1, minWidth: 0, background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 14, padding: '9px 10px' }}>
           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.label}</div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>{Math.round(p[m.key] || 0)}g</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16 }}>{Math.round(p[m.key] || 0)}g</div>
           <div style={{ height: 5, borderRadius: 3, background: 'var(--border-default)', marginTop: 6 }}>
             <div style={{ width: `${Math.min(100, Math.round(((Number(p[m.key]) || 0) * m.kcalPer / total) * 100))}%`, height: '100%', borderRadius: 3, background: m.color }} />
           </div>
@@ -53,7 +53,7 @@ function GoalRing({ pct }) {
       aria-label={`${pct}% of daily goal`}
       style={{ width: 70, height: 70, borderRadius: '50%', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: `conic-gradient(${pct > 110 ? 'var(--danger)' : 'var(--accent)'} ${shown * 3.6}deg, var(--border-default) 0)` }}
     >
-      <span style={{ width: 54, height: 54, borderRadius: '50%', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>{pct}%</span>
+      <span style={{ width: 54, height: 54, borderRadius: '50%', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16 }}>{pct}%</span>
     </span>
   );
 }
@@ -101,7 +101,7 @@ function Body({ post, photoUrl, checking }) {
           <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</div>
           <div style={{ fontSize: 17, marginTop: 2, overflowWrap: 'anywhere' }}>{p.title}</div>
         </div>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 26, lineHeight: 1, flexShrink: 0 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 26, lineHeight: 1, flexShrink: 0 }}>
           {fmt(p.calories)}<span style={{ fontFamily: 'inherit', fontSize: 12, color: 'var(--text-muted)' }}> kcal{post.kind === 'recipe' ? ' / serve' : ''}</span>
         </div>
       </div>

@@ -57,7 +57,7 @@ export default function DaySelector({ selectedDate, onSelect }) {
               }}
             >
               <span style={{ fontSize: 10, fontWeight: 600, color: isSelected ? 'var(--accent-contrast)' : 'var(--text-muted)' }}>{WEEKDAY_LABELS[d.getDay()]}</span>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, color: isSelected ? 'var(--accent-contrast)' : 'var(--text-secondary)' }}>{d.getDate()}</span>
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 700, color: isSelected ? 'var(--accent-contrast)' : 'var(--text-secondary)' }}>{d.getDate()}</span>
             </button>
           );
         })}

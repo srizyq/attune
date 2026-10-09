@@ -39,8 +39,8 @@
 
 .app-sidebar {
   width: 52px;
-  background: var(--bg-primary, #181412);
-  border-right: 1px solid var(--border-default, #332c27);
+  background: var(--bg-primary, #1f1815);
+  border-right: 1px solid var(--border-default, #3d322c);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -73,22 +73,22 @@
 }
 
 .app-nav-icon.is-active {
-  color: var(--accent, #e87a48);
-  background: var(--accent-bg, #2a1d16);
-  border-color: var(--accent-border, #4a3223);
+  color: var(--accent, #c99494);
+  background: var(--accent-bg, #3a2a28);
+  border-color: var(--accent-border, #5a4140);
 }
 
 .app-nav-avatar {
   width: 32px;
   height: 32px;
-  background: var(--bg-card, #221d1a);
-  border: 1px solid var(--border-default, #332c27);
+  background: var(--bg-card, #2b221e);
+  border: 1px solid var(--border-default, #3d322c);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  color: var(--accent, #e87a48);
+  color: var(--accent, #c99494);
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -96,8 +96,8 @@
 }
 
 .app-nav-avatar.is-active {
-  background: var(--accent-bg, #2a1d16);
-  border-color: var(--accent-dark, #b85e38);
+  background: var(--accent-bg, #3a2a28);
+  border-color: var(--accent-dark, #b07e7e);
 }
 
 .app-bottom-nav {
@@ -136,8 +136,8 @@
     height: 64px;
     padding-bottom: var(--bottom-nav-pad);
     box-sizing: content-box;
-    background: var(--bg-card, #221d1a);
-    border-top: 1px solid var(--border-default, #332c27);
+    background: var(--bg-card, #2b221e);
+    border-top: 1px solid var(--border-default, #3d322c);
     border-radius: 22px 22px 0 0;
     box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.18);
     z-index: 100;
@@ -210,8 +210,8 @@
     color: var(--text-primary);
   }
   .app-bottom-icon-content.is-active .app-bottom-icon-pill {
-    background: color-mix(in srgb, var(--accent) 18%, var(--bg-card));
-    color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-contrast);
   }
   .app-bottom-icon-content.is-active .app-bottom-icon-label {
     font-weight: 800;
@@ -223,7 +223,7 @@
     height: 50px;
     justify-self: center;
     border-radius: 50%;
-    background: var(--accent, #e87a48);
+    background: var(--accent, #c99494);
     border: none;
     color: var(--accent-contrast);
     font-size: 26px;
@@ -443,7 +443,7 @@
   min-width: 0;
 }
 .app-page-header h1 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Epilogue', 'Plus Jakarta Sans', sans-serif;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;

@@ -97,7 +97,7 @@ export function ClientAvatar({ name, pct, size = 44 }) {
       <div style={{
         position: 'absolute', inset: strokeWidth, borderRadius: '50%', background: 'var(--bg-card)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: size * 0.32, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Syne', sans-serif",
+        fontSize: size * 0.32, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}>
         {initials}
       </div>
@@ -118,7 +118,7 @@ export function StatCard({ label, value, hint, color = ACCENT }) {
   return (
     <Card style={{ borderRadius: 12, padding: 16, marginBottom: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, color: value === '—' ? 'var(--text-hint)' : color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: value === '—' ? 'var(--text-hint)' : color, lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: 11, color: 'var(--text-hint)' }}>{hint}</div>
     </Card>
   );

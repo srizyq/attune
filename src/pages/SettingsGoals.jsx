@@ -501,10 +501,10 @@ export default function SettingsGoals() {
                   max={4000}
                   onChange={setCustomCal}
                   ariaLabel="Calorie target"
-                  style={{ fontFamily: "'Syne', sans-serif", fontSize: '40px', fontWeight: 700, color: 'var(--accent)', width: '5.5ch' }}
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '40px', fontWeight: 700, color: 'var(--accent)', width: '5.5ch' }}
                 />
               ) : (
-                <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '40px', fontWeight: 700, color: 'var(--accent)' }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '40px', fontWeight: 700, color: 'var(--accent)' }}>
                   {calories.toLocaleString()}
                 </span>
               )}

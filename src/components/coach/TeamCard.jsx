@@ -21,7 +21,7 @@ function TeamMemberDetail({ member, isSelf, isOwnerView, teamName, onRemove, bus
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <ListRow.SquareAvatar name={member.name} size={48} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
               {member.name}{isSelf ? ' (you)' : ''}
             </div>
             {member.role === 'owner' && (
@@ -118,7 +118,7 @@ export default function TeamCard() {
     <Card>
       <SectionLabel icon="ti-users-group">Team</SectionLabel>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-        <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>{t.name}</span>
+        <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>{t.name}</span>
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.members.length} of {t.max_members} members</span>
       </div>
       <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 16px', lineHeight: 1.5 }}>
@@ -161,7 +161,7 @@ export default function TeamCard() {
             <ul style={{ listStyle: 'none', margin: '12px 0 0', padding: 0 }}>
               {t.invites.map((i) => (
                 <li key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '8px 0' }}>
-                  <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--accent)' }}>{i.code}</span>
+                  <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 18, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--accent)' }}>{i.code}</span>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)', flex: 1 }}>{inviteExpiry(i.expires_at)} · single use</span>
                   <button onClick={() => copy(i)} className="btn-press" style={ghost}>{copiedId === i.id ? 'Copied' : 'Copy code'}</button>
                   <button aria-label={`Revoke invite ${i.code}`} onClick={() => act(`revoke-${i.id}`, () => team.revokeInvite(i.id))} className="btn-press" style={quiet}>Revoke</button>

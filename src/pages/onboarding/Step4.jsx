@@ -215,7 +215,7 @@ export default function Step4() {
           you're all set
         </p>
         <h1 style={{
-          fontFamily: "'Syne', sans-serif",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontSize: 'clamp(26px, 4vw, 36px)',
           fontWeight: 700,
           color: 'var(--text-primary)',

@@ -64,7 +64,7 @@ ListRow.SquareAvatar = function SquareAvatar({ name, initials, icon, pct, size =
           background: 'var(--accent-bg)', transition: 'height 400ms cubic-bezier(0.23, 1, 0.32, 1)',
         }} />
       )}
-      <div style={{ position: 'relative', fontSize: icon ? size * 0.45 : size * 0.32, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Syne', sans-serif" }}>
+      <div style={{ position: 'relative', fontSize: icon ? size * 0.45 : size * 0.32, fontWeight: 700, color: 'var(--accent)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         {icon ? <i aria-hidden="true" className={`ti ${icon}`} /> : computedInitials}
       </div>
     </div>
@@ -82,7 +82,7 @@ ListRow.Badge = function Badge({ children, tone = 'default', withChevron = false
   const color = tone === 'warning' ? 'var(--warning)' : tone === 'accent' ? 'var(--accent)' : 'var(--text-secondary)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-      <span style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'Syne', sans-serif" }}>{children}</span>
+      <span style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{children}</span>
       {withChevron && <ListRow.Chevron />}
     </div>
   );

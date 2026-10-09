@@ -156,7 +156,7 @@ export default function Step2() {
             quick stats
           </p>
           <h1 style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontSize: 'clamp(26px, 4vw, 36px)',
             fontWeight: 700,
             color: 'var(--text-primary)',
@@ -276,7 +276,7 @@ export default function Step2() {
                         boxSizing: 'border-box',
                       }}
                     >
-                      <div style={{ color: isSelected ? 'var(--accent)' : 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', marginBottom: '3px', fontFamily: "'Syne', sans-serif" }}>
+                      <div style={{ color: isSelected ? 'var(--accent)' : 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', marginBottom: '3px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                         {p.label}
                       </div>
                       <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '2px' }}>
@@ -324,7 +324,7 @@ export default function Step2() {
                     fontWeight: 600,
                     fontSize: '14px',
                     marginBottom: '3px',
-                    fontFamily: "'Syne', sans-serif",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                     transition: 'color 0.2s',
                   }}>
                     {a.label}

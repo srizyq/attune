@@ -40,7 +40,7 @@ export default function JoinCommunity({ profile, onJoin }) {
   if (gate === 'unknown') {
     return (
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: 20 }}>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>One thing first</div>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>One thing first</div>
         <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 14px' }}>Community is for people aged 16 and over. Add your age in your profile so we can check.</p>
         <button type="button" onClick={() => navigate('/settings/personal')} style={{ background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>Open profile</button>
       </div>
@@ -71,7 +71,7 @@ export default function JoinCommunity({ profile, onJoin }) {
 
   return (
     <form onSubmit={submit} noValidate style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: '20px 18px' }}>
-      <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, margin: 0 }}>Join Community</h2>
+      <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 20, margin: 0 }}>Join Community</h2>
       <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.55, margin: '6px 0 0' }}>Share meals, days and recipes with friends, and copy theirs into your log. You choose everything you post.</p>
 
       <label htmlFor="cm-username" style={label}>Username</label>

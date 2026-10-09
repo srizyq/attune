@@ -52,7 +52,7 @@ export default function QuickMacroSheet({ onClose, onSubmit }) {
         style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderBottom: 'none', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 460, padding: '20px 20px calc(20px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 12 }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Quick macro</span>
+          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Quick macro</span>
           <button type="button" className="hit-slop" aria-label="Close" onClick={close} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
         </div>
 
@@ -81,7 +81,7 @@ export default function QuickMacroSheet({ onClose, onSubmit }) {
 
         {error && <p style={{ color: 'var(--danger)', fontSize: 12, margin: 0 }}>{error}</p>}
 
-        <button type="submit" disabled={!canSave} style={{ background: canSave ? 'var(--accent)' : 'var(--border-default)', border: 'none', borderRadius: 8, padding: '12px', fontSize: 14, fontWeight: 600, color: canSave ? '#0f0f0f' : 'var(--text-muted)', cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+        <button type="submit" disabled={!canSave} style={{ background: canSave ? 'var(--accent)' : 'var(--border-default)', border: 'none', borderRadius: 8, padding: '12px', fontSize: 14, fontWeight: 600, color: canSave ? 'var(--accent-contrast)' : 'var(--text-muted)', cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
           {saving ? 'Logging…' : 'Log it'}
         </button>
       </form>

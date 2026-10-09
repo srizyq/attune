@@ -22,7 +22,7 @@ export function ChainResultCards({ chains, onOpen }) {
             onClick={() => onOpen(chain)}
             style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 12, padding: '12px 14px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 56 }}
           >
-            <span aria-hidden="true" style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 10, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14 }}>
+            <span aria-hidden="true" style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 10, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 14 }}>
               {initials(chain.name)}
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
@@ -79,7 +79,7 @@ export function ChainMenu({ chain, onBack, renderFood }) {
         <i className="ti ti-arrow-left" aria-hidden="true" /> Back to results
       </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <span aria-hidden="true" style={{ flexShrink: 0, width: 44, height: 44, borderRadius: 12, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>
+        <span aria-hidden="true" style={{ flexShrink: 0, width: 44, height: 44, borderRadius: 12, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16 }}>
           {initials(chain.name)}
         </span>
         <div style={{ minWidth: 0 }}>

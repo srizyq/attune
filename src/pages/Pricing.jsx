@@ -56,7 +56,7 @@ function ConfirmSubscribeModal({ title, body, confirmLabel, busy, onCancel, onCo
   return (
     <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 210, padding: 24 }}>
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 17, color: 'var(--text-primary)', marginBottom: 10 }}>
           {title}
         </div>
         <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px' }}>
@@ -189,7 +189,7 @@ function ProCard({ profile, pendingConfirmation, paymentsFrozen, onGoToProfile, 
   return (
     <>
       <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Pro</div>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Pro</div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{PRO_PRICE}</div>
         {!pendingConfirmation && !paymentsFrozen && canClaimFreeMonth(profile) ? (
           <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {TRIAL_DAYS} days free, no card required</div>
@@ -278,7 +278,7 @@ function CoachCard({ profile, pendingConfirmation, paymentsFrozen, onGoToProfile
   return (
     <>
       <Card style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Coach Pass</div>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>Coach Pass</div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{COACH_PASS_PRICE}</div>
         {!pendingConfirmation && trialEligible ? (
           <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 14 }}>First {COACH_TRIAL_DAYS} days free</div>

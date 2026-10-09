@@ -102,7 +102,7 @@ function RunningPanel({ fast, nowMs, busy, onEnd, onDiscard }) {
     <Card style={{ padding: 20 }}>
       <SectionLabel>{p.done ? 'Goal reached' : 'Fasting'}</SectionLabel>
       <Ring pct={p.pct} done={p.done}>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }} aria-label="Time fasted">
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 34, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }} aria-label="Time fasted">
           {formatClock(p.elapsedMs)}
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>of your {formatHours(fast.target_hours)} goal</div>

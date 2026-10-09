@@ -5,7 +5,7 @@ import { blankAnswers, dueState, validateAnswers, MAX_TEXT_ANSWER } from '../lib
 import VoiceMicButton from './VoiceMicButton';
 
 const card = { background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 };
-const heading = { fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' };
+const heading = { fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' };
 const fmt = (d) => new Date(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
 
 // Its own component (not inlined in the questions.map below) so each text

@@ -45,12 +45,12 @@ export default function JoinCoach() {
   return (
     <div data-theme={theme} style={{ minHeight: 'var(--app-h)', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none' }}>attune</Link>
+        <Link to="/" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none' }}>attune</Link>
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
-          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px', textAlign: 'center' }}>
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px', textAlign: 'center' }}>
             You've been invited
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6, margin: '0 0 28px', textAlign: 'center' }}>

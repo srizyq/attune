@@ -42,7 +42,7 @@ function DetailHeader({ title, onBack }) {
       <button onClick={onBack} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <i className="ti ti-arrow-left" style={{ fontSize: 16 }} />
       </button>
-      <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, margin: 0 }}>{title}</h3>
+      <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 18, fontWeight: 700, margin: 0 }}>{title}</h3>
     </div>
   );
 }
@@ -77,7 +77,7 @@ export default function CardHubVariant() {
             </FieldRow>
           </div>
           <div style={{ textAlign: 'center', margin: '20px 0 16px' }}>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, fontWeight: 700, color: 'var(--accent)' }}>{s.calories.toLocaleString()}</span>
+            <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 34, fontWeight: 700, color: 'var(--accent)' }}>{s.calories.toLocaleString()}</span>
             <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 6 }}>kcal / day</span>
           </div>
           <div style={{ marginBottom: 16 }}>
@@ -166,7 +166,7 @@ export default function CardHubVariant() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
           <AVATAR initials="S" />
           <div>
-            <div style={{ color: 'var(--text-primary)', fontSize: 17, fontWeight: 700, fontFamily: "'Syne', sans-serif" }}>{s.name}</div>
+            <div style={{ color: 'var(--text-primary)', fontSize: 17, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.name}</div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4, padding: '3px 9px', background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: 20 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)' }} />
               <span style={{ color: 'var(--accent)', fontSize: 11, fontWeight: 600 }}>Guest · {s.daysRemaining} days left</span>

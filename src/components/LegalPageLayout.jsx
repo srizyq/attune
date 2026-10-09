@@ -37,13 +37,13 @@ export default function LegalPageLayout({ title, updated, children }) {
         <button onClick={goBack} className="app-icon-btn" aria-label="Back">
           <i className="ti ti-arrow-left" />
         </button>
-        <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--accent)', letterSpacing: '-0.5px' }}>attune</span>
+        <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--accent)', letterSpacing: '-0.5px' }}>attune</span>
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 80px' }}>
-          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700, margin: '0 0 6px' }}>{title}</h1>
+          <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 700, margin: '0 0 6px' }}>{title}</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 32px' }}>Last updated {updated}</p>
           <div style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
             {children}
@@ -57,7 +57,7 @@ export default function LegalPageLayout({ title, updated, children }) {
 export function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 28 }}>
-      <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>{title}</h2>
+      <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>{title}</h2>
       {children}
     </div>
   );

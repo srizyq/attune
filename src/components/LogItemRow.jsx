@@ -23,7 +23,7 @@ const MEAL_OPTIONS = [
 // own conversion. It's low-impact there since this only renders when a
 // row is actually expanded, not on page load.
 const C = {
-  green: 'var(--accent)', blue: '#6aabcf', purple: '#9f97e8',
+  green: 'var(--accent)', blue: 'var(--water-blue)', purple: 'var(--ai-purple)',
 };
 
 const fieldStyle = { width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '7px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
@@ -191,7 +191,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 10 }}>
               <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                 {item.brand && <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.brand}</div>}
               </div>
               <button onClick={onToggle} aria-label="Close" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}>✕</button>

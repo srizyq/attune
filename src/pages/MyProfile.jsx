@@ -41,7 +41,7 @@ function BasicProfile({ canJoin }) {
     <Shell>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         <Avatar name={profile?.name || 'A'} size={84} />
-        <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22, margin: '10px 0 0', overflowWrap: 'anywhere' }}>{profile?.name || 'Your name'}</h2>
+        <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 22, margin: '10px 0 0', overflowWrap: 'anywhere' }}>{profile?.name || 'Your name'}</h2>
         {email && <div style={{ fontSize: 14, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{email}</div>}
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', margin: '16px 0' }}>

@@ -27,7 +27,7 @@ export default function OnboardingLayout({ children, step, totalSteps = 4, showS
       }}>
         {/* Logo */}
         <span style={{
-          fontFamily: "'Syne', sans-serif",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontWeight: 700,
           fontSize: '20px',
           color: 'var(--accent)',

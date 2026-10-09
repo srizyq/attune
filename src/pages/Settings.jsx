@@ -168,12 +168,12 @@ export default function Settings() {
               background: 'var(--accent-bg)', border: '1px solid var(--accent-dark)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 22, fontWeight: 700, color: 'var(--accent)', flexShrink: 0,
-              fontFamily: "'Syne', sans-serif",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}>
               {initials}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, fontFamily: "'Syne', sans-serif", overflowWrap: 'anywhere' }}>
+              <div style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", overflowWrap: 'anywhere' }}>
                 {profile?.name || 'Your name'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>

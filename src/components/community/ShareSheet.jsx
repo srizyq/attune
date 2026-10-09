@@ -17,7 +17,7 @@ const label = { fontSize: 12, color: 'var(--text-muted)', letterSpacing: '0.05em
 function LowCalorieCheck({ onContinue, onCancel }) {
   return (
     <div role="group" aria-label="Before you share this day" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: 20 }}>
-      <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, margin: 0 }}>This looks like a low day</h2>
+      <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 18, margin: 0 }}>This looks like a low day</h2>
       <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, margin: '8px 0 12px' }}>
         It's under {LOW_CALORIE_DAY.toLocaleString()} kcal. If food has felt hard lately, you don't have to share it. Talking to someone can help — in Australia, the Butterfly Foundation helpline is{' '}
         <a href="tel:1800334673" style={{ color: 'var(--accent)' }}>1800 33 4673</a> (<a href="https://butterfly.org.au" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>butterfly.org.au</a>). Elsewhere, search for eating-disorder support in your country.

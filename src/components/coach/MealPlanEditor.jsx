@@ -132,7 +132,7 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
         return (
           <div key={meal.key} style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{meal.label}</span>
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{meal.label}</span>
               {items.length > 0 && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{mealTotals(items).calories} kcal</span>}
             </div>
             {items.map((it, i) => (

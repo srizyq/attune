@@ -25,7 +25,7 @@ function CoachPassUpsell({ profile, pendingConfirmation, onGoToProfile, onGoToPr
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
     }}>
       <div>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
           Become a coach
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 440, lineHeight: 1.5 }}>
@@ -64,7 +64,7 @@ function TargetStat({ label, value }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
     </div>
   );
 }
@@ -185,7 +185,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
       ))}
 
       <Card style={{ padding: 24, marginBottom: 20 }}>
-        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>
         {trainersLoading ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
         ) : trainer ? (
@@ -194,7 +194,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
               {trainer.coach_logo_url ? (
                 <img src={trainer.coach_logo_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--accent)', fontFamily: "'Syne', sans-serif" }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--accent)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   {(trainer.name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
               )}
@@ -241,7 +241,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
 
           {hasTargets && (
             <Card style={{ padding: 24, marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your current targets</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your current targets</div>
               <div className="grid-4">
                 <TargetStat label="Calories" value={targets.calories ? `${targets.calories}` : '—'} />
                 <TargetStat label="Protein" value={targets.protein ? `${targets.protein}g` : '—'} />
@@ -252,7 +252,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
             </Card>
           )}
 
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>Notes from your coach</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>Notes from your coach</div>
           {hasNotes ? (
             <div className="grid-2" style={{ marginBottom: 8 }}>
               {weightNote && <CoachNote note={weightNote} onDismiss={dismissWeight} />}

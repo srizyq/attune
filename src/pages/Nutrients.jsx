@@ -133,7 +133,7 @@ export default function Nutrients() {
             <>
               <Card style={{ padding: 24, marginBottom: 20 }}>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{isToday ? "Today's calories" : 'Calories'}</div>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
                   {Math.round(totals.cal).toLocaleString()}
                   {dayTargets.calories ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 500 }}> / {dayTargets.calories.toLocaleString()} kcal</span> : ' kcal'}
                 </div>

@@ -70,7 +70,7 @@ export default function Step5() {
           justifyContent: 'center', fontSize: '28px', margin: '0 auto 24px',
         }}>✉️</div>
 
-        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+        <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
           Verify your email
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '28px' }}>

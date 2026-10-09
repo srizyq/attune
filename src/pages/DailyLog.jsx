@@ -202,7 +202,7 @@ export default function DailyLog() {
             <DaySelector selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setExpandedId(null); }} />
             <div style={{ textAlign: 'center', marginTop: 14 }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{dateStr}</div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{Math.round(totalCal).toLocaleString()} kcal logged</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{Math.round(totalCal).toLocaleString()} kcal logged</div>
             </div>
             {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', marginTop: 8 }}>{viewSaveError}</p>}
           </div>
@@ -241,7 +241,7 @@ export default function DailyLog() {
                   <div key={mealKey} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, overflow: 'hidden' }}>
                     <button onClick={() => setOpen(o => ({ ...o, [mealKey]: !o[mealKey] }))} style={{ width: '100%', background: 'none', border: 'none', padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>{MEAL_LABELS[mealKey]}</div>
+                        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>{MEAL_LABELS[mealKey]}</div>
                         {items.length > 0 && <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>P {mealProtein}g · C {mealCarbs}g · F {mealFat}g</div>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

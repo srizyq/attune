@@ -33,7 +33,7 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: compact ? 16 : 12, padding: compact ? 16 : 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: compact ? 12 : 16 }}>
         <div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Logging calendar</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Logging calendar</div>
           {!compact && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Each day fills up the more you log toward your calorie target</div>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

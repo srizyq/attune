@@ -61,7 +61,7 @@ function EnergyPanel({ checkin, save }) {
             <button key={label} type="button" className="btn-press" aria-pressed={active} aria-label={`${label}, ${n} of 5`}
               onClick={() => save({ energy: active ? null : levelToEnergy(n) })}
               style={{ ...optionBtn(active), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, padding: '6px 2px' }}>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 17, fontWeight: 700, lineHeight: 1 }}>{n}</span>
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 17, fontWeight: 700, lineHeight: 1 }}>{n}</span>
               <span style={{ fontSize: 10, fontWeight: 600 }}>{label}</span>
             </button>
           );
@@ -103,7 +103,7 @@ function SleepPanel({ checkin, save, onError }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <button type="button" className="btn-press" aria-label="Half an hour less" onClick={() => setHours(stepSleepHours(hours, -0.5))} disabled={hours != null && hours <= MIN_SLEEP_HOURS}
           style={{ ...optionBtn(false), flex: '0 0 44px', fontSize: 20, lineHeight: 1 }}>−</button>
-        <div style={{ flex: 1, textAlign: 'center', fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 700, color: hours == null ? 'var(--text-hint)' : 'var(--text-primary)' }} aria-live="polite">
+        <div style={{ flex: 1, textAlign: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 700, color: hours == null ? 'var(--text-hint)' : 'var(--text-primary)' }} aria-live="polite">
           {formatSleep(hours) || '—'}
         </div>
         <button type="button" className="btn-press" aria-label="Half an hour more" onClick={() => setHours(stepSleepHours(hours, 0.5))} disabled={hours != null && hours >= MAX_SLEEP_HOURS}
@@ -125,7 +125,7 @@ function SleepPanel({ checkin, save, onError }) {
             <button key={label} type="button" className="btn-press" aria-pressed={active} aria-label={`${label}, ${n} of 5`}
               onClick={async () => { try { await save({ sleep_quality: active ? null : n }); } catch (err) { onError(err); } }}
               style={{ ...optionBtn(active), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, padding: '6px 2px' }}>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 17, fontWeight: 700, lineHeight: 1 }}>{n}</span>
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 17, fontWeight: 700, lineHeight: 1 }}>{n}</span>
               <span style={{ fontSize: 10, fontWeight: 600 }}>{label}</span>
             </button>
           );

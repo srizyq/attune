@@ -9,7 +9,7 @@ export default function LogoMark({ size = 28 }) {
       flexShrink: 0, boxSizing: 'border-box',
     }}>
       <span style={{
-        fontFamily: "'Syne', sans-serif", fontWeight: 800,
+        fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800,
         fontSize: size * 0.53, color: 'var(--accent)', lineHeight: 1,
       }}>a</span>
     </div>

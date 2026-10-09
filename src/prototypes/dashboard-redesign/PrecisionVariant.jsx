@@ -96,7 +96,7 @@ export default function PrecisionVariant() {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
           <div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 700, marginBottom: 2 }}>Good evening, {mock.name}</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, marginBottom: 2 }}>Good evening, {mock.name}</div>
             <div style={{ fontSize: 13, color: C.textM }}>{mock.date}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -112,11 +112,11 @@ export default function PrecisionVariant() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <div>
               <div style={{ fontSize: 11, color: C.textM, marginBottom: 2 }}>TODAY</div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 30, fontWeight: 700 }}>{mock.calorieConsumed.toLocaleString()} <span style={{ fontSize: 14, color: C.textM, fontWeight: 400 }}>/ {mock.calorieTarget.toLocaleString()} kcal</span></div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 30, fontWeight: 700 }}>{mock.calorieConsumed.toLocaleString()} <span style={{ fontSize: 14, color: C.textM, fontWeight: 400 }}>/ {mock.calorieTarget.toLocaleString()} kcal</span></div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: C.textM, marginBottom: 2 }}>REMAINING</div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: accent }}>{(mock.calorieTarget - mock.calorieConsumed).toLocaleString()}</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 700, color: accent }}>{(mock.calorieTarget - mock.calorieConsumed).toLocaleString()}</div>
             </div>
           </div>
 
@@ -144,7 +144,7 @@ export default function PrecisionVariant() {
           {[{ l: 'Protein', v: mock.protein }, { l: 'Carbs', v: mock.carbs }, { l: 'Fat', v: mock.fat }].map(m => (
             <div key={m.l} style={{ background: C.bg, padding: '14px 16px' }}>
               <div style={{ fontSize: 11, color: C.textM, marginBottom: 4 }}>{m.l.toUpperCase()}</div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 17, fontWeight: 700 }}>{m.v.value}<span style={{ fontSize: 12, color: C.textM, fontWeight: 400 }}>g / {m.v.target}g</span></div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 17, fontWeight: 700 }}>{m.v.value}<span style={{ fontSize: 12, color: C.textM, fontWeight: 400 }}>g / {m.v.target}g</span></div>
             </div>
           ))}
         </div>

@@ -1267,7 +1267,7 @@ function ModalShell({ title, onClose, children, maxWidth = 460 }) {
         bug otherwise. */}
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth, maxHeight: "calc(var(--vvh, 100vh) * 0.85)", overflowY: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{title}</span>
+          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{title}</span>
           <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>{children}</div>

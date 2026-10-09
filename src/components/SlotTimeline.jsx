@@ -136,7 +136,7 @@ function SlotEntry({ segment, isLast, isOpen, onToggle, expandedItemId, onToggle
                   style={{ fontSize: 12, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 8, padding: '3px 8px', color: 'var(--text-primary)', fontFamily: 'inherit' }}
                 />
               ) : (
-                <button onClick={() => setRetiming(true)} title="Change time" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 99, padding: '4px 10px', cursor: 'pointer' }}>
+                <button onClick={() => setRetiming(true)} title="Change time" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 99, padding: '4px 10px', cursor: 'pointer' }}>
                   {formatSlotTime(slotTime)}
                 </button>
               )}
@@ -162,7 +162,7 @@ function SlotEntry({ segment, isLast, isOpen, onToggle, expandedItemId, onToggle
               </div>
             </button>
           </div>
-          <button onClick={() => onNavigateAdd(segment)} title={`Add food to ${label}`} style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: 'var(--accent)', border: 'none', color: '#0f0f0f', fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <button onClick={() => onNavigateAdd(segment)} title={`Add food to ${label}`} style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: 'var(--accent)', border: 'none', color: 'var(--accent-contrast)', fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <i className="ti ti-plus" />
           </button>
           <button onClick={() => onDeleteSlot(id)} title={`Delete ${label}`} style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: 'none', border: '1px solid var(--border-default)', color: 'var(--text-hint)', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
@@ -301,7 +301,7 @@ function TargetEditor({ segment, onCancel, onSubmit }) {
       <TargetInputs protein={protein} carbs={carbs} fat={fat} onChange={onChange} />
       <div style={{ display: 'flex', gap: 6 }}>
         <button type="button" onClick={onCancel} style={{ flex: 1, background: 'none', border: '1px solid var(--border-default)', borderRadius: 6, padding: '6px', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-        <button type="button" onClick={handleSave} disabled={saving} style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: 6, padding: '6px', color: '#0f0f0f', fontSize: 11, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>{saving ? 'Saving…' : 'Save target'}</button>
+        <button type="button" onClick={handleSave} disabled={saving} style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: 6, padding: '6px', color: 'var(--accent-contrast)', fontSize: 11, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>{saving ? 'Saving…' : 'Save target'}</button>
       </div>
     </div>
   );
@@ -369,7 +369,7 @@ function AddSlotForm({ onCancel, onSubmit }) {
       {error && <p style={{ color: 'var(--danger)', fontSize: 12, margin: 0 }}>{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button type="button" onClick={onCancel} style={{ flex: 1, background: 'none', border: '1px solid var(--border-default)', borderRadius: 7, padding: '9px', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-        <button type="submit" disabled={!label.trim() || saving} style={{ flex: 1, background: !label.trim() || saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '9px', color: !label.trim() || saving ? 'var(--text-muted)' : '#0f0f0f', fontSize: 13, fontWeight: 600, cursor: !label.trim() || saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+        <button type="submit" disabled={!label.trim() || saving} style={{ flex: 1, background: !label.trim() || saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7, padding: '9px', color: !label.trim() || saving ? 'var(--text-muted)' : 'var(--accent-contrast)', fontSize: 13, fontWeight: 600, cursor: !label.trim() || saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
           {saving ? 'Adding…' : 'Add slot'}
         </button>
       </div>

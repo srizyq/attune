@@ -59,7 +59,7 @@ export default function GroupedListVariant() {
   return (
     <div style={pageShellStyle}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 20px' }}>
-        <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, margin: '0 0 4px' }}>Settings</h2>
+        <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 700, margin: '0 0 4px' }}>Settings</h2>
         <p style={{ color: 'var(--text-hint)', fontSize: 13, margin: '0 0 20px' }}>Tap a section to open it</p>
 
         <button style={{
@@ -93,7 +93,7 @@ export default function GroupedListVariant() {
             </FieldRow>
           </div>
           <div style={{ textAlign: 'center', margin: '20px 0 16px' }}>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, fontWeight: 700, color: 'var(--accent)' }}>{s.calories.toLocaleString()}</span>
+            <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 34, fontWeight: 700, color: 'var(--accent)' }}>{s.calories.toLocaleString()}</span>
             <span style={{ color: 'var(--text-muted)', fontSize: 13, marginLeft: 6 }}>kcal / day</span>
           </div>
           <div style={{ marginBottom: 16 }}>

@@ -88,7 +88,7 @@ export function AVATAR({ initials = 'S' }) {
     <div style={{
       width: 48, height: 48, borderRadius: '50%', background: 'var(--accent-bg)', border: '1px solid var(--accent-dark)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 700, color: 'var(--accent)',
-      flexShrink: 0, fontFamily: "'Syne', sans-serif",
+      flexShrink: 0, fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>
       {initials}
     </div>

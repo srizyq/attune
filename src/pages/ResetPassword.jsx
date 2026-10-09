@@ -65,7 +65,7 @@ export default function ResetPassword() {
     }}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link to="/" style={{
-          fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: '20px',
+          fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: '20px',
           color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none',
         }}>attune</Link>
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -77,7 +77,7 @@ export default function ResetPassword() {
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center' }}>Checking your link…</p>
           ) : !validLink ? (
             <>
-              <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>
+              <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>
                 Link expired
               </h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px', textAlign: 'center', lineHeight: 1.5 }}>
@@ -96,7 +96,7 @@ export default function ResetPassword() {
             </>
           ) : done ? (
             <>
-              <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>
+              <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>
                 Password updated
               </h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px', textAlign: 'center' }}>
@@ -115,7 +115,7 @@ export default function ResetPassword() {
             </>
           ) : (
             <form onSubmit={handleSubmit}>
-              <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>
+              <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>
                 Set a new password
               </h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '28px', textAlign: 'center' }}>
