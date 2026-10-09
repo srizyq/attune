@@ -141,7 +141,7 @@ const CANDIDATES = [
   {
     metricKey: 'moodScore', scale: 5,
     predicate: d => isWeekend(d.date),
-    icon: '📅', title: 'Weekday vs weekend', accentColor: '#9a7d70',
+    icon: '📅', title: 'Weekday vs weekend', accentColor: '#c9a24f',
     body: (c) =>
       `Your mood runs ${c.delta >= 0 ? 'higher' : 'lower'} on weekends (${c.withAvg.toFixed(1)}/5) than weekdays (${c.withoutAvg.toFixed(1)}/5) — worth noticing if weekday routines are the lever you can actually pull.`,
   },
@@ -169,7 +169,7 @@ const CANDIDATES = [
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.waterGlasses != null && d.waterGlasses >= 6,
-    icon: '💧', title: 'Hydration', accentColor: '#9a7d70',
+    icon: '💧', title: 'Hydration', accentColor: '#c9a24f',
     body: (c) =>
       `Days you log 6+ glasses of water average ${c.withAvg.toFixed(1)}/10 energy vs ${c.withoutAvg.toFixed(1)}/10 on lower-hydration days.`,
   },
@@ -199,7 +199,7 @@ function proteinEnergyCorrelation(dailyData) {
   const r = pearsonCorrelation(rows.map(d => d.protein_g), rows.map(d => d.energy));
   if (r == null || Math.abs(r) < 0.3) return null;
   return {
-    icon: '🔗', title: 'Protein & energy', accentColor: '#bfa57a',
+    icon: '🔗', title: 'Protein & energy', accentColor: '#cf7468',
     effectSize: Math.abs(r),
     body: `Across ${rows.length} logged days, more protein tends to track with ${r >= 0 ? 'higher' : 'lower'} energy (r = ${r.toFixed(2)}) — not a guarantee, but a real trend in your own data.`,
   };

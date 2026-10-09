@@ -20,8 +20,9 @@ export default function StatBadge({ tone = 'neutral', color, children, style }) 
       display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
       padding: '3px 10px', borderRadius: 20,
       fontSize: 12, fontWeight: 700,
-      color: tint || 'var(--text-secondary)',
-      background: tint ? `color-mix(in srgb, ${tint} 18%, transparent)` : 'var(--bg-subtle)',
+      color: tint ? `color-mix(in srgb, ${tint} 62%, var(--text-primary))` : 'var(--text-secondary)',
+      background: tint ? `color-mix(in srgb, ${tint} 22%, transparent)` : 'var(--bg-subtle)',
+      border: `1px solid ${tint ? `color-mix(in srgb, ${tint} 30%, transparent)` : 'var(--border-default)'}`,
       whiteSpace: 'nowrap',
       ...style,
     }}>

@@ -233,12 +233,12 @@ function WaterCard({ glasses, targetGlasses, setGlasses }) {
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WATER</span>
         <StatBadge>{glasses} / {round1(targetMl / 1000)}L</StatBadge>
       </div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--water-blue)', marginBottom: 12 }}>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
         {glasses * WATER_ML_PER_GLASS}ml
       </div>
       <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
         {Array.from({ length: WATER_SEGMENTS }, (_, i) => (
-          <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < filledSegments ? 'var(--water-blue)' : 'var(--border-default)' }} />
+          <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < filledSegments ? 'var(--accent)' : 'var(--border-default)' }} />
         ))}
       </div>
       <button
@@ -552,10 +552,10 @@ function MacroCell({ label, value, target, color, tone, onClick }) {
         <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.02em', minWidth: 0 }}>{label.toUpperCase()}</span>
         <StatBadge tone={tone} style={{ padding: '2px 6px', fontSize: 11 }}>{pct}%</StatBadge>
       </div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color, whiteSpace: 'nowrap', marginBottom: 8 }}>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', marginBottom: 8 }}>
         {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>/{target}g</span>
       </div>
-      <div style={{ height: 4, borderRadius: 2, background: 'var(--border-default)', overflow: 'hidden' }}>
+      <div style={{ height: 5, borderRadius: 3, background: 'var(--pill-track)', overflow: 'hidden' }}>
         <div style={{ width: `${barPct}%`, height: '100%', background: color, borderRadius: 2 }} />
       </div>
     </Card>

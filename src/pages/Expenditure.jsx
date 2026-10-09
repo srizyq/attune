@@ -56,8 +56,8 @@ const WEIGHT_RANGES = [
 
 // Theme-invariant accents — identical hex in both themes by design.
 const ACCENT = '#a86b6b';
-const WATER_BLUE = '#9a7d70';
-const AI_PURPLE = '#bfa57a';
+const WATER_BLUE = '#c9a24f';
+const AI_PURPLE = '#cf7468';
 
 function avg(arr) {
   return arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;

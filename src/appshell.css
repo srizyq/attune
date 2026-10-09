@@ -204,14 +204,13 @@
     white-space: nowrap;
   }
 
-  /* Active tab: a soft accent-tinted pill behind the icon, the icon in the
-     accent colour, and the label turns bold and dark. */
+  /* Active tab: the icon and the label both turn the accent colour and the
+     label goes bold — no filled pill behind it. */
   .app-bottom-icon-content.is-active {
-    color: var(--text-primary);
+    color: var(--accent);
   }
   .app-bottom-icon-content.is-active .app-bottom-icon-pill {
-    background: var(--accent);
-    color: var(--accent-contrast);
+    color: var(--accent);
   }
   .app-bottom-icon-content.is-active .app-bottom-icon-label {
     font-weight: 800;
