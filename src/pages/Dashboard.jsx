@@ -363,9 +363,7 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
               width={barWidth}
               height={Math.max(0, b.height)}
               rx={Math.min(6, barWidth / 2)}
-              fill={b.over ? 'var(--accent-tertiary)' : b.current ? 'var(--accent)' : 'var(--bar-idle)'}
-              stroke={b.over ? 'var(--text-primary)' : 'none'}
-              strokeWidth={b.over ? 1.5 : 0}
+              fill={b.over ? 'var(--over-target)' : b.current ? 'var(--accent)' : 'var(--bar-idle)'}
             />
           ))}
         </svg>
@@ -869,7 +867,7 @@ function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
             <span style={{ fontSize: 17, fontWeight: 800, color: fg, lineHeight: 1.1 }}>
               {dayDate.getDate()}
             </span>
-            <span data-testid="day-dot" aria-hidden="true" style={{ width: 6, height: 6, boxSizing: 'border-box', borderRadius: '50%', background: calories && !over ? (isSelected ? 'var(--accent-contrast)' : 'var(--accent-secondary)') : 'transparent', border: calories && over ? `1.5px solid ${isSelected ? 'var(--accent-contrast)' : 'var(--text-primary)'}` : 'none' }} />
+            <span data-testid="day-dot" aria-hidden="true" style={{ width: 6, height: 6, boxSizing: 'border-box', borderRadius: '50%', background: calories ? (over ? 'var(--over-target)' : isSelected ? 'var(--accent-contrast)' : 'var(--text-hint)') : 'transparent', opacity: calories && !over && isSelected ? 0.6 : 1 }} />
           </button>
         );
       })}
