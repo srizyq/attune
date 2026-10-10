@@ -6,8 +6,8 @@ import { useSignedPhotoUrl } from '../../hooks/useSignedPhotoUrl';
 
 const MACROS = [
   { key: 'protein_g', label: 'Protein', short: 'P', color: 'var(--macro-protein)', kcalPer: 4 },
-  { key: 'carbs_g', label: 'Carbs', short: 'C', color: 'var(--water-blue)', kcalPer: 4 },
-  { key: 'fat_g', label: 'Fat', short: 'F', color: 'var(--ai-purple)', kcalPer: 9 },
+  { key: 'carbs_g', label: 'Carbs', short: 'C', color: 'var(--macro-carbs)', kcalPer: 4 },
+  { key: 'fat_g', label: 'Fat', short: 'F', color: 'var(--macro-fat)', kcalPer: 9 },
 ];
 const KIND_LABEL = { day: 'Day', meal: 'Meal', recipe: 'Recipe' };
 const KIND_ICON = { day: 'ti-target-arrow', meal: 'ti-tools-kitchen-2', recipe: 'ti-chef-hat' };

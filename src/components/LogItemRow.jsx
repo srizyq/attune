@@ -23,7 +23,7 @@ const MEAL_OPTIONS = [
 // own conversion. It's low-impact there since this only renders when a
 // row is actually expanded, not on page load.
 const C = {
-  green: 'var(--accent)', blue: 'var(--water-blue)', purple: 'var(--ai-purple)',
+  green: 'var(--accent)', protein: 'var(--macro-protein)', blue: 'var(--macro-carbs)', purple: 'var(--macro-fat)',
 };
 
 const fieldStyle = { width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '7px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
@@ -200,7 +200,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
             {readOnly ? (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <MacroReadout value={Math.round(item.cal)} unit="" label="Calories" color={C.green} />
-                <MacroReadout value={round1(item.protein)} unit="g" label="Protein" color={C.green} />
+                <MacroReadout value={round1(item.protein)} unit="g" label="Protein" color={C.protein} />
                 <MacroReadout value={round1(item.carbs)} unit="g" label="Carbs" color={C.blue} />
                 <MacroReadout value={round1(item.fat)} unit="g" label="Fat" color={C.purple} />
               </div>
@@ -244,7 +244,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--border-default)' }}>
                   <MacroReadout value={preview.cal} unit="" label="Calories" color={C.green} />
-                  <MacroReadout value={round1(preview.protein)} unit="g" label="Protein" color={C.green} />
+                  <MacroReadout value={round1(preview.protein)} unit="g" label="Protein" color={C.protein} />
                   <MacroReadout value={round1(preview.carbs)} unit="g" label="Carbs" color={C.blue} />
                   <MacroReadout value={round1(preview.fat)} unit="g" label="Fat" color={C.purple} />
                 </div>

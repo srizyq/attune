@@ -211,11 +211,11 @@ export default function Step3() {
               <Slider value={Math.round(targets.protein.pct * 100)} min={10} max={60} onChange={v => applyMacroSplit(v / 100, targets.fat.pct)} color="var(--macro-protein)" />
             </div>
           )}
-          <MacroBar label="Carbohydrates" grams={targets.carbs.g}   calories={targets.carbs.cal}   pct={targets.carbs.pct}   color="var(--water-blue)" delay={100} />
+          <MacroBar label="Carbohydrates" grams={targets.carbs.g}   calories={targets.carbs.cal}   pct={targets.carbs.pct}   color="var(--macro-carbs)" delay={100} />
           {editingMacros && (
             <p style={{ color: 'var(--text-hint)', fontSize: '11px', margin: '-10px 0 16px' }}>Carbs fill whatever's left, so the split always totals 100%.</p>
           )}
-          <MacroBar label="Fat"           grams={targets.fat.g}     calories={targets.fat.cal}      pct={targets.fat.pct}     color="var(--ai-purple)" delay={200} />
+          <MacroBar label="Fat"           grams={targets.fat.g}     calories={targets.fat.cal}      pct={targets.fat.pct}     color="var(--macro-fat)" delay={200} />
           {editingMacros && (
             <div style={{ marginTop: '-10px' }}>
               <Slider value={Math.round(targets.fat.pct * 100)} min={10} max={50} onChange={v => applyMacroSplit(targets.protein.pct, v / 100)} color="var(--ai-purple)" />

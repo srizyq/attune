@@ -1637,7 +1637,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
           )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
             <MacroPill value={scaled.protein} label="Protein" color="var(--macro-protein)" />
-            <MacroPill value={scaled.carbs} label="Carbs" color="var(--water-blue)" />
+            <MacroPill value={scaled.carbs} label="Carbs" color="var(--macro-carbs)" />
             <MacroPill value={scaled.fat} label="Fat" color="var(--warning)" />
             <MacroPill value={scaled.fibre} label="Fibre" color="var(--ai-purple)" />
           </div>

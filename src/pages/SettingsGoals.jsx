@@ -596,16 +596,16 @@ export default function SettingsGoals() {
                   style={{ color: 'var(--ai-purple)', fontSize: '13px', fontWeight: 600, width: '3.5ch' }}
                 />
               </div>
-              <Slider value={fatPct} min={FAT_PCT_RANGE.min} max={FAT_PCT_RANGE.max} onChange={v => setFatPct(Math.min(v, 100 - proteinPct))} color="var(--ai-purple)" />
+              <Slider value={fatPct} min={FAT_PCT_RANGE.min} max={FAT_PCT_RANGE.max} onChange={v => setFatPct(Math.min(v, 100 - proteinPct))} color="var(--macro-fat)" />
             </div>
 
             <div style={{ marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600 }}>{netCarbs ? 'Net carbs' : 'Carbs'}</span>
-                <span style={{ color: 'var(--water-blue)', fontSize: '13px', fontWeight: 600 }}>{carbPct}% (auto)</span>
+                <span style={{ color: 'var(--macro-carbs)', fontSize: '13px', fontWeight: 600 }}>{carbPct}% (auto)</span>
               </div>
               <div style={{ height: '6px', background: 'var(--border-default)', borderRadius: '99px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${carbPct}%`, background: 'var(--water-blue)', borderRadius: '99px', transition: 'width 0.2s' }} />
+                <div style={{ height: '100%', width: `${carbPct}%`, background: 'var(--macro-carbs)', borderRadius: '99px', transition: 'width 0.2s' }} />
               </div>
               <p style={{ color: 'var(--text-hint)', fontSize: '11px', marginTop: '6px' }}>Carbs fill whatever's left so your split always totals 100%.</p>
             </div>
@@ -616,8 +616,8 @@ export default function SettingsGoals() {
                 Daily breakdown
               </p>
               <MacroPreviewBar label="Protein" grams={preview.protein.g} calories={preview.protein.cal} pct={preview.protein.pct} color="var(--macro-protein)" />
-              <MacroPreviewBar label={netCarbs ? 'Net carbs' : 'Carbs'} grams={preview.carbs.g}   calories={preview.carbs.cal}   pct={preview.carbs.pct}   color="var(--water-blue)" />
-              <MacroPreviewBar label="Fat"     grams={preview.fat.g}     calories={preview.fat.cal}     pct={preview.fat.pct}     color="var(--ai-purple)" />
+              <MacroPreviewBar label={netCarbs ? 'Net carbs' : 'Carbs'} grams={preview.carbs.g}   calories={preview.carbs.cal}   pct={preview.carbs.pct}   color="var(--macro-carbs)" />
+              <MacroPreviewBar label="Fat"     grams={preview.fat.g}     calories={preview.fat.cal}     pct={preview.fat.pct}     color="var(--macro-fat)" />
             </div>
           </Card>
 

@@ -9,7 +9,7 @@ export default function MilestonePrompt({ streak, onShare }) {
   const dismiss = () => { write(milestone); force((n) => n + 1); };
   return (
     <section aria-label="Streak milestone" style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 'var(--card-radius)', padding: '12px 14px', marginBottom: 16 }}>
-      <i className="ti ti-flame" aria-hidden="true" style={{ fontSize: 26, color: 'var(--accent)', flexShrink: 0 }} />
+      <i className="ti ti-flame" aria-hidden="true" style={{ fontSize: 26, color: 'var(--burn)', flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14 }}>{milestone} days in a row</div>
         <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>Want to share it with your friends?</div>

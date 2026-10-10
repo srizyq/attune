@@ -56,8 +56,8 @@ const WEIGHT_RANGES = [
 
 // Theme-invariant accents — identical hex in both themes by design.
 const ACCENT = '#9867c5';
-const WATER_BLUE = '#b188d8';
-const AI_PURPLE = '#7e6b93';
+const WATER_BLUE = '#c0803f';
+const AI_PURPLE = '#9b8aa8';
 
 function avg(arr) {
   return arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
@@ -570,9 +570,9 @@ export default function Expenditure() {
             <Card style={{ padding: 20, marginBottom: 0 }}>
               <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 16 }}>Streak badges</div>
               {[
-                { icon: 'ti-flame',      iconBg: 'var(--accent-bg)', iconColor: 'var(--accent)',     name: 'Logging streak',   count: loggingStreak },
+                { icon: 'ti-flame',      iconBg: 'var(--accent-bg)', iconColor: 'var(--burn)',     name: 'Logging streak',   count: loggingStreak },
                 { icon: 'ti-target',     iconBg: 'var(--accent-bg)', iconColor: 'var(--accent)',     name: 'Calorie target',   count: calorieStreak },
-                { icon: 'ti-meat',       iconBg: WATER_BLUE + '18',  iconColor: 'var(--water-blue)', name: 'Protein target',   count: proteinStreak },
+                { icon: 'ti-meat',       iconBg: 'var(--chip-bg)',  iconColor: 'var(--macro-protein)', name: 'Protein target',   count: proteinStreak },
                 { icon: 'ti-mood-smile', iconBg: AI_PURPLE + '18',   iconColor: 'var(--ai-purple)',  name: 'Mood check-ins',   count: moodStreak },
               ].map((s, i, arr) => (
                 <div key={s.name} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--border-default)' : 'none' }}>

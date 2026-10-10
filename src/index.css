@@ -27,8 +27,8 @@
   --accent-border: rgba(152, 103, 197, 0.38);
   --accent-strong: var(--accent);
   --danger-strong: var(--danger);
-  --water-blue: #b188d8;
-  --ai-purple: #e6dcf5;
+  --water-blue: #93bae0;
+  --ai-purple: #b188d8;
   --warning: #6c7054;
   --danger: #e57a70;
   --gold: #e8c468;
@@ -61,8 +61,12 @@
   --card-shadow: none;
   --chip-bg: rgba(177, 136, 216, 0.16);
   --bar-idle: #2b221d;
-  --macro-protein: #9867c5;
-  --over-target: #e6dcf5;
+  --bar-under: #4b3768;
+  --macro-protein: #b188d8;
+  --macro-carbs: #e2a869;
+  --macro-fat: #c9a27e;
+  --burn: #e2a869;
+  --over-target: #b188d8;
 }
 
 /* App-wide theme system — scoped to a wrapper element carrying
@@ -80,11 +84,15 @@
    dark — and --accent-secondary is the brand highlight for text and icons
    (links, the active tab, chip text), a touch darker/lighter than iris so it
    stays readable. --accent-contrast is the text on a primary fill; always use
-   it instead of a hardcoded black/white. --macro-protein is iris, --water-blue
-   is orchid (carbs) and --ai-purple is espresso/lilac (fat). --chip-bg is the
-   lilac pill behind small labels; --bar-idle is the resting colour of chart
-   bars. Over a calorie target is shown in --over-target (iris in light, soft lilac in dark), not red;
-   --danger stays red only for errors and destructive actions. Canvas charts can't read CSS variables, so their
+   it instead of a hardcoded black/white. Macros each have their own colour:
+   --macro-protein (iris), --macro-carbs (caramel) and --macro-fat (cocoa in
+   light, latte in dark); --water-blue is a soft blue for water only, --burn
+   is caramel for flames/burned calories, and --ai-purple is iris for the AI
+   badges. --chip-bg is the lilac pill behind small labels. Chart bars:
+   --bar-idle is the track/empty colour, --bar-under the days under target
+   (visible deep iris in dark, soft lilac in light) and --over-target the part
+   of a bar above the target line (orchid). Over a calorie target is never
+   red; --danger stays red only for errors and destructive actions. Canvas charts can't read CSS variables, so their
    mid-tone hex colours live in Expenditure.jsx and coach/constants.js. */
 [data-theme='dark'] {
   --bg-primary: #0e0a08;
@@ -102,8 +110,8 @@
   --accent-border: rgba(152, 103, 197, 0.38);
   --accent-strong: var(--accent);
   --danger-strong: var(--danger);
-  --water-blue: #b188d8;
-  --ai-purple: #e6dcf5;
+  --water-blue: #93bae0;
+  --ai-purple: #b188d8;
   --warning: #6c7054;
   --danger: #e57a70;
   --gold: #e8c468;
@@ -124,8 +132,12 @@
   --card-shadow: none;
   --chip-bg: rgba(177, 136, 216, 0.16);
   --bar-idle: #2b221d;
-  --macro-protein: #9867c5;
-  --over-target: #e6dcf5;
+  --bar-under: #4b3768;
+  --macro-protein: #b188d8;
+  --macro-carbs: #e2a869;
+  --macro-fat: #c9a27e;
+  --burn: #e2a869;
+  --over-target: #b188d8;
 }
 [data-theme='light'] {
   /* Warm off-white/cream, not pure white — matches the retro-telemetry
@@ -161,8 +173,8 @@
      for the same "needs to read as a data mark" cases. */
   --accent-strong: var(--accent-dark);
   --danger-strong: #a12218;
-  --water-blue: #b188d8;
-  --ai-purple: #1a120b;
+  --water-blue: #6c9bc9;
+  --ai-purple: #9867c5;
   --warning: #6c7054;
   --danger: #b3261e;
   --gold: #e8c468;
@@ -188,8 +200,12 @@
   --card-shadow: 0 1px 2px rgba(26, 18, 11, 0.05);
   --chip-bg: #ede6f5;
   --bar-idle: #dacbeb;
+  --bar-under: #dacbeb;
   --macro-protein: #9867c5;
-  --over-target: #9867c5;
+  --macro-carbs: #c0803f;
+  --macro-fat: #8a5a3a;
+  --burn: #c0803f;
+  --over-target: #b188d8;
 }
 
 /* The themed wrapper sets its own text colour. Without it, anything with no

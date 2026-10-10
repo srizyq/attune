@@ -50,10 +50,17 @@ import ListRow from '../components/ListRow';
 import Card from '../components/Card';
 import StatBadge from '../components/StatBadge';
 
-// Accent/water-blue/ai-purple are the same hex in both themes by design.
+// Macro colours come from the theme tokens (--macro-*) so they follow light/dark.
+// A rounded rectangle with separate top and bottom corner radii (bars that
+// are split at the target line round only their outer ends).
+function barPath(x, y, w, h, rt, rb) {
+  const t = Math.min(rt, w / 2, h / 2), b = Math.min(rb, w / 2, h / 2);
+  return `M${x + t},${y} H${x + w - t} Q${x + w},${y} ${x + w},${y + t} V${y + h - b} Q${x + w},${y + h} ${x + w - b},${y + h} H${x + b} Q${x},${y + h} ${x},${y + h - b} V${y + t} Q${x},${y} ${x + t},${y} Z`;
+}
+
 const PROTEIN = 'var(--macro-protein)';
-const WATER_BLUE = 'var(--water-blue)';
-const AI_PURPLE = 'var(--ai-purple)';
+const CARBS = 'var(--macro-carbs)';
+const FAT = 'var(--macro-fat)';
 
 // ─── Calorie hero — real weekly/monthly/quarterly trend, no decorative
 // elements without real data behind them (no fake "uncertainty band" —
@@ -318,10 +325,12 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
       x: i * (barWidth + gap),
       y: baseline - barHeight,
       height: barHeight,
+      targetY: baseline - (dayTarget / max) * plotHeight,
       over: d.calories > dayTarget,
       current: i === days.length - 1,
     };
   });
+  const corner = Math.min(6, barWidth / 2);
 
   // A handful of evenly-spaced labels regardless of range. Each is placed
   // absolutely under its own bar rather than every bar getting a (mostly
@@ -355,17 +364,24 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
             const y = baseline - (seg.value / max) * plotHeight;
             return <line key={`target-${seg.start}`} x1={bars[seg.start].x} y1={y} x2={bars[seg.end].x + barWidth} y2={y} stroke="var(--text-hint)" strokeWidth="2" strokeLinecap="round" strokeDasharray="0 5" />;
           })}
-          {bars.map((b, i) => (
-            <rect
-              key={i}
-              x={b.x}
-              y={b.y}
-              width={barWidth}
-              height={Math.max(0, b.height)}
-              rx={Math.min(6, barWidth / 2)}
-              fill={b.over ? 'var(--over-target)' : b.current ? 'var(--accent)' : 'var(--bar-idle)'}
-            />
-          ))}
+          {bars.map((b, i) => {
+            const base = b.current ? 'var(--accent)' : 'var(--bar-under)';
+            if (!b.over) {
+              return <path key={i} d={barPath(b.x, b.y, barWidth, Math.max(0, b.height), corner, corner)} fill={base} />;
+            }
+            // Over the day's target: the bar stops at the target line and only
+            // the part above it takes the over-target colour, with a hairline
+            // gap between the two — so how far over you went reads at a glance
+            // and the bar isn't one solid block of the loud colour.
+            const baseH = baseline - b.targetY;
+            const overH = Math.max(4, b.targetY - b.y - 2);
+            return (
+              <g key={i}>
+                <path d={barPath(b.x, b.targetY, barWidth, baseH, 2, corner)} fill={base} />
+                <path d={barPath(b.x, b.targetY - 2 - overH, barWidth, overH, corner, 2)} fill="var(--over-target)" />
+              </g>
+            );
+          })}
         </svg>
       </div>
       <div style={{ position: 'relative', height: 14, marginTop: 6, marginBottom: 16 }} onClick={e => e.stopPropagation()}>
@@ -589,10 +605,10 @@ function MacroGroup({ onDetails, children }) {
 // placeholder. Burned is real: manually-logged workouts (see
 // LogWorkoutModal/useWorkoutLogs), MET-estimated from type/intensity/
 // duration and editable, feeding back into the day's calorie budget.
-function ActivityStat({ icon, label, value, active, chip }) {
+function ActivityStat({ icon, iconColor = 'var(--text-primary)', label, value, active, chip }) {
   return (
     <Card style={{ padding: '14px 12px', marginBottom: 0, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-      <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--chip-bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--text-primary)' }}>
+      <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--chip-bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: iconColor }}>
         <i className={`ti ${icon}`} style={{ fontSize: 18 }} />
       </span>
       <div style={{ minWidth: 0, flex: 1 }}>
@@ -609,7 +625,7 @@ function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWork
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 10 }}>
         <ActivityStat icon="ti-walk" label="Steps" value="—" chip="Daily" />
-        <ActivityStat icon="ti-flame" label="Burned" active={!!totalCaloriesBurned} value={totalCaloriesBurned ? Math.round(totalCaloriesBurned).toLocaleString() : '—'} chip="Active" />
+        <ActivityStat icon="ti-flame" iconColor="var(--burn)" label="Burned" active={!!totalCaloriesBurned} value={totalCaloriesBurned ? Math.round(totalCaloriesBurned).toLocaleString() : '—'} chip="Active" />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
         <span style={{ fontSize: 11, color: 'var(--text-hint)', fontWeight: 700 }}>Steps will sync from Apple Health / Google Fit once the native app ships.</span>
@@ -1192,8 +1208,8 @@ export default function Dashboard() {
 
           <MacroGroup onDetails={() => navigate('/nutrients', { state: { date: viewedDate } })}>
             <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={PROTEIN} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-            <MacroCell label={carbsLabel(profile?.net_carbs)} value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-            <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label={carbsLabel(profile?.net_carbs)} value={consumedCarbs} target={targets.carbs.g} color={CARBS} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={FAT} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
           </MacroGroup>
 
           {community.canShare && community.me && <FriendsStrip me={community.me} />}

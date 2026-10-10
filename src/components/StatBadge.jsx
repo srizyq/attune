@@ -6,8 +6,8 @@
 // secondary text on the chip.
 const TINTS = {
   accent: 'var(--accent-secondary)',
-  carbs: 'var(--water-blue)',
-  fat: 'var(--text-primary)',
+  carbs: 'var(--macro-carbs)',
+  fat: 'var(--macro-fat)',
 };
 
 export default function StatBadge({ tone = 'neutral', color, children, style }) {

@@ -114,7 +114,7 @@ export function CommunityProfileView({ username, own = false, onRenamed }) {
           )}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          {person.streak > 0 && <span style={chip}><i className="ti ti-flame" aria-hidden="true" style={{ color: 'var(--accent)' }} />{person.streak}-day streak</span>}
+          {person.streak > 0 && <span style={chip}><i className="ti ti-flame" aria-hidden="true" style={{ color: 'var(--burn)' }} />{person.streak}-day streak</span>}
           {person.goal_type && <span style={chip}>{GOAL[person.goal_type]}</span>}
           {person.is_private && <span style={chip}><i className="ti ti-lock" aria-hidden="true" />Private account</span>}
           {person.follows_you && !isSelf && <span style={chip}>Follows you</span>}

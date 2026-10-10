@@ -110,9 +110,9 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
       <Card>
         <SectionLabel icon="ti-flame">Streaks</SectionLabel>
         {[
-          { icon: 'ti-flame', iconBg: 'var(--accent-bg)', iconColor: 'var(--accent)', name: 'Logging streak', count: loggingStreak },
+          { icon: 'ti-flame', iconBg: 'var(--accent-bg)', iconColor: 'var(--burn)', name: 'Logging streak', count: loggingStreak },
           { icon: 'ti-target', iconBg: 'var(--accent-bg)', iconColor: 'var(--accent)', name: 'Calorie target', count: calorieStreak },
-          { icon: 'ti-meat', iconBg: WATER_BLUE + '18', iconColor: 'var(--water-blue)', name: 'Protein target', count: proteinStreak },
+          { icon: 'ti-meat', iconBg: 'var(--chip-bg)', iconColor: 'var(--macro-protein)', name: 'Protein target', count: proteinStreak },
           { icon: 'ti-mood-smile', iconBg: AI_PURPLE + '18', iconColor: 'var(--ai-purple)', name: 'Mood check-ins', count: moodStreak },
         ].map((s, i, arr) => (
           <div key={s.name} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--border-default)' : 'none' }}>

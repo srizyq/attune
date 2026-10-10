@@ -97,15 +97,15 @@ export default function TargetsForm({ client, onSave, onCancel }) {
       <div style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
           <span style={labelStyle}>Fat</span>
-          <span style={{ color: 'var(--ai-purple)', fontSize: 12, fontWeight: 600 }}>{fatPct}%</span>
+          <span style={{ color: 'var(--macro-fat)', fontSize: 12, fontWeight: 600 }}>{fatPct}%</span>
         </div>
-        <Slider aria-label="Fat share of calories" value={fatPct} min={10} max={50} onChange={v => setFatPct(Math.min(v, 100 - proteinPct))} color="var(--ai-purple)" />
+        <Slider aria-label="Fat share of calories" value={fatPct} min={10} max={50} onChange={v => setFatPct(Math.min(v, 100 - proteinPct))} color="var(--macro-fat)" />
       </div>
 
       <div style={{ marginBottom: 6 }}>
         <MacroPreviewBar label="Protein" grams={computed.protein.g} calories={computed.protein.cal} pct={split.protein} color="var(--macro-protein)" />
-        <MacroPreviewBar label="Carbs" grams={computed.carbs.g} calories={computed.carbs.cal} pct={split.carbs} color="var(--water-blue)" />
-        <MacroPreviewBar label="Fat" grams={computed.fat.g} calories={computed.fat.cal} pct={split.fat} color="var(--ai-purple)" />
+        <MacroPreviewBar label="Carbs" grams={computed.carbs.g} calories={computed.carbs.cal} pct={split.carbs} color="var(--macro-carbs)" />
+        <MacroPreviewBar label="Fat" grams={computed.fat.g} calories={computed.fat.cal} pct={split.fat} color="var(--macro-fat)" />
         <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '2px 0 0' }}>Carbs ({carbPct}%) fill whatever protein and fat leave.</p>
       </div>
       {supportsDay && (

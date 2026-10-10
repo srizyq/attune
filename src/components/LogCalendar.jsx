@@ -83,7 +83,7 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
           <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Logging streak</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{streak} {streak === 1 ? 'day' : 'days'}</span>
-            <i className="ti ti-flame" style={{ fontSize: 14, color: 'var(--accent)' }} />
+            <i className="ti ti-flame" style={{ fontSize: 14, color: 'var(--burn)' }} />
           </div>
         </div>
       )}

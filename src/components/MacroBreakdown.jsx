@@ -8,7 +8,7 @@
 const FIELDS = [
   { key: 'cal', label: 'kcal', color: 'var(--accent)', unit: '' },
   { key: 'protein', label: 'Protein', color: 'var(--macro-protein)', unit: 'g' },
-  { key: 'carbs', label: 'Carbs', color: 'var(--water-blue)', unit: 'g' },
+  { key: 'carbs', label: 'Carbs', color: 'var(--macro-carbs)', unit: 'g' },
   { key: 'fat', label: 'Fat', color: 'var(--warning)', unit: 'g' },
 ];
 
