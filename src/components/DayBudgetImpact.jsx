@@ -44,7 +44,7 @@ export default function DayBudgetImpact({ target, consumed, adding }) {
         <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Day budget impact</span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
           {formatBudget(remainingBefore)} <i className="ti ti-arrow-right" aria-hidden="true" style={{ fontSize: 11 }} />
-          {over ? <span style={{ ...pill('danger'), fontSize: 12 }}>{formatBudget(remainingAfter)}</span> : formatBudget(remainingAfter)}
+          {over ? <span style={{ ...pill('accent-secondary'), fontSize: 12 }}>{formatBudget(remainingAfter)}</span> : formatBudget(remainingAfter)}
         </span>
       </div>
 
@@ -54,7 +54,7 @@ export default function DayBudgetImpact({ target, consumed, adding }) {
           <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: pct(addedEnd), background: 'var(--accent)', transition: 'width 300ms ease' }} />
           <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: pct(consumedEnd), background: 'color-mix(in srgb, var(--accent) 65%, #000)', transition: 'width 300ms ease' }} />
           {over && (
-            <div data-testid="budget-over" style={{ position: 'absolute', top: 0, bottom: 0, left: pct(target), right: 0, background: 'var(--danger)' }} />
+            <div data-testid="budget-over" style={{ position: 'absolute', top: 0, bottom: 0, left: pct(target), right: 0, background: 'var(--accent-tertiary)', boxShadow: 'inset 0 0 0 1.5px var(--text-primary)' }} />
           )}
         </div>
         {over && (

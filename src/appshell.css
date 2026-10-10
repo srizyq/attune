@@ -39,8 +39,8 @@
 
 .app-sidebar {
   width: 52px;
-  background: var(--bg-primary, #1f1815);
-  border-right: 1px solid var(--border-default, #3d322c);
+  background: var(--bg-primary, #0e0a08);
+  border-right: 1px solid var(--border-default, #2c2330);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -73,22 +73,22 @@
 }
 
 .app-nav-icon.is-active {
-  color: var(--accent, #c99494);
-  background: var(--accent-bg, #3a2a28);
-  border-color: var(--accent-border, #5a4140);
+  color: var(--accent, #9867c5);
+  background: var(--accent-bg, #2a2033);
+  border-color: var(--accent-border, #4a3a63);
 }
 
 .app-nav-avatar {
   width: 32px;
   height: 32px;
-  background: var(--bg-card, #2b221e);
-  border: 1px solid var(--border-default, #3d322c);
+  background: var(--bg-card, #1c1612);
+  border: 1px solid var(--border-default, #2c2330);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  color: var(--accent, #c99494);
+  color: var(--accent, #9867c5);
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -96,8 +96,8 @@
 }
 
 .app-nav-avatar.is-active {
-  background: var(--accent-bg, #3a2a28);
-  border-color: var(--accent-dark, #b07e7e);
+  background: var(--accent-bg, #2a2033);
+  border-color: var(--accent-dark, #7e4fa8);
 }
 
 .app-bottom-nav {
@@ -136,8 +136,8 @@
     height: 64px;
     padding-bottom: var(--bottom-nav-pad);
     box-sizing: content-box;
-    background: var(--bg-card, #2b221e);
-    border-top: 1px solid var(--border-default, #3d322c);
+    background: var(--bg-card, #1c1612);
+    border-top: 1px solid var(--border-default, #2c2330);
     border-radius: 22px 22px 0 0;
     box-shadow: 0 -4px 18px rgba(26, 18, 11, 0.06);
     z-index: 100;
@@ -206,13 +206,11 @@
     white-space: nowrap;
   }
 
-  /* Active tab: the icon and the label both turn the accent colour and the
-     label goes bold — no filled pill behind it. */
-  .app-bottom-icon-content.is-active {
-    color: var(--accent);
-  }
+  /* Active tab: the icon and the label both turn the brand-highlight (iris)
+     colour and the label goes bold — no filled pill behind it. */
+  .app-bottom-icon-content.is-active,
   .app-bottom-icon-content.is-active .app-bottom-icon-pill {
-    color: var(--accent);
+    color: var(--accent-secondary);
   }
   .app-bottom-icon-content.is-active .app-bottom-icon-label {
     font-weight: 800;
@@ -225,7 +223,7 @@
     box-shadow: 0 0 0 4px var(--bg-card), 0 6px 14px rgba(26, 18, 11, 0.18);
     justify-self: center;
     border-radius: 50%;
-    background: var(--accent, #c99494);
+    background: var(--accent, #9867c5);
     border: none;
     color: var(--accent-contrast);
     font-size: 26px;
@@ -555,5 +553,12 @@
   .app-bottom-icon-label {
     font-size: 9px;
     letter-spacing: 0.02em;
+  }
+}
+
+/* Dark mode: the + button glows iris, as in the design. */
+@media (max-width: 860px) {
+  [data-theme='dark'] .app-bottom-add {
+    box-shadow: 0 0 0 4px var(--bg-card), 0 0 22px rgba(152, 103, 197, 0.5);
   }
 }

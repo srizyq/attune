@@ -3,9 +3,9 @@
 // var(--accent)) because it's fed into Chart.js canvas contexts and
 // string-concatenated with a hex alpha suffix elsewhere (ACCENT + '22'),
 // neither of which can resolve a CSS custom property.
-export const ACCENT = '#b07a55';
-export const WATER_BLUE = '#c4905b';
-export const AI_PURPLE = '#8c7260';
+export const ACCENT = '#9867c5';
+export const WATER_BLUE = '#b188d8';
+export const AI_PURPLE = '#7e6b93';
 export const RANGES = [{ id: 7, label: '7 days' }, { id: 30, label: '30 days' }, { id: 90, label: '90 days' }];
 export const GOAL_LABELS = { lose: 'Lose weight', maintain: 'Stay balanced', build: 'Build muscle' };
 export const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };

@@ -67,11 +67,11 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
                 title={day?.calories ? `${Math.round(day.calories)} kcal logged${over ? ' — over target' : ''}` : 'Nothing logged'}
                 style={{
                   position: 'relative', aspectRatio: '1', borderRadius: 6, overflow: 'hidden',
-                  background: 'var(--bg-subtle)', border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border-default)'}`,
+                  background: 'var(--bg-subtle)', border: `1px solid ${isToday ? 'var(--accent)' : over ? 'var(--text-primary)' : 'var(--border-default)'}`,
                   cursor: isFuture ? 'default' : 'pointer', opacity: isFuture ? 0.35 : 1,
                 }}
               >
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: over ? 'color-mix(in srgb, var(--danger) 45%, transparent)' : 'color-mix(in srgb, var(--accent) 31%, transparent)', transition: 'height 0.4s ease, background 0.2s ease' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: over ? 'color-mix(in srgb, var(--accent-tertiary) 70%, transparent)' : 'color-mix(in srgb, var(--accent) 31%, transparent)', transition: 'height 0.4s ease, background 0.2s ease' }} />
                 <div style={{ position: 'relative', fontSize: 10, color: pct > 55 ? 'var(--text-primary)' : 'var(--text-muted)', padding: compact ? 2 : 3 }}>{Number(dateStr.slice(-2))}</div>
               </div>
             );

@@ -580,7 +580,7 @@ export default function SettingsGoals() {
                   style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 600, width: '3.5ch' }}
                 />
               </div>
-              <Slider value={proteinPct} min={PROTEIN_PCT_RANGE.min} max={PROTEIN_PCT_RANGE.max} onChange={v => setProteinPct(Math.min(v, 100 - fatPct))} color="var(--accent-secondary)" />
+              <Slider value={proteinPct} min={PROTEIN_PCT_RANGE.min} max={PROTEIN_PCT_RANGE.max} onChange={v => setProteinPct(Math.min(v, 100 - fatPct))} color="var(--macro-protein)" />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
@@ -615,7 +615,7 @@ export default function SettingsGoals() {
               <p style={{ color: 'var(--accent-dark)', fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 14px' }}>
                 Daily breakdown
               </p>
-              <MacroPreviewBar label="Protein" grams={preview.protein.g} calories={preview.protein.cal} pct={preview.protein.pct} color="var(--accent-secondary)" />
+              <MacroPreviewBar label="Protein" grams={preview.protein.g} calories={preview.protein.cal} pct={preview.protein.pct} color="var(--macro-protein)" />
               <MacroPreviewBar label={netCarbs ? 'Net carbs' : 'Carbs'} grams={preview.carbs.g}   calories={preview.carbs.cal}   pct={preview.carbs.pct}   color="var(--water-blue)" />
               <MacroPreviewBar label="Fat"     grams={preview.fat.g}     calories={preview.fat.cal}     pct={preview.fat.pct}     color="var(--ai-purple)" />
             </div>

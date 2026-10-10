@@ -12,7 +12,7 @@ export default function CalorieLimitBanner({ limit, today, style }) {
   return (
     <div role="status" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 'var(--card-radius)', padding: '12px 12px 12px 12px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, ...style }}>
       <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--chip-bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <i className="ti ti-target" style={{ color: 'var(--text-primary)', fontSize: 20 }} />
+        <i className="ti ti-target" style={{ color: 'var(--accent-secondary)', fontSize: 20 }} />
       </span>
       <div style={{ flex: 1, minWidth: 0, lineHeight: 1.35 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{limit.calories.toLocaleString()} kcal limit</div>

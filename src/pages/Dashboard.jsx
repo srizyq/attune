@@ -17,10 +17,8 @@ import { toKg, fromKg } from '../lib/adaptiveTDEE';
 import { weightInKg, getWorkoutType } from '../lib/workoutMath';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import AppNav from '../components/AppNav';
-import CoachNote from '../components/CoachNote';
-import CoachChatModal from '../components/CoachChatModal';
+import CoachInbox from '../components/CoachInbox';
 import LogWorkoutModal from '../components/LogWorkoutModal';
-import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
 import SlotTimeline from '../components/SlotTimeline';
@@ -53,7 +51,7 @@ import Card from '../components/Card';
 import StatBadge from '../components/StatBadge';
 
 // Accent/water-blue/ai-purple are the same hex in both themes by design.
-const PROTEIN = 'var(--accent-secondary)';
+const PROTEIN = 'var(--macro-protein)';
 const WATER_BLUE = 'var(--water-blue)';
 const AI_PURPLE = 'var(--ai-purple)';
 
@@ -365,8 +363,9 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
               width={barWidth}
               height={Math.max(0, b.height)}
               rx={Math.min(6, barWidth / 2)}
-              fill={b.over ? 'var(--danger-strong)' : b.current ? 'var(--accent)' : 'var(--bar-idle)'}
-              opacity={b.over ? 0.85 : 1}
+              fill={b.over ? 'var(--accent-tertiary)' : b.current ? 'var(--accent)' : 'var(--bar-idle)'}
+              stroke={b.over ? 'var(--text-primary)' : 'none'}
+              strokeWidth={b.over ? 1.5 : 0}
             />
           ))}
         </svg>
@@ -870,7 +869,7 @@ function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
             <span style={{ fontSize: 17, fontWeight: 800, color: fg, lineHeight: 1.1 }}>
               {dayDate.getDate()}
             </span>
-            <span data-testid="day-dot" aria-hidden="true" style={{ width: 5, height: 5, borderRadius: '50%', background: calories ? (over ? 'var(--danger-strong)' : isSelected ? 'var(--accent-contrast)' : 'var(--accent-secondary)') : 'transparent' }} />
+            <span data-testid="day-dot" aria-hidden="true" style={{ width: 6, height: 6, boxSizing: 'border-box', borderRadius: '50%', background: calories && !over ? (isSelected ? 'var(--accent-contrast)' : 'var(--accent-secondary)') : 'transparent', border: calories && over ? `1.5px solid ${isSelected ? 'var(--accent-contrast)' : 'var(--text-primary)'}` : 'none' }} />
           </button>
         );
       })}
@@ -1033,8 +1032,6 @@ export default function Dashboard() {
   }, [profile, computeAdaptive, saveProfile]);
 
   const name = profile?.name || 'there';
-  const { note: coachNote, dismiss: dismissCoachNote } = useCoachNote('general');
-  const [coachChatOpen, setCoachChatOpen] = useState(false);
   // Onboarding now requires real signup before RequireAuth lets anyone
   // reach this page (see its isUnsignedGuest gate) — is_anonymous here can
   // only mean "submitted the signup form, hasn't clicked the confirmation
@@ -1123,7 +1120,10 @@ export default function Dashboard() {
         <PullIndicator {...pullState} />
         <div className="page-pad-top" style={{ minHeight: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 10, paddingBottom: 8, position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
           <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, letterSpacing: '0.03em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>Dashboard</h1>
-          <button onClick={() => navigate('/profile')} aria-label="Your profile" title="Your profile" style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'var(--accent)', color: 'var(--accent-contrast)', fontSize: 12, fontWeight: 800, letterSpacing: '0.02em', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>{initials}</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <CoachInbox />
+            <button onClick={() => navigate('/profile')} aria-label="Your profile" title="Your profile" style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'var(--accent)', color: 'var(--accent-contrast)', fontSize: 12, fontWeight: 800, letterSpacing: '0.02em', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>{initials}</button>
+          </div>
         </div>
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
@@ -1151,15 +1151,6 @@ export default function Dashboard() {
           <CalorieLimitBanner limit={activeLimit(profile, today)} today={today} />
           <InstallPrompt />
           <TrialBanner profile={profile} userId={user?.id} />
-          {coachNote && <CoachNote note={coachNote} onDismiss={dismissCoachNote} onClick={() => setCoachChatOpen(true)} style={{ marginBottom: 16 }} />}
-          {coachChatOpen && (
-            <CoachChatModal
-              trainerId={coachNote.trainer_id}
-              trainerName={coachNote.trainer?.name}
-              trainerLogoUrl={coachNote.trainer?.coach_logo_url}
-              onClose={() => setCoachChatOpen(false)}
-            />
-          )}
 
           {/* Hero/calendar pager — swipe (or use the dots) to get from the
               calorie/weight/water glance to the logging calendar. Restored

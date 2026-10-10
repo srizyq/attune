@@ -55,9 +55,9 @@ const WEIGHT_RANGES = [
 ];
 
 // Theme-invariant accents — identical hex in both themes by design.
-const ACCENT = '#b07a55';
-const WATER_BLUE = '#c4905b';
-const AI_PURPLE = '#8c7260';
+const ACCENT = '#9867c5';
+const WATER_BLUE = '#b188d8';
+const AI_PURPLE = '#7e6b93';
 
 function avg(arr) {
   return arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
@@ -350,7 +350,7 @@ export default function Expenditure() {
   // properties — it needs a literal color string at render time.
   const isLight = theme === 'light';
   const chartTextMuted = isLight ? '#6b6b6b' : '#666666';
-  const chartGrid = isLight ? '#eadfd3' : '#35291f';
+  const chartGrid = isLight ? '#ece6f2' : '#2c2330';
 
   const trendPoints = useMemo(() => computeTrendWeight(chartWeightLogs), [chartWeightLogs]);
   const trendByDate = useMemo(() => new Map(trendPoints.map(p => [p.date, p.trend])), [trendPoints]);

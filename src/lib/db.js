@@ -1125,6 +1125,21 @@ export async function getLatestCoachComment(clientId, category, date = null) {
   return data;
 }
 
+// Everything the client's coach(es) have sent them, newest first — notes of
+// every kind (general, weight, a day's nutrition), not the client's own
+// replies. This is what the dashboard bell lists.
+export async function getCoachMessages(clientId) {
+  const { data, error } = await supabase
+    .from('trainer_comments')
+    .select('id, body, created_at, comment_date, category, trainer_id')
+    .eq('client_id', clientId)
+    .eq('sender_role', 'trainer')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data || [];
+}
+
 // The client's side of the two-way 'general' thread — full history, both
 // directions, oldest first (a normal chat read order).
 export async function getGeneralThread(clientId, trainerId) {

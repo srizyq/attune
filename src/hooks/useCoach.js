@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '../lib/supabase';
 import {
+  getCoachMessages,
   getMyClients, getMyTrainers, redeemCoachInviteCode, revokeClientLink, setClientGroup,
   respondToCoachLink, getMyInvites, createCoachInvite, revokeCoachInvite, getPendingClients,
   getClientSummaries, getTrainerNotes, addTrainerNote, updateTrainerNote, deleteTrainerNote, getWorkoutLogsForRange,
@@ -10,6 +11,7 @@ import {
   getFoodLogsForDate,
 } from '../lib/db';
 import { extractInviteCode } from '../lib/coachInvite';
+import { getSeenAt, setSeenAt, countUnread } from '../lib/coachInbox';
 import { mapRow } from './useFoodLogs';
 import { fetchWithTimeout } from '../lib/http';
 
@@ -270,6 +272,54 @@ export function useCoachNote(category, date = null) {
   }
 
   return { note, loading, dismiss };
+}
+
+// Client-side: every note the user's active coach(es) have sent them, for the
+// dashboard bell. `hasCoach` is false for anyone without an active coach (the
+// bell is then hidden). `unread` counts messages newer than the last time the
+// bell was opened on this device.
+export function useCoachInbox() {
+  const { user } = useAuth();
+  const { active, loading: trainersLoading } = useMyTrainers();
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [seenAt, setSeen] = useState(() => (user ? getSeenAt(user.id) : null));
+  const activeIds = useMemo(() => new Set(active.map((t) => t.trainer.id)), [active]);
+
+  useEffect(() => { setSeen(user ? getSeenAt(user.id) : null); }, [user]);
+
+  const refetch = useCallback(async () => {
+    if (!user || activeIds.size === 0) { setMessages([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const all = await getCoachMessages(user.id);
+      setMessages(all.filter((m) => activeIds.has(m.trainer_id)));
+    } catch (err) {
+      console.error('Failed to load coach messages:', err);
+      setMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, activeIds]);
+
+  useEffect(() => { if (!trainersLoading) refetch(); }, [trainersLoading, refetch]);
+
+  const markSeen = useCallback(() => {
+    if (!user || messages.length === 0) return;
+    const newest = messages[0].created_at;
+    setSeenAt(user.id, newest);
+    setSeen(newest);
+  }, [user, messages]);
+
+  return {
+    hasCoach: active.length > 0,
+    trainers: active,
+    messages,
+    loading: loading || trainersLoading,
+    unread: countUnread(messages, seenAt),
+    markSeen,
+    refetch,
+  };
 }
 
 // Client-side: the full two-way 'general' thread with one trainer, for
