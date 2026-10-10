@@ -5,7 +5,7 @@ import { todayLocalDate } from '../lib/patterns';
 import { DAYS, MEALS, dayTotals, groceryList, groceryText, itemToFood, loggedPlanMeals, mealTotals, weekdayKey } from '../lib/mealPlan';
 
 const card = { background: 'var(--bg-subtle)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 16, padding: 24, marginBottom: 20 };
-const heading = { fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' };
+const heading = { fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)' };
 const chip = (active) => ({ padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", background: active ? 'var(--accent-bg)' : 'var(--bg-primary)', border: `1px solid ${active ? 'var(--border-active)' : 'var(--border-default)'}`, color: active ? 'var(--accent)' : 'var(--text-muted)' });
 
 function Plan({ plan }) {

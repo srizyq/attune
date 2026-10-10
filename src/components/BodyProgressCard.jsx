@@ -8,7 +8,7 @@ import FormRow from './FormRow';
 import Card from './Card';
 
 const input = { padding: '8px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none' };
-const heading = { fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' };
+const heading = { fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)' };
 
 // The client's own body-measurement and progress-photo log, on the Progress
 // page under weight. Visible only to them and, if they've connected one, their

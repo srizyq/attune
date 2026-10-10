@@ -90,9 +90,9 @@ export default function TargetsForm({ client, onSave, onCancel }) {
       <div style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
           <span style={labelStyle}>Protein</span>
-          <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 600 }}>{proteinPct}%</span>
+          <span style={{ color: 'var(--accent-secondary)', fontSize: 12, fontWeight: 600 }}>{proteinPct}%</span>
         </div>
-        <Slider aria-label="Protein share of calories" value={proteinPct} min={10} max={60} onChange={v => setProteinPct(Math.min(v, 100 - fatPct))} color="var(--accent)" />
+        <Slider aria-label="Protein share of calories" value={proteinPct} min={10} max={60} onChange={v => setProteinPct(Math.min(v, 100 - fatPct))} color="var(--accent-secondary)" />
       </div>
       <div style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -103,7 +103,7 @@ export default function TargetsForm({ client, onSave, onCancel }) {
       </div>
 
       <div style={{ marginBottom: 6 }}>
-        <MacroPreviewBar label="Protein" grams={computed.protein.g} calories={computed.protein.cal} pct={split.protein} color="var(--accent)" />
+        <MacroPreviewBar label="Protein" grams={computed.protein.g} calories={computed.protein.cal} pct={split.protein} color="var(--accent-secondary)" />
         <MacroPreviewBar label="Carbs" grams={computed.carbs.g} calories={computed.carbs.cal} pct={split.carbs} color="var(--water-blue)" />
         <MacroPreviewBar label="Fat" grams={computed.fat.g} calories={computed.fat.cal} pct={split.fat} color="var(--ai-purple)" />
         <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '2px 0 0' }}>Carbs ({carbPct}%) fill whatever protein and fat leave.</p>

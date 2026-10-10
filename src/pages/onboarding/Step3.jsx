@@ -205,10 +205,10 @@ export default function Step3() {
               {editingMacros ? 'Done' : 'Edit'}
             </button>
           </div>
-          <MacroBar label="Protein"       grams={targets.protein.g} calories={targets.protein.cal} pct={targets.protein.pct} color="var(--accent)" delay={0}   />
+          <MacroBar label="Protein"       grams={targets.protein.g} calories={targets.protein.cal} pct={targets.protein.pct} color="var(--accent-secondary)" delay={0}   />
           {editingMacros && (
             <div style={{ marginTop: '-10px', marginBottom: '16px' }}>
-              <Slider value={Math.round(targets.protein.pct * 100)} min={10} max={60} onChange={v => applyMacroSplit(v / 100, targets.fat.pct)} color="var(--accent)" />
+              <Slider value={Math.round(targets.protein.pct * 100)} min={10} max={60} onChange={v => applyMacroSplit(v / 100, targets.fat.pct)} color="var(--accent-secondary)" />
             </div>
           )}
           <MacroBar label="Carbohydrates" grams={targets.carbs.g}   calories={targets.carbs.cal}   pct={targets.carbs.pct}   color="var(--water-blue)" delay={100} />

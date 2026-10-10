@@ -55,9 +55,9 @@ const WEIGHT_RANGES = [
 ];
 
 // Theme-invariant accents — identical hex in both themes by design.
-const ACCENT = '#a86b6b';
-const WATER_BLUE = '#c9a24f';
-const AI_PURPLE = '#cf7468';
+const ACCENT = '#b07a55';
+const WATER_BLUE = '#c4905b';
+const AI_PURPLE = '#8c7260';
 
 function avg(arr) {
   return arr.length ? arr.reduce((s, n) => s + n, 0) / arr.length : 0;
@@ -350,7 +350,7 @@ export default function Expenditure() {
   // properties — it needs a literal color string at render time.
   const isLight = theme === 'light';
   const chartTextMuted = isLight ? '#6b6b6b' : '#666666';
-  const chartGrid = isLight ? '#ddc9bc' : '#3d322c';
+  const chartGrid = isLight ? '#eadfd3' : '#35291f';
 
   const trendPoints = useMemo(() => computeTrendWeight(chartWeightLogs), [chartWeightLogs]);
   const trendByDate = useMemo(() => new Map(trendPoints.map(p => [p.date, p.trend])), [trendPoints]);
@@ -460,13 +460,13 @@ export default function Expenditure() {
             <Card style={{ padding: 20, marginBottom: 20 }}>
               <div style={{ display: 'flex', gap: 32, marginBottom: 4 }}>
                 <div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Average</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 4 }}>Average</div>
                   <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>
                     {Math.round(avgExpenditure).toLocaleString()}<span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}> kcal</span>
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Difference</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 4 }}>Difference</div>
                   <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>
                     {difference > 0 ? '+' : ''}{difference.toLocaleString()}<span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}> kcal</span>
                   </div>
@@ -476,7 +476,7 @@ export default function Expenditure() {
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
                 Difference is expenditure minus what you actually ate — positive means you ran a deficit, negative means a surplus.
               </div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Expenditure trend</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 2 }}>Expenditure trend</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Darker = higher estimated burn that day</div>
               <DayHeatmapStrip days={tdeeHeatmapDays} color={AI_PURPLE} />
             </Card>
@@ -486,13 +486,13 @@ export default function Expenditure() {
           {!loading && hasAnyLogs && (
             <div className="grid-2" style={{ marginBottom: 20 }}>
               <Card style={{ padding: 20, marginBottom: 0 }}>
-                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Calories vs goal</div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 2 }}>Calories vs goal</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Darker = closer to your calorie target that day</div>
                 <DayHeatmapStrip days={calorieHeatmapDays} color={ACCENT} />
               </Card>
 
               <Card style={{ padding: 20, marginBottom: 0 }}>
-                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Macro breakdown</div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 2 }}>Macro breakdown</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Average split over this range</div>
                 <MacroSplitBar protein={avgMacroProtein} carbs={avgMacroCarbs} fat={avgMacroFat} />
               </Card>
@@ -539,7 +539,7 @@ export default function Expenditure() {
 
           {/* weight chart */}
           <Card ref={weightSectionRef} style={{ padding: 20, marginBottom: 24 }}>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 10 }}>Weight</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 10 }}>Weight</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
               <LogWeightButton unit={weightUnit} onLog={(w, u) => logWeight(today, w, u)} />
               <select
@@ -568,7 +568,7 @@ export default function Expenditure() {
           {/* streaks + week-at-a-glance */}
           <div className="grid-2">
             <Card style={{ padding: 20, marginBottom: 0 }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Streak badges</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 16 }}>Streak badges</div>
               {[
                 { icon: 'ti-flame',      iconBg: 'var(--accent-bg)', iconColor: 'var(--accent)',     name: 'Logging streak',   count: loggingStreak },
                 { icon: 'ti-target',     iconBg: 'var(--accent-bg)', iconColor: 'var(--accent)',     name: 'Calorie target',   count: calorieStreak },
@@ -582,7 +582,7 @@ export default function Expenditure() {
             </Card>
 
             <Card style={{ padding: 20, marginBottom: 0 }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>This week at a glance</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 8 }}>This week at a glance</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Calories logged each day</div>
               <WeekBars days={dateRange(dateNDaysAgo(6), today).map(date => filledByDate.get(date) || { date, calories: 0 })} calorieTarget={calorieTarget} targetFor={calorieTargetFor} />
               <div style={{ marginTop: 20, padding: '12px 14px', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 8, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>

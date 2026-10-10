@@ -57,7 +57,7 @@ export default function DiaryTab({ d }) {
                   <div key={mealKey} style={{ background: 'var(--bg-primary)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, overflow: 'hidden' }}>
                     <button onClick={() => setOpen(o => ({ ...o, [mealKey]: !o[mealKey] }))} className="btn-press" style={{ width: '100%', background: 'none', border: 'none', padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>{MEAL_LABELS[mealKey]}</div>
+                        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>{MEAL_LABELS[mealKey]}</div>
                         {items.length > 0 && <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>P {mealProtein}g · C {mealCarbs}g · F {mealFat}g</div>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -7,7 +7,7 @@
 // render the bar unfilled, e.g. for a plain estimate with no target context.
 const FIELDS = [
   { key: 'cal', label: 'kcal', color: 'var(--accent)', unit: '' },
-  { key: 'protein', label: 'Protein', color: 'var(--accent)', unit: 'g' },
+  { key: 'protein', label: 'Protein', color: 'var(--accent-secondary)', unit: 'g' },
   { key: 'carbs', label: 'Carbs', color: 'var(--water-blue)', unit: 'g' },
   { key: 'fat', label: 'Fat', color: 'var(--warning)', unit: 'g' },
 ];

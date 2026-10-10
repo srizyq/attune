@@ -24,7 +24,7 @@ test('swipe right/left on the daily log changes day; swiping on a row does not',
   const ctx = await openApp({ page, context }, testInfo);
   await page.goto('/log');
   await settle(page);
-  const dateLabel = () => page.locator('.page-pad').first().evaluate((el) => el.querySelector('div[style*="text-align: center"] div')?.textContent || '');
+  const dateLabel = () => page.getByTestId('log-date').textContent();
   const today = await dateLabel();
   expect(today).toMatch(/^Today/i);
 

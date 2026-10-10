@@ -5,7 +5,7 @@ import { openApp, settle, assertLayout } from './harness.js';
 // column beside it (top of Weight to bottom of Water), on every chart range,
 // and never wider than the screen — 1M/3M used to push it off the right edge.
 const cardOf = (label) => (page) => page.evaluate((text) => {
-  const el = [...document.querySelectorAll('span')].find((e) => e.children.length === 0 && e.textContent.trim() === text);
+  const el = [...document.querySelectorAll('span')].find((e) => e.children.length === 0 && e.textContent.trim().toLowerCase() === text.toLowerCase());
   // Cards are found by the shared --card-radius token, not a hardcoded px value.
   const radius = getComputedStyle(document.querySelector('[data-theme]')).getPropertyValue('--card-radius').trim();
   let card = el;

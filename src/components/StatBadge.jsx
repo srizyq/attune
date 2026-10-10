@@ -1,12 +1,13 @@
-// Small pill for a stat delta/percentage/ratio (e.g. weight change, macro %,
-// "1476 left", water ratio). Tones reuse colors the app already has
-// (accent/water-blue/ai-purple — the exact hues macro numbers are already
-// shown in elsewhere) as a translucent tint, rather than a new color
-// system — 'neutral' (the default) is the app's existing dark-pill look.
+// Small beige chip for a stat delta/percentage/ratio/label (e.g. "21 LEFT",
+// "TARGET 70 KG", "-0.4", "DAILY"). Always the same --chip-bg pill with small
+// bold capitals; `tone` (accent/carbs/fat) or a raw `color` only changes the
+// text colour — the macro hues the numbers are shown in elsewhere — so every
+// chip in the app reads as one family. 'neutral' (the default) is plain
+// secondary text on the chip.
 const TINTS = {
-  accent: 'var(--accent)',
+  accent: 'var(--accent-secondary)',
   carbs: 'var(--water-blue)',
-  fat: 'var(--ai-purple)',
+  fat: 'var(--text-primary)',
 };
 
 export default function StatBadge({ tone = 'neutral', color, children, style }) {
@@ -18,11 +19,10 @@ export default function StatBadge({ tone = 'neutral', color, children, style }) 
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
-      padding: '3px 10px', borderRadius: 20,
-      fontSize: 12, fontWeight: 700,
-      color: tint ? `color-mix(in srgb, ${tint} 62%, var(--text-primary))` : 'var(--text-secondary)',
-      background: tint ? `color-mix(in srgb, ${tint} 22%, transparent)` : 'var(--bg-subtle)',
-      border: `1px solid ${tint ? `color-mix(in srgb, ${tint} 30%, transparent)` : 'var(--border-default)'}`,
+      padding: '3px 9px', borderRadius: 20,
+      fontSize: 11, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
+      color: tint ? `color-mix(in srgb, ${tint} 70%, var(--text-primary))` : 'var(--text-secondary)',
+      background: 'var(--chip-bg)',
       whiteSpace: 'nowrap',
       ...style,
     }}>

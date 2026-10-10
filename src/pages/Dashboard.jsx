@@ -53,7 +53,7 @@ import Card from '../components/Card';
 import StatBadge from '../components/StatBadge';
 
 // Accent/water-blue/ai-purple are the same hex in both themes by design.
-const ACCENT = 'var(--accent)';
+const PROTEIN = 'var(--accent-secondary)';
 const WATER_BLUE = 'var(--water-blue)';
 const AI_PURPLE = 'var(--ai-purple)';
 
@@ -70,26 +70,30 @@ const CHART_RANGE_OPTIONS = [{ id: '1W', label: '1W' }, { id: '1M', label: '1M' 
 const WATER_ML_PER_GLASS = 250;
 const WATER_LONG_PRESS_MS = 500;
 
+// Small caps label above every dashboard figure (WEIGHT, TODAY, WATER…).
+const CARD_LABEL = { fontSize: 11, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.06em', textTransform: 'uppercase' };
+
 function WeightCard({ latest, weightTrendKg, weightUnit, recentWeights, targetWeight, onClick }) {
   const trendDisplay = weightTrendKg == null ? null : round1(fromKg(weightTrendKg, weightUnit));
   const hasSparkline = recentWeights.length >= 2;
   return (
     <button onClick={onClick} style={{ all: 'unset', display: 'flex', flexDirection: 'column', width: '100%', flex: 1, cursor: 'pointer' }}>
-      <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer', flex: 1, boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WEIGHT</span>
-          {weightTrendKg != null && (
-            <StatBadge>{trendDisplay >= 0 ? '+' : ''}{round1(trendDisplay)}</StatBadge>
+      <Card style={{ padding: '16px 16px', marginBottom: 0, cursor: 'pointer', flex: 1, boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={CARD_LABEL}>Weight</span>
+          {trendDisplay != null && trendDisplay !== 0 && (
+            <i className={`ti ${trendDisplay < 0 ? 'ti-arrow-down-right' : 'ti-arrow-up-right'}`} aria-hidden="true" style={{ fontSize: 16, color: 'var(--text-primary)' }} />
           )}
         </div>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: hasSparkline ? 10 : 0 }}>
-          {latest ? `${latest.weight}${latest.unit}` : '—'}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: hasSparkline ? 8 : 0 }}>
+          <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>{latest ? latest.weight : '—'}</span>
+          {latest && <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{latest.unit}</span>}
+          {trendDisplay != null && <StatBadge style={{ marginLeft: 'auto', alignSelf: 'center' }}>{trendDisplay > 0 ? '+' : ''}{trendDisplay}</StatBadge>}
         </div>
-        {hasSparkline && <WeightSparkline points={recentWeights} color="var(--accent)" />}
+        {hasSparkline && <WeightSparkline points={recentWeights} color="var(--accent-secondary)" />}
         {targetWeight != null && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: hasSparkline ? 8 : 12, paddingTop: hasSparkline ? 8 : 0, borderTop: hasSparkline ? '1px solid var(--border-default)' : 'none' }}>
-            <span style={{ fontSize: 11, color: 'var(--text-hint)' }}>Target</span>
-            <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>{round1(targetWeight)} {weightUnit}</span>
+          <div style={{ marginTop: 10 }}>
+            <StatBadge>Target {round1(targetWeight)} {weightUnit}</StatBadge>
           </div>
         )}
       </Card>
@@ -118,7 +122,7 @@ function WeightSparkline({ points, color }) {
     <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: h, display: 'block' }}>
       <polygon points={areaPts} fill={color} opacity="0.08" />
       <polyline points={linePts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r="3.5" fill={color} />
+      <circle cx={last[0]} cy={last[1]} r="4" fill="var(--bg-card)" stroke={color} strokeWidth="2" />
     </svg>
   );
 }
@@ -228,17 +232,18 @@ function WaterCard({ glasses, targetGlasses, setGlasses }) {
   const filledSegments = Math.min(WATER_SEGMENTS, Math.round((glasses / Math.max(1, targetGlasses)) * WATER_SEGMENTS));
 
   return (
-    <Card style={{ padding: '16px 18px', marginBottom: 0, flex: 1, boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>WATER</span>
+    <Card style={{ padding: '16px 16px', marginBottom: 0, flex: 1, boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={CARD_LABEL}>Water</span>
         <StatBadge>{glasses} / {round1(targetMl / 1000)}L</StatBadge>
       </div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-        {glasses * WATER_ML_PER_GLASS}ml
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 12 }}>
+        <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>{glasses * WATER_ML_PER_GLASS}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>ml</span>
       </div>
       <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
         {Array.from({ length: WATER_SEGMENTS }, (_, i) => (
-          <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < filledSegments ? 'var(--accent)' : 'var(--border-default)' }} />
+          <div key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i < filledSegments ? 'var(--accent)' : 'var(--bar-idle)' }} />
         ))}
       </div>
       <button
@@ -248,13 +253,13 @@ function WaterCard({ glasses, targetGlasses, setGlasses }) {
         onPointerCancel={clearPressTimer}
         title="Tap to add 250ml — hold to undo the last tap"
         style={{
-          width: '100%', padding: '10px 0', borderRadius: 20, border: '1px solid var(--border-default)',
-          background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600,
+          width: '100%', padding: '11px 0', borderRadius: 20, border: 'none',
+          background: 'var(--chip-bg)', color: 'var(--text-primary)', fontSize: 12, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase',
           cursor: 'pointer', fontFamily: 'inherit', touchAction: 'manipulation', userSelect: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
         }}
       >
-        <i className="ti ti-plus" style={{ fontSize: 13 }} /> {WATER_ML_PER_GLASS}ml
+        <i className="ti ti-droplet" style={{ fontSize: 14 }} /> + {WATER_ML_PER_GLASS}ml
       </button>
     </Card>
   );
@@ -306,7 +311,7 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
   const baseline = chartHeight - 6;
   const plotHeight = baseline - topPad;
   const w = chartSize.w;
-  const gap = days.length > 14 ? 3 : 5;
+  const gap = days.length > 14 ? 3 : 8;
   const barWidth = Math.max(1, (w - gap * (days.length - 1)) / days.length);
   const bars = days.map((d, i) => {
     const dayTarget = dayTargets[i];
@@ -316,6 +321,7 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
       y: baseline - barHeight,
       height: barHeight,
       over: d.calories > dayTarget,
+      current: i === days.length - 1,
     };
   });
 
@@ -331,24 +337,16 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
   if (!labelIdxs.includes(days.length - 1)) labelIdxs.push(days.length - 1);
   const labelFor = (d) => (weekly
     ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
-    : new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short' }));
+    : new Date(d.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'narrow' }));
 
   return (
-    <Card style={{ padding: '16px 18px', marginBottom: 0, cursor: 'pointer', height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minWidth: 0 }} onClick={onChartClick}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>TODAY</span>
+    <Card style={{ padding: '16px 16px', marginBottom: 0, cursor: 'pointer', height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', minWidth: 0 }} onClick={onChartClick}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={CARD_LABEL}>Today</span>
         <StatBadge>{round1(Math.max(0, target - consumed))} left</StatBadge>
       </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(consumed).toLocaleString()}</span>
-        <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>/ {target.toLocaleString()} kcal</span>
-      </div>
-
-      {/* Everyday baseline, not the per-day (workout-adjusted) target the
-          dashed line itself steps up to — there's no single flat number
-          honest enough to print for a week that includes a workout day,
-          so this labels the one constant real value instead. */}
-      <div style={{ textAlign: 'right', fontSize: 10, color: 'var(--text-hint)', marginTop: 6 }}>{baseCalorieTarget.toLocaleString()} KCAL</div>
+      <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>{Math.round(consumed).toLocaleString()}</div>
+      <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: 2 }}>/ {target.toLocaleString()} kcal target</div>
 
       <div ref={chartRef} style={{ position: 'relative', flex: 1, minHeight: CHART_HEIGHT, marginTop: 2 }}>
         <svg viewBox={`0 0 ${w} ${chartHeight}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}>
@@ -366,8 +364,8 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
               y={b.y}
               width={barWidth}
               height={Math.max(0, b.height)}
-              rx={Math.min(3, barWidth / 2)}
-              fill={b.over ? 'var(--danger-strong)' : 'var(--accent-strong)'}
+              rx={Math.min(6, barWidth / 2)}
+              fill={b.over ? 'var(--danger-strong)' : b.current ? 'var(--accent)' : 'var(--bar-idle)'}
               opacity={b.over ? 0.85 : 1}
             />
           ))}
@@ -541,23 +539,45 @@ function SwipePager({ pages }) {
   );
 }
 
-function MacroCell({ label, value, target, color, tone, onClick }) {
+function MacroCell({ label, value, target, color, onClick }) {
   const pct = target > 0 ? Math.round((value / target) * 100) : 0;
   const barPct = Math.min(100, pct);
+  // Grams over (+) or under (-) the target — the number the % badge is hiding.
+  const diff = round1(value - target);
   return (
-    <Card style={{ padding: '12px 8px', marginBottom: 0, cursor: 'pointer' }} onClick={onClick}>
-      {/* One line, always: if the badge wrapped under a long label (PROTEIN) the
-          three cards' numbers and bars would sit at different heights. */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'nowrap', marginBottom: 8, gap: 3 }}>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.02em', minWidth: 0 }}>{label.toUpperCase()}</span>
-        <StatBadge tone={tone} style={{ padding: '2px 6px', fontSize: 11 }}>{pct}%</StatBadge>
+    <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 14, padding: '10px 8px 10px', cursor: 'pointer', minWidth: 0 }}>
+      {/* One line, always: if the percentage wrapped under a long label (PROTEIN)
+          the three cells' numbers and bars would sit at different heights. */}
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'nowrap', marginBottom: 6, gap: 3 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.04em', minWidth: 0 }}>{label.toUpperCase()}</span>
+        <span style={{ fontSize: 10, fontWeight: 800, color: `color-mix(in srgb, ${color} 70%, var(--text-primary))`, flexShrink: 0 }}>{pct}%</span>
       </div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', marginBottom: 8 }}>
-        {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>/{target}g</span>
+      <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', marginBottom: 8, letterSpacing: '-0.01em' }}>
+        {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700 }}> / {target}g</span>
       </div>
-      <div style={{ height: 5, borderRadius: 3, background: 'var(--pill-track)', overflow: 'hidden' }}>
-        <div style={{ width: `${barPct}%`, height: '100%', background: color, borderRadius: 2 }} />
+      <div style={{ height: 5, borderRadius: 3, background: 'var(--bar-idle)', overflow: 'hidden' }}>
+        <div style={{ width: `${barPct}%`, height: '100%', background: color, borderRadius: 3 }} />
       </div>
+      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent-secondary)', textAlign: 'right', marginTop: 8 }}>
+        {diff > 0 ? '+' : ''}{diff}g
+      </div>
+    </div>
+  );
+}
+
+// "Daily macronutrients" — the three macro cells share one card with a
+// heading and a link through to the full Nutrients page.
+function MacroGroup({ onDetails, children }) {
+  return (
+    <Card style={{ padding: '16px 14px 14px', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '0 2px' }}>
+        <span style={CARD_LABEL}>Daily macronutrients</span>
+        <button onClick={onDetails} className="hit-slop" style={{ display: 'inline-flex', alignItems: 'center', gap: 2, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent-secondary)' }}>
+          Details <i className="ti ti-chevron-right" style={{ fontSize: 12 }} />
+        </button>
+      </div>
+      <div className="grid-3-fixed" style={{ gap: 8 }}>{children}</div>
     </Card>
   );
 }
@@ -572,34 +592,36 @@ function MacroCell({ label, value, target, color, tone, onClick }) {
 // placeholder. Burned is real: manually-logged workouts (see
 // LogWorkoutModal/useWorkoutLogs), MET-estimated from type/intensity/
 // duration and editable, feeding back into the day's calorie budget.
+function ActivityStat({ icon, label, value, active, chip }) {
+  return (
+    <Card style={{ padding: '14px 12px', marginBottom: 0, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+      <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--chip-bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--text-primary)' }}>
+        <i className={`ti ${icon}`} style={{ fontSize: 18 }} />
+      </span>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={CARD_LABEL}>{label}</div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: active ? 'var(--text-primary)' : 'var(--text-hint)', marginTop: 2 }}>{value}</div>
+      </div>
+      <StatBadge>{chip}</StatBadge>
+    </Card>
+  );
+}
+
 function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWorkout }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>ACTIVITY</span>
-        <button onClick={onLogWorkout} className="hit-slop" style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 10 }}>
+        <ActivityStat icon="ti-walk" label="Steps" value="—" chip="Daily" />
+        <ActivityStat icon="ti-flame" label="Burned" active={!!totalCaloriesBurned} value={totalCaloriesBurned ? Math.round(totalCaloriesBurned).toLocaleString() : '—'} chip="Active" />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-hint)', fontWeight: 700 }}>Steps will sync from Apple Health / Google Fit once the native app ships.</span>
+        <button onClick={onLogWorkout} className="hit-slop" style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', padding: 0, flexShrink: 0, marginLeft: 12 }}>
           <i className="ti ti-plus" style={{ fontSize: 13 }} /> Log workout
         </button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 16, overflow: 'hidden' }}>
-        <div style={{ borderRight: '1px solid var(--border-default)', padding: '14px 10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-            <i className="ti ti-walk" style={{ fontSize: 13 }} /> STEPS
-          </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--text-hint)' }}>—</div>
-        </div>
-        <div style={{ padding: '14px 10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-            <i className="ti ti-flame" style={{ fontSize: 13 }} /> BURNED
-          </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, fontWeight: 700, color: totalCaloriesBurned ? 'var(--accent)' : 'var(--text-hint)' }}>
-            {totalCaloriesBurned ? Math.round(totalCaloriesBurned).toLocaleString() : '—'}
-          </div>
-          {totalCaloriesBurned > 0 && <div style={{ fontSize: 10, color: 'var(--text-hint)', marginTop: 2 }}>Active burn</div>}
-        </div>
-      </div>
       {workouts.length > 0 && (
-        <div style={{ marginTop: 10, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '0 12px' }}>
+        <div style={{ marginTop: 10, background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, padding: '0 12px' }}>
           {workouts.map(w => {
             const type = getWorkoutType(w.type);
             return (
@@ -608,7 +630,6 @@ function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWork
           })}
         </div>
       )}
-      <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 8 }}>Steps will sync from Apple Health / Google Fit once the native app ships.</div>
     </div>
   );
 }
@@ -661,7 +682,7 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
           <div key={key} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '12px', overflow: 'hidden' }}>
             <button onClick={() => setOpen(o => ({ ...o, [key]: !o[key] }))} style={{ width: '100%', background: 'none', border: 'none', padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: '14px', color: 'var(--text-secondary)' }}>{label}</div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>{label}</div>
                 {items.length > 0 && <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: 2 }}>P {protein}g · C {carbs}g · F {fat}g</div>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -777,7 +798,7 @@ function ShortcutRow({ navigate, date }) {
   return (
     <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
       {shortcuts.map((s, i) => (
-        <button key={i} onClick={s.action} style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: '14px', padding: '15px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+        <button key={i} onClick={s.action} style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: '15px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
           <i className={`ti ${s.icon}`} style={{ fontSize: 15, color: 'var(--text-primary)' }} />
           <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}>{s.label}</span>
         </button>
@@ -794,36 +815,10 @@ function ShortcutRow({ navigate, date }) {
 // number that reads as "0" — a failure — the moment a new day starts.
 // Logged days fill in bold; not-yet-logged days stay light instead.
 
-// One tab per day of this week: weekday name over a ring that fills with how
-// much of that day's calorie target was eaten (orange; red once over it; an
-// empty grey ring for nothing logged). The day being viewed gets a card-
-// coloured pill behind it. Future days are faded and not tappable.
-const RING = 34;
-const RING_STROKE = 3;
-
-function DayRing({ fraction, over, children }) {
-  const r = (RING - RING_STROKE) / 2;
-  const c = 2 * Math.PI * r;
-  const filled = Math.max(0, Math.min(1, fraction));
-  return (
-    <span style={{ position: 'relative', width: RING, height: RING, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-      <svg width={RING} height={RING} viewBox={`0 0 ${RING} ${RING}`} aria-hidden="true" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-        <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" stroke="var(--text-hint)" strokeOpacity="0.35" strokeWidth={RING_STROKE} />
-        {filled > 0 && (
-          <circle
-            data-testid="day-ring-arc"
-            cx={RING / 2} cy={RING / 2} r={r} fill="none"
-            stroke={over ? 'var(--danger-strong)' : 'var(--accent)'}
-            strokeWidth={RING_STROKE} strokeLinecap="round"
-            strokeDasharray={`${c * filled} ${c}`}
-          />
-        )}
-      </svg>
-      {children}
-    </span>
-  );
-}
-
+// One tab per day of this week, all in one card: weekday name over the date.
+// The day being viewed is a solid primary-colour tile; a small dot under a
+// date says that day has food logged (red once it went over the calorie
+// target). Future days are faded and not tappable.
 function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
   const today = todayLocalDate();
   // The strip shows the week of the day being viewed, so picking a day from an
@@ -840,7 +835,7 @@ function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
   const swipeRef = useDaySwipe({ onPrev: () => goWeek(-1), onNext: () => goWeek(1) });
 
   return (
-    <div ref={swipeRef} data-testid="day-strip" style={{ touchAction: 'pan-y', overflow: 'hidden' }}>
+    <div ref={swipeRef} data-testid="day-strip" style={{ touchAction: 'pan-y', overflow: 'hidden', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: 6, marginBottom: 12, boxShadow: 'var(--card-shadow)' }}>
     <div key={days[0]} className={slide.from && slide.key === days[0] ? `day-slide-from-${slide.from}` : undefined} style={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
       {days.map((dateStr) => {
         const isFuture = dateStr > today;
@@ -850,6 +845,8 @@ function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
         const fraction = target > 0 ? calories / target : calories > 0 ? 1 : 0;
         const dayDate = new Date(dateStr + 'T00:00:00');
         const pct = Math.round(fraction * 100);
+        const over = calories > target && target > 0;
+        const fg = isSelected ? 'var(--accent-contrast)' : 'var(--text-primary)';
         return (
           <button
             key={dateStr}
@@ -860,21 +857,20 @@ function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
             aria-pressed={isSelected}
             aria-label={`${dayDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}${isFuture ? '' : calories ? `, ${pct}% of calorie target` : ', nothing logged'}`}
             style={{
-              flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-              padding: '7px 0 8px', borderRadius: 16, fontFamily: 'inherit', cursor: isFuture ? 'default' : 'pointer',
-              background: isSelected ? 'var(--bg-card)' : 'transparent',
-              border: `1px solid ${isSelected ? 'var(--border-default)' : 'transparent'}`,
+              flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              padding: '8px 0 7px', borderRadius: 14, fontFamily: 'inherit', cursor: isFuture ? 'default' : 'pointer',
+              background: isSelected ? 'var(--accent)' : 'transparent',
+              border: 'none',
               opacity: isFuture ? 0.4 : 1,
             }}
           >
-            <span style={{ fontSize: 11, fontWeight: isSelected ? 800 : 600, color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: isSelected ? 'var(--accent-contrast)' : 'var(--text-muted)', opacity: isSelected ? 0.85 : 1 }}>
               {dayDate.toLocaleDateString('en-AU', { weekday: 'short' })}
             </span>
-            <DayRing fraction={fraction} over={calories > target && target > 0}>
-              <span style={{ fontSize: 13, fontWeight: isSelected ? 800 : 600, color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                {dayDate.getDate()}
-              </span>
-            </DayRing>
+            <span style={{ fontSize: 17, fontWeight: 800, color: fg, lineHeight: 1.1 }}>
+              {dayDate.getDate()}
+            </span>
+            <span data-testid="day-dot" aria-hidden="true" style={{ width: 5, height: 5, borderRadius: '50%', background: calories ? (over ? 'var(--danger-strong)' : isSelected ? 'var(--accent-contrast)' : 'var(--accent-secondary)') : 'transparent' }} />
           </button>
         );
       })}
@@ -1116,7 +1112,8 @@ export default function Dashboard() {
 
   const now = new Date();
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening';
-  const dateStr = new Date(viewedDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', month: 'long', day: 'numeric' });
+  const viewedDay = new Date(viewedDate + 'T00:00:00');
+  const dateStr = `${viewedDay.toLocaleDateString('en-AU', { weekday: 'long' })}, ${String(viewedDay.getDate()).padStart(2, '0')} ${viewedDay.toLocaleDateString('en-AU', { month: 'long' })}`;
 
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -1124,25 +1121,32 @@ export default function Dashboard() {
 
       <div ref={pullRef} className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         <PullIndicator {...pullState} />
-        <div className="page-pad-top" style={{ minHeight: 40, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 12px', paddingTop: 10, paddingBottom: 4, position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
-          <div>
-            <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {isViewingToday ? `${greeting}, ${name}` : `${name}'s log`}
-            </span>
-            <span style={{ color: 'var(--text-hint)', fontSize: '13px', marginLeft: '12px' }}>{dateStr}</span>
-            {!isViewingToday && (
-              <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginLeft: '12px', padding: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                ← Back to today
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="page-pad-top" style={{ paddingBottom: 12, borderBottom: '1px solid var(--border-default)' }}>
-          <StreakStrip byDate={stripByDate} viewedDate={viewedDate} targetFor={calorieTargetFor} onSelectDay={(date) => navigate('/dashboard', { state: { date } })} />
+        <div className="page-pad-top" style={{ minHeight: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 10, paddingBottom: 8, position: 'sticky', top: 0, background: 'var(--bg-primary)', zIndex: 10 }}>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, letterSpacing: '0.03em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>Dashboard</h1>
+          <button onClick={() => navigate('/profile')} aria-label="Your profile" title="Your profile" style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'var(--accent)', color: 'var(--accent-contrast)', fontSize: 12, fontWeight: 800, letterSpacing: '0.02em', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>{initials}</button>
         </div>
 
         <div className="page-pad app-content-pad" style={{ maxWidth: '1100px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-secondary)' }} />
+                {dateStr}
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em', marginTop: 4, lineHeight: 1.2 }}>
+                {isViewingToday ? `${greeting}, ${name}` : `${name}'s log`}
+              </div>
+              {!isViewingToday && (
+                <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '13px', fontWeight: 800, cursor: 'pointer', padding: '4px 0 0', fontFamily: 'inherit' }}>
+                  ← Back to today
+                </button>
+              )}
+            </div>
+            <button onClick={() => navigate('/expenditure')} aria-label="View trends" title="View trends" style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid var(--card-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="ti ti-trending-up" />
+            </button>
+          </div>
+          <StreakStrip byDate={stripByDate} viewedDate={viewedDate} targetFor={calorieTargetFor} onSelectDay={(date) => navigate('/dashboard', { state: { date } })} />
           {pendingConfirmation && <ConfirmEmailBanner email={user?.new_email} />}
           <CalorieLimitBanner limit={activeLimit(profile, today)} today={today} />
           <InstallPrompt />
@@ -1197,11 +1201,11 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="grid-3-fixed" style={{ gap: 8, marginBottom: '20px' }}>
-            <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={ACCENT} tone="accent" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-            <MacroCell label={carbsLabel(profile?.net_carbs)} value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} tone="carbs" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-            <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} tone="fat" onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-          </div>
+          <MacroGroup onDetails={() => navigate('/nutrients', { state: { date: viewedDate } })}>
+            <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={PROTEIN} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label={carbsLabel(profile?.net_carbs)} value={consumedCarbs} target={targets.carbs.g} color={WATER_BLUE} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+            <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={AI_PURPLE} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
+          </MacroGroup>
 
           {community.canShare && community.me && <FriendsStrip me={community.me} />}
           {community.canShare && community.me && allItems.length > 0 && isViewingToday && (
@@ -1220,12 +1224,12 @@ export default function Dashboard() {
           <ShortcutRow navigate={navigate} date={viewedDate} />
 
           {/* Daily food log */}
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)', padding: '20px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <span onClick={() => navigate('/log')} style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span onClick={() => navigate('/log')} style={{ ...CARD_LABEL, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 Daily food log <i className="ti ti-chevron-right" style={{ fontSize: 13 }} />
               </span>
-              <span style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: 600 }}>{Math.round(consumed)} kcal logged</span>
+              <StatBadge>{Math.round(consumed)} kcal logged</StatBadge>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', gap: 10 }}>
               <span onClick={() => navigate('/recipes')} style={{ color: 'var(--text-hint)', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>

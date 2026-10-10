@@ -10,13 +10,15 @@ export default function CalorieLimitBanner({ limit, today, style }) {
   if (!limit) return null;
   const left = daysLeft(limit, today);
   return (
-    <div role="status" style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: 14, padding: '10px 12px 10px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, ...style }}>
-      <i className="ti ti-target-arrow" aria-hidden="true" style={{ color: 'var(--accent)', fontSize: 20, flexShrink: 0 }} />
+    <div role="status" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 'var(--card-radius)', padding: '12px 12px 12px 12px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, ...style }}>
+      <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--chip-bg)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <i className="ti ti-target" style={{ color: 'var(--text-primary)', fontSize: 20 }} />
+      </span>
       <div style={{ flex: 1, minWidth: 0, lineHeight: 1.35 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{limit.calories.toLocaleString()} kcal limit</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{limit.calories.toLocaleString()} kcal limit</div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>until {fmt(limit.end)} · {left} day{left === 1 ? '' : 's'} left</div>
       </div>
-      <button onClick={() => navigate('/settings/goals')} style={{ flexShrink: 0, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: '8px 4px', minHeight: 36, fontFamily: 'inherit' }}>
+      <button onClick={() => navigate('/settings/goals')} style={{ flexShrink: 0, background: 'var(--chip-bg)', border: 'none', borderRadius: 20, color: 'var(--text-primary)', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', padding: '9px 14px', minHeight: 36, fontFamily: 'inherit' }}>
         Manage
       </button>
     </div>

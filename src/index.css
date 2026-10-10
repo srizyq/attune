@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 * {
   margin: 0;
@@ -12,38 +12,38 @@
 }
 
 :root {
-  --bg-primary: #141110;
-  --bg-card: #1e1a18;
-  --bg-subtle: #191514;
-  --border-default: rgba(255, 240, 230, 0.09);
-  --border-active: #d08d8d;
-  --border-strong: rgba(255, 240, 230, 0.16);
-  --accent: #d08d8d;
-  --accent-dark: #b87575;
-  --accent-secondary: #b89a90;
-  --accent-tertiary: #d6bf98;
-  --accent-contrast: #2a1616;
-  --accent-bg: #35221f;
-  --accent-border: rgba(208, 141, 141, 0.35);
+  --bg-primary: #1a120b;
+  --bg-card: #251b13;
+  --bg-subtle: #1f160f;
+  --border-default: rgba(255, 241, 233, 0.09);
+  --border-active: #fff1e9;
+  --border-strong: rgba(255, 241, 233, 0.16);
+  --accent: #fff1e9;
+  --accent-dark: #e8d5c6;
+  --accent-secondary: #c8956a;
+  --accent-tertiary: #d4a373;
+  --accent-contrast: #1a120b;
+  --accent-bg: rgba(255, 241, 233, 0.10);
+  --accent-border: rgba(255, 241, 233, 0.22);
   --accent-strong: var(--accent);
   --danger-strong: var(--danger);
-  --water-blue: #e2bf7a;
-  --ai-purple: #e8a094;
+  --water-blue: #d4a373;
+  --ai-purple: #fff1e9;
   --warning: #6c7054;
   --danger: #e57a70;
   --gold: #e8c468;
-  --text-primary: #f8f2ed;
-  --text-secondary: #eadfd6;
+  --text-primary: #fff1e9;
+  --text-secondary: #ebdacd;
   /* The grey tiers carry real content (labels, units, dates, hints), so they
      sit well above WCAG AA's 4.5:1 floor on this background (~9:1 / ~7.5:1)
      rather than just clearing it — they used to read as washed out next to
      the headline numbers. Paired with bold weight, see the rule at the end
      of this file. */
-  --text-muted: #cfc0b5;
-  --text-hint: #b2a296;
-  --pill-track: #221d1b;
-  --pill-bg: #f4e6db;
-  --pill-text: #141110;
+  --text-muted: #c9b5a5;
+  --text-hint: #a8927f;
+  --pill-track: #2e2218;
+  --pill-bg: #fff1e9;
+  --pill-text: #1a120b;
   /* One outline for every card in the app. Dashboard's cards always used
      --border-strong for real definition against the background; every other
      page used the much fainter --border-default, which is why the rest of
@@ -56,9 +56,11 @@
      'none' there. --card-radius is the shared corner radius for the new
      bento-card look (rounder than the app's older 12-16px cards) — layout
      only, colors/shadow are unchanged from what dark mode already had. */
-  --card-border: rgba(255, 240, 230, 0.10);
-  --card-radius: 24px;
+  --card-border: rgba(255, 241, 233, 0.10);
+  --card-radius: 20px;
   --card-shadow: none;
+  --chip-bg: rgba(255, 241, 233, 0.10);
+  --bar-idle: #3a2d22;
 }
 
 /* App-wide theme system — scoped to a wrapper element carrying
@@ -68,58 +70,61 @@
    have. [data-theme="dark"] restates the same values as :root above
    (so app dark mode == today's app, unchanged) rather than relying on
    inheritance, so both states are explicit and neither is an implicit
-   fallback. The palette is "Warm Organic Wellness": a dusty-rose primary,
-   taupe secondary and tan tertiary on warm cream (light) or warm dark brown
-   (dark). Unlike the old amber palette the accent now differs per theme — a
-   deeper rose on cream, a lighter rose on dark brown — so each reads as a
-   solid fill with enough contrast. --accent-contrast is the text/icon color
-   for anything sitting on a solid --accent fill (buttons, the active
-   bottom-nav pill) and flips with the theme for the same reason: always use
-   it instead of a hardcoded black/white on an accent fill. --water-blue and
-   --ai-purple keep their old names but are now the gold used for carbs
-   and the coral-rose used for fat/AI. Canvas charts can't read CSS variables, so their
+   fallback. The palette is "Earthen Brew": Dark Espresso #1A120B, Mocha
+   Latte #7B543D, Warm Crema #D4A373, Latte Foam #FFF1E9, Steamed Oat #FFF8F5.
+   In light mode espresso is the primary colour (buttons, the active tab, the
+   selected day) on a warm cream page with off-white cards; in dark mode the
+   page is espresso and cream takes the primary role. So --accent flips
+   between near-black and cream, and --accent-contrast flips with it —
+   always use it instead of a hardcoded black/white on an accent fill.
+   --accent-secondary is the mocha brown (protein, links), --water-blue is
+   the crema tan (carbs) and --ai-purple is espresso/cream (fat). --chip-bg
+   is the beige pill behind small labels; --bar-idle is the resting colour
+   of chart bars. Canvas charts can't read CSS variables, so their
    mid-tone hex colours live in Expenditure.jsx and coach/constants.js. */
 [data-theme='dark'] {
-  --bg-primary: #141110;
-  --bg-card: #1e1a18;
-  --bg-subtle: #191514;
-  --border-default: rgba(255, 240, 230, 0.09);
-  --border-active: #d08d8d;
-  --border-strong: rgba(255, 240, 230, 0.16);
-  --accent: #d08d8d;
-  --accent-dark: #b87575;
-  --accent-secondary: #b89a90;
-  --accent-tertiary: #d6bf98;
-  --accent-contrast: #2a1616;
-  --accent-bg: #35221f;
-  --accent-border: rgba(208, 141, 141, 0.35);
+  --bg-primary: #1a120b;
+  --bg-card: #251b13;
+  --bg-subtle: #1f160f;
+  --border-default: rgba(255, 241, 233, 0.09);
+  --border-active: #fff1e9;
+  --border-strong: rgba(255, 241, 233, 0.16);
+  --accent: #fff1e9;
+  --accent-dark: #e8d5c6;
+  --accent-secondary: #c8956a;
+  --accent-tertiary: #d4a373;
+  --accent-contrast: #1a120b;
+  --accent-bg: rgba(255, 241, 233, 0.10);
+  --accent-border: rgba(255, 241, 233, 0.22);
   --accent-strong: var(--accent);
   --danger-strong: var(--danger);
-  --water-blue: #e2bf7a;
-  --ai-purple: #e8a094;
+  --water-blue: #d4a373;
+  --ai-purple: #fff1e9;
   --warning: #6c7054;
   --danger: #e57a70;
   --gold: #e8c468;
-  --text-primary: #f8f2ed;
-  --text-secondary: #eadfd6;
+  --text-primary: #fff1e9;
+  --text-secondary: #ebdacd;
   /* The grey tiers carry real content (labels, units, dates, hints), so they
      sit well above WCAG AA's 4.5:1 floor on this background (~9:1 / ~7.5:1)
      rather than just clearing it — they used to read as washed out next to
      the headline numbers. Paired with bold weight, see the rule at the end
      of this file. */
-  --text-muted: #cfc0b5;
-  --text-hint: #b2a296;
-  --pill-track: #221d1b;
-  --pill-bg: #f4e6db;
-  --pill-text: #141110;
-  --card-border: rgba(255, 240, 230, 0.10);
-  --card-radius: 24px;
+  --text-muted: #c9b5a5;
+  --text-hint: #a8927f;
+  --pill-track: #2e2218;
+  --pill-bg: #fff1e9;
+  --pill-text: #1a120b;
+  --card-border: rgba(255, 241, 233, 0.10);
+  --card-radius: 20px;
   --card-shadow: none;
+  --chip-bg: rgba(255, 241, 233, 0.10);
+  --bar-idle: #3a2d22;
 }
 [data-theme='light'] {
   /* Warm off-white/cream, not pure white — matches the retro-telemetry
      reference's paper-like light mode instead of a clinical white. */
-  --bg-primary: #f2ece6;
+  --bg-primary: #f6f0e9;
   /* bg-card and bg-subtle used to be the identical #f7f7f5 — any UI
      nesting a "subtle" surface inside a "card" (29 files use bg-subtle)
      went flat, unlike dark mode's real 3-step ramp (primary < subtle <
@@ -127,18 +132,18 @@
      light mode's "raised" surfaces read as slightly deeper, not lighter.
      Both get a faint warm-tan cast (toward the accent hue) instead of true
      gray, same reasoning as border-default below. */
-  --bg-card: #ffffff;
-  --bg-subtle: #f8f3ee;
-  --border-default: #e6dbd0;
-  --border-active: #8e5555;
-  --border-strong: #d8cabc;
-  --accent: #8e5555;
-  --accent-dark: #774646;
-  --accent-secondary: #8c6c63;
-  --accent-tertiary: #c8ae88;
-  --accent-contrast: #fff8f4;
-  --accent-bg: #f3e3df;
-  --accent-border: #e6c9c3;
+  --bg-card: #fffdfb;
+  --bg-subtle: #fbf6f1;
+  --border-default: #eadfd3;
+  --border-active: #1a120b;
+  --border-strong: #d9cabb;
+  --accent: #1a120b;
+  --accent-dark: #0f0a06;
+  --accent-secondary: #7b543d;
+  --accent-tertiary: #d4a373;
+  --accent-contrast: #fff8f5;
+  --accent-bg: #efe5da;
+  --accent-border: #e2d3c4;
   /* danger is deliberately identical hex in both themes (see the comment
      on the dark block above) since that coral hue is the product's real
      palette, not just a dark-mode choice — but that same pastel-on-black
@@ -150,20 +155,20 @@
      for the same "needs to read as a data mark" cases. */
   --accent-strong: var(--accent-dark);
   --danger-strong: #a12218;
-  --water-blue: #9d7a2a;
-  --ai-purple: #b5564f;
+  --water-blue: #b07c45;
+  --ai-purple: #1a120b;
   --warning: #6c7054;
   --danger: #b3261e;
   --gold: #e8c468;
-  --text-primary: #2e241f;
-  --text-secondary: #3f322b;
+  --text-primary: #1a120b;
+  --text-secondary: #3a2a1e;
   /* Darker greys than the original warm taupe so labels read as clearly as
      the headline numbers beside them (~9:1 / ~7.5:1 on the cream cards). */
-  --text-muted: #54453d;
-  --text-hint: #6a5a51;
-  --pill-track: #e8ddd2;
-  --pill-bg: #3b302a;
-  --pill-text: #f8ebe1;
+  --text-muted: #6b5646;
+  --text-hint: #7f6a5a;
+  --pill-track: #ede3d8;
+  --pill-bg: #1a120b;
+  --pill-text: #fff8f5;
   /* The one deliberate departure from "restate the same value" — this is
      the actual fix: every page's cards now outline as clearly as
      Dashboard's already did, instead of only Dashboard bothering to use
@@ -172,9 +177,11 @@
      restatement of anything — a soft two-layer shadow alongside the
      border, the kind of quiet depth flat borders alone can't give white
      backgrounds without looking either harsh or completely flat. */
-  --card-border: #e6dbd0;
-  --card-radius: 24px;
-  --card-shadow: 0 1px 3px rgba(59, 48, 42, 0.06);
+  --card-border: #ece2d8;
+  --card-radius: 20px;
+  --card-shadow: 0 1px 2px rgba(26, 18, 11, 0.05);
+  --chip-bg: #efe5da;
+  --bar-idle: #e6d9cb;
 }
 
 /* The themed wrapper sets its own text colour. Without it, anything with no
@@ -290,8 +297,7 @@ input, textarea, [contenteditable="true"], .selectable-text {
 }
 
 h1, h2, h3, h4, h5 {
-  font-family: 'Epilogue', 'Plus Jakarta Sans', sans-serif;
-  letter-spacing: -0.01em;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 /* MOTION — shared, reused by multiple components rather than declared

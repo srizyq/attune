@@ -200,9 +200,12 @@ export default function DailyLog() {
         <div key={swipe.key} className={`page-pad${swipe.from ? ` day-slide-from-${swipe.from}` : ''}`} style={{ maxWidth: 700 }}>
           <div style={{ marginBottom: 20 }}>
             <DaySelector selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setExpandedId(null); }} />
-            <div style={{ textAlign: 'center', marginTop: 14 }}>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{dateStr}</div>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>{Math.round(totalCal).toLocaleString()} kcal logged</div>
+            <div style={{ marginTop: 16 }}>
+              <div data-testid="log-date" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-secondary)' }} />
+                {dateStr}
+              </div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em', marginTop: 2 }}>{Math.round(totalCal).toLocaleString()} kcal logged</div>
             </div>
             {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', marginTop: 8 }}>{viewSaveError}</p>}
           </div>
@@ -241,7 +244,7 @@ export default function DailyLog() {
                   <div key={mealKey} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, overflow: 'hidden' }}>
                     <button onClick={() => setOpen(o => ({ ...o, [mealKey]: !o[mealKey] }))} style={{ width: '100%', background: 'none', border: 'none', padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 15, color: 'var(--text-secondary)' }}>{MEAL_LABELS[mealKey]}</div>
+                        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>{MEAL_LABELS[mealKey]}</div>
                         {items.length > 0 && <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>P {mealProtein}g · C {mealCarbs}g · F {mealFat}g</div>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

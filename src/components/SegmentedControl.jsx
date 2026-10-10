@@ -22,8 +22,8 @@ export default function SegmentedControl({ options, value, onChange, fill = true
       role={asTabs ? 'tablist' : undefined}
       aria-label={asTabs ? ariaLabel : undefined}
       style={{
-        display: 'flex', gap: 4, background: 'var(--bg-primary)',
-        border: '1px solid var(--border-default)', borderRadius: 20, padding: 2,
+        display: 'flex', gap: 4, background: 'var(--chip-bg)',
+        border: 'none', borderRadius: 20, padding: 3,
         ...(fill ? { width: '100%' } : { flexShrink: 0 }),
         ...style,
       }}
@@ -44,7 +44,7 @@ export default function SegmentedControl({ options, value, onChange, fill = true
               ...(fill ? { flex: 1 } : null),
               background: active ? 'var(--accent)' : 'transparent',
               color: active ? 'var(--accent-contrast)' : 'var(--text-muted)',
-              fontSize: 12, fontWeight: 600, cursor: opt.disabled ? 'not-allowed' : 'pointer',
+              fontSize: 12, fontWeight: 700, cursor: opt.disabled ? 'not-allowed' : 'pointer',
               opacity: opt.disabled ? 0.5 : 1,
               fontFamily: 'inherit', whiteSpace: 'nowrap',
             }}

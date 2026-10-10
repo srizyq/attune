@@ -134,14 +134,14 @@ const CANDIDATES = [
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.proteinBeforeNoon_g >= 30,
-    icon: '⚡', title: 'Protein timing', accentColor: '#a86b6b',
+    icon: '⚡', title: 'Protein timing', accentColor: '#b07a55',
     body: (c) =>
       `You average ${c.withAvg.toFixed(1)}/10 energy on days you log 30g+ protein before noon, vs ${c.withoutAvg.toFixed(1)}/10 otherwise — a ${Math.abs(c.delta).toFixed(1)}-point ${c.delta >= 0 ? 'lift' : 'drop'} across ${c.withCount + c.withoutCount} logged days.`,
   },
   {
     metricKey: 'moodScore', scale: 5,
     predicate: d => isWeekend(d.date),
-    icon: '📅', title: 'Weekday vs weekend', accentColor: '#c9a24f',
+    icon: '📅', title: 'Weekday vs weekend', accentColor: '#c4905b',
     body: (c) =>
       `Your mood runs ${c.delta >= 0 ? 'higher' : 'lower'} on weekends (${c.withAvg.toFixed(1)}/5) than weekdays (${c.withoutAvg.toFixed(1)}/5) — worth noticing if weekday routines are the lever you can actually pull.`,
   },
@@ -169,7 +169,7 @@ const CANDIDATES = [
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.waterGlasses != null && d.waterGlasses >= 6,
-    icon: '💧', title: 'Hydration', accentColor: '#c9a24f',
+    icon: '💧', title: 'Hydration', accentColor: '#c4905b',
     body: (c) =>
       `Days you log 6+ glasses of water average ${c.withAvg.toFixed(1)}/10 energy vs ${c.withoutAvg.toFixed(1)}/10 on lower-hydration days.`,
   },
@@ -199,7 +199,7 @@ function proteinEnergyCorrelation(dailyData) {
   const r = pearsonCorrelation(rows.map(d => d.protein_g), rows.map(d => d.energy));
   if (r == null || Math.abs(r) < 0.3) return null;
   return {
-    icon: '🔗', title: 'Protein & energy', accentColor: '#cf7468',
+    icon: '🔗', title: 'Protein & energy', accentColor: '#8c7260',
     effectSize: Math.abs(r),
     body: `Across ${rows.length} logged days, more protein tends to track with ${r >= 0 ? 'higher' : 'lower'} energy (r = ${r.toFixed(2)}) — not a guarantee, but a real trend in your own data.`,
   };
@@ -229,7 +229,7 @@ export function generateInsights(dailyData, max = 3) {
     const daysCheckedIn = dailyData.filter(d => d.mood != null).length;
     const needed = Math.max(0, MIN_SAMPLE * 2 - Math.min(daysLogged, daysCheckedIn));
     results.push({
-      icon: '🌱', title: 'Building your patterns', accentColor: '#a86b6b',
+      icon: '🌱', title: 'Building your patterns', accentColor: '#b07a55',
       body: needed > 0
         ? `Log food and check in on mood for about ${needed} more day${needed === 1 ? '' : 's'} and I'll start surfacing real patterns — not generic tips, actual correlations from your own data.`
         : `Nothing statistically meaningful yet across your logged days — keep going and patterns will surface as your data builds up.`,

@@ -153,7 +153,7 @@ export default function DayCheckinTiles({ checkin, onSave }) {
 
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, margin: '0 0 10px 2px' }}>How are you today?</div>
+      <div style={{ color: 'var(--text-primary)', fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 10px 2px' }}>How are you today?</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
         {TILES.map((t) => {
           const isOpen = open === t.id;

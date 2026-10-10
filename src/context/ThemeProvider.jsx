@@ -53,7 +53,7 @@ export function ThemeProvider({ children }) {
   // isn't inside the theme-scoped wrapper, so the only way to keep it in
   // sync is to set it directly, right here where theme actually changes.
   useEffect(() => {
-    document.body.style.background = theme === 'light' ? '#f2ece6' : '#141110';
+    document.body.style.background = theme === 'light' ? '#f6f0e9' : '#1a120b';
   }, [theme]);
 
   const setTheme = useCallback((next) => {

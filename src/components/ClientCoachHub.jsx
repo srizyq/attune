@@ -185,7 +185,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
       ))}
 
       <Card style={{ padding: 24, marginBottom: 20 }}>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your trainer</div>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 16 }}>Your trainer</div>
         {trainersLoading ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
         ) : trainer ? (
@@ -241,7 +241,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
 
           {hasTargets && (
             <Card style={{ padding: 24, marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Your current targets</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 16 }}>Your current targets</div>
               <div className="grid-4">
                 <TargetStat label="Calories" value={targets.calories ? `${targets.calories}` : '—'} />
                 <TargetStat label="Protein" value={targets.protein ? `${targets.protein}g` : '—'} />
@@ -252,7 +252,7 @@ export default function ClientCoachHub({ showUpsell = true }) {
             </Card>
           )}
 
-          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>Notes from your coach</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 12 }}>Notes from your coach</div>
           {hasNotes ? (
             <div className="grid-2" style={{ marginBottom: 8 }}>
               {weightNote && <CoachNote note={weightNote} onDismiss={dismissWeight} />}

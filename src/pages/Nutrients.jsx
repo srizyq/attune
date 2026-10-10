@@ -132,12 +132,12 @@ export default function Nutrients() {
           {loading ? null : (
             <>
               <Card style={{ padding: 24, marginBottom: 20 }}>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{isToday ? "Today's calories" : 'Calories'}</div>
-                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 32, fontWeight: 700, color: 'var(--accent)', marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 6 }}>{isToday ? "Today's calories" : 'Calories'}</div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 20 }}>
                   {Math.round(totals.cal).toLocaleString()}
                   {dayTargets.calories ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 500 }}> / {dayTargets.calories.toLocaleString()} kcal</span> : ' kcal'}
                 </div>
-                <MacroRow label="Protein" value={round1(totals.protein)} unit="g" target={dayTargets.protein_g} color="var(--accent)" />
+                <MacroRow label="Protein" value={round1(totals.protein)} unit="g" target={dayTargets.protein_g} color="var(--accent-secondary)" />
                 <MacroRow label={carbsLabel(profile?.net_carbs)} value={round1(logs.reduce((sum, r) => sum + carbsToShow(r.carbs_g, r.fibre_g, profile?.net_carbs), 0))} unit="g" target={dayTargets.carbs_g} color="var(--water-blue)" />
                 <MacroRow label="Fat" value={round1(totals.fat)} unit="g" target={dayTargets.fat_g} color="var(--ai-purple)" />
               </Card>
