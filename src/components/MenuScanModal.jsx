@@ -57,6 +57,24 @@ function MacroGrid({ pick }) {
   return <MacroBreakdown values={{ cal: pick.cal, protein: pick.protein, carbs: pick.carbs, fat: pick.fat }} />;
 }
 
+// The round tick at the left of a dish: select it to add together with others.
+function SelectBox({ checked, onChange, label }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      style={{ flexShrink: 0, width: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+    >
+      <span style={{ width: 22, height: 22, borderRadius: '50%', boxSizing: 'border-box', border: `2px solid ${checked ? 'var(--accent)' : 'var(--border-strong)'}`, background: checked ? 'var(--accent)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-contrast)', fontSize: 13 }}>
+        {checked && <i className="ti ti-check" aria-hidden="true" />}
+      </span>
+    </button>
+  );
+}
+
 export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchManually, selectedDate }) {
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
@@ -68,6 +86,9 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
   // whichever list the pick came from, so the review/confirm step below
   // doesn't need to know which tab it was tapped from.
   const [picked, setPicked] = useState(null);
+  // Dishes ticked in the lists, to be added together (key -> { kind, data }).
+  const [selected, setSelected] = useState(() => new Map());
+  const [addError, setAddError] = useState(null);
   const [error, setError] = useState(null);
   const [limitReached, setLimitReached] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -113,6 +134,19 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     setCropOpen(false);
   }
 
+  const selKey = (kind, index) => `${kind}:${index}`;
+  function toggleSelected(kind, data, index) {
+    setAddError(null);
+    setSelected((prev) => {
+      const next = new Map(prev);
+      const key = selKey(kind, index);
+      if (next.has(key)) next.delete(key); else next.set(key, { kind, data });
+      return next;
+    });
+  }
+  const selectedList = useMemo(() => [...selected.entries()], [selected]);
+  const selectedCal = selectedList.reduce((sum, [, { data }]) => sum + (Number(data.cal) || 0), 0);
+
   function toggleTweak(i) {
     setActiveTweaks((prev) => {
       const next = new Set(prev);
@@ -141,6 +175,8 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     setRecommendations(null);
     setMenuItems(null);
     setPicked(null);
+    setSelected(new Map());
+    setAddError(null);
     setActiveTab('goal');
     setAnalyzing(true);
     let dataUrl, base64;
@@ -183,6 +219,8 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
   }
 
   function reset() {
+    setSelected(new Map());
+    setAddError(null);
     setPreview(null);
     setRecommendations(null);
     setMenuItems(null);
@@ -233,6 +271,33 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     } catch (err) {
       console.error(err);
       setError("Couldn't add this — try again.");
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  // Everything ticked, each as its own entry at its listed portion (portions
+  // and tweaks can still be changed per dish by tapping it, or later in the log).
+  async function handleLogSelected() {
+    if (selectedList.length === 0 || adding) return;
+    setAdding(true);
+    setAddError(null);
+    const now = new Date();
+    const meal = mealFromDate(now);
+    const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
+    const done = [];
+    try {
+      for (const [key, { data }] of selectedList) {
+        const base = adjustPick(data, null, [], null);
+        await onAddFood({ name: data.name, ...base, source: 'menu', servingLabel: '1 serving' }, showSlots ? null : mealLabel, showSlots ? now : null);
+        done.push(key);
+      }
+      onClose();
+    } catch (err) {
+      console.error(err);
+      // What did get added is out of the selection, so trying again can't double it.
+      setSelected((prev) => { const next = new Map(prev); done.forEach((k) => next.delete(k)); return next; });
+      setAddError(done.length ? `Added ${done.length}, but couldn't add the rest. Try again.` : "Couldn't add these — try again.");
     } finally {
       setAdding(false);
     }
@@ -346,6 +411,37 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
         )}
       </button>
     </div>
+  ) : (hasResults && !error && selectedList.length > 0) ? (
+    <div>
+      {addError && <div role="alert" style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{addError}</div>}
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button
+          onClick={() => { setSelected(new Map()); setAddError(null); }}
+          style={{ flexShrink: 0, minHeight: 52, padding: '0 16px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: 14, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        >
+          Clear
+        </button>
+        <button
+          onClick={handleLogSelected}
+          disabled={adding}
+          style={{
+            flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            minHeight: 52, padding: '0 12px', borderRadius: 14, border: 'none',
+            background: adding ? 'var(--border-default)' : 'var(--accent)',
+            color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)',
+            fontSize: 14, fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer',
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+          }}
+        >
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{adding ? 'Adding…' : `Add ${selectedList.length} item${selectedList.length === 1 ? '' : 's'}`}</span>
+          {!adding && (
+            <span style={{ flexShrink: 0, background: 'rgba(0,0,0,0.18)', borderRadius: 99, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
+              +{Math.round(selectedCal)} kcal
+            </span>
+          )}
+        </button>
+      </div>
+    </div>
   ) : null;
 
   return (
@@ -388,7 +484,8 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
           review before logging. */}
       {hasResults && !picked && !error && (
         <div style={{ marginTop: 14 }}>
-          <SegmentedControl options={SCAN_TABS} value={activeTab} onChange={setActiveTab} fill style={{ marginBottom: 14 }} />
+          <SegmentedControl options={SCAN_TABS} value={activeTab} onChange={setActiveTab} fill style={{ marginBottom: 10 }} />
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.4 }}>Tick every dish you had to add them together, or tap one to adjust its portion first.</p>
 
           {activeTab === 'goal' && (
             recommendations.length === 0 ? (
@@ -396,10 +493,11 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
                 {recommendations.map((pick, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: 2 }}>
+                  <SelectBox checked={selected.has(selKey('recommendation', i))} onChange={() => toggleSelected('recommendation', pick, i)} label={`Select ${pick.name}`} />
                   <button
-                    key={i}
                     onClick={() => choosePick({ kind: 'recommendation', data: pick, index: i })}
-                    style={{ textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+                    style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'var(--bg-card)', border: `1px solid ${selected.has(selKey('recommendation', i)) ? 'var(--accent)' : 'var(--border-default)'}`, borderRadius: 10, padding: 14, cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 10, fontWeight: 700, color: i === 0 ? 'var(--accent-contrast)' : 'var(--bg-primary)', background: i === 0 ? 'var(--accent)' : 'var(--border-strong)', borderRadius: 5, padding: '2px 6px' }}>#{i + 1}</span>
@@ -411,6 +509,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
                     )}
                     <MacroGrid pick={pick} />
                   </button>
+                  </div>
                 ))}
               </div>
             )
@@ -425,11 +524,15 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
                   <div key={section} style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{section}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {items.map((item, i) => (
+                      {items.map((item, i) => {
+                        const itemIndex = menuItems.indexOf(item);
+                        const ticked = selected.has(selKey('item', itemIndex));
+                        return (
+                        <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: 2 }}>
+                        <SelectBox checked={ticked} onChange={() => toggleSelected('item', item, itemIndex)} label={`Select ${item.name}`} />
                         <button
-                          key={i}
-                          onClick={() => choosePick({ kind: 'item', data: item, index: menuItems.indexOf(item) })}
-                          style={{ textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
+                          onClick={() => choosePick({ kind: 'item', data: item, index: itemIndex })}
+                          style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'var(--bg-card)', border: `1px solid ${ticked ? 'var(--accent)' : 'var(--border-default)'}`, borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
                         >
                           <div style={{ minWidth: 0 }}>
                             <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>{item.name}</div>
@@ -442,7 +545,9 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
                             <div>{item.protein}p · {item.carbs}c · {item.fat}f</div>
                           </div>
                         </button>
-                      ))}
+                        </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

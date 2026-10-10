@@ -1,4 +1,5 @@
 import { todayLocalDate } from '../lib/patterns';
+import { latestDate } from '../lib/weekStrip';
 
 const WEEKDAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
@@ -21,16 +22,19 @@ function shiftDateStr(dateStr, days) {
 // glance. The chevrons shift by a full week (±7 days from the selected
 // day) rather than day-by-day, since single-day stepping is still
 // available by tapping an adjacent day in the strip itself.
-export default function DaySelector({ selectedDate, onSelect }) {
+// `allowFuture` lets the strip move into days that haven't happened yet (the
+// Daily log uses it to plan meals ahead); elsewhere it stops at today.
+export default function DaySelector({ selectedDate, onSelect, allowFuture = false }) {
   const today = todayLocalDate();
+  const last = allowFuture ? latestDate(today) : today;
   const weekStart = todayLocalDate(startOfWeek(selectedDate));
   const days = Array.from({ length: 7 }, (_, i) => shiftDateStr(weekStart, i));
   const nextWeekStart = shiftDateStr(weekStart, 7);
-  const canGoNext = nextWeekStart <= today;
+  const canGoNext = nextWeekStart <= last;
 
   function shiftWeek(delta) {
     const target = shiftDateStr(selectedDate, delta * 7);
-    onSelect(target > today ? today : target);
+    onSelect(target > last ? last : target);
   }
 
   return (
@@ -41,7 +45,8 @@ export default function DaySelector({ selectedDate, onSelect }) {
       <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', gap: 4, minWidth: 0 }}>
         {days.map(dateStr => {
           const isSelected = dateStr === selectedDate;
-          const isFuture = dateStr > today;
+          const isFuture = dateStr > last;
+          const isAhead = dateStr > today; // allowed, but hasn't happened yet
           const d = new Date(dateStr + 'T00:00:00');
           return (
             <button
@@ -53,7 +58,7 @@ export default function DaySelector({ selectedDate, onSelect }) {
                 padding: '6px 2px', borderRadius: 10, border: 'none', fontFamily: 'inherit',
                 background: isSelected ? 'var(--accent)' : 'transparent',
                 cursor: isFuture ? 'default' : 'pointer',
-                opacity: isFuture ? 0.35 : 1,
+                opacity: isFuture ? 0.35 : isAhead && !isSelected ? 0.7 : 1,
               }}
             >
               <span style={{ fontSize: 10, fontWeight: 600, color: isSelected ? 'var(--accent-contrast)' : 'var(--text-muted)' }}>{WEEKDAY_LABELS[d.getDay()]}</span>

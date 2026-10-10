@@ -4,6 +4,7 @@ import { useProfile } from '../hooks/useProfile';
 import { hasProAccess } from '../lib/proAccess';
 import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
+import { latestDate } from '../lib/weekStrip';
 import { slotFromTime } from '../lib/daySlots';
 import { copyDaySlots } from '../lib/db';
 import AppNav from '../components/AppNav';
@@ -55,11 +56,11 @@ export default function DailyLog() {
   // regardless of who calls it next.
   const [selectedDate, setSelectedDate] = useState(() => {
     const requested = location.state?.date;
-    return requested && requested <= today ? requested : today;
+    return requested && requested <= latestDate(today) ? requested : today;
   });
   useEffect(() => {
     const requested = location.state?.date;
-    if (requested && requested <= today) setSelectedDate(requested);
+    if (requested && requested <= latestDate(today)) setSelectedDate(requested);
   }, [location.state, today]);
   const isToday = selectedDate === today;
 
@@ -75,12 +76,12 @@ export default function DailyLog() {
   const goDay = useCallback((delta) => {
     setSelectedDate((d) => {
       const next = shiftDate(d, delta);
-      return next > today ? d : next;
+      return next > latestDate(today) ? d : next;
     });
     setExpandedId(null);
     setSwipe((s) => ({ key: s.key + 1, from: delta > 0 ? 'right' : 'left' }));
   }, [today]);
-  const swipeRef = useDaySwipe({ onPrev: () => goDay(-1), onNext: isToday ? null : () => goDay(1) });
+  const swipeRef = useDaySwipe({ onPrev: () => goDay(-1), onNext: selectedDate >= latestDate(today) ? null : () => goDay(1) });
   const [pullRef, pullState] = usePullToRefresh(() => refetch());
   // One ref for the scroll container, shared by both gestures.
   const setScrollEl = useCallback((el) => { pullRef.current = el; swipeRef.current = el; }, [pullRef, swipeRef]);
@@ -165,7 +166,7 @@ export default function DailyLog() {
           backLabel="Back to Dashboard"
           right={
             <div style={{ position: 'relative', display: 'flex', flexShrink: 0, gap: 8 }}>
-            {community.canShare && allItems.length > 0 && (
+            {community.canShare && selectedDate <= today && allItems.length > 0 && (
               <button onClick={shareDay} title="Share this day to Community" aria-label="Share this day" className="app-icon-btn">
                 <i className="ti ti-share-3" />
               </button>
@@ -199,7 +200,7 @@ export default function DailyLog() {
 
         <div key={swipe.key} className={`page-pad${swipe.from ? ` day-slide-from-${swipe.from}` : ''}`} style={{ maxWidth: 700 }}>
           <div style={{ marginBottom: 20 }}>
-            <DaySelector selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setExpandedId(null); }} />
+            <DaySelector allowFuture selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setExpandedId(null); }} />
             <div style={{ marginTop: 16 }}>
               <div data-testid="log-date" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                 <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-secondary)' }} />
@@ -280,7 +281,7 @@ export default function DailyLog() {
                         <button onClick={() => navigate('/food', { state: { openMeal: mealKey, date: selectedDate } })} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '12px 18px', textAlign: 'left' }}>
                           + Add food
                         </button>
-                        {community.canShare && items.length > 0 && (
+                        {community.canShare && selectedDate <= today && items.length > 0 && (
                           <button onClick={() => shareMeal(mealKey, items)} aria-label={`Share ${MEAL_LABELS[mealKey]} to Community`} style={{ width: '100%', background: 'none', border: 'none', borderTop: '1px solid var(--border-default)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', padding: '12px 18px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                             <i className="ti ti-share-3" aria-hidden="true" /> Share this meal
                           </button>

@@ -43,6 +43,8 @@ export function mapRow(row) {
     loggedAt: row.logged_at || null,
     createdAt: row.created_at || null,
     slotId: row.slot_id || null,
+    // What a photo-scanned meal was made of (null for everything else).
+    ingredients: Array.isArray(row.ingredients) && row.ingredients.length ? row.ingredients : null,
   };
 }
 
@@ -145,6 +147,7 @@ export function useFoodLogs(date) {
       loggedAmount: food.loggedAmount ?? null,
       loggedUnit: food.loggedUnit ?? null,
       servingLabel: food.servingLabel ?? null,
+      ingredients: food.ingredients ?? null,
     });
     setLogs(prev => [...prev, created]);
     return created;

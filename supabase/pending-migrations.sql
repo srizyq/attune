@@ -30,6 +30,7 @@
 --   20. Sleep check-ins + fasting timer
 --   21. Net carbs setting
 --   22. Community
+--   23. Ingredients on a logged meal
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block).
@@ -3443,3 +3444,14 @@ end;
 $$;
 revoke all on function public.community_leave() from public, anon;
 grant execute on function public.community_leave() to authenticated;
+
+
+-- ═══════════════════════════════════════
+-- Ingredients on a logged meal (schema update — run against an existing DB;
+-- safe to re-run).
+-- ═══════════════════════════════════════
+-- A meal scanned from a photo is logged as one entry (its calories and macros
+-- are the totals). This keeps the ingredients it was made of — name, grams and
+-- macros each — so expanding the entry in the log can show them. Null for
+-- everything else.
+alter table public.food_logs add column if not exists ingredients jsonb;

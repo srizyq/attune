@@ -33,7 +33,7 @@ import { targetsForDate } from '../lib/dayTargets';
 import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import { useDaySwipe } from '../hooks/useDaySwipe';
-import { weekDays, shiftWeek } from '../lib/weekStrip';
+import { weekDays, shiftWeek, latestDate } from '../lib/weekStrip';
 import { useCommunityShare } from '../hooks/useCommunityShare';
 import { buildDayPost } from '../lib/communityPosts';
 import FriendsStrip from '../components/community/FriendsStrip';
@@ -851,7 +851,7 @@ function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
     <div ref={swipeRef} data-testid="day-strip" style={{ touchAction: 'pan-y', overflow: 'hidden', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: 6, marginBottom: 12, boxShadow: 'var(--card-shadow)' }}>
     <div key={days[0]} className={slide.from && slide.key === days[0] ? `day-slide-from-${slide.from}` : undefined} style={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
       {days.map((dateStr) => {
-        const isFuture = dateStr > today;
+        const isFuture = dateStr > today; // hasn't happened yet: tappable (to plan ahead), just shown lighter
         const isSelected = dateStr === viewedDate;
         const calories = Number(byDate.get(dateStr)?.calories) || 0;
         const target = targetFor(dateStr);
@@ -865,16 +865,15 @@ function StreakStrip({ byDate, viewedDate, targetFor, onSelectDay }) {
             key={dateStr}
             className="hit-slop hit-slop-tight"
             data-testid="day-tab"
-            disabled={isFuture}
             onClick={() => onSelectDay(dateStr)}
             aria-pressed={isSelected}
-            aria-label={`${dayDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}${isFuture ? '' : calories ? `, ${pct}% of calorie target` : ', nothing logged'}`}
+            aria-label={`${dayDate.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}${isFuture ? (calories ? ', planned' : ', nothing planned') : calories ? `, ${pct}% of calorie target` : ', nothing logged'}`}
             style={{
               flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              padding: '8px 0 7px', borderRadius: 14, fontFamily: 'inherit', cursor: isFuture ? 'default' : 'pointer',
+              padding: '8px 0 7px', borderRadius: 14, fontFamily: 'inherit', cursor: 'pointer',
               background: isSelected ? 'var(--accent)' : 'transparent',
               border: 'none',
-              opacity: isFuture ? 0.4 : 1,
+              opacity: isFuture && !isSelected ? 0.6 : 1,
             }}
           >
             <span style={{ fontSize: 11, fontWeight: 700, color: isSelected ? 'var(--accent-contrast)' : 'var(--text-muted)', opacity: isSelected ? 0.85 : 1 }}>
@@ -995,7 +994,7 @@ export default function Dashboard() {
   const calMonthEnd = todayLocalDate(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0));
   const { dailyData: calData, loading: calLoading } = useHistory(calMonthStart, calMonthEnd);
   const calByDate = new Map(calData.map(d => [d.date, d]));
-  const canGoNextMonth = calMonthStart < todayLocalDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const canGoNextMonth = calMonthStart < latestDate(today).slice(0, 8) + '01';
 
   // The targets for the day being viewed — a rest day can have its own (see
   // lib/dayTargets.js); with none set every day gets the everyday targets.
@@ -1148,10 +1147,10 @@ export default function Dashboard() {
                 {dateStr}
               </div>
               <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em', marginTop: 4, lineHeight: 1.2 }}>
-                {isViewingToday ? `${greeting}, ${name}` : `${name}'s log`}
+                {isViewingToday ? `${greeting}, ${name}` : viewedDate > today ? `${name}'s plan` : `${name}'s log`}
               </div>
               {!isViewingToday && (
-                <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '13px', fontWeight: 800, cursor: 'pointer', padding: '4px 0 0', fontFamily: 'inherit' }}>
+                <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '13px', fontWeight: 800, cursor: 'pointer', padding: '6px 0', minHeight: 28, fontFamily: 'inherit' }}>
                   ← Back to today
                 </button>
               )}
@@ -1191,6 +1190,7 @@ export default function Dashboard() {
                   setGlasses={setGlasses}
                 />,
                 <LogCalendar
+                  allowFuture
                   month={calMonth}
                   byDate={calByDate}
                   calorieTarget={calorieTargetFor}

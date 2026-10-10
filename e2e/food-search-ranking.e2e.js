@@ -4,7 +4,7 @@ import { USER_ID } from './fixtures.js';
 
 // Search puts the plain ingredient first ("potato" -> raw potato, not potato
 // pudding), copes with half-typed words, and a barcode nobody has added opens
-// the label camera instead of an empty form.
+// a question (add it?) instead of a camera.
 // A fake camera, so the scanner and the label camera behave as on a phone.
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }, permissions: ['camera'] });
 
@@ -68,7 +68,7 @@ async function openBarcodeLookup(page, code) {
   await page.getByRole('button', { name: 'Look up' }).click();
 }
 
-test('a barcode nobody has added opens the label camera, and a photo fills the form', async ({ page, context }, testInfo) => {
+test('a barcode nobody has added asks to add it; the add form has an optional label photo that fills the numbers', async ({ page, context }, testInfo) => {
   const ctx = await openApp({ page, context }, testInfo);
   await page.route('**/world.openfoodfacts.org/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 0 }) }));
   await page.route('**/api/recognize-label', (route) => route.fulfill({
@@ -77,11 +77,20 @@ test('a barcode nobody has added opens the label camera, and a photo fills the f
   }));
   await openBarcodeLookup(page, '9310232962474');
 
-  // Straight into the label camera, not an error panel.
-  await expect(page.getByText(/Product not found/)).toHaveCount(0);
+  // A question, not a camera: no shutter button, no form yet.
+  await expect(page.getByText('Not in our database yet')).toBeVisible();
+  await expect(page.getByText(/9310232962474/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Take photo' })).toHaveCount(0);
+  await expect(page.getByPlaceholder('Product name')).toHaveCount(0);
+  await assertLayout(page, testInfo, 'x-barcode-not-found-prompt', ctx);
+
+  // Yes → the add-product form, still with no camera until asked.
+  await page.getByRole('button', { name: /Add this product/ }).click();
+  await page.getByPlaceholder('Product name').waitFor();
+  await expect(page.getByRole('button', { name: 'Take photo' })).toHaveCount(0);
+  await page.getByRole('button', { name: /Photograph the nutrition label/ }).click();
   await page.getByRole('button', { name: 'Take photo' }).click();
 
-  await page.getByPlaceholder('Product name').waitFor();
   await expect(page.getByPlaceholder('Calories')).toHaveValue('190');
   await expect(page.getByPlaceholder('Protein (g)')).toHaveValue('12');
   await expect(page.getByText(/Nobody has added this product yet/)).toBeVisible();
@@ -91,21 +100,19 @@ test('a barcode nobody has added opens the label camera, and a photo fills the f
   await expect(page.getByText('Choc protein bar').first()).toBeVisible();
 });
 
-test('closing the label camera falls back to the plain form; backing out shows the not-found options', async ({ page, context }, testInfo) => {
+test('backing out of the add form returns to the question; Not now closes the scanner', async ({ page, context }, testInfo) => {
   await openApp({ page, context }, testInfo);
   await page.route('**/world.openfoodfacts.org/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 0 }) }));
   await openBarcodeLookup(page, '9310232962474');
-  await page.getByRole('button', { name: 'Close camera' }).click();
+  await page.getByRole('button', { name: /Add this product/ }).click();
   await page.getByPlaceholder('Product name').waitFor();
   await page.getByRole('button', { name: 'Cancel' }).click();
-  await expect(page.getByText(/Product not found for barcode/)).toBeVisible();
-  await expect(page.getByRole('button', { name: /Add this product for everyone/ })).toBeVisible();
+  await expect(page.getByText('Not in our database yet')).toBeVisible();
   // The two buttons that only closed the sheet or duplicated this one are gone.
   await expect(page.getByRole('button', { name: /Search manually/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Create custom food/ })).toHaveCount(0);
-  // ...and Add this product goes back to the label camera.
-  await page.getByRole('button', { name: /Add this product for everyone/ }).click();
-  await expect(page.getByRole('button', { name: 'Take photo' })).toBeVisible();
+  await page.getByRole('button', { name: 'Not now' }).click();
+  await expect(page.getByText('Not in our database yet')).toHaveCount(0);
 });
 
 test('every lookup failing is a connection problem, not a missing product', async ({ page, context }, testInfo) => {

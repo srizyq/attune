@@ -37,13 +37,13 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-async function openResult(onAddFood = vi.fn()) {
+async function openResult(onAddFood = vi.fn(), props = {}) {
   const { container } = render(
-    <MemoryRouter><PhotoScanModal onClose={() => {}} onAddFood={onAddFood} defaultMeal="Dinner" selectedDate="2026-10-03" /></MemoryRouter>,
+    <MemoryRouter><PhotoScanModal onClose={() => {}} onAddFood={onAddFood} defaultMeal="Dinner" selectedDate="2026-10-03" {...props} /></MemoryRouter>,
   );
   await screen.findByRole('button', { name: 'Take photo' });
   fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [new File(['x'], 'p.jpg', { type: 'image/jpeg' })] } });
-  await screen.findByText('Chicken curry with rice');
+  await screen.findByDisplayValue('Chicken curry with rice', {}, { timeout: 8000 }); // the meal's name, editable
   return container;
 }
 
@@ -78,10 +78,36 @@ describe('PhotoScanModal result layout', () => {
     expect(JSON.parse(fetch.mock.calls[0][1].body).correction).toBe('it is lamb');
   });
 
-  it('Log adds each ingredient as its own entry', async () => {
+  it('Log adds the whole meal as ONE entry, with its ingredients inside', async () => {
     const onAddFood = vi.fn();
     await openResult(onAddFood);
     await userEvent.click(screen.getByRole('button', { name: /^Log to Dinner/ }));
+    await waitFor(() => expect(onAddFood).toHaveBeenCalledTimes(1));
+    const [food, meal] = onAddFood.mock.calls[0];
+    expect(meal).toBe('Dinner');
+    expect(food).toMatchObject({ name: 'Chicken curry with rice', source: 'photo', cal: 500 });
+    expect(food.ingredients).toHaveLength(2);
+    expect(food.ingredients[0]).toMatchObject({ name: 'Chicken curry', grams: 200, cal: 300 });
+  });
+
+  it('the meal name can be edited before logging', async () => {
+    const onAddFood = vi.fn();
+    await openResult(onAddFood);
+    const name = screen.getByLabelText('Meal name');
+    await userEvent.clear(name);
+    await userEvent.type(name, 'Mum\'s curry');
+    await userEvent.click(screen.getByRole('button', { name: /^Log to Dinner/ }));
+    await waitFor(() => expect(onAddFood).toHaveBeenCalledTimes(1));
+    expect(onAddFood.mock.calls[0][0].name).toBe("Mum's curry");
+  });
+
+  it('while building a recipe each ingredient is added to the recipe separately', async () => {
+    const onAddFood = vi.fn();
+    await openResult(onAddFood, { recipeMode: true });
+    expect(screen.queryByRole('button', { name: /^Log to/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /^Add to recipe/ }));
     await waitFor(() => expect(onAddFood).toHaveBeenCalledTimes(2));
+    expect(onAddFood.mock.calls.map((c) => c[0].name)).toEqual(['Chicken curry', expect.any(String)]);
+    expect(onAddFood.mock.calls[0][0].ingredients).toBeUndefined();
   });
 });

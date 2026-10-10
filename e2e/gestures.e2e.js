@@ -28,9 +28,15 @@ test('swipe right/left on the daily log changes day; swiping on a row does not',
   const today = await dateLabel();
   expect(today).toMatch(/^Today/i);
 
-  // Swipe left on today: there is no tomorrow, so nothing changes.
+  // Swipe left on today: tomorrow (days ahead can be opened, to plan meals)…
   await touchDrag(page, '.page-pad', [300, 400], [90, 405]);
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(400);
+  const tomorrow = await dateLabel();
+  expect(tomorrow).not.toMatch(/^Today/i);
+  expect(tomorrow).not.toBe(today);
+  // …and right comes back to today.
+  await touchDrag(page, '.page-pad', [90, 400], [300, 405]);
+  await page.waitForTimeout(400);
   expect(await dateLabel()).toBe(today);
 
   // Swipe right: yesterday.
@@ -142,9 +148,14 @@ test('swiping the dashboard day strip moves a week at a time, back and forward',
   expect(thisWeek.count).toBe(7);
   expect(thisWeek.selected).toBeGreaterThanOrEqual(0);
 
-  // Nothing after this week: swiping left leaves it alone.
+  // Swiping left goes to next week (future days can be opened), same weekday; right comes back.
   await touchDrag(page, strip, [300, 10], [90, 12]);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(500);
+  const nextWeek = await state();
+  expect(nextWeek.first).not.toBe(thisWeek.first);
+  expect(nextWeek.selected).toBe(thisWeek.selected);
+  await touchDrag(page, strip, [90, 10], [300, 12]);
+  await page.waitForTimeout(500);
   expect(await state()).toEqual(thisWeek);
 
   // Swipe right: last week, same weekday selected.

@@ -164,7 +164,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
           <ListRow
             avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
             title={item.name}
-            subtitleParts={[item.brand, `${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`]}
+            subtitleParts={[item.brand, `${Math.round(item.cal)} cal`, `P ${round1(item.protein)}g`, `C ${round1(item.carbs)}g`, `F ${round1(item.fat)}g`, item.ingredients ? `${item.ingredients.length} ingredient${item.ingredients.length === 1 ? '' : 's'}` : null]}
             trailing={<ListRow.Chevron />}
             onClick={onToggle}
           />
@@ -196,6 +196,20 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
               </div>
               <button onClick={onToggle} aria-label="Close" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}>✕</button>
             </div>
+
+            {item.ingredients && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Ingredients (as scanned)</label>
+                <div style={{ border: '1px solid var(--border-default)', borderRadius: 10, padding: '0 12px', background: 'var(--bg-primary)' }}>
+                  {item.ingredients.map((ing, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, padding: '9px 0', borderBottom: i < item.ingredients.length - 1 ? '1px solid var(--border-default)' : 'none' }}>
+                      <span style={{ fontSize: 13, color: 'var(--text-primary)', minWidth: 0, overflowWrap: 'anywhere' }}>{ing.name}{ing.grams ? <span style={{ color: 'var(--text-muted)' }}> · {Math.round(ing.grams)}g</span> : null}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>{Math.round(ing.cal || 0)} cal</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {readOnly ? (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

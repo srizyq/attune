@@ -14,7 +14,7 @@ const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 // instead of the generic subtitle. Progress.jsx has room to spare and
 // its own separate streak-badges section, so it doesn't pass either —
 // defaulting both off keeps it exactly as it was.
-export default function LogCalendar({ month, byDate, calorieTarget, loading, onPrevMonth, onNextMonth, canGoNext, onSelectDay, compact = false, streak }) {
+export default function LogCalendar({ month, byDate, calorieTarget, loading, onPrevMonth, onNextMonth, canGoNext, onSelectDay, compact = false, streak, allowFuture = false }) {
   const year = month.getFullYear();
   const monthIdx = month.getMonth();
   const firstOfMonth = new Date(year, monthIdx, 1);
@@ -59,7 +59,8 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
             const pct = dayFillPct(day, dayTarget);
             const over = dayIsOver(day, dayTarget);
             const isToday = dateStr === today;
-            const isFuture = dateStr > today;
+            const isFuture = !allowFuture && dateStr > today;
+            const isAhead = dateStr > today; // allowed (planning ahead), shown lighter
             return (
               <div
                 key={dateStr}
@@ -68,7 +69,7 @@ export default function LogCalendar({ month, byDate, calorieTarget, loading, onP
                 style={{
                   position: 'relative', aspectRatio: '1', borderRadius: 6, overflow: 'hidden',
                   background: 'var(--bg-subtle)', border: `1px solid ${isToday ? 'var(--accent)' : 'var(--border-default)'}`,
-                  cursor: isFuture ? 'default' : 'pointer', opacity: isFuture ? 0.35 : 1,
+                  cursor: isFuture ? 'default' : 'pointer', opacity: isFuture ? 0.35 : isAhead ? 0.65 : 1,
                 }}
               >
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${pct}%`, background: over ? 'color-mix(in srgb, var(--over-target) 65%, transparent)' : 'color-mix(in srgb, var(--accent) 31%, transparent)', transition: 'height 0.4s ease, background 0.2s ease' }} />

@@ -11,6 +11,7 @@ import { useProfile } from '../hooks/useProfile';
 import { hasProAccess } from '../lib/proAccess';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
+import { latestDate } from '../lib/weekStrip';
 import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems, getRestaurantChains } from '../lib/db';
 import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
@@ -578,7 +579,7 @@ const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', 
 //    chrome (no separate ScanModal wrapper) since it needs to switch
 //    between a full-screen camera step and a normal modal card depending
 //    on internal state. ─────────────────────────────────────────────────
-function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, showSlots }) {
+function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, showSlots, recipeMode = false }) {
   const { user } = useAuth();
   const { profile } = useProfile();
   // Read-only here — logs for today's day-budget-impact preview, not
@@ -641,14 +642,14 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const [labelAnalyzing, setLabelAnalyzing] = useState(false);
   const [labelError, setLabelError] = useState(null);
   const [labelPreview, setLabelPreview] = useState(null);
-  // The label camera opens by itself for a product nobody has added yet; this
-  // is set once the person skips it (or a photo couldn't be read) so they get
-  // the plain form instead.
-  const [labelSkipped, setLabelSkipped] = useState(false);
+  // A scanned barcode nobody has: ask whether to add it (nothing opens by itself).
+  const [notFound, setNotFound] = useState(false);
+  // The label photo in the add form is optional: the camera only opens when asked for.
+  const [labelCameraOpen, setLabelCameraOpen] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
 
   async function startScanner() {
-    setError(null); setResult(null); setLooking(true);
+    setError(null); setNotFound(false); setResult(null); setLooking(true);
     setTorchOn(false); setTorchSupported(false);
     processingRef.current = false;
     try {
@@ -801,12 +802,11 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           setError("Couldn't look up this product. Check your connection and try again.");
           return;
         }
-        // Nobody has this barcode yet. Go straight to photographing its label
-        // (see the add-product form) so it's added for everyone in one step;
-        // the error is kept underneath for if they back out.
-        setError(`Product not found for barcode ${barcode}. Try searching manually, or add it yourself.`);
-        setNewProduct(BLANK_NEW_PRODUCT); setLabelError(null); setLabelPreview(null); setLabelSkipped(false);
-        setAddingProduct(true);
+        // Nobody has this barcode yet: ask whether to add it. Saying yes opens
+        // the add-product form; nothing opens a camera on its own.
+        setError(`Product not found for barcode ${barcode}.`);
+        setNotFound(true);
+        setNewProduct(BLANK_NEW_PRODUCT); setLabelError(null); setLabelPreview(null); setLabelCameraOpen(false);
         return;
       }
       setError(null);
@@ -836,8 +836,8 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   }
 
   function reset() {
-    setResult(null); setError(null); setScanning(false); setAddingProduct(false); setCalorieWarning(false);
-    setNewProduct(BLANK_NEW_PRODUCT); setLabelError(null); setLabelPreview(null); setLabelSkipped(false);
+    setResult(null); setError(null); setNotFound(false); setScanning(false); setAddingProduct(false); setCalorieWarning(false);
+    setNewProduct(BLANK_NEW_PRODUCT); setLabelError(null); setLabelPreview(null); setLabelCameraOpen(false);
     startScanner();
   }
 
@@ -876,7 +876,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       const data = await res.json();
       if (!res.ok || data.error) {
         setLabelError(data.error || "Couldn't read this label. Try again or enter the numbers yourself.");
-        setLabelPreview(null); setLabelSkipped(true);
+        setLabelPreview(null);
         return;
       }
       setNewProduct(p => ({
@@ -895,7 +895,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
     } catch (err) {
       console.error(err);
       setLabelError("Couldn't read this label. Check your connection and try again.");
-      setLabelPreview(null); setLabelSkipped(true);
+      setLabelPreview(null);
     } finally {
       setLabelAnalyzing(false);
     }
@@ -1055,29 +1055,25 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
     );
   }
 
-  // A product nobody has added yet: the label camera opens straight away, same
-  // full-screen treatment as the barcode camera. Closing it falls back to the
-  // plain form (type the numbers in); a photo that can't be read does too.
-  if (addingProduct && !labelPreview && !labelAnalyzing && !labelSkipped) {
-    return (
-      <CameraCapture
-        onCapture={handleLabelPhoto}
-        hint="Not in our database yet — photograph the nutrition label"
-        fullScreen
-        onClose={() => setLabelSkipped(true)}
-      />
-    );
-  }
-
   return (
     <DragSheet title={addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"} onClose={close} closing={closing}>
       {error && !addingProduct && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
-          {scannedBarcode && (
-            <button onClick={() => { setLabelSkipped(false); setAddingProduct(true); }} style={{ width: "100%", marginBottom: 8, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <i className="ti ti-barcode" style={{ fontSize: 14 }} /> Add this product for everyone
-            </button>
+          {notFound ? (
+            <div role="status" style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 12, padding: "16px 16px 14px", marginBottom: 10 }}>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Not in our database yet</div>
+              <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 14 }}>
+                We couldn't find a product for barcode {scannedBarcode}. Would you like to add it? Once it's added, it's here for everyone who scans it.
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={close} style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 10, padding: "11px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Not now</button>
+                <button onClick={() => { setNotFound(false); setAddingProduct(true); }} style={{ flex: 2, background: "var(--accent)", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  <i className="ti ti-barcode" style={{ fontSize: 14 }} /> Add this product
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
           )}
           {/* Same manual-entry path as the camera view (submitManualBarcode)
               — reachable here too since this screen covers both "camera
@@ -1123,11 +1119,17 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               style={{ width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
           </div>
 
-          {!labelPreview && (
-            <>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>Take a photo of the nutrition facts label — it'll fill in the numbers below.</div>
-              <CameraCapture onCapture={handleLabelPhoto} hint="Fit the whole nutrition panel in frame" />
-            </>
+          {!labelPreview && !labelAnalyzing && (
+            labelCameraOpen ? (
+              <>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>Take a photo of the nutrition facts label — it'll fill in the numbers below.</div>
+                <CameraCapture onCapture={(file) => { setLabelCameraOpen(false); handleLabelPhoto(file); }} hint="Fit the whole nutrition panel in frame" />
+              </>
+            ) : (
+              <button type="button" onClick={() => setLabelCameraOpen(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", marginBottom: 12, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <i className="ti ti-camera" style={{ fontSize: 15 }} /> Photograph the nutrition label (optional)
+              </button>
+            )
           )}
 
           {labelAnalyzing && (
@@ -1180,7 +1182,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           </div>
 
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { setAddingProduct(false); setLabelError(null); setLabelPreview(null); setLabelSkipped(false); setNewProduct(BLANK_NEW_PRODUCT); }}
+            <button onClick={() => { setAddingProduct(false); setNotFound(!!scannedBarcode); setLabelError(null); setLabelPreview(null); setLabelCameraOpen(false); setNewProduct(BLANK_NEW_PRODUCT); }}
               style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Cancel
             </button>
@@ -1242,6 +1244,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             meal={meal} setMeal={setMeal}
             time={time} setTime={setTime}
             showSlots={showSlots}
+            addLabel={recipeMode ? "Add to recipe" : undefined}
             onAdd={() => { onAddFood(scaled, showSlots ? null : meal, showSlots ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null); onClose(); }}
             disabled={!servings}
           />
@@ -1680,7 +1683,7 @@ function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, se
         </select>
       </div>
       {unit === 'serving' && <ServingStepper.Multipliers amount={amount} setAmount={setAmount} />}
-      {showSlots ? (
+      {addLabel ? null : showSlots ? (
         <input
           type="time" value={time} onChange={e => setTime(e.target.value)}
           style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "7px 10px", color: "var(--text-secondary)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
@@ -1721,14 +1724,14 @@ export default function FoodSearch() {
   // shortcuts, nav) and clamps out anything invalid or in the future.
   const [selectedDate, setSelectedDate] = useState(() => {
     const requested = location.state?.date;
-    return requested && requested <= today ? requested : today;
+    return requested && requested <= latestDate(today) ? requested : today;
   });
   const isToday = selectedDate === today;
   function shiftDate(days) {
     const d = new Date(selectedDate + "T00:00:00");
     d.setDate(d.getDate() + days);
     const next = todayLocalDate(d);
-    if (next > today) return;
+    if (next > latestDate(today)) return;
     setSelectedDate(next);
     setExpandedId(null);
   }
@@ -2201,6 +2204,17 @@ export default function FoodSearch() {
     return logFood(food, meal, loggedAt);
   }
 
+  // Anything a scanner finds: an ingredient while a recipe is being built,
+  // otherwise an entry in the log. (It used to always go to the log, so a
+  // barcode scanned mid-recipe never reached the recipe.)
+  async function handleScanned(food, meal, loggedAt) {
+    if (builderMode) { addToBuilder(food); return; }
+    await addFoodLog(food, meal, loggedAt);
+    refetchRecent();
+    lastLogged.refetch();
+    showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`);
+  }
+
   async function handleDeleteCustom(food) {
     await customFoods.remove(food.customId);
     showToast(`${withBrand(food.name, food.brand)} removed`);
@@ -2271,7 +2285,7 @@ export default function FoodSearch() {
 
         {/* Top bar */}
         <PageHeader
-          title="Food search"
+          title={builderMode ? (editingRecipeId ? "Edit recipe" : "New recipe") : "Food search"}
           right={
             <>
               <button type="button" className="app-icon-btn" onClick={() => setCreateFoodOpen(true)} title="Create a custom food" aria-label="Create a custom food"><i className="ti ti-plus" /></button>
@@ -2279,8 +2293,17 @@ export default function FoodSearch() {
             </>
           }
         >
+          {builderMode ? (
+            <div role="status" style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 14, padding: "10px 14px" }}>
+              <i className="ti ti-chef-hat" aria-hidden="true" style={{ fontSize: 22, color: "var(--accent)", flexShrink: 0 }} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>You're building a recipe</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, lineHeight: 1.4 }}>Everything you search for or scan is added to the recipe, not to your daily log.</div>
+              </div>
+            </div>
+          ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <DateStepper selectedDate={selectedDate} isToday={isToday} onShift={shiftDate} />
+            <DateStepper selectedDate={selectedDate} isToday={isToday} onShift={shiftDate} canGoNext={selectedDate < latestDate(today)} />
             {showSlots ? (
               <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 22, padding: "0 16px", minHeight: 42, boxSizing: "border-box" }}>
                 <span style={{ fontSize: 12, color: "var(--accent)" }}>Logging at</span>
@@ -2302,6 +2325,7 @@ export default function FoodSearch() {
               </div>
             )}
           </div>
+          )}
         </PageHeader>
 
         {/* Page body */}
@@ -2689,22 +2713,24 @@ export default function FoodSearch() {
       {/* Scan modal */}
       {scanOpen && (
         <BarcodeScanner
+          recipeMode={builderMode}
           onClose={() => setScanOpen(false)}
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
           showSlots={showSlots}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={handleScanned}
         />
       )}
 
       {/* Photo scan modal */}
       {photoScanOpen && (
         <PhotoScanModal
+          recipeMode={builderMode}
           onClose={() => setPhotoScanOpen(false)}
           defaultMeal={activeMeal} selectedDate={selectedDate}
           defaultTime={activeTime}
           showSlots={showSlots}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={handleScanned}
           onCreateCustom={(prefill) => { setPhotoScanOpen(false); setCreateFoodPrefill(prefill || null); setCreateFoodOpen(true); }}
           onSearchManually={() => { setPhotoScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
@@ -2716,7 +2742,7 @@ export default function FoodSearch() {
           onClose={() => setMenuScanOpen(false)}
           showSlots={showSlots}
           selectedDate={selectedDate}
-          onAddFood={async (food, meal, loggedAt) => { await addFoodLog(food, meal, loggedAt); refetchRecent(); lastLogged.refetch(); showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`); }}
+          onAddFood={handleScanned}
           onSearchManually={() => { setMenuScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
         />
       )}

@@ -97,7 +97,12 @@ export async function addFoodLog(userId, entry) {
   // when the food actually carries them. If the database hasn't had its
   // update yet, retry without them so logging food never breaks over a
   // missing column.
-  const extended = { ...extendedToRow(entry), ...(entry.brand ? { brand: entry.brand } : {}) };
+  const extended = {
+    ...extendedToRow(entry),
+    ...(entry.brand ? { brand: entry.brand } : {}),
+    // A photo-scanned meal keeps the ingredients it was made of, shown when the entry is expanded.
+    ...(Array.isArray(entry.ingredients) && entry.ingredients.length ? { ingredients: entry.ingredients } : {}),
+  };
   const insert = (r) => supabase.from('food_logs').insert(r).select().single();
   let { data, error } = await insert({ ...row, ...extended });
   if (error && Object.keys(extended).length > 0 && isMissingColumnError(error)) ({ data, error } = await insert(row));
