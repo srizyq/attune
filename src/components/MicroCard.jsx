@@ -25,14 +25,15 @@ export default function MicroCard({ icon, label, value, unit, guideline, target,
   return (
     <Card
       onClick={locked ? onUpgrade : undefined}
-      style={{ border: '1px solid var(--border-default)', borderRadius: 12, padding: 18, marginBottom: 0, position: 'relative', cursor: locked ? 'pointer' : 'default' }}
+      style={{ border: '1px solid var(--border-default)', borderRadius: 12, padding: '16px 14px', marginBottom: 0, position: 'relative', cursor: locked ? 'pointer' : 'default' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <div style={{ width: 28, height: 28, flexShrink: 0, background: color + '22', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
+          <div style={{ width: 26, height: 26, flexShrink: 0, background: color + '22', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
             <i className={`ti ${icon}`} style={{ fontSize: 14 }} />
           </div>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+          {/* The name wraps instead of being cut to "Sodi…" in a half-width card. */}
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', minWidth: 0, lineHeight: 1.25, overflowWrap: 'anywhere' }}>{label}</span>
         </div>
         {pct !== null && !locked && (
           <StatBadge color={color} style={{ padding: '2px 6px', fontSize: 11 }}>{Math.round(pct)}%</StatBadge>

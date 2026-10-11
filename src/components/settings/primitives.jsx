@@ -60,7 +60,7 @@ export function Select({ value, onChange, options }) {
 // in appshell.css) already solves this same problem.
 export function Segmented({ value, onChange, options }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`, gap: '8px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(74px, 1fr))', gap: '8px' }}>
       {options.map(o => {
         const sel = value === o.value;
         return (

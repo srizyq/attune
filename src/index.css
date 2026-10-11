@@ -521,3 +521,25 @@ button:not(:disabled):active {
 @media (prefers-reduced-motion: reduce) {
   .day-slide-from-right, .day-slide-from-left { animation: none; }
 }
+
+/* Range sliders (macro splits, weekly rate): the browser's default thumb is a
+   blue dot that ignores the theme, so it's drawn here in the primary fill
+   colour with a ring in the card colour. */
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--bg-card);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--bg-card);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}

@@ -369,15 +369,15 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
             if (!b.over) {
               return <path key={i} d={barPath(b.x, b.y, barWidth, Math.max(0, b.height), corner, corner)} fill={base} />;
             }
-            // Over the day's target: the bar stops at the target line and only
-            // the part above it takes the over-target colour, with a hairline
-            // gap between the two — so how far over you went reads at a glance
-            // and the bar isn't one solid block of the loud colour.
+            // Over the day's target: the whole bar is tinted toward the
+            // over-target colour so the day stands out, and the part above the
+            // target line takes it in full, with a hairline gap between the two
+            // — so how far over you went still reads at a glance.
             const baseH = baseline - b.targetY;
             const overH = Math.max(4, b.targetY - b.y - 2);
             return (
               <g key={i}>
-                <path d={barPath(b.x, b.targetY, barWidth, baseH, 2, corner)} fill={base} />
+                <path d={barPath(b.x, b.targetY, barWidth, baseH, 2, corner)} fill={b.current ? base : 'color-mix(in srgb, var(--over-target) 45%, var(--bar-under))'} />
                 <path d={barPath(b.x, b.targetY - 2 - overH, barWidth, overH, corner, 2)} fill="var(--over-target)" />
               </g>
             );
@@ -424,7 +424,7 @@ function TodayCard({ consumed, target, baseCalorieTarget, chartDays, chartRange,
 // Water stranded below both instead of filling the rest of its column.
 function DashboardTopCards({ latestWeight, weightTrendKg, weightUnit, recentWeights, targetWeight, onWeightClick, glasses, targetGlasses, setGlasses, ...todayProps }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 12, alignItems: 'stretch' }}>
+    <div className="dash-top-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 12, alignItems: 'stretch' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
         <WeightCard latest={latestWeight} weightTrendKg={weightTrendKg} weightUnit={weightUnit} recentWeights={recentWeights} targetWeight={targetWeight} onClick={onWeightClick} />
         <WaterCard glasses={glasses} targetGlasses={targetGlasses} setGlasses={setGlasses} />
@@ -560,11 +560,13 @@ function MacroCell({ label, value, target, color, onClick }) {
   return (
     <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 14, padding: '10px 8px 10px', cursor: 'pointer', minWidth: 0 }}>
-      {/* One line, always: if the percentage wrapped under a long label (PROTEIN)
-          the three cells' numbers and bars would sit at different heights. */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'nowrap', marginBottom: 6, gap: 3 }}>
-        <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.04em', minWidth: 0 }}>{label.toUpperCase()}</span>
-        <span style={{ fontSize: 10, fontWeight: 800, color: `color-mix(in srgb, ${color} 70%, var(--text-primary))`, flexShrink: 0 }}>{pct}%</span>
+      {/* One line at every normal phone width; only on a ~280px foldable cover
+          screen does the percentage drop under the label rather than collide. */}
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 6, gap: '0 3px' }}>
+        {/* Type scales down a touch on the narrowest phones so "PROTEIN" and its
+            percentage never run into each other in a third-width cell. */}
+        <span style={{ fontSize: 'clamp(8px, 2.7vw, 10px)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.03em', minWidth: 0 }}>{label.toUpperCase()}</span>
+        <span style={{ fontSize: 'clamp(8px, 2.7vw, 10px)', fontWeight: 800, color: `color-mix(in srgb, ${color} 70%, var(--text-primary))`, flexShrink: 0 }}>{pct}%</span>
       </div>
       <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', marginBottom: 8, letterSpacing: '-0.01em' }}>
         {round1(value)}<span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700 }}> / {target}g</span>
@@ -612,10 +614,14 @@ function ActivityStat({ icon, iconColor = 'var(--text-primary)', label, value, a
         <i className={`ti ${icon}`} style={{ fontSize: 18 }} />
       </span>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={CARD_LABEL}>{label}</div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: active ? 'var(--text-primary)' : 'var(--text-hint)', marginTop: 2 }}>{value}</div>
+        <div style={{ ...CARD_LABEL, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
+        {/* The chip sits beside the number and drops under it when the number is
+            long — three things in one row didn't fit a half-width card. */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px', marginTop: 3 }}>
+          <span style={{ fontSize: 17, fontWeight: 800, color: active ? 'var(--text-primary)' : 'var(--text-hint)', lineHeight: 1.2 }}>{value}</span>
+          <StatBadge>{chip}</StatBadge>
+        </div>
       </div>
-      <StatBadge>{chip}</StatBadge>
     </Card>
   );
 }
