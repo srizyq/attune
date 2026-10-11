@@ -14,9 +14,13 @@ import StatBadge from './StatBadge';
 // falling back to plain guideline text. Only nutrients with neither (the
 // two whose guideline isn't a number at all — "as low as possible",
 // "favour over saturated fat") show text instead of a bar.
-export default function MicroCard({ icon, label, value, unit, guideline, target, defaultTarget, color, locked, onUpgrade }) {
+//
+// `noData` (none of the logged foods carried this nutrient) shows a dash
+// instead of a misleading 0; `approx` puts a "~" on a total that includes
+// estimates; `note` is the small line saying how much of it was measured.
+export default function MicroCard({ icon, label, value, unit, guideline, target, defaultTarget, color, locked, onUpgrade, note, noData = false, approx = false }) {
   const effectiveTarget = target || defaultTarget;
-  const pct = effectiveTarget ? (value / effectiveTarget) * 100 : null;
+  const pct = effectiveTarget && !noData ? (value / effectiveTarget) * 100 : null;
   const barPct = pct !== null ? Math.min(pct, 100) : null;
   return (
     <Card
@@ -35,9 +39,10 @@ export default function MicroCard({ icon, label, value, unit, guideline, target,
         )}
       </div>
       <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', filter: locked ? 'blur(6px)' : 'none', userSelect: locked ? 'none' : 'auto' }}>
-        {value}
-        {target ? <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}> / {target}{unit}</span> : <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}>{unit}</span>}
+        {noData ? '—' : <>{approx ? '~' : ''}{value}</>}
+        {noData ? null : target ? <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}> / {target}{unit}</span> : <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}>{unit}</span>}
       </div>
+      {note && <div style={{ fontSize: 10, color: 'var(--text-hint)', marginTop: 3, lineHeight: 1.35, filter: locked ? 'blur(4px)' : 'none' }}>{note}</div>}
       {pct !== null ? (
         <>
           <div style={{ height: 5, background: 'var(--border-default)', borderRadius: 99, marginTop: 8, filter: locked ? 'blur(4px)' : 'none' }}>

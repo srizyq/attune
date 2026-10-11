@@ -12,6 +12,7 @@ import { hasProAccess } from '../lib/proAccess';
 import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
 import { latestDate } from '../lib/weekStrip';
+import { microsFromOFF } from '../lib/offNutrients';
 import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems, getRestaurantChains } from '../lib/db';
 import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
@@ -99,23 +100,6 @@ function offCountryTag(region) {
 // data (OFF tags each product with every country it's sold in), unlike
 // FatSecret's region param above which the account isn't authorised to
 // actually use.
-// Open Food Facts reports everything per-100g in grams (even things like
-// cholesterol/calcium/iron that are more naturally read in mg, and vitamin D
-// which is more naturally read in micrograms) — convert each to the unit
-// food_logs actually stores, scaled by the same `factor` used for cal/protein/etc.
-function extraMicrosFromOFF(per100, factor) {
-  return {
-    saturatedFat: Math.round((per100["saturated-fat_100g"] || 0) * factor * 10) / 10,
-    transFat: Math.round((per100["trans-fat_100g"] || 0) * factor * 10) / 10,
-    cholesterol: Math.round((per100["cholesterol_100g"] || 0) * factor * 1000),
-    potassium: Math.round((per100["potassium_100g"] || 0) * factor * 1000),
-    addedSugar: Math.round((per100["added-sugars_100g"] || 0) * factor * 10) / 10,
-    vitaminD: Math.round((per100["vitamin-d_100g"] || 0) * factor * 1000000 * 10) / 10,
-    calcium: Math.round((per100["calcium_100g"] || 0) * factor * 1000),
-    iron: Math.round((per100["iron_100g"] || 0) * factor * 1000 * 10) / 10,
-  };
-}
-
 async function searchOpenFoodFacts(q, region) {
   const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&sort_by=unique_scans_n&fields=product_name,generic_name,brands,nutriments,code,countries_tags`;
   // Open Food Facts' shared search backend has occasional one-off blips
@@ -148,7 +132,7 @@ async function searchOpenFoodFacts(q, region) {
       fibre: Math.round((n.fiber_100g || 0) * 10) / 10,
       sodium: Math.round((n.sodium_100g || 0) * 1000),
       sugar: Math.round((n.sugars_100g || 0) * 10) / 10,
-      ...extraMicrosFromOFF(n, 1),
+      ...microsFromOFF(n, 1),
       // Local to the searching user's own country — sorted first below,
       // never used to exclude anything, then stripped before returning.
       _localMatch: countryTag ? (p.countries_tags || []).includes(countryTag) : false,
@@ -525,7 +509,7 @@ async function lookupOpenFoodFactsBarcode(barcode) {
     fibre: Math.round((per100.fiber_100g || 0) * factor * 10) / 10,
     sodium: Math.round((per100.sodium_100g || 0) * factor * 1000),
     sugar: Math.round((per100.sugars_100g || 0) * factor * 10) / 10,
-    ...extraMicrosFromOFF(per100, factor),
+    ...microsFromOFF(per100, factor),
     source: "off",
     servingGrams: weight.grams,
     servingUnit: weight.unit,

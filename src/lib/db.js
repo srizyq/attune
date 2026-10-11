@@ -808,6 +808,16 @@ function wordBoundaryPattern(word) {
   return `\\m${escaped}`;
 }
 
+// Only exact word matches, no typo-tolerant fallback — for borrowing nutrition from
+// a similar food, a loose match is worse than none.
+export async function searchAusnutStrict(query, limit = 40) {
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const { data, error } = await supabase.rpc('search_ausnut_foods_ranked', { patterns: words.map(wordBoundaryPattern), match_limit: limit });
+  if (error) throw error;
+  return data || [];
+}
+
 export async function searchAusnutFoods(query, limit = 15) {
   const words = query.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return [];
