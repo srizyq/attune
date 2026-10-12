@@ -3,7 +3,7 @@ import { openApp, settle, assertLayout } from './harness.js';
 import { USER_ID } from './fixtures.js';
 
 // The Nutrients page: foods that came without vitamins and minerals borrow them
-// from the closest AUSNUT food, the card says so, and a nutrient no food had
+// from the closest similar food, the card says so, and a nutrient no food had
 // shows a dash instead of a misleading 0.
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const log = (id, over) => ({
@@ -32,7 +32,7 @@ test('foods without micronutrients get marked estimates; unknowns show a dash, n
   const dash = page.getByText('—', { exact: true });
   await expect(dash.first()).toBeVisible();
   // The B-vitamin group explains where its estimates come from.
-  await expect(page.getByText(/Foods without data borrow it from the closest AUSNUT food/).first()).toBeVisible();
+  await expect(page.getByText(/Foods without data borrow it from the closest similar food/).first()).toBeVisible();
   // The estimate is flagged with a ~ on the total.
   await expect(page.getByText(/^~/).first()).toBeVisible();
   await assertLayout(page, testInfo, 'x-nutrients-estimates', ctx);

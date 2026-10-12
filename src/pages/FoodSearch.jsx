@@ -300,7 +300,7 @@ async function searchAusnut(q) {
   const mapped = rows.map(row => ({
     id: "ausnut_" + row.id,
     name: row.name,
-    meta: "100g · AUSNUT",
+    meta: "100g",
     cuisine: "all",
     cal: Math.round(row.calories),
     protein: Math.round(row.protein_g * 10) / 10,
