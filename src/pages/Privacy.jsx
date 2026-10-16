@@ -1,8 +1,9 @@
 import LegalPageLayout, { Section, P, Ul } from '../components/LegalPageLayout';
+import { COACH_CAN_SEE, COACH_CAN_DO } from '../lib/coachAccess';
 
 export default function Privacy() {
   return (
-    <LegalPageLayout title="Privacy Policy" updated="7 October 2026">
+    <LegalPageLayout title="Privacy Policy" updated="16 October 2026">
       <P>
         Attune ("Attune", "we", "us") is currently operated by an individual, not a
         registered company, from Australia. This policy explains what data the
@@ -107,14 +108,32 @@ export default function Privacy() {
         ]} />
       </Section>
 
-      <Section title="9. Changes to this policy">
+      <Section title="9. Coach Mode and health information">
+        <P>
+          Coach Mode lets a person with a Coach Pass look after clients' nutrition. Coaches are other
+          Attune users, not Attune staff. What follows is what the app does; the lists below are the same
+          ones the app shows you when you're asked to accept a coach.
+        </P>
+        <Ul items={[
+          <><b>Nothing is shared until you accept.</b> A coach sees none of your data until you accept their invitation, on a screen that lists what they will be able to access.</>,
+          <><b>What a connected coach can see:</b> {COACH_CAN_SEE.map((i) => i.text.charAt(0).toLowerCase() + i.text.slice(1)).join('; ')}.</>,
+          <><b>What a connected coach can do:</b> {COACH_CAN_DO.map((i) => i.text.charAt(0).toLowerCase() + i.text.slice(1)).join('; ')}.</>,
+          <><b>Your targets.</b> When a coach sets your calorie and macro targets, your Settings shows them as your coach's and doesn't change them. You can take them over at any time; your coach is then told.</>,
+          <><b>Your coach's private notes.</b> A coach can keep private notes about you. We store them on the coach's behalf; only that coach can read them, so you can't see them in the app, and they are deleted if either of your accounts is deleted. They are not part of your data export for that reason.</>,
+          <><b>Coaches on a team.</b> Being on the same team gives a coach no access to your data. A teammate can only be brought in if you accept a separate invitation from them.</>,
+          <><b>Disconnecting.</b> You can disconnect from a coach at any time and their access ends immediately. Your own data stays in your account. A coach may already have downloaded a report of your data or sent you messages; those copies are theirs and are not deleted when you disconnect.</>,
+          <><b>Your record.</b> Your Coach tab keeps a record of when you connected, when you accepted, and when your targets were set or taken over. Your data export includes your coaching connections, messages, plans and check-in answers.</>,
+        ]} />
+      </Section>
+
+      <Section title="10. Changes to this policy">
         <P>
           If this policy changes materially, we'll update the date at the top of this
           page and, where practical, let you know in the app.
         </P>
       </Section>
 
-      <Section title="10. Contact">
+      <Section title="11. Contact">
         <P>
           For any privacy question or request, contact: <b>attun3app@gmail.com</b>
         </P>

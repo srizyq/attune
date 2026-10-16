@@ -7,6 +7,7 @@ import CoachNote from './CoachNote';
 import CoachChatModal from './CoachChatModal';
 import CoachConsentCard from './CoachConsentCard';
 import CoachCheckinCard from './CoachCheckinCard';
+import CoachAccessRecord from './CoachAccessRecord';
 import MealPlanCard from './MealPlanCard';
 import FormRow from './FormRow';
 import Card from './Card';
@@ -251,6 +252,8 @@ export default function ClientCoachHub({ showUpsell = true }) {
               {dayNote && <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '14px 0 0' }}>{dayNote}</p>}
             </Card>
           )}
+
+          <CoachAccessRecord link={link} profile={profile} />
 
           <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 12 }}>Notes from your coach</div>
           {hasNotes ? (

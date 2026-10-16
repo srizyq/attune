@@ -1,14 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { getProfile, getFoodLogsForRange, getWeightLogsForRange, getCheckinsForRange } from '../../lib/db';
+import { exportMyData, exportFilename } from '../../lib/dataExport';
 import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
-
-// Wide enough to cover anyone's real history without needing to know
-// their actual signup date up front — Supabase's own row cap (1000 per
-// query) is far more logged days than a personal export realistically
-// needs to worry about.
-const EXPORT_START_DATE = '2020-01-01';
 
 function downloadJSON(filename, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -24,33 +18,22 @@ function downloadJSON(filename, data) {
 
 function ExportDataButton() {
   const { user } = useAuth();
-  const [state, setState] = useState(null); // null | 'loading' | 'done' | error string
+  const [state, setState] = useState(null); // null | 'loading' | { done, skipped } | error string
 
   async function handleExport() {
     setState('loading');
     try {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const [profile, foodLogs, weightLogs, checkins] = await Promise.all([
-        getProfile(user.id),
-        getFoodLogsForRange(user.id, EXPORT_START_DATE, todayStr),
-        getWeightLogsForRange(user.id, EXPORT_START_DATE, todayStr),
-        getCheckinsForRange(user.id, EXPORT_START_DATE, todayStr),
-      ]);
-      downloadJSON(`attune-data-export-${todayStr}.json`, {
-        exportedAt: new Date().toISOString(),
-        profile,
-        foodLogs,
-        weightLogs,
-        checkins,
-      });
-      setState('done');
+      const result = await exportMyData(user.id);
+      downloadJSON(exportFilename(), result);
+      setState({ done: true, skipped: result.skipped });
     } catch (err) {
       setState(err.message || "Couldn't export your data — try again.");
     }
   }
 
+  const done = state && typeof state === 'object';
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, maxWidth: 260 }}>
       <button
         onClick={handleExport}
         disabled={state === 'loading'}
@@ -60,9 +43,14 @@ function ExportDataButton() {
           cursor: state === 'loading' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
-        {state === 'loading' ? 'Preparing…' : state === 'done' ? 'Downloaded ✓' : 'Export my data'}
+        {state === 'loading' ? 'Preparing…' : done ? 'Downloaded ✓' : 'Export my data'}
       </button>
-      {state && state !== 'loading' && state !== 'done' && (
+      {done && state.skipped.length > 0 && (
+        <span role="status" style={{ color: 'var(--gold)', fontSize: 11, textAlign: 'right', lineHeight: 1.4 }}>
+          Left out because they couldn't be read: {state.skipped.map((s) => `${s.section} (${s.reason})`).join('; ')}. The file lists them too.
+        </span>
+      )}
+      {typeof state === 'string' && state !== 'loading' && (
         <span style={{ color: 'var(--danger)', fontSize: 11 }}>{state}</span>
       )}
     </div>
@@ -74,7 +62,7 @@ export default function PrivacyModal({ onClose, closing, onImport }) {
     <SettingsModal title="Privacy" onClose={onClose} closing={closing}>
       <Card style={{ marginBottom: 16 }}>
         <SectionLabel>Your data</SectionLabel>
-        <FieldRow label="Export my data" hint="Download everything you've logged — food, weight, mood check-ins — as a file">
+        <FieldRow label="Export my data" hint="Download everything we hold about you — logs, health data, coaching messages and plans — as a file">
           <ExportDataButton />
         </FieldRow>
         {onImport && (
