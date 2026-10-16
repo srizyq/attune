@@ -29,7 +29,7 @@ export function ScanPage({ title, onBack, closing, headerRight, footer, children
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px 10px', minWidth: 0 }}>
             <button
               type="button" onClick={onBack} aria-label={backLabel} title={backLabel}
-              style={{ width: 40, height: 40, flexShrink: 0, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--card-border)', color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
+              style={{ width: 44, height: 44, flexShrink: 0, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--card-border)', color: 'var(--text-primary)', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
             >
               <i className="ti ti-arrow-left" aria-hidden="true" />
             </button>
@@ -214,5 +214,54 @@ export function IconTile({ icon, size = 44, color = 'var(--accent-secondary)', s
     <span aria-hidden="true" style={{ width: size, height: size, flexShrink: 0, borderRadius: Math.round(size * 0.3), background: tint(color, 16), color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: Math.round(size * 0.5), ...style }}>
       <i className={`ti ${icon}`} />
     </span>
+  );
+}
+
+// The error / limit-reached screen shared by the photo and menu scans.
+export function ScanErrorPage({ title, error, limitReached, onBack, closing, onUpgrade, onRetry, retryLabel = 'Try another photo', onSearchManually }) {
+  return (
+    <ScanPage title={title} onBack={onBack} closing={closing}>
+      <div
+        role="alert"
+        style={{
+          padding: '14px 16px', borderRadius: 'var(--card-radius)', fontSize: 14, lineHeight: 1.5, marginBottom: 12,
+          color: limitReached ? 'var(--text-primary)' : 'var(--danger)',
+          background: limitReached ? 'var(--accent-bg)' : 'color-mix(in srgb, var(--danger) 10%, var(--bg-card))',
+          border: `1px solid ${limitReached ? 'var(--accent-border)' : 'color-mix(in srgb, var(--danger) 35%, transparent)'}`,
+        }}
+      >
+        {error}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {limitReached ? (
+          <PrimaryButton onClick={onUpgrade} style={{ minHeight: 48, borderRadius: 16, fontSize: 14 }}>Upgrade to Pro</PrimaryButton>
+        ) : (
+          <PrimaryButton onClick={onRetry} style={{ minHeight: 48, borderRadius: 16, fontSize: 14 }}>
+            <i className="ti ti-camera" aria-hidden="true" style={{ fontSize: 16 }} /> {retryLabel}
+          </PrimaryButton>
+        )}
+        {onSearchManually && (
+          <GhostButton onClick={onSearchManually} style={{ border: '1px solid var(--border-strong)', minHeight: 48, borderRadius: 16 }}>Search manually</GhostButton>
+        )}
+      </div>
+    </ScanPage>
+  );
+}
+
+// The round tick on a dish: select several to log together. 44px hit area.
+export function SelectDot({ checked, onChange, label, style }) {
+  return (
+    <button
+      type="button" role="checkbox" aria-checked={checked} aria-label={label} onClick={onChange}
+      style={{ flexShrink: 0, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0, ...style }}
+    >
+      <span style={{
+        width: 24, height: 24, borderRadius: '50%', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+        border: `2px solid ${checked ? 'var(--accent)' : 'var(--border-strong)'}`,
+        background: checked ? 'var(--accent)' : 'transparent', color: 'var(--accent-contrast)',
+      }}>
+        {checked && <i className="ti ti-check" aria-hidden="true" />}
+      </span>
+    </button>
   );
 }

@@ -28,7 +28,7 @@ test('photo-scan-result-pinned-actions', async ({ page, context }, testInfo) => 
     window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
   });
   await page.getByRole('button', { name: 'Take photo' }).click();
-  const log = page.getByRole('button', { name: /^Log to / });
+  const log = page.getByRole('button', { name: /^Log plate / });
   await log.waitFor();
   const recalc = page.getByRole('button', { name: /Recalculate/ });
   await page.waitForTimeout(500);
@@ -77,7 +77,7 @@ test('menu-scan-confirm-pinned-actions', async ({ page, context }, testInfo) => 
     window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
   });
   await page.getByRole('button', { name: 'Take photo' }).click();
-  await page.getByText('Regular Mixed Meats Wrap').click();
+  await page.getByRole('button', { name: 'Customize Regular Mixed Meats Wrap' }).click();
   const confirm = page.getByRole('button', { name: /Confirm & log/ });
   await confirm.waitFor();
   await page.waitForTimeout(500);

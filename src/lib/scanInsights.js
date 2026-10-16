@@ -213,3 +213,47 @@ export function plateInsight(totals, targets, consumed = {}) {
     text: `Uses ${fit.calPct}% of your daily calories and leaves you ${fit.leftAfter} kcal for the rest of the day.`,
   };
 }
+
+// ─── Menu scan ──────────────────────────────────────────────────────────────
+
+// A dish counts as "high protein" at 25 g or more, or when at least 15 g of it
+// supplies 30% or more of its calories.
+export function isHighProtein(dish) {
+  const protein = Number(dish?.protein) || 0;
+  const cal = Number(dish?.cal) || 0;
+  return protein >= 25 || (cal > 0 && protein >= 15 && (protein * 4) / cal >= 0.3);
+}
+
+// "Low carb" is 20 g of carbs or fewer, for a dish that has calories at all.
+export function isLowCarb(dish) {
+  return (Number(dish?.cal) || 0) > 0 && (Number(dish?.carbs) || 0) <= 20;
+}
+
+// The one tag shown on a ranked dish, strongest first.
+export function dishLabel(dish) {
+  if (isHighProtein(dish)) return 'High protein';
+  if (isLowCarb(dish)) return 'Low carb';
+  if ((Number(dish?.cal) || 0) > 0 && Number(dish.cal) <= 400) return 'Light';
+  return null;
+}
+
+// Filters for the menu list: id -> predicate over a menu item.
+export const MENU_FILTERS = {
+  protein: isHighProtein,
+  carb: isLowCarb,
+};
+
+// Fallback for the "Smart dining advice" card when the AI didn't write one:
+// what is left today, and how the top pick sits against it.
+export function menuAdvice(pick, targets, consumed = {}) {
+  const fit = dayFit(pick || {}, targets, consumed);
+  if (!pick || !fit) return null;
+  const proteinTarget = Number(targets?.protein_g) || 0;
+  const proteinLeft = Math.max(0, Math.round(proteinTarget - (Number(consumed.protein) || 0)));
+  const left = Math.max(0, fit.left);
+  if (fit.over) {
+    return `${pick.name} is ${Math.round(pick.cal)} kcal, which is more than the ${left} kcal you have left today, so consider a smaller portion or a lighter pick.`;
+  }
+  const remaining = proteinLeft > 0 ? `${left} kcal and ${proteinLeft}g protein` : `${left} kcal`;
+  return `Based on your remaining ${remaining}, ${pick.name} (${Math.round(pick.cal)} kcal, ${Math.round(pick.protein)}g protein) fits best without going over budget.`;
+}

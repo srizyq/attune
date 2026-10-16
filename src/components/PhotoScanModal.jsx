@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { timeStringToDate, formatTime12h } from '../lib/mealTime';
+import { timeStringToDate } from '../lib/mealTime';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { useVoiceTranscription } from '../hooks/useVoiceTranscription';
 import { useProfile } from '../hooks/useProfile';
@@ -8,13 +8,9 @@ import { useFoodLogs } from '../hooks/useFoodLogs';
 import { targetsForDate } from '../lib/dayTargets';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
-import DragSheet from './DragSheet';
-import MacroBreakdown from './MacroBreakdown';
-import DayBudgetImpact from './DayBudgetImpact';
-import TargetIntervalPicker from './TargetIntervalPicker';
+import PhotoResult from './scan/PhotoResult';
+import { ScanErrorPage } from './scan/ScanKit';
 import { fetchWithTimeout } from '../lib/http';
-
-const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
 
 const round1 = n => Math.round(n * 10) / 10;
 
@@ -35,6 +31,9 @@ function ingredientsFromResponse(list) {
     baseFibre: Number(ing.fibre) || 0,
     baseSodium: Number(ing.sodium) || 0,
     baseSugar: Number(ing.sugar) || 0,
+    // Optional extras from the AI (see api/_scanExtras.js) — shown when present.
+    match: Number.isFinite(Number(ing.match)) && ing.match !== null && ing.match !== '' ? Number(ing.match) : null,
+    portion: typeof ing.portion === 'string' ? ing.portion : '',
   }));
 }
 
@@ -51,30 +50,6 @@ function scaleIngredient(ing) {
     sodium: Math.round(ing.baseSodium * ratio),
     sugar: round1(ing.baseSugar * ratio),
   };
-}
-
-function IngredientRow({ ingredient, onGramsChange, last }) {
-  const scaled = scaleIngredient(ingredient);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: last ? 'none' : '1px solid var(--border-default)' }}>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ingredient.name}</div>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{scaled.cal} kcal · {scaled.protein}g P · {scaled.carbs}g C · {scaled.fat}g F</div>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-        <input
-          type="number"
-          min="0"
-          inputMode="decimal"
-          value={ingredient.grams}
-          onChange={e => onGramsChange(e.target.value)}
-          aria-label={`${ingredient.name} weight in grams`}
-          style={{ width: 54, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 6, padding: '6px', color: 'var(--text-primary)', fontSize: 13, textAlign: 'right', outline: 'none', fontFamily: 'inherit' }}
-        />
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>g</span>
-      </div>
-    </div>
-  );
 }
 
 // Downscale + re-encode before upload: keeps the request well under
@@ -101,15 +76,6 @@ function resizeImage(file, maxDim = 1024, quality = 0.82) {
   });
 }
 
-function MicroStat({ value, unit, label }) {
-  return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{value ?? 0}{unit}</div>
-      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{label}</div>
-    </div>
-  );
-}
-
 export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaultTime, selectedDate, showSlots, onCreateCustom, onSearchManually, recipeMode = false }) {
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
@@ -133,7 +99,6 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   const [correctionError, setCorrectionError] = useState(null);
   const [readingLabel, setReadingLabel] = useState(false);
   const [labelError, setLabelError] = useState(null);
-  const [showMicros, setShowMicros] = useState(false);
   const { closing, close } = useClosingTransition(onClose);
 
   // Speaking a correction instead of typing it — same record/upload
@@ -151,6 +116,7 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   const { logs: todaysLogs } = useFoodLogs(selectedDate);
   const dailyTarget = targetsForDate(profile, selectedDate);
   const consumedToday = todaysLogs.reduce((s, l) => s + (Number(l.calories) || 0), 0);
+  const consumedProtein = todaysLogs.reduce((s, l) => s + (Number(l.protein_g) || 0), 0);
 
   const scaledIngredients = useMemo(() => ingredients.map(scaleIngredient), [ingredients]);
   const totals = useMemo(() => scaledIngredients.reduce((t, i) => ({
@@ -168,6 +134,22 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
   function updateIngredientGrams(index, raw) {
     const grams = raw === '' ? 0 : Math.max(0, Number(raw) || 0);
     setIngredients(prev => prev.map((ing, i) => (i === index ? { ...ing, grams } : ing)));
+  }
+
+  function removeIngredient(index) {
+    setIngredients(prev => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+  }
+
+  // An item the AI missed, typed in by the person. Its numbers are for the
+  // weight they gave, so changing the weight afterwards scales them like any
+  // other item.
+  function addManualIngredient(v) {
+    const grams = Number(v.grams) > 0 ? Number(v.grams) : 100;
+    setIngredients(prev => [...prev, {
+      name: v.name.trim(), baseGrams: grams, grams,
+      baseCal: Number(v.cal) || 0, baseProtein: Number(v.protein) || 0, baseCarbs: Number(v.carbs) || 0, baseFat: Number(v.fat) || 0,
+      baseFibre: 0, baseSodium: 0, baseSugar: 0, match: null, portion: `${grams}g`,
+    }]);
   }
 
   async function handleFile(file) {
@@ -419,218 +401,30 @@ export default function PhotoScanModal({ onClose, onAddFood, defaultMeal, defaul
     );
   }
 
-  const footer = result && !analyzing ? (
-    <div style={{ display: 'flex', gap: 10 }}>
-      <button
-        onClick={handleRecalculateClick}
-        disabled={correcting}
-        aria-label="Recalculate"
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexShrink: 0,
-          minHeight: 52, padding: '0 14px', borderRadius: 14,
-          background: 'var(--bg-card)', border: '1px solid var(--border-default)',
-          color: 'var(--text-primary)', fontSize: 13, fontWeight: 600,
-          cursor: correcting ? 'not-allowed' : 'pointer', opacity: correcting ? 0.6 : 1,
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-        }}
-      >
-        <i className="ti ti-refresh" style={{ fontSize: 16 }} />
-        <span className="scan-bar-label">{correcting ? 'Fixing…' : 'Recalculate'}</span>
-      </button>
-      <button
-        onClick={handleAdd}
-        disabled={adding}
-        style={{
-          flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          minHeight: 52, padding: '0 12px', borderRadius: 14, border: 'none',
-          background: adding ? 'var(--border-default)' : 'var(--accent)',
-          color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)',
-          fontSize: 14, fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer',
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-        }}
-      >
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {adding ? (recipeMode ? 'Adding…' : 'Logging…') : recipeMode ? 'Add to recipe' : `Log ${showSlots ? `at ${formatTime12h(time)}` : `to ${meal}`}`}
-        </span>
-        {!adding && (
-          <span style={{ flexShrink: 0, background: 'rgba(0,0,0,0.18)', borderRadius: 99, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
-            +{Math.round(totals.cal)} kcal
-          </span>
-        )}
-      </button>
-    </div>
-  ) : null;
+  // Something went wrong (or the cap was hit): its own page, with the way on.
+  if (error && !result) {
+    return (
+      <ScanErrorPage
+        title="Photo scan" error={error} limitReached={limitReached} closing={closing}
+        onBack={close} onUpgrade={() => navigate('/pricing')} onRetry={reset} onSearchManually={onSearchManually}
+      />
+    );
+  }
 
   return (
-    <DragSheet title="Scan food photo" onClose={close} closing={closing} footer={footer}>
-      {preview && <img src={preview} alt="" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />}
-
-      {analyzing && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '20px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-          <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid var(--border-default)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite' }} />
-          Analyzing photo…
-        </div>
-      )}
-
-      {error && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ background: limitReached ? '#1a1508' : '#1a0f0f', border: `1px solid ${limitReached ? '#4a3a1a' : '#c0707040'}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: limitReached ? 'var(--gold)' : 'var(--danger)', marginBottom: 10 }}>{error}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {limitReached ? (
-              <button onClick={() => navigate('/pricing')} style={{ flex: 1, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Upgrade to Pro
-              </button>
-            ) : (
-              <button onClick={reset} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Try another photo
-              </button>
-            )}
-            {onSearchManually && (
-              <button onClick={onSearchManually} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Search manually
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {result && (
-        <div style={{ marginTop: 14 }}>
-          <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <i className="ti ti-sparkles" /> AI estimate
-          </div>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
-            <input
-              type="text"
-              value={mealName}
-              onChange={e => setMealName(e.target.value)}
-              maxLength={80}
-              aria-label="Meal name"
-              style={{ width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none', borderBottom: '1px dashed var(--border-default)', outline: 'none', padding: '0 0 4px', marginBottom: 4, fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, fontFamily: 'inherit' }}
-            />
-            {result.portion && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{result.portion}</div>}
-            <MacroBreakdown values={totals} />
-            <button
-              onClick={() => setShowMicros(s => !s)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, width: '100%', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4, padding: '8px 0', minHeight: 32 }}
-            >
-              {showMicros ? 'Hide' : 'Show'} fibre, sodium & sugar
-              <i className={`ti ti-chevron-${showMicros ? 'up' : 'down'}`} style={{ fontSize: 12 }} />
-            </button>
-            {showMicros && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-default)' }}>
-                <MicroStat value={totals.fibre} unit="g" label="Fibre" />
-                <MicroStat value={totals.sodium} unit="mg" label="Sodium" />
-                <MicroStat value={totals.sugar} unit="g" label="Sugar" />
-              </div>
-            )}
-          </div>
-
-          {/* Each detected component gets its own editable weight — editing
-              it rescales just that component's own macros (see
-              scaleIngredient), and the totals/MacroBreakdown above move
-              with it live. */}
-          {ingredients.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Ingredients</div>
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '0 14px' }}>
-                {ingredients.map((ing, i) => (
-                  <IngredientRow key={i} ingredient={ing} onGramsChange={(v) => updateIngredientGrams(i, v)} last={i === ingredients.length - 1} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
-            This is a visual estimate, not verified nutrition data — review before adding, and adjust later if it's off.
-          </p>
-
-          {dailyTarget.calories > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={totals.cal} />
-            </div>
-          )}
-
-          {/* The photo itself can carry a real nutrition panel (a
-              packaged product shot from the front) — offering to
-              re-read it via OCR gets exact printed numbers instead of
-              a visual guess, using the same photo, no new capture. */}
-          {result.labelVisible && (
-            <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
-              <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 6, lineHeight: 1.5 }}>
-                This photo shows a nutrition label — read it for exact numbers instead of an estimate?
-              </div>
-              <button
-                onClick={handleReadLabel}
-                disabled={readingLabel}
-                style={{
-                  background: readingLabel ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 7,
-                  padding: '7px 14px', fontSize: 12, fontWeight: 600,
-                  color: readingLabel ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: readingLabel ? 'not-allowed' : 'pointer',
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
-              >
-                {readingLabel ? 'Reading label…' : 'Read exact label'}
-              </button>
-              {labelError && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--danger)' }}>{labelError}</div>}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14, alignItems: 'stretch' }}>
-            {recipeMode ? <div style={{ flex: 1 }} /> : <TargetIntervalPicker showSlots={showSlots} meal={meal} setMeal={setMeal} time={time} setTime={setTime} meals={MEALS} />}
-            <button onClick={reset} style={{ background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '7px 14px', fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", flexShrink: 0 }}>Retake</button>
-          </div>
-          {/* Always visible, not gated behind a "this is wrong" toggle —
-              correcting is free (doesn't cost a scan) and can be done
-              as many times as needed; each correction re-sends the
-              same photo + this comment + the current estimate. A
-              textarea (not a single-line input) — a real correction is
-              often more than a few words ("it's a 3 egg omelette with
-              170g rice, not 2 eggs and less rice"), and a cramped input
-              made that awkward to type and re-read before sending. */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)' }}>Not quite right? Tell it what's wrong</label>
-              {voiceTranscribing && <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid var(--text-hint)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />}
-              {!voiceTranscribing && voiceRecording && (
-                <button onClick={stopVoice} title="Stop recording" style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: 0, display: 'flex', animation: 'pulse 1.2s ease-in-out infinite' }}>
-                  <i className="ti ti-player-stop-filled" />
-                </button>
-              )}
-              {!voiceTranscribing && !voiceRecording && (
-                <button onClick={startVoice} className="hit-slop" title="Speak your correction" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: 0, display: 'flex' }}>
-                  <i className="ti ti-microphone" />
-                </button>
-              )}
-            </div>
-            <textarea
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-              placeholder="e.g. it's chicken not fish, or it's 1.5 servings, or it's a 3 egg omelette with 170g rice"
-              disabled={correcting}
-              rows={3}
-              ref={commentRef}
-              style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 8 }}
-            />
-            {voiceError && <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--danger)' }}>{voiceError}</div>}
-            {correctionError && (
-              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--danger)' }}>{correctionError}</div>
-            )}
-          </div>
-
-          {onCreateCustom && (
-            <button onClick={() => onCreateCustom({ name: result.name, portion: result.portion, cal: totals.cal, protein: totals.protein, carbs: totals.carbs, fat: totals.fat })} style={{ width: '100%', marginTop: 4, padding: '8px 0', minHeight: 32, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              {hasCorrected
-                // Once you've corrected it, saving it as a custom food
-                // means this exact dish never needs an AI guess again —
-                // the whole point of the correction loop, made explicit
-                // instead of requiring you to notice it's possible.
-                ? 'Save as custom food — skip the AI guess next time'
-                : 'Not quite right? Save as a custom food instead'}
-            </button>
-          )}
-        </div>
-      )}
-    </DragSheet>
+    <PhotoResult
+      preview={preview} result={result} mealName={mealName} setMealName={setMealName}
+      ingredients={ingredients} scaledIngredients={scaledIngredients} totals={totals}
+      onGramsChange={updateIngredientGrams} onRemoveItem={removeIngredient} onAddItem={addManualIngredient}
+      meal={meal} setMeal={setMeal} time={time} setTime={setTime} showSlots={showSlots} recipeMode={recipeMode}
+      dailyTarget={dailyTarget} consumed={{ cal: consumedToday, protein: consumedProtein }}
+      comment={comment} setComment={setComment} commentRef={commentRef} correcting={correcting} correctionError={correctionError}
+      voice={{ recording: voiceRecording, transcribing: voiceTranscribing, error: voiceError, start: startVoice, stop: stopVoice }}
+      onRecalculate={handleRecalculateClick}
+      labelVisible={!!result?.labelVisible} readingLabel={readingLabel} labelError={labelError} onReadLabel={handleReadLabel}
+      hasCorrected={hasCorrected}
+      onCreateCustom={onCreateCustom ? () => onCreateCustom({ name: result.name, portion: result.portion, cal: totals.cal, protein: totals.protein, carbs: totals.carbs, fat: totals.fat }) : null}
+      onRetake={reset} onClose={close} closing={closing} onAdd={handleAdd} adding={adding} error={error}
+    />
   );
 }

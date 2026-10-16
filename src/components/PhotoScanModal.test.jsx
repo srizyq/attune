@@ -50,14 +50,14 @@ async function openResult(onAddFood = vi.fn(), props = {}) {
 describe('PhotoScanModal result layout', () => {
   it('pins Recalculate and Log below the scrolling content, which holds the comment box', async () => {
     await openResult();
-    const logBtn = screen.getByRole('button', { name: /^Log to Dinner/ });
+    const logBtn = screen.getByRole('button', { name: /^Log plate .* to Dinner/ });
     const recalc = screen.getByRole('button', { name: /Recalculate/ });
     const comment = screen.getByPlaceholderText(/it's chicken not fish/i);
     const scroller = comment.closest('div[style*="overflow-y"]');
     expect(scroller).not.toBeNull();
     expect(scroller).not.toContainElement(logBtn);
     expect(scroller).not.toContainElement(recalc);
-    expect(logBtn).toHaveTextContent('+500 kcal');
+    expect(logBtn).toHaveTextContent('500 kcal');
   });
 
   it('Recalculate with nothing typed takes you to the comment box instead of calling the API', async () => {
@@ -81,7 +81,7 @@ describe('PhotoScanModal result layout', () => {
   it('Log adds the whole meal as ONE entry, with its ingredients inside', async () => {
     const onAddFood = vi.fn();
     await openResult(onAddFood);
-    await userEvent.click(screen.getByRole('button', { name: /^Log to Dinner/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Log plate .* to Dinner/ }));
     await waitFor(() => expect(onAddFood).toHaveBeenCalledTimes(1));
     const [food, meal] = onAddFood.mock.calls[0];
     expect(meal).toBe('Dinner');
@@ -96,7 +96,7 @@ describe('PhotoScanModal result layout', () => {
     const name = screen.getByLabelText('Meal name');
     await userEvent.clear(name);
     await userEvent.type(name, 'Mum\'s curry');
-    await userEvent.click(screen.getByRole('button', { name: /^Log to Dinner/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Log plate .* to Dinner/ }));
     await waitFor(() => expect(onAddFood).toHaveBeenCalledTimes(1));
     expect(onAddFood.mock.calls[0][0].name).toBe("Mum's curry");
   });
@@ -105,7 +105,7 @@ describe('PhotoScanModal result layout', () => {
     const onAddFood = vi.fn();
     await openResult(onAddFood, { recipeMode: true });
     expect(screen.queryByRole('button', { name: /^Log to/ })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: /^Add to recipe/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Add plate .* to recipe/ }));
     await waitFor(() => expect(onAddFood).toHaveBeenCalledTimes(2));
     expect(onAddFood.mock.calls.map((c) => c[0].name)).toEqual(['Chicken curry', expect.any(String)]);
     expect(onAddFood.mock.calls[0][0].ingredients).toBeUndefined();

@@ -107,3 +107,27 @@ describe('plateInsight', () => {
     expect(i.text).toContain('Uses 25% of your daily calories');
   });
 });
+
+describe('menu helpers', () => {
+  it('flags high protein and low carb dishes', async () => {
+    const { isHighProtein, isLowCarb, dishLabel } = await import('./scanInsights');
+    expect(isHighProtein({ cal: 500, protein: 40 })).toBe(true);
+    expect(isHighProtein({ cal: 200, protein: 16 })).toBe(true); // 64 of 200 kcal
+    expect(isHighProtein({ cal: 900, protein: 18 })).toBe(false);
+    expect(isLowCarb({ cal: 400, carbs: 12 })).toBe(true);
+    expect(isLowCarb({ cal: 0, carbs: 0 })).toBe(false);
+    expect(dishLabel({ cal: 410, protein: 44, carbs: 18 })).toBe('High protein');
+    expect(dishLabel({ cal: 600, protein: 10, carbs: 15 })).toBe('Low carb');
+    expect(dishLabel({ cal: 350, protein: 8, carbs: 40 })).toBe('Light');
+    expect(dishLabel({ cal: 900, protein: 8, carbs: 90 })).toBeNull();
+  });
+  it('writes the dining advice from what is left today', async () => {
+    const { menuAdvice } = await import('./scanInsights');
+    const pick = { name: 'Pan-Seared Scallops', cal: 410, protein: 44 };
+    expect(menuAdvice(pick, TARGETS, { cal: 1000, protein: 100 }))
+      .toBe('Based on your remaining 1000 kcal and 50g protein, Pan-Seared Scallops (410 kcal, 44g protein) fits best without going over budget.');
+    expect(menuAdvice(pick, TARGETS, { cal: 1800, protein: 0 })).toContain('more than the 200 kcal you have left');
+    expect(menuAdvice(pick, { calories: 0 }, {})).toBeNull();
+    expect(menuAdvice(null, TARGETS, {})).toBeNull();
+  });
+});

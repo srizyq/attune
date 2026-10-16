@@ -19,6 +19,7 @@ import { withCompGrants } from '../src/lib/compGrants.js';
 import { withTrial } from '../src/lib/trial.js';
 import { withCoachProAccess } from '../src/lib/proAccess.js';
 import { rateLimit, AI_REQUESTS_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
+import { sanitizePhotoExtras } from './_scanExtras.js';
 
 // Constructed lazily, after the config check below, rather than at module
 // load — the SDK throws immediately if ANTHROPIC_API_KEY is missing, which
@@ -37,11 +38,14 @@ const FREE_CORRECTION_GRACE = 10;
 const PROMPT = `You're looking at a photo of food. Identify what's in it, break it down into its main components, and estimate each component's nutrition separately.
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"name": "short overall dish name", "portion": "estimated total portion, e.g. '1 bowl (~430g total)'", "confidence": "low" | "medium" | "high", "labelVisible": boolean, "ingredients": [{"name": "component name, e.g. 'Chicken curry' or 'Rice'", "grams": number, "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number}]}
+{"name": "short overall dish name", "portion": "estimated total portion, e.g. '1 bowl (~430g total)'", "confidence": "low" | "medium" | "high", "labelVisible": boolean, "insight": "one short sentence", "ingredients": [{"name": "component name, e.g. 'Chicken curry' or 'Rice'", "grams": number, "match": number, "portion": "short portion description", "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number}]}
 
 If the photo doesn't clearly show food, reply with exactly: {"error": "No food detected in this photo."}
 
 Break composite meals into their main visually-distinct components (a curry-and-rice plate is "Chicken curry" + "Rice", not one blob — but don't split further into individual spices, oil, or seasoning). A single simple item (a piece of fruit, a protein bar, a glass of milk) is just one entry in the array. Most photos should produce 1-4 ingredients — don't over-split.
+
+insight: one short sentence (under 25 words) about what stands out nutritionally in this meal, for example that it is high in protein, rich in omega-3 fats, or mostly refined carbs. Describe the food only; don't mention anyone's goals or targets.
+match: a whole number from 0 to 100 for how sure you are of what that component is (100 = certain). portion: a short description of that component's portion, for example "6 oz fillet" or "1 cup cooked".
 
 grams is your best estimate of that component's own weight, independent of the others — the user can edit it afterward, so it needs to be a real, standalone weight for that component, not just a share of a total you picked first. Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal. fibre and sugar are grams, sodium is milligrams — same visual-estimate confidence as the main macros, not a separate, more hedged guess. This is a best-effort visual estimate, not a lab measurement — use your best judgement on typical portion sizes and preparation (e.g. oil/butter used in cooking, dressing on a salad).
 
@@ -68,12 +72,14 @@ User's correction: "${comment}"
 Re-identify the food and its components, re-estimating nutrition, taking the user's correction as ground truth (e.g. if they say it's actually a different food, a different portion size, or has an extra or missing component, trust that over the photo's first impression).
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"name": "short overall dish name", "portion": "estimated total portion, e.g. '1 bowl (~430g total)'", "confidence": "low" | "medium" | "high", "labelVisible": boolean, "ingredients": [{"name": "component name", "grams": number, "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number}]}
+{"name": "short overall dish name", "portion": "estimated total portion, e.g. '1 bowl (~430g total)'", "confidence": "low" | "medium" | "high", "labelVisible": boolean, "insight": "one short sentence", "ingredients": [{"name": "component name", "grams": number, "match": number, "portion": "short portion description", "cal": number, "protein": number, "carbs": number, "fat": number, "fibre": number, "sodium": number, "sugar": number}]}
 
 labelVisible: true only if an actual printed nutrition facts panel (with real numbers) is legibly visible in the photo.
 
 If the correction makes it clear this isn't food at all, reply with exactly: {"error": "No food detected in this photo."}
 
+insight: one short sentence (under 25 words) about what stands out nutritionally in this meal, for example that it is high in protein, rich in omega-3 fats, or mostly refined carbs. Describe the food only; don't mention anyone's goals or targets.
+match: a whole number from 0 to 100 for how sure you are of what that component is (100 = certain). portion: a short description of that component's portion, for example "6 oz fillet" or "1 cup cooked".
 Macros are grams, calories are kcal, all rounded to whole numbers except macros can have one decimal. fibre and sugar are grams, sodium is milligrams.`;
 }
 
@@ -176,7 +182,7 @@ export default async function handler(req, res) {
       // Was 512 for a single combined estimate — a per-ingredient array
       // (up to ~4 components, each with its own full macro set) needs more
       // room to avoid truncating mid-JSON on a busier plate.
-      max_tokens: 768,
+      max_tokens: 1024,
       // Adaptive thinking is on by default and its budget comes out of
       // max_tokens — on a harder-to-read photo, thinking alone can consume
       // the whole budget and leave zero tokens for the actual answer
@@ -246,7 +252,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    res.status(200).json(parsed);
+    res.status(200).json(sanitizePhotoExtras(parsed));
   } catch (err) {
     console.error('Food recognition error:', err);
     res.status(502).json({ error: 'Food recognition is temporarily unavailable.' });

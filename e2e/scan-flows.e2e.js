@@ -37,22 +37,21 @@ test('menu scan: tick several dishes and add them together as separate entries',
   await goFood(page, { openMenuScan: true });
   await page.getByRole('button', { name: 'Take photo' }).click();
 
-  // Nothing ticked yet: no Add button.
-  await expect(page.getByRole('button', { name: /^Add \d+ item/ })).toHaveCount(0);
+  // Nothing ticked yet: no Log button.
+  await expect(page.getByRole('button', { name: /^Log \d+ items? to / })).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'Select Grilled chicken salad' }).click();
-  await page.getByText('All items', { exact: true }).click();
   await page.getByRole('checkbox', { name: 'Select Beef burger' }).click();
   await page.getByRole('checkbox', { name: 'Select Garden salad' }).click();
-  const add = page.getByRole('button', { name: /^Add 3 items/ });
+  const add = page.getByRole('button', { name: /^Log 3 items to / });
   await expect(add).toBeVisible();
-  await expect(add).toContainText('+1520 kcal'); // 420 + 980 + 120
+  await expect(add).toContainText('(1520 kcal)'); // 420 + 980 + 120
   await assertLayout(page, testInfo, 'x-menu-scan-multi', ctx);
 
   // Unticking one updates the count.
   await page.getByRole('checkbox', { name: 'Select Garden salad' }).click();
-  await expect(page.getByRole('button', { name: /^Add 2 items/ })).toContainText('+1400 kcal');
+  await expect(page.getByRole('button', { name: /^Log 2 items to / })).toContainText('(1400 kcal)');
 
-  await page.getByRole('button', { name: /^Add 2 items/ }).click();
+  await page.getByRole('button', { name: /^Log 2 items to / }).click();
   await expect.poll(() => posts.length).toBe(2);
   expect(posts.map((p) => p.food_name).sort()).toEqual(['Beef burger', 'Grilled chicken salad']);
   expect(posts.every((p) => p.source === 'menu' && p.meal === posts[0].meal)).toBe(true);
@@ -63,7 +62,7 @@ test('menu scan: tapping a dish still opens its own review', async ({ page, cont
   await page.route('**/api/recognize-menu', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(JSON.parse(route.request().postData() || '{}').detail ? {} : MENU) }));
   await goFood(page, { openMenuScan: true });
   await page.getByRole('button', { name: 'Take photo' }).click();
-  await page.getByText('Grilled chicken salad').click();
+  await page.getByRole('button', { name: 'Customize Grilled chicken salad' }).click();
   await expect(page.getByRole('button', { name: /Confirm & log/ })).toBeVisible();
 });
 
@@ -86,7 +85,7 @@ test('photo scan: the whole meal is one entry that keeps its ingredients', async
   const name = page.getByLabel('Meal name');
   await expect(name).toHaveValue('Croissant with pistachio cream');
   await name.fill('Breakfast croissant');
-  await page.getByRole('button', { name: /^Log to / }).click();
+  await page.getByRole('button', { name: /^Log plate / }).click();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0]).toMatchObject({ food_name: 'Breakfast croissant', calories: 499, source: 'photo', serving_grams: 115 });
   expect(posts[0].ingredients).toHaveLength(3);

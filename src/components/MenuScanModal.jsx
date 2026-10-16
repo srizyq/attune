@@ -8,20 +8,12 @@ import { useFoodLogs } from '../hooks/useFoodLogs';
 import { targetsForDate } from '../lib/dayTargets';
 import { supabase } from '../lib/supabase';
 import CameraCapture from './CameraCapture';
-import DragSheet from './DragSheet';
-import SegmentedControl from './SegmentedControl';
-import MacroBreakdown from './MacroBreakdown';
-import DayBudgetImpact from './DayBudgetImpact';
-import VoiceMicButton from './VoiceMicButton';
-import { SourcePill, CropViewer, PortionRow, PortionSkeleton, IncludesRow, QuickTweaks } from './MenuPickDetails';
+import { CropViewer } from './MenuPickDetails';
+import { MenuList, MenuReview } from './scan/MenuResult';
+import { ScanErrorPage } from './scan/ScanKit';
 import { useMenuPickDetail } from '../hooks/useMenuPickDetail';
 import { adjustPick, loggedName } from '../lib/menuTweaks';
 import { fetchWithTimeout } from '../lib/http';
-
-const SCAN_TABS = [
-  { id: 'goal', label: 'For your goal', icon: 'ti-sparkles' },
-  { id: 'all', label: 'All items', icon: 'ti-list' },
-];
 
 // Downscale + re-encode before upload — same reasoning as PhotoScanModal's
 // resizeImage: keeps the request under serverless body-size limits and
@@ -46,42 +38,17 @@ function resizeImage(file, maxDim = 1400, quality = 0.85) {
   });
 }
 
-// The model is asked for null when a pick is ordered exactly as listed, but
-// sometimes says "None" or similar instead — treat those as no modification
-// too rather than showing a redundant "Modified: None" line.
-function hasModification(text) {
-  return !!text && !/^(none|no modifications?|n\/a|as listed|as-is)\.?$/i.test(text.trim());
-}
-
-function MacroGrid({ pick }) {
-  return <MacroBreakdown values={{ cal: pick.cal, protein: pick.protein, carbs: pick.carbs, fat: pick.fat }} />;
-}
-
-// The round tick at the left of a dish: select it to add together with others.
-function SelectBox({ checked, onChange, label }) {
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      style={{ flexShrink: 0, width: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-    >
-      <span style={{ width: 22, height: 22, borderRadius: '50%', boxSizing: 'border-box', border: `2px solid ${checked ? 'var(--accent)' : 'var(--border-strong)'}`, background: checked ? 'var(--accent)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-contrast)', fontSize: 13 }}>
-        {checked && <i className="ti ti-check" aria-hidden="true" />}
-      </span>
-    </button>
-  );
-}
-
 export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchManually, selectedDate }) {
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
   const [menuItems, setMenuItems] = useState(null);
-  const [activeTab, setActiveTab] = useState('goal');
+  const [filter, setFilter] = useState('all');
+  // Optional extras the AI read off the menu: the restaurant's name and a
+  // sentence of advice (see api/_scanExtras.js).
+  const [restaurant, setRestaurant] = useState(null);
+  const [advice, setAdvice] = useState(null);
   // { kind: 'recommendation' | 'item', data } — one shared shape for
   // whichever list the pick came from, so the review/confirm step below
   // doesn't need to know which tab it was tapped from.
@@ -119,6 +86,7 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
   const { logs: todaysLogs } = useFoodLogs(selectedDate);
   const dailyTarget = targetsForDate(profile, selectedDate);
   const consumedToday = todaysLogs.reduce((s, l) => s + (Number(l.calories) || 0), 0);
+  const consumedProtein = todaysLogs.reduce((s, l) => s + (Number(l.protein_g) || 0), 0);
 
   // Clears any correction UI left over from a previous pick — picking a
   // different item (or going back to pick again) shouldn't carry a stale
@@ -177,7 +145,9 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     setPicked(null);
     setSelected(new Map());
     setAddError(null);
-    setActiveTab('goal');
+    setFilter('all');
+    setRestaurant(null);
+    setAdvice(null);
     setAnalyzing(true);
     let dataUrl, base64;
     try {
@@ -210,6 +180,8 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
       }
       setRecommendations(data.recommendations || []);
       setMenuItems(data.items || []);
+      setRestaurant(data.restaurant || null);
+      setAdvice(data.advice || null);
     } catch (err) {
       console.error(err);
       setError("Couldn't read this menu. Check your connection and try again.");
@@ -241,6 +213,11 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     }
     return Array.from(bySection, ([section, items]) => ({ section, items }));
   }, [menuItems]);
+
+  function mealLabelNow() {
+    const meal = mealFromDate(new Date());
+    return meal.charAt(0).toUpperCase() + meal.slice(1);
+  }
 
   async function handleLog() {
     if (!picked) return;
@@ -298,6 +275,25 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
       // What did get added is out of the selection, so trying again can't double it.
       setSelected((prev) => { const next = new Map(prev); done.forEach((k) => next.delete(k)); return next; });
       setAddError(done.length ? `Added ${done.length}, but couldn't add the rest. Try again.` : "Couldn't add these — try again.");
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  // "Log to Dinner" on a ranked dish: that dish at its listed portion, now,
+  // without opening it (portion and tweaks can still be changed in the log).
+  async function handleLogOne(data) {
+    if (adding) return;
+    setAdding(true);
+    setAddError(null);
+    try {
+      const now = new Date();
+      const base = adjustPick(data, null, [], null);
+      await onAddFood({ name: data.name, ...base, source: 'menu', servingLabel: '1 serving' }, showSlots ? null : mealLabelNow(), showSlots ? now : null);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setAddError("Couldn't add this — try again.");
     } finally {
       setAdding(false);
     }
@@ -380,265 +376,51 @@ export default function MenuScanModal({ onClose, onAddFood, showSlots, onSearchM
     );
   }
 
-  // Pinned under the scrolling review (see DragSheet's `footer`) so Back and
-  // Confirm are always reachable, however tall the estimate + comment box get.
-  const footer = picked ? (
-    <div style={{ display: 'flex', gap: 10 }}>
-      <button
-        onClick={() => choosePick(null)}
-        aria-label={picked.kind === 'recommendation' ? 'Back to options' : 'Back to menu'}
-        style={{ flexShrink: 0, minHeight: 52, padding: '0 14px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-      >
-        Back<span className="scan-bar-label"> to {picked.kind === 'recommendation' ? 'options' : 'menu'}</span>
-      </button>
-      <button
-        onClick={handleLog}
-        disabled={adding}
-        style={{
-          flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          minHeight: 52, padding: '0 12px', borderRadius: 14, border: 'none',
-          background: adding ? 'var(--border-default)' : 'var(--accent)',
-          color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)',
-          fontSize: 14, fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer',
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-        }}
-      >
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{adding ? 'Adding…' : 'Confirm & log'}</span>
-        {!adding && (
-          <span style={{ flexShrink: 0, background: 'rgba(0,0,0,0.18)', borderRadius: 99, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
-            +{adjusted.cal} kcal
-          </span>
-        )}
-      </button>
-    </div>
-  ) : (hasResults && !error && selectedList.length > 0) ? (
-    <div>
-      {addError && <div role="alert" style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{addError}</div>}
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button
-          onClick={() => { setSelected(new Map()); setAddError(null); }}
-          style={{ flexShrink: 0, minHeight: 52, padding: '0 16px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: 14, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-        >
-          Clear
-        </button>
-        <button
-          onClick={handleLogSelected}
-          disabled={adding}
-          style={{
-            flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            minHeight: 52, padding: '0 12px', borderRadius: 14, border: 'none',
-            background: adding ? 'var(--border-default)' : 'var(--accent)',
-            color: adding ? 'var(--text-muted)' : 'var(--accent-contrast)',
-            fontSize: 14, fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-          }}
-        >
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{adding ? 'Adding…' : `Add ${selectedList.length} item${selectedList.length === 1 ? '' : 's'}`}</span>
-          {!adding && (
-            <span style={{ flexShrink: 0, background: 'rgba(0,0,0,0.18)', borderRadius: 99, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
-              +{Math.round(selectedCal)} kcal
-            </span>
-          )}
-        </button>
-      </div>
-    </div>
-  ) : null;
+  // Something went wrong before there was anything to show: its own page.
+  if (error && !hasResults) {
+    return (
+      <ScanErrorPage
+        title="Scan a menu" error={error} limitReached={limitReached} closing={closing}
+        onBack={close} onUpgrade={() => navigate('/pricing')} onRetry={reset} onSearchManually={onSearchManually}
+      />
+    );
+  }
+
+  const consumed = { cal: consumedToday, protein: consumedProtein };
+
+  if (picked) {
+    return (
+      <>
+        <MenuReview
+          picked={picked} adjusted={adjusted}
+          sourceLabel={picked.kind === 'recommendation' ? `Pick #${picked.index + 1}` : `Menu Item #${picked.index + 1}`}
+          detail={detail} detailLoading={detailLoading} portions={portions} portionIdx={portionIdx} setPortionIdx={setPortionIdx}
+          tweaks={tweaks} activeTweaks={activeTweaks} onToggleTweak={toggleTweak} onInspect={() => setCropOpen(true)}
+          dailyTarget={dailyTarget} consumed={consumed}
+          comment={comment} setComment={setComment}
+          voice={{ recording: voiceRecording, transcribing: voiceTranscribing, error: voiceError, start: startVoice, stop: stopVoice }}
+          correcting={correcting} correctionError={correctionError} onCorrect={handleCorrect}
+          onBack={() => choosePick(null)} onLog={handleLog} adding={adding} closing={closing} error={error}
+        />
+        {cropOpen && detail?.source?.box && <CropViewer photo={preview} box={detail.source.box} onClose={() => setCropOpen(false)} />}
+      </>
+    );
+  }
 
   return (
-    <DragSheet title={picked ? 'Confirm pick' : 'Scan a menu'} onClose={close} closing={closing} footer={footer}>
-      {preview && !picked && (
-        <img src={preview} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
-      )}
-
-      {analyzing && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '20px 0', color: 'var(--text-muted)', fontSize: 13 }}>
-          <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid var(--border-default)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite' }} />
-          Reading the whole menu…
-        </div>
-      )}
-
-      {error && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ background: limitReached ? '#1a1508' : '#1a0f0f', border: `1px solid ${limitReached ? '#4a3a1a' : '#c0707040'}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: limitReached ? 'var(--gold)' : 'var(--danger)', marginBottom: 10 }}>{error}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {limitReached ? (
-              <button onClick={() => navigate('/pricing')} style={{ flex: 1, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Upgrade to Pro
-              </button>
-            ) : (
-              <button onClick={reset} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Try another photo
-              </button>
-            )}
-            {onSearchManually && (
-              <button onClick={onSearchManually} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Search manually
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Results — a "for your goal" tab of 3 ranked picks, and an "all
-          items" tab covering the whole menu. Tap any card/row in either to
-          review before logging. */}
-      {hasResults && !picked && !error && (
-        <div style={{ marginTop: 14 }}>
-          <SegmentedControl options={SCAN_TABS} value={activeTab} onChange={setActiveTab} fill style={{ marginBottom: 10 }} />
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.4 }}>Tick every dish you had to add them together, or tap one to adjust its portion first.</p>
-
-          {activeTab === 'goal' && (
-            recommendations.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Couldn't put together recommendations for this menu.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-                {recommendations.map((pick, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: 2 }}>
-                  <SelectBox checked={selected.has(selKey('recommendation', i))} onChange={() => toggleSelected('recommendation', pick, i)} label={`Select ${pick.name}`} />
-                  <button
-                    onClick={() => choosePick({ kind: 'recommendation', data: pick, index: i })}
-                    style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'var(--bg-card)', border: `1px solid ${selected.has(selKey('recommendation', i)) ? 'var(--accent)' : 'var(--border-default)'}`, borderRadius: 10, padding: 14, cursor: 'pointer', fontFamily: 'inherit' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: i === 0 ? 'var(--accent-contrast)' : 'var(--bg-primary)', background: i === 0 ? 'var(--accent)' : 'var(--border-strong)', borderRadius: 5, padding: '2px 6px' }}>#{i + 1}</span>
-                      <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600 }}>{pick.name}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: hasModification(pick.modifications) ? 2 : 10, lineHeight: 1.4 }}>{pick.items}</div>
-                    {hasModification(pick.modifications) && (
-                      <div style={{ fontSize: 11, color: 'var(--gold)', marginBottom: 10 }}>Modified: {pick.modifications}</div>
-                    )}
-                    <MacroGrid pick={pick} />
-                  </button>
-                  </div>
-                ))}
-              </div>
-            )
-          )}
-
-          {activeTab === 'all' && (
-            groupedItems.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Couldn't make out individual items on this menu.</p>
-            ) : (
-              <div style={{ marginBottom: 12 }}>
-                {groupedItems.map(({ section, items }) => (
-                  <div key={section} style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{section}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {items.map((item, i) => {
-                        const itemIndex = menuItems.indexOf(item);
-                        const ticked = selected.has(selKey('item', itemIndex));
-                        return (
-                        <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: 2 }}>
-                        <SelectBox checked={ticked} onChange={() => toggleSelected('item', item, itemIndex)} label={`Select ${item.name}`} />
-                        <button
-                          onClick={() => choosePick({ kind: 'item', data: item, index: itemIndex })}
-                          style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'var(--bg-card)', border: `1px solid ${ticked ? 'var(--accent)' : 'var(--border-default)'}`, borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
-                        >
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>{item.name}</div>
-                            {item.description && (
-                              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>{item.description}</div>
-                            )}
-                          </div>
-                          <div style={{ flexShrink: 0, textAlign: 'right', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                            <div style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 13 }}>{item.cal} kcal</div>
-                            <div>{item.protein}p · {item.carbs}c · {item.fat}f</div>
-                          </div>
-                        </button>
-                        </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          )}
-
-          <button onClick={reset} style={{ width: '100%', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, padding: '9px', fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Try another photo</button>
-        </div>
-      )}
-
-      {/* Review — the picked recommendation or menu item, confirm before logging */}
-      {picked && (
-        <div style={{ marginTop: 0 }}>
-          {/* Where on the photo this came from — "Menu Item #4 • "Mixed wrap"". */}
-          <SourcePill
-            label={picked.kind === 'recommendation' ? `Pick #${picked.index + 1}` : `Menu Item #${picked.index + 1}`}
-            quote={detail?.source?.quote}
-            onInspect={detail?.source?.box ? () => setCropOpen(true) : undefined}
-          />
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-active)', borderRadius: 10, padding: 14, marginBottom: 12 }}>
-            <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 4 }}>{picked.data.name}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: hasModification(picked.data.modifications) ? 2 : 10, lineHeight: 1.4 }}>
-              {picked.kind === 'recommendation' ? picked.data.items : (picked.data.description || picked.data.section)}
-            </div>
-            {picked.kind === 'recommendation' && hasModification(picked.data.modifications) && (
-              <div style={{ fontSize: 11, color: 'var(--gold)', marginBottom: 10 }}>Modified: {picked.data.modifications}</div>
-            )}
-            {portions.length > 1 ? (
-              <PortionRow portions={portions} value={portionIdx} onChange={setPortionIdx} />
-            ) : detailLoading ? (
-              <PortionSkeleton />
-            ) : null}
-            <MacroGrid pick={adjusted} />
-            {detail && (
-              <IncludesRow allergens={detail.allergens} sodiumMg={adjusted.sodium} sodium={adjusted.sodium} fibre={adjusted.fibre} sugar={adjusted.sugar} />
-            )}
-          </div>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
-            This is an AI estimate based on the menu photo, not verified nutrition data — review before adding.
-          </p>
-          {dailyTarget.calories > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={adjusted.cal} />
-            </div>
-          )}
-
-          {/* Always visible, not gated behind a "this is wrong" toggle —
-              correcting is free (doesn't cost a scan) and can be done as
-              many times as needed. Covers both "the AI got this pick
-              wrong" and "I want to note what I actually got" (extra
-              sauce, a swapped side, a different size than listed) — same
-              comment box either way, since both just re-estimate this
-              one pick's macros from the same menu photo plus the note. */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-              <label style={{ fontSize: 11, color: 'var(--text-muted)' }}>Get something different, or want to note a change? Tell it here</label>
-              <VoiceMicButton recording={voiceRecording} transcribing={voiceTranscribing} onStart={startVoice} onStop={stopVoice} title="Speak your correction" />
-            </div>
-            <textarea
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-              placeholder="e.g. I got the large size, or no cheese, or extra sauce on the side"
-              disabled={correcting}
-              rows={3}
-              style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 8 }}
-            />
-            {voiceError && <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--danger)' }}>{voiceError}</div>}
-            {tweaks.length > 0 && <QuickTweaks tweaks={tweaks} active={activeTweaks} onToggle={toggleTweak} />}
-            <button
-              onClick={handleCorrect}
-              disabled={!comment.trim() || correcting}
-              style={{
-                width: '100%',
-                background: !comment.trim() || correcting ? 'var(--border-default)' : 'var(--accent-bg)',
-                border: `1px solid ${!comment.trim() || correcting ? 'var(--border-default)' : 'var(--border-active)'}`,
-                borderRadius: 7, padding: '9px 14px', fontSize: 13, fontWeight: 600,
-                color: !comment.trim() || correcting ? 'var(--text-muted)' : 'var(--accent)',
-                cursor: !comment.trim() || correcting ? 'not-allowed' : 'pointer',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              {correcting ? 'Fixing…' : 'Recalculate'}
-            </button>
-            {correctionError && (
-              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--danger)' }}>{correctionError}</div>
-            )}
-          </div>
-        </div>
-      )}
-      {cropOpen && detail?.source?.box && <CropViewer photo={preview} box={detail.source.box} onClose={() => setCropOpen(false)} />}
-    </DragSheet>
+    <MenuList
+      preview={preview} restaurant={restaurant} advice={advice}
+      recommendations={recommendations || []} menuItems={menuItems || []} groupedItems={groupedItems}
+      filter={filter} setFilter={setFilter}
+      isSelected={(kind, i) => selected.has(selKey(kind, i))}
+      onToggle={toggleSelected}
+      onOpen={(kind, data, index) => choosePick({ kind, data, index })}
+      onLogOne={(kind, data) => handleLogOne(data)}
+      mealLabel={mealLabelNow()} dailyTarget={dailyTarget} consumed={consumed}
+      onRescan={reset} onSearchManually={onSearchManually} onClose={close} closing={closing}
+      adding={adding} addError={addError}
+      selectedList={selectedList} selectedCal={selectedCal}
+      onLogSelected={handleLogSelected} onClearSelected={() => { setSelected(new Map()); setAddError(null); }}
+    />
   );
 }

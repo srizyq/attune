@@ -13,6 +13,7 @@ import { withTrial } from '../src/lib/trial.js';
 import { withCoachProAccess } from '../src/lib/proAccess.js';
 import { targetsForDate } from '../src/lib/dayTargets.js';
 import { detailPrompt, sanitizeDetail } from './_menuDetail.js';
+import { sanitizeMenuExtras } from './_scanExtras.js';
 import { rateLimit, AI_REQUESTS_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
 
 // Constructed lazily, after the config check below, rather than at module
@@ -51,9 +52,14 @@ Do two things with this menu:
 2. Separately, recommend the 3 best options for this person's goal and remaining macros. You're not limited to picking 3 whole standalone items — you can combine items across menu sections (e.g. a main plus a side from elsewhere on the menu) and suggest simple modifications (e.g. dressing on the side, swap fries for a side salad, no bun), as long as it's something they could realistically order at this restaurant. If you suggest a modification, recalculate the macros for the modified version — don't report the stock item's macros for a modified order.
 
 Reply with ONLY a JSON object (no other text, no markdown code fence) in exactly this shape:
-{"items": [{"section": string, "name": string, "description": string, "cal": number, "protein": number, "carbs": number, "fat": number}, ...], "recommendations": [{"name": string, "items": string, "modifications": string or null, "cal": number, "protein": number, "carbs": number, "fat": number, "confidence": "low" | "medium" | "high"}, ...]}
+{"restaurant": string or null, "advice": string, "items": [{"section": string, "name": string, "description": string, "price": string or null, "cal": number, "protein": number, "carbs": number, "fat": number}, ...], "recommendations": [{"name": string, "items": string, "modifications": string or null, "price": string or null, "match": number, "tip": string or null, "cal": number, "protein": number, "carbs": number, "fat": number, "confidence": "low" | "medium" | "high"}, ...]}
+
+Top-level fields:
+- restaurant: the restaurant's name if it is printed on the menu, otherwise the JSON value null
+- advice: one or two plain sentences telling this person what to order tonight and why, based on their remaining calories and protein above. Name the dish you rank first.
 
 Field notes for "items" (part 1, every menu item as-is):
+- price: the item's price exactly as printed, including its currency symbol if shown (for example $14.50), or the JSON value null if no price is printed
 - section: the menu heading this item sits under, for example Pizzas or Small Plates — use the menu's own section names
 - name: the item's name exactly as printed
 - description: the item's own description/ingredients as printed, or an empty string if it has none
@@ -65,6 +71,9 @@ Field notes for "recommendations" (part 2, your 3 picks for this person):
 - modifications: what changed from the stock menu item, as plain text. Use the JSON value null if it was ordered exactly as listed with nothing changed — do not use the word none as a string.
 - cal, protein, carbs, fat: numbers only
 - confidence: one of low, medium, or high
+- match: a whole number from 0 to 100 for how well this pick fits their goal and remaining macros (100 = ideal); the first pick should score highest
+- tip: one short practical ordering tip for this pick (for example "Ask for dressing on the side to save ~80 kcal"), or the JSON value null if there isn't a useful one
+- price: the price of this pick as printed (the sum if it combines items, with the currency symbol if shown), or the JSON value null if prices aren't printed
 
 Always return exactly 3 recommendations, ranked best first for this person's goal and remaining macros.
 
@@ -323,7 +332,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    res.status(200).json(isDetail ? sanitizeDetail(parsed) : parsed);
+    res.status(200).json(isDetail ? sanitizeDetail(parsed) : isCorrection ? parsed : sanitizeMenuExtras(parsed));
   } catch (err) {
     console.error('Menu recognition error:', err);
     res.status(502).json({ error: 'Menu recognition is temporarily unavailable.' });

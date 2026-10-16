@@ -49,7 +49,7 @@ async function openConfirm(onAddFood = vi.fn()) {
   await screen.findByRole('button', { name: 'Take photo' });
   fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [new File(['x'], 'm.jpg', { type: 'image/jpeg' })] } });
   await userEvent.click(await screen.findByText('Grilled salmon bowl'));
-  await screen.findByText('Confirm pick');
+  await screen.findByText('Customize your pick');
   await screen.findByLabelText('Portion serving');
 }
 
@@ -136,7 +136,7 @@ describe('MenuScanModal pick details', () => {
     await screen.findByRole('button', { name: 'Take photo' });
     fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [new File(['x'], 'm.jpg', { type: 'image/jpeg' })] } });
     await userEvent.click(await screen.findByText('Grilled salmon bowl'));
-    await screen.findByText('Confirm pick');
+    await screen.findByText('Customize your pick');
     await waitFor(() => expect(screen.queryByText('Loading…')).toBeNull());
     expect(screen.queryByLabelText('Portion serving')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Quick tweaks' })).toBeNull();
