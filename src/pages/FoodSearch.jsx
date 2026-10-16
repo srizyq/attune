@@ -37,10 +37,9 @@ import { getCategoryStyle } from '../lib/foodCategories';
 import PageHeader from '../components/PageHeader';
 import DateStepper from '../components/DateStepper';
 import FormRow from '../components/FormRow';
-import DragSheet from '../components/DragSheet';
+import BarcodeResult from '../components/scan/BarcodeResult';
+import { ScanPage, ScanCard } from '../components/scan/ScanKit';
 import ServingStepper from '../components/ServingStepper';
-import MacroBreakdown from '../components/MacroBreakdown';
-import DayBudgetImpact from '../components/DayBudgetImpact';
 import { targetsForDate } from '../lib/dayTargets';
 import { fetchWithTimeout } from '../lib/http';
 import { rankFoods, foodMatchRank } from '../lib/foodRank';
@@ -521,6 +520,13 @@ async function lookupOpenFoodFactsBarcode(barcode) {
     // baseline it's actually showing macros for, instead of implying "1
     // serving" is the whole product when nobody actually knows that.
     servingIsFallback: !p.serving_size,
+    // Display-only extras for the scan result page (photo, NutriScore,
+    // dietary labels). Split off before the food is stored or logged.
+    meta: {
+      image: p.image_front_small_url || p.image_front_url || p.image_url || null,
+      nutriscore: p.nutriscore_grade || null,
+      labels: Array.isArray(p.labels_tags) ? p.labels_tags : [],
+    },
   };
   return found;
 }
@@ -555,6 +561,13 @@ async function lookupSharedBarcodeProduct(barcode) {
   };
 }
 
+function stripMeta(food) {
+  if (!food || !('meta' in food)) return food;
+  const rest = { ...food };
+  delete rest.meta;
+  return rest;
+}
+
 const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', servingUnit: 'g', cal: '', protein: '', carbs: '', fat: '', fibre: '', sodium: '', sugar: '' };
 
 // ─── Barcode scan — menu/plate photo scanning live elsewhere as
@@ -575,6 +588,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   // own totals reducer) — `.calories`, not the mapped `.cal` that `items`
   // would carry. Reading `.cal` here silently summed to 0 every time.
   const consumedToday = todaysLogs.reduce((s, l) => s + (Number(l.calories) || 0), 0);
+  const consumedProtein = todaysLogs.reduce((s, l) => s + (Number(l.protein_g) || 0), 0);
   const favourites = useFavouriteFoods();
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
@@ -594,6 +608,10 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
   const [result, setResult] = useState(null);
+  // Photo / NutriScore / dietary labels when Open Food Facts knows the product.
+  const [productMeta, setProductMeta] = useState(null);
+  // Name of the product just logged with "Log & scan another".
+  const [loggedNote, setLoggedNote] = useState(null);
   const [error, setError] = useState(null);
   const [meal, setMeal] = useState(defaultMeal);
   const [time, setTime] = useState(defaultTime);
@@ -794,7 +812,11 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         return;
       }
       setError(null);
-      setResult(found);
+      // The display extras can come from Open Food Facts even when another
+      // source supplied the numbers.
+      setProductMeta(off?.meta || found.meta || null);
+      setLoggedNote(null);
+      setResult(stripMeta(found));
       // "1 serving" only means something when a source actually told us
       // what a serving of *this* product is. When every source we found
       // it through was flagged servingIsFallback (no real serving info
@@ -959,7 +981,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         <video ref={videoRef} playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", display: looking ? "block" : "none" }} />
 
         {!looking && (
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, color: "#555" }}>
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, color: "#8d8497" }}>
             <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid #333", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite" }} />
             <div style={{ fontSize: 12 }}>Opening camera…</div>
           </div>
@@ -969,9 +991,9 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           onClick={close}
           aria-label="Close camera"
           title="Close"
-          style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: 16, width: 38, height: 38, borderRadius: "50%", background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: 16, width: 40, height: 40, borderRadius: "50%", background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
         >
-          ✕
+          <i className="ti ti-arrow-left" aria-hidden="true" />
         </button>
 
         {looking && torchSupported && (
@@ -981,7 +1003,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             title={torchOn ? "Turn off torch" : "Turn on torch"}
             style={{
               position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: 16,
-              width: 38, height: 38, borderRadius: "50%",
+              width: 40, height: 40, borderRadius: "50%",
               background: torchOn ? "#e8c468" : "rgba(20,17,16,0.6)",
               border: `1px solid ${torchOn ? "#e8c468" : "rgba(255,255,255,0.25)"}`,
               color: torchOn ? "#181412" : "#fff", fontSize: 17,
@@ -994,11 +1016,23 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
         {looking && (
           <>
-            <div style={{ position: "absolute", top: "calc(24px + env(safe-area-inset-top))", left: 0, right: 0, textAlign: "center", fontSize: 13, color: "#ccc", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
-              Point your camera at a barcode
+            <div style={{ position: "absolute", top: "calc(24px + env(safe-area-inset-top))", left: 64, right: 64, textAlign: "center" }}>
+              <span style={{ display: "inline-block", maxWidth: "100%", padding: "6px 14px", borderRadius: 99, background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.18)", fontSize: 13, fontWeight: 600, color: "#f6f2fa" }}>
+                Point your camera at a barcode
+              </span>
             </div>
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-              <div style={{ width: "70%", height: 2, background: "var(--accent)", opacity: 0.7, boxShadow: "0 0 8px var(--accent)", borderRadius: 2 }} />
+              <div style={{ position: "relative", width: "min(78%, 340px)", height: 150 }}>
+                {[["top", "left"], ["top", "right"], ["bottom", "left"], ["bottom", "right"]].map(([v, h]) => (
+                  <span key={v + h} aria-hidden="true" style={{
+                    position: "absolute", [v]: 0, [h]: 0, width: 30, height: 30,
+                    [`border${v === "top" ? "Top" : "Bottom"}`]: "4px solid #b188d8",
+                    [`border${h === "left" ? "Left" : "Right"}`]: "4px solid #b188d8",
+                    borderRadius: `${v === "top" && h === "left" ? 16 : 0}px ${v === "top" && h === "right" ? 16 : 0}px ${v === "bottom" && h === "right" ? 16 : 0}px ${v === "bottom" && h === "left" ? 16 : 0}px`,
+                  }} />
+                ))}
+                <div style={{ position: "absolute", top: "50%", left: 14, right: 14, height: 2, marginTop: -1, background: "#b188d8", opacity: 0.75, boxShadow: "0 0 8px #b188d8", borderRadius: 2 }} />
+              </div>
             </div>
           </>
         )}
@@ -1012,13 +1046,19 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
         {!scanning && (
           <div style={{ position: "absolute", bottom: "calc(32px + env(safe-area-inset-bottom))", left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "0 24px" }}>
+            {loggedNote && (
+              <div role="status" style={{ maxWidth: "100%", display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 99, background: "rgba(20,17,16,0.72)", border: "1px solid var(--accent-border)", fontSize: 13, fontWeight: 600, color: "#f6f2fa" }}>
+                <i className="ti ti-circle-check" aria-hidden="true" style={{ color: "#b188d8", fontSize: 16, flexShrink: 0 }} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Logged {loggedNote}</span>
+              </div>
+            )}
             {manualEntryOpen ? (
               <form onSubmit={submitManualBarcode} style={{ width: "100%", maxWidth: 320 }}>
                 <FormRow>
                   <input
                     type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
                     value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
-                    style={{ width: "100%", boxSizing: "border-box", background: "rgba(20,17,16,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
+                    style={{ width: "100%", boxSizing: "border-box", background: "rgba(20,17,16,0.85)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 12, padding: "11px 14px", color: "#fff", fontSize: 14, outline: "none", fontFamily: "inherit" }}
                   />
                   <FormRow.Button icon="ti-search" primary type="submit" disabled={!manualBarcode.replace(/\D/g, "")}>
                     Look up
@@ -1028,7 +1068,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             ) : (
               <button
                 onClick={() => setManualEntryOpen(true)}
-                style={{ background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20, padding: "8px 16px", fontSize: 13, color: "#ccc", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 99, padding: "10px 18px", fontSize: 13, fontWeight: 600, color: "#e4dbee", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <i className="ti ti-keyboard" style={{ fontSize: 14 }} /> Enter barcode manually
               </button>
@@ -1039,25 +1079,57 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
     );
   }
 
+  function logCurrent() {
+    onAddFood(scaled, showSlots ? null : meal, showSlots ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null);
+  }
+
+  // A found product gets its own full page (see BarcodeResult).
+  if (result && !addingProduct) {
+    return (
+      <BarcodeResult
+        result={result} scaled={scaled} meta={productMeta} barcode={scannedBarcode}
+        calorieWarning={calorieWarning} closing={closing} onClose={close}
+        amount={amount} setAmount={setAmount} unit={unit} setUnit={setUnit}
+        units={unitsFor(servingUnit)} servingUnit={servingUnit} gramsEquivalent={gramsEquivalent}
+        meal={meal} setMeal={setMeal} time={time} setTime={setTime}
+        showSlots={showSlots} recipeMode={recipeMode}
+        dailyTarget={dailyTarget} consumed={{ cal: consumedToday, protein: consumedProtein }}
+        isFavourite={favourites.isFavourite(result.name)}
+        onToggleFavourite={() => favourites.toggle({ ...result, cal: scaled.cal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat })}
+        disabled={!servings}
+        onAdd={() => { logCurrent(); onClose(); }}
+        onAddAndScan={() => { const name = result.name; logCurrent(); reset(); setLoggedNote(name); }}
+      />
+    );
+  }
+
+  const field = { width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-strong)", borderRadius: 14, padding: "12px 14px", color: "var(--text-primary)", fontSize: 14, outline: "none", fontFamily: "inherit" };
+  const softBtn = { background: "transparent", border: "1px solid var(--border-strong)", borderRadius: 14, padding: "12px", fontSize: 13, fontWeight: 700, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" };
+  const solidBtn = (off) => ({ background: off ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 14, padding: "12px", fontSize: 13, fontWeight: 800, color: off ? "var(--text-muted)" : "var(--accent-contrast)", cursor: off ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" });
+  const dangerBox = { background: "color-mix(in srgb, var(--danger) 10%, var(--bg-card))", border: "1px solid color-mix(in srgb, var(--danger) 35%, transparent)", borderRadius: 16, padding: "12px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 };
+
   return (
-    <DragSheet title={addingProduct ? "Add product" : result ? "Product found" : "Scan barcode"} onClose={close} closing={closing}>
+    <ScanPage title={addingProduct ? "Add product" : "Scan barcode"} onBack={close} closing={closing}>
       {error && !addingProduct && (
         <div style={{ marginBottom: 12 }}>
           {notFound ? (
-            <div role="status" style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 12, padding: "16px 16px 14px", marginBottom: 10 }}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Not in our database yet</div>
-              <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 14 }}>
+            <ScanCard role="status" style={{ padding: "18px 16px 16px", marginBottom: 10 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: "var(--accent-bg)", color: "var(--accent-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 12 }}>
+                <i className="ti ti-barcode" aria-hidden="true" />
+              </div>
+              <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 6, color: "var(--text-primary)" }}>Not in our database yet</div>
+              <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 16 }}>
                 We couldn't find a product for barcode {scannedBarcode}. Would you like to add it? Once it's added, it's here for everyone who scans it.
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={close} style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 10, padding: "11px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Not now</button>
-                <button onClick={() => { setNotFound(false); setAddingProduct(true); }} style={{ flex: 2, background: "var(--accent)", border: "none", borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <button onClick={close} style={{ ...softBtn, flex: 1 }}>Not now</button>
+                <button onClick={() => { setNotFound(false); setAddingProduct(true); }} style={{ ...solidBtn(false), flex: 2 }}>
                   <i className="ti ti-barcode" style={{ fontSize: 14 }} /> Add this product
                 </button>
               </div>
-            </div>
+            </ScanCard>
           ) : (
-            <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)", marginBottom: 10 }}>{error}</div>
+            <div style={dangerBox}>{error}</div>
           )}
           {/* Same manual-entry path as the camera view (submitManualBarcode)
               — reachable here too since this screen covers both "camera
@@ -1070,18 +1142,14 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               <input
                 type="text" inputMode="numeric" autoFocus placeholder="Barcode number"
                 value={manualBarcode} onChange={e => setManualBarcode(e.target.value)}
-                style={{ flex: 1, minWidth: 0, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
+                style={{ ...field, flex: 1, width: "auto" }}
               />
-              <button
-                type="submit"
-                disabled={!manualBarcode.replace(/\D/g, "")}
-                style={{ background: "var(--accent)", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "var(--accent-contrast)", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}
-              >
+              <button type="submit" disabled={!manualBarcode.replace(/\D/g, "")} style={{ ...solidBtn(!manualBarcode.replace(/\D/g, "")), padding: "0 18px", flexShrink: 0 }}>
                 Look up
               </button>
             </form>
           ) : (
-            <button onClick={() => setManualEntryOpen(true)} style={{ width: "100%", background: "transparent", border: "none", borderRadius: 8, padding: "9px", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
+            <button onClick={() => setManualEntryOpen(true)} style={{ width: "100%", background: "transparent", border: "none", borderRadius: 12, padding: "11px", fontSize: 13, fontWeight: 600, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 }}>
               <i className="ti ti-keyboard" style={{ fontSize: 14 }} /> Enter barcode number manually
             </button>
           )}
@@ -1090,28 +1158,28 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
       {addingProduct && (
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "4px 2px 6px" }}>
             Add product — barcode {scannedBarcode}
           </div>
-          <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)", margin: "0 2px 12px", lineHeight: 1.5 }}>
             Nobody has added this product yet. Add it once and it's here for everyone who scans it.
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-            <input type="text" placeholder="Product name" value={newProduct.name} onChange={e => updateNewProduct("name", e.target.value)}
-              style={{ width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
-            <input type="text" placeholder="Brand (optional)" value={newProduct.brand} onChange={e => updateNewProduct("brand", e.target.value)}
-              style={{ width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
-          </div>
+          <ScanCard>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <input type="text" placeholder="Product name" value={newProduct.name} onChange={e => updateNewProduct("name", e.target.value)} style={field} />
+              <input type="text" placeholder="Brand (optional)" value={newProduct.brand} onChange={e => updateNewProduct("brand", e.target.value)} style={field} />
+            </div>
+          </ScanCard>
 
           {!labelPreview && !labelAnalyzing && (
             labelCameraOpen ? (
-              <>
+              <ScanCard>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>Take a photo of the nutrition facts label — it'll fill in the numbers below.</div>
                 <CameraCapture onCapture={(file) => { setLabelCameraOpen(false); handleLabelPhoto(file); }} hint="Fit the whole nutrition panel in frame" />
-              </>
+              </ScanCard>
             ) : (
-              <button type="button" onClick={() => setLabelCameraOpen(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", marginBottom: 12, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                <i className="ti ti-camera" style={{ fontSize: 15 }} /> Photograph the nutrition label (optional)
+              <button type="button" onClick={() => setLabelCameraOpen(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", marginBottom: 12, background: "var(--accent-bg)", border: "1px solid var(--accent-border)", borderRadius: 16, padding: "13px", fontSize: 13, fontWeight: 700, color: "var(--accent-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <i className="ti ti-camera" style={{ fontSize: 16 }} /> Photograph the nutrition label (optional)
               </button>
             )
           )}
@@ -1122,122 +1190,63 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
               Reading label…
             </div>
           )}
-          {labelError && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{labelError}</div>}
+          {labelError && <div style={{ ...dangerBox, fontSize: 12 }}>{labelError}</div>}
 
           {labelPreview && (
-            <div style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
-              <img src={labelPreview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
-              <div style={{ fontSize: 12, color: "var(--text-muted)", flex: 1 }}>Label read — review the numbers below and adjust anything that's off before saving.</div>
-            </div>
+            <ScanCard style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <img src={labelPreview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 12, flexShrink: 0 }} />
+              <div style={{ fontSize: 12, color: "var(--text-muted)", flex: 1, minWidth: 0 }}>Label read — review the numbers below and adjust anything that's off before saving.</div>
+            </ScanCard>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8, marginBottom: 12 }}>
-            <input type="text" placeholder="Serving (e.g. 1 cup)" value={newProduct.serving} onChange={e => updateNewProduct("serving", e.target.value)}
-              style={{ gridColumn: "1 / -1", width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
-            {[
-              ["cal", "Calories"], ["protein", "Protein (g)"], ["carbs", "Carbs (g)"], ["fat", "Fat (g)"],
-              ["fibre", "Fibre (g)"], ["sodium", "Sodium (mg)"], ["sugar", "Sugar (g)"],
-            ].map(([key, label]) => (
-              <input key={key} type="number" inputMode="decimal" placeholder={label} value={newProduct[key]} onChange={e => updateNewProduct(key, e.target.value)}
-                style={{ width: "100%", minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
-            ))}
-            {/* Split from the mapped fields above since it needs the g/ml
-                toggle alongside it — whichever's picked here becomes this
-                product's servingUnit for every future scan, same as the
-                live FatSecret/Open Food Facts lookups (see unitsFor in
-                lib/foodMath.js), so a manually-added drink gets an ml
-                amount/unit option later instead of g/kg/lb/oz. */}
-            <div style={{ display: "flex", gap: 6 }}>
-              <input type="number" inputMode="decimal" placeholder={newProduct.servingUnit === "ml" ? "Serving (ml)" : "Serving (g)"} value={newProduct.servingGrams} onChange={e => updateNewProduct("servingGrams", e.target.value)}
-                style={{ flex: 1, minWidth: 0, boxSizing: "border-box", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
-              {["g", "ml"].map(u => (
-                <button key={u} type="button" onClick={() => updateNewProduct("servingUnit", u)}
-                  style={{
-                    width: 36, flexShrink: 0, borderRadius: 8, fontSize: 12, fontFamily: "inherit", cursor: "pointer",
-                    background: newProduct.servingUnit === u ? "var(--accent)" : "var(--bg-card)",
-                    color: newProduct.servingUnit === u ? "var(--accent-contrast)" : "var(--text-secondary)",
-                    border: `1px solid ${newProduct.servingUnit === u ? "var(--accent)" : "var(--border-default)"}`,
-                  }}
-                >
-                  {u}
-                </button>
+          <ScanCard>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8 }}>
+              <input type="text" placeholder="Serving (e.g. 1 cup)" value={newProduct.serving} onChange={e => updateNewProduct("serving", e.target.value)}
+                style={{ ...field, gridColumn: "1 / -1" }} />
+              {[
+                ["cal", "Calories"], ["protein", "Protein (g)"], ["carbs", "Carbs (g)"], ["fat", "Fat (g)"],
+                ["fibre", "Fibre (g)"], ["sodium", "Sodium (mg)"], ["sugar", "Sugar (g)"],
+              ].map(([key, label]) => (
+                <input key={key} type="number" inputMode="decimal" placeholder={label} value={newProduct[key]} onChange={e => updateNewProduct(key, e.target.value)} style={field} />
               ))}
+              {/* Split from the mapped fields above since it needs the g/ml
+                  toggle alongside it — whichever's picked here becomes this
+                  product's servingUnit for every future scan, same as the
+                  live FatSecret/Open Food Facts lookups (see unitsFor in
+                  lib/foodMath.js), so a manually-added drink gets an ml
+                  amount/unit option later instead of g/kg/lb/oz. */}
+              <div style={{ display: "flex", gap: 6, minWidth: 0 }}>
+                <input type="number" inputMode="decimal" placeholder={newProduct.servingUnit === "ml" ? "Serving (ml)" : "Serving (g)"} value={newProduct.servingGrams} onChange={e => updateNewProduct("servingGrams", e.target.value)}
+                  style={{ ...field, flex: 1, width: "auto" }} />
+                {["g", "ml"].map(u => (
+                  <button key={u} type="button" onClick={() => updateNewProduct("servingUnit", u)}
+                    style={{
+                      width: 40, flexShrink: 0, borderRadius: 12, fontSize: 12, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
+                      background: newProduct.servingUnit === u ? "var(--accent)" : "var(--bg-card)",
+                      color: newProduct.servingUnit === u ? "var(--accent-contrast)" : "var(--text-secondary)",
+                      border: `1px solid ${newProduct.servingUnit === u ? "var(--accent)" : "var(--border-strong)"}`,
+                    }}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          </ScanCard>
 
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => { setAddingProduct(false); setNotFound(!!scannedBarcode); setLabelError(null); setLabelPreview(null); setLabelCameraOpen(false); setNewProduct(BLANK_NEW_PRODUCT); }}
-              style={{ flex: 1, background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              style={{ ...softBtn, flex: 1 }}>
               Cancel
             </button>
             <button onClick={saveNewProduct} disabled={!newProduct.name.trim() || savingProduct}
-              style={{
-                flex: 2, background: !newProduct.name.trim() || savingProduct ? "var(--border-default)" : "var(--accent)",
-                border: "none", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 600,
-                color: !newProduct.name.trim() || savingProduct ? "var(--text-muted)" : "var(--accent-contrast)",
-                cursor: !newProduct.name.trim() || savingProduct ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}>
+              style={{ ...solidBtn(!newProduct.name.trim() || savingProduct), flex: 2 }}>
               {savingProduct ? "Saving…" : "Save & continue"}
             </button>
           </div>
         </div>
       )}
-      {result && (
-        <div>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Product found</div>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-active)", borderRadius: 10, padding: "14px", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 2 }}>
-              <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600 }}>{result.name}</div>
-              <button
-                onClick={() => favourites.toggle({ ...result, cal: scaled.cal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat })}
-                className="hit-slop" aria-label={favourites.isFavourite(result.name) ? "Remove favourite" : "Add favourite"}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0, color: favourites.isFavourite(result.name) ? "var(--gold)" : "var(--text-hint)", fontSize: 16, display: "flex" }}
-              >
-                <i className={favourites.isFavourite(result.name) ? "ti ti-star-filled" : "ti ti-star"} />
-              </button>
-            </div>
-            {result.brand && <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>{result.brand} · {result.serving}</div>}
-            <MacroBreakdown
-              values={{ cal: scaled.cal, protein: scaled.protein, carbs: scaled.carbs, fat: scaled.fat }}
-              dailyTarget={dailyTarget.calories ? { cal: dailyTarget.calories, protein: dailyTarget.protein_g, carbs: dailyTarget.carbs_g, fat: dailyTarget.fat_g } : null}
-            />
-            <div style={{ display: "flex", gap: 16, paddingTop: 10, marginTop: 10, borderTop: "1px solid var(--border-default)" }}>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Fibre <span style={{ color: "var(--text-secondary)" }}>{scaled.fibre}g</span></div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sodium <span style={{ color: "var(--text-secondary)" }}>{scaled.sodium}mg</span></div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sugar <span style={{ color: "var(--text-secondary)" }}>{scaled.sugar}g</span></div>
-            </div>
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-            {unit !== servingUnit && `≈${gramsEquivalent}${servingUnit} · `}label serving: {result.serving}
-          </div>
-          {calorieWarning && (
-            <div role="alert" style={{ display: "flex", gap: 8, alignItems: "flex-start", background: "var(--bg-card)", border: "1px solid var(--gold)", borderRadius: 10, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>
-              <i aria-hidden="true" className="ti ti-alert-triangle" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0, marginTop: 1 }} />
-              <span>The calories here don't match this product's protein, carbs and fat, so one of them may be wrong. Check the pack's nutrition panel before logging.</span>
-            </div>
-          )}
-          {dailyTarget.calories > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <DayBudgetImpact target={dailyTarget.calories} consumed={consumedToday} adding={scaled.cal} />
-            </div>
-          )}
-          <AddControls
-            amount={amount} setAmount={setAmount}
-            unit={unit} setUnit={setUnit}
-            units={unitsFor(servingUnit)}
-            meal={meal} setMeal={setMeal}
-            time={time} setTime={setTime}
-            showSlots={showSlots}
-            addLabel={recipeMode ? "Add to recipe" : undefined}
-            onAdd={() => { onAddFood(scaled, showSlots ? null : meal, showSlots ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null); onClose(); }}
-            disabled={!servings}
-          />
-          <button onClick={reset} style={{ marginTop: 10, width: "100%", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 14px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <i aria-hidden="true" className="ti ti-scan" style={{ fontSize: 13 }} /> Scan next
-          </button>
-        </div>
-      )}
-    </DragSheet>
+    </ScanPage>
   );
 }
 

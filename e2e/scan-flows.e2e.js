@@ -126,9 +126,9 @@ test('barcode scanned while building a recipe goes into the recipe, not the dail
   await page.getByRole('button', { name: 'Look up' }).click();
   await expect(page.getByText('Greek yoghurt').first()).toBeVisible();
   // The button says what it does, and there is no meal to pick.
-  await expect(page.getByRole('button', { name: 'Add to recipe' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Add \d+ kcal to recipe/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Add to (breakfast|lunch|dinner|snacks)/i })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Add to recipe' }).click();
+  await page.getByRole('button', { name: /Add \d+ kcal to recipe/ }).click();
 
   // Back on the recipe screen: clearly in recipe mode, with the item in it.
   await expect(page.getByText("You're building a recipe")).toBeVisible();

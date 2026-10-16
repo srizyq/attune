@@ -47,14 +47,31 @@ export function findLayoutProblems() {
   };
   const leaves = all.filter((e) => e.children.length === 0 && (e.textContent || '').trim() && !/^(OPTION|SCRIPT|STYLE)$/.test(e.tagName));
   const boxes = leaves.map((e) => ({ e, r: textBox(e) })).filter((b) => b.r.width > 2 && b.r.height > 2 && b.r.bottom > 0 && b.r.top < innerHeight * 6);
+  // The visible part of `r` after clipping to every scroll/clip ancestor of `e`
+  // that does NOT also contain `other` (a box that holds both is no reason to hide either).
+  const clipToScrollers = (r, e, other) => {
+    let { left, right, top, bottom } = r;
+    for (let p = e.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+      if (p.contains(other)) continue;
+      if (!/(auto|scroll|hidden|clip)/.test(getComputedStyle(p).overflowY)) continue;
+      const pr = p.getBoundingClientRect();
+      left = Math.max(left, pr.left); right = Math.min(right, pr.right);
+      top = Math.max(top, pr.top); bottom = Math.min(bottom, pr.bottom);
+    }
+    return right > left && bottom > top ? { left, right, top, bottom } : null;
+  };
   const layer = (e) => e.closest('[role="dialog"], .modal-backdrop, .sheet-panel');
   for (let i = 0; i < boxes.length; i++) {
     for (let j = i + 1; j < boxes.length; j++) {
       const a = boxes[i], b = boxes[j];
       if (a.e.contains(b.e) || b.e.contains(a.e)) continue;
       if (a.e.closest('.app-bottom-nav, .app-sidebar') || b.e.closest('.app-bottom-nav, .app-sidebar')) continue;
-      const ox = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
-      const oy = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+      // Text scrolled out of view inside a scroll box (e.g. a page body above a
+      // pinned footer) isn't drawn there, so compare only the part still shown.
+      const ra = clipToScrollers(a.r, a.e, b.e), rb = clipToScrollers(b.r, b.e, a.e);
+      if (!ra || !rb) continue;
+      const ox = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
+      const oy = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
       if (ox > 3 && oy > 3 && layer(a.e) === layer(b.e)) out.push({ check: 'text-overlaps-text', msg: `${label(a.e)}  and  ${label(b.e)}` });
     }
   }
