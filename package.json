@@ -15,6 +15,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
     "@supabase/supabase-js": "^2.112.4",
     "@zxing/browser": "^0.2.0",
     "@zxing/library": "^0.22.0",

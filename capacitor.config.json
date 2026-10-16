@@ -1,0 +1,13 @@
+{
+  "appId": "com.attune.app",
+  "appName": "Attune",
+  "webDir": "dist",
+  "server": {
+    "url": "https://attun3.com",
+    "cleartext": false
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0f0f0f"
+  }
+}
