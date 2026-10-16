@@ -1185,6 +1185,25 @@ export async function getCoachMessages(clientId) {
   return data || [];
 }
 
+// Everything said between this coach and their clients (both directions, newest
+// first), for the coach's "who has written to me" view. Capped: it only needs
+// recent history to say what's unread. A database without sender_role yet
+// simply has nothing to show.
+export async function getRecentClientMessages(trainerId, limit = 400) {
+  const { data, error } = await supabase
+    .from('trainer_comments')
+    .select('id, client_id, sender_role, body, created_at')
+    .eq('trainer_id', trainerId)
+    .eq('category', 'general')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    if (isMissingColumnError(error)) return [];
+    throw error;
+  }
+  return data || [];
+}
+
 // The client's side of the two-way 'general' thread — full history, both
 // directions, oldest first (a normal chat read order).
 export async function getGeneralThread(clientId, trainerId) {

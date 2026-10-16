@@ -7,11 +7,12 @@ import {
   respondToCoachLink, getMyInvites, createCoachInvite, revokeCoachInvite, getPendingClients,
   getClientSummaries, getTrainerNotes, addTrainerNote, updateTrainerNote, deleteTrainerNote, getWorkoutLogsForRange,
   getTrainerComments, addTrainerComment, deleteTrainerComment, getLatestCoachComment,
-  getGeneralThread, addClientReply,
+  getGeneralThread, addClientReply, getRecentClientMessages,
   getFoodLogsForDate,
 } from '../lib/db';
 import { extractInviteCode } from '../lib/coachInvite';
 import { getSeenAt, setSeenAt, countUnread } from '../lib/coachInbox';
+import { loadSeen, saveSeen, firstRunSeen, markClientSeen, unreadByClient, totalUnread } from '../lib/coachUnread';
 import { mapRow } from './useFoodLogs';
 import { fetchWithTimeout } from '../lib/http';
 
@@ -467,3 +468,54 @@ export function useClientWorkouts(clientId, startDate, endDate) {
   return { workouts, loading };
 }
 
+
+
+// Which of the coach's clients have written since the coach last looked — one
+// query for everyone, refreshed every minute and whenever the tab is shown again.
+// `markSeen(clientId)` is called when the coach opens that client's messages.
+const MESSAGES_POLL_MS = 60000;
+export function useClientMessages({ enabled = true } = {}) {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([]);
+  const [seen, setSeen] = useState(null);
+  // Only coaches have clients to hear from; everyone else makes no requests.
+  const userId = enabled ? user?.id : undefined;
+
+  useEffect(() => {
+    if (!userId) { setSeen(null); return; }
+    // First time on this device: only the last few days count as unread.
+    let stored = loadSeen(userId);
+    if (!stored) { stored = firstRunSeen(); saveSeen(userId, stored); }
+    setSeen(stored);
+  }, [userId]);
+
+  const refetch = useCallback(async () => {
+    if (!userId) { setMessages([]); return; }
+    try {
+      setMessages(await getRecentClientMessages(userId));
+    } catch (err) {
+      console.error('Failed to load client messages:', err);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    refetch();
+    const timer = setInterval(refetch, MESSAGES_POLL_MS);
+    const onVisible = () => { if (document.visibilityState === 'visible') refetch(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+  }, [refetch]);
+
+  const markSeen = useCallback((clientId) => {
+    setSeen((cur) => {
+      if (!cur || !userId) return cur;
+      const next = markClientSeen(cur, clientId);
+      saveSeen(userId, next);
+      return next;
+    });
+  }, [userId]);
+
+  const unread = useMemo(() => unreadByClient(messages, seen), [messages, seen]);
+  const total = useMemo(() => totalUnread(unread), [unread]);
+  return { unread, total, markSeen, refetch };
+}

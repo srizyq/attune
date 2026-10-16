@@ -21,7 +21,7 @@ const ADHERENCE_HELP = `7-day adherence: how consistently they log, and how ofte
 // that used to live inline here now live in ClientDetail's own header,
 // since the row is a single tap target now rather than a name + inline
 // actions.
-function SummaryRow({ row, summary, index, today, onSelect }) {
+function SummaryRow({ row, summary, index, today, onSelect, unreadCount = 0 }) {
   const score = adherenceScore(summary);
   const tone = adherenceTone(score);
   const flags = attentionFlags(summary, today);
@@ -35,8 +35,13 @@ function SummaryRow({ row, summary, index, today, onSelect }) {
         trailing={score != null ? <ListRow.Badge tone={tone === 'low' ? 'warning' : 'accent'} withChevron title={ADHERENCE_HELP} label={`7-day adherence ${score} percent`}>{score}%</ListRow.Badge> : <ListRow.Chevron />}
         onClick={() => onSelect(row.client)}
       />
-      {flags.length > 0 && (
+      {(flags.length > 0 || unreadCount > 0) && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '-6px 0 6px 56px' }}>
+          {unreadCount > 0 && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 20, padding: '2px 8px' }}>
+              {unreadCount} new {unreadCount === 1 ? 'message' : 'messages'}
+            </span>
+          )}
           {flags.slice(0, 2).map(f => (
             <span key={f.id} style={{ fontSize: 11, fontWeight: 600, color: SEVERITY_COLOR[f.severity], border: `1px solid ${SEVERITY_COLOR[f.severity]}`, borderRadius: 20, padding: '2px 8px' }}>{f.label}</span>
           ))}
@@ -83,10 +88,11 @@ function LegacyClientRow({ row, index, onSelect, onStatus }) {
 // The trainer's client list. With summaries (one query for everyone) it can
 // search, sort and flag who needs attention; without them — the database
 // update not applied yet — it falls back to the previous per-client rows.
-export default function ClientList({ clients, loading, summaries, summariesSupported, today, onSelect, onStatus, loggedTodayCount, resolvedCount, allLoggedToday }) {
+export default function ClientList({ clients, loading, summaries, summariesSupported, today, onSelect, onStatus, loggedTodayCount, resolvedCount, allLoggedToday, unread = new Map() }) {
   const [query, setQuery] = useState('');
   const [sortId, setSortId] = useState('attention');
   const [attentionOnly, setAttentionOnly] = useState(false);
+  const [unreadOnly, setUnreadOnly] = useState(false);
   const hasClients = clients.length > 0;
 
   const byLink = useMemo(() => new Map(summaries.map(s => [s.link_id, s])), [summaries]);
@@ -94,10 +100,11 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
     const rows = clients.map(row => ({ row, summary: byLink.get(row.id) })).filter(x => x.summary);
     const filtered = rows
       .filter(x => matchesSearch(x.summary, query))
-      .filter(x => !attentionOnly || needsAttention(x.summary, today));
+      .filter(x => !attentionOnly || needsAttention(x.summary, today))
+      .filter(x => !unreadOnly || unread.has(x.summary.client_id));
     const order = new Map(sortSummaries(filtered.map(x => x.summary), sortId, today).map((s, i) => [s.link_id, i]));
     return filtered.sort((a, b) => order.get(a.summary.link_id) - order.get(b.summary.link_id));
-  }, [clients, byLink, query, attentionOnly, sortId, today]);
+  }, [clients, byLink, query, attentionOnly, unreadOnly, unread, sortId, today]);
   const attentionCount = useMemo(() => summaries.filter(s => needsAttention(s, today)).length, [summaries, today]);
 
   // Legacy path: the old grouped list.
@@ -175,7 +182,13 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
               >
                 Needs attention{attentionCount > 0 ? ` (${attentionCount})` : ''}
               </FilterChipRow.Chip>
-              <FilterChipRow.Chip>Active ({Math.max(0, clients.length - attentionCount)})</FilterChipRow.Chip>
+              <FilterChipRow.Chip
+                active={unreadOnly}
+                onClick={() => setUnreadOnly(v => !v)}
+                onClear={unreadOnly ? () => setUnreadOnly(false) : undefined}
+              >
+                Unread{unread.size > 0 ? ` (${unread.size})` : ''}
+              </FilterChipRow.Chip>
             </FilterChipRow>
           </div>
           <p style={{ color: 'var(--text-hint)', fontSize: 11, lineHeight: 1.5, margin: '0 0 8px' }}>
@@ -183,11 +196,11 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
           </p>
           {visible.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0 4px' }}>
-              {attentionOnly && !query ? 'Nobody needs attention right now.' : 'No clients match.'}
+              {unreadOnly && !query ? 'No unread messages.' : attentionOnly && !query ? 'Nobody needs attention right now.' : 'No clients match.'}
             </p>
           ) : (
             visible.map(({ row, summary }, i) => (
-              <SummaryRow key={row.id} row={row} summary={summary} index={i} today={today} onSelect={onSelect} />
+              <SummaryRow key={row.id} row={row} summary={summary} index={i} today={today} onSelect={onSelect} unreadCount={unread.get(summary.client_id)?.unread || 0} />
             ))
           )}
         </>

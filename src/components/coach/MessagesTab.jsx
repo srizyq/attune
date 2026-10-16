@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTrainerComments } from '../../hooks/useCoach';
 import { useVoiceTranscription } from '../../hooks/useVoiceTranscription';
 import { Card, SectionLabel } from './shared';
@@ -16,11 +16,17 @@ const VIEWS = [
 // Two clearly separate places to write: what the client will see, and what
 // only the coach will. Keeping them on separate sub-tabs (with the lock icon
 // on the private one) is what stops a private note being posted as a message.
-export default function MessagesTab({ client, clientData, d }) {
+export default function MessagesTab({ client, clientData, d, onViewed }) {
   const [view, setView] = useState('thread');
   const [commentBody, setCommentBody] = useState('');
   const [commentCategory, setCommentCategory] = useState('general');
   const { comments, addComment, removeComment } = useTrainerComments(client.id);
+  // Having the thread open (and loaded) is what "read" means — a message that
+  // arrives while it's open is marked read too, on the next load.
+  const latestMessageAt = comments.length ? comments[comments.length - 1]?.created_at : null;
+  useEffect(() => {
+    if (view === 'thread') onViewed?.(client.id);
+  }, [view, client.id, latestMessageAt, comments.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const { date } = d;
   // The category picker doubles as a filter tab — only the selected
   // category's thread shows below, matching what its label already implies.

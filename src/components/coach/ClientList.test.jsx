@@ -30,6 +30,32 @@ const names = () => screen.getAllByRole('button', { name: /Olive|Quinn|Pat/ }).m
 beforeEach(() => vi.stubGlobal('confirm', vi.fn(() => false)));
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
+describe('ClientList — unread messages', () => {
+  const unread = new Map([['patchy', { unread: 2, latestAt: '2026-09-20T01:00:00Z', latestBody: 'hello' }]]);
+
+  it('marks the client who has written, and says how many', () => {
+    setup({ unread });
+    expect(screen.getByText('2 new messages')).toBeInTheDocument();
+    expect(screen.getByText('Unread (1)')).toBeInTheDocument();
+  });
+
+  it('the Unread filter shows only clients with something new, and says so when there is none', async () => {
+    setup({ unread });
+    await userEvent.click(screen.getByText('Unread (1)'));
+    expect(names()).toEqual(['Pat']);
+    cleanup();
+    setup({ unread: new Map() });
+    await userEvent.click(screen.getByText('Unread'));
+    expect(screen.getByText('No unread messages.')).toBeInTheDocument();
+  });
+
+  it('shows a client with one new message in the singular, and nothing for clients with none', () => {
+    setup({ unread: new Map([['ok', { unread: 1, latestAt: '2026-09-20T01:00:00Z', latestBody: 'hi' }]]) });
+    expect(screen.getByText('1 new message')).toBeInTheDocument();
+    expect(screen.queryByText(/new messages/)).toBeNull();
+  });
+});
+
 describe('ClientList (with summaries)', () => {
   it('labels the score: a percent on each row, and one line saying what it measures', () => {
     setup();

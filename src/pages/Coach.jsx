@@ -1,7 +1,7 @@
 // src/pages/Coach.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useProfile } from '../hooks/useProfile';
-import { useMyClients, useClientSummaries } from '../hooks/useCoach';
+import { useMyClients, useClientSummaries, useClientMessages } from '../hooks/useCoach';
 import AppNav from '../components/AppNav';
 import ClientCoachHub from '../components/ClientCoachHub';
 import CoachInvitePanel from '../components/CoachInvitePanel';
@@ -9,6 +9,7 @@ import LogoMark from '../components/LogoMark';
 import ClientList from '../components/coach/ClientList';
 import TeamCard from '../components/coach/TeamCard';
 import ClientDetail from '../components/coach/ClientDetail';
+import ClientMessagesInbox from '../components/coach/ClientMessagesInbox';
 import { needsAttention } from '../lib/clientInsights';
 import { todayLocalDate } from '../lib/patterns';
 import PageHeader from '../components/PageHeader';
@@ -38,7 +39,11 @@ export default function Coach() {
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [refetchClients, refetchSummaries]);
+  const { unread, total: unreadTotal, markSeen } = useClientMessages({ enabled: !!profile?.coach_pass });
   const [selectedClient, setSelectedClient] = useState(null);
+  // Opening a client from the message list lands on their messages, not Overview.
+  const [initialTab, setInitialTab] = useState('overview');
+  const openClient = (client, tab = 'overview') => { setInitialTab(tab); setSelectedClient(client); };
   // A trainer can *also* be someone else's client (a coach with their own
   // nutritionist, say) — this tab is how they reach that relationship's
   // notes/chat/targets without it being hidden behind their own trainer
@@ -61,8 +66,27 @@ export default function Coach() {
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const isTrainer = !!profile?.coach_pass;
   const attentionCount = summaries.filter(s => needsAttention(s, today)).length;
+  const unreadNote = unreadTotal > 0 ? ` · ${unreadTotal} new message${unreadTotal === 1 ? '' : 's'}` : '';
   const selectedSummary = selectedClient ? summaries.find(s => s.client_id === selectedClient.id) : undefined;
   const selectedRow = selectedClient ? clients.find(r => r.client?.id === selectedClient.id) : undefined;
+
+  const hasClients = clients.length > 0;
+  const invitePanel = <CoachInvitePanel hasClients={hasClients} />;
+  const clientList = (
+    <ClientList
+      clients={clients}
+      loading={clientsLoading || (summariesLoading && summariesSupported && summaries.length === 0 && clients.length > 0)}
+      summaries={summaries}
+      summariesSupported={summariesSupported}
+      today={today}
+      onSelect={(c) => openClient(c)}
+      onStatus={reportStatus}
+      loggedTodayCount={loggedTodayCount}
+      resolvedCount={resolvedStatuses.length}
+      allLoggedToday={allLoggedToday}
+      unread={unread}
+    />
+  );
 
   if (!profile) return null;
 
@@ -80,8 +104,8 @@ export default function Coach() {
                     ? (summariesLoading
                         ? `${timeOfDayGreeting()} — checking in on your clients…`
                         : attentionCount === 0
-                        ? `${timeOfDayGreeting()} — everyone's on track`
-                        : `${timeOfDayGreeting()} — ${attentionCount} of ${clients.length} clients need attention`)
+                        ? `${timeOfDayGreeting()} — everyone's on track${unreadNote}`
+                        : `${timeOfDayGreeting()} — ${attentionCount} of ${clients.length} clients need attention${unreadNote}`)
                     : resolvedStatuses.length === 0
                     ? `${timeOfDayGreeting()} — checking in on your clients…`
                     : allLoggedToday
@@ -118,20 +142,12 @@ export default function Coach() {
             <ClientCoachHub showUpsell={false} />
           ) : !selectedClient ? (
             <>
+            <ClientMessagesInbox unread={unread} clients={clients} onOpen={(c) => openClient(c, 'messages')} />
+            {/* The list is what a coach opens this page for, so on a phone (one
+                column) it comes before the invite card once there are clients;
+                with none yet, inviting is the job and comes first. */}
             <div className="grid-2" style={{ alignItems: 'start' }}>
-              <CoachInvitePanel hasClients={clients.length > 0} />
-              <ClientList
-                clients={clients}
-                loading={clientsLoading || (summariesLoading && summariesSupported && summaries.length === 0 && clients.length > 0)}
-                summaries={summaries}
-                summariesSupported={summariesSupported}
-                today={today}
-                onSelect={setSelectedClient}
-                onStatus={reportStatus}
-                loggedTodayCount={loggedTodayCount}
-                resolvedCount={resolvedStatuses.length}
-                allLoggedToday={allLoggedToday}
-              />
+              {hasClients ? <>{clientList}{invitePanel}</> : <>{invitePanel}{clientList}</>}
             </div>
             <div style={{ marginTop: 20 }}><TeamCard /></div>
             </>
@@ -142,6 +158,8 @@ export default function Coach() {
               row={selectedRow}
               onSetGroup={setGroup}
               onRevoke={async (id) => { await revoke(id); setSelectedClient(null); }}
+              initialTab={initialTab}
+              onMessagesViewed={markSeen}
             />
           )}
         </div>

@@ -17,20 +17,21 @@ const TONE_COLOR = { good: 'var(--accent)', fair: 'var(--gold)', low: 'var(--dan
 // One client, split into six tabs so each stays short: the long single page
 // this replaced mixed reading (charts, diary), writing (messages, notes) and
 // output (reports) in one scroll.
-export default function ClientDetail({ client, summary, row, onSetGroup, onRevoke }) {
+export default function ClientDetail({ client, summary, row, onSetGroup, onRevoke, initialTab = 'overview', onMessagesViewed }) {
   const { user } = useAuth();
   // A mutable local copy of the client's goal/target fields — resyncs from the
   // prop whenever a different client is selected, but otherwise holds whatever
   // the trainer just saved so the page reflects it without refetching the list.
   const [clientData, setClientData] = useState(client);
   const [editingTargets, setEditingTargets] = useState(false);
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState(initialTab);
   const tabRefs = useRef({});
   useEffect(() => { setClientData(client); setEditingTargets(false); }, [client]);
   // Back to Overview only for a *different* client — a refetch that hands us a
   // fresh object for the same one must not throw the coach out of the tab
   // they're working in.
-  useEffect(() => { setTab('overview'); }, [client.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setTab(initialTab); }, [client.id]);
 
   // On a phone the six tabs overflow and scroll sideways; keep the selected
   // one in view (optional-called: jsdom, and old browsers, lack scrollIntoView).
@@ -131,7 +132,7 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
         )}
         {tab === 'diary' && <DiaryTab d={d} />}
         {tab === 'progress' && <ProgressTab client={client} d={d} />}
-        {tab === 'messages' && <MessagesTab client={client} clientData={clientData} d={d} />}
+        {tab === 'messages' && <MessagesTab client={client} clientData={clientData} d={d} onViewed={onMessagesViewed} />}
         {tab === 'plan' && <PlanTab client={client} clientData={clientData} />}
         {tab === 'reports' && <ReportsTab client={client} clientData={clientData} />}
       </div>
