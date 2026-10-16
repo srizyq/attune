@@ -7,6 +7,10 @@ import { useAdaptiveTarget } from '../hooks/useAdaptiveTarget';
 import { DIET_STYLES, FAT_PCT_RANGE, PROTEIN_PCT_RANGE, dietStyleFor, splitForStyle } from '../lib/dietStyles';
 import { goalMacroSplits, calcCalories, buildTargets, splitFromGrams, calcGoalAdjustment, defaultPace, clampToFloor, MIN_CALORIES } from '../lib/calorieTargets';
 import { useWeightLogs } from '../hooks/useWeightLogs';
+import { useMyTrainers, useGeneralThread } from '../hooks/useCoach';
+import { overrideCoachTargets } from '../lib/db';
+import { coachOwnerOf, targetsLockedByCoach, storedTargets, takeoverMessage } from '../lib/coachTargets';
+import CoachTargetsCard from '../components/settings/CoachTargetsCard';
 import { toKg } from '../lib/adaptiveTDEE';
 import { todayLocalDate } from '../lib/patterns';
 import GoalRateCard from '../components/settings/GoalRateCard';
@@ -133,7 +137,7 @@ const DEFAULT_FORM = { unit: 'metric', age: 30, weight: 70, height: 170, goal: '
 export default function SettingsGoals() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile, save: saveProfile } = useProfile();
+  const { profile, save: saveProfile, refetch: refetchProfile } = useProfile();
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   // RequireAuth's isUnsignedGuest gate means is_anonymous here can only
   // mean "signed up, hasn't confirmed their email yet" — never "browsing
@@ -147,6 +151,16 @@ export default function SettingsGoals() {
   // draft that differs from it.
   const [lastSavedKey, setLastSavedKey] = useState(null);
   const { latest: latestWeight } = useWeightLogs(todayLocalDate(), todayLocalDate());
+
+  // A coach who set the calorie and macro targets owns them while connected: this
+  // page shows them as set and writes nothing over them (the autosave leaves
+  // those fields out) until the client takes them over, which tells the coach.
+  const { active: activeCoaches, loading: coachesLoading } = useMyTrainers();
+  const coachOwner = coachOwnerOf(profile, activeCoaches);
+  const targetsLocked = targetsLockedByCoach(profile, activeCoaches, coachesLoading);
+  const { sendReply: tellCoach } = useGeneralThread(coachOwner?.id ?? null);
+  const [takeoverBusy, setTakeoverBusy] = useState(false);
+  const [takeoverError, setTakeoverError] = useState(null);
 
   const [form, setForm] = useState(DEFAULT_FORM);
   const [calMode, setCalMode] = useState('calculated');
@@ -285,8 +299,25 @@ export default function SettingsGoals() {
   const calories = calMode === 'calculated' ? calculatedCal
     : calMode === 'adaptive' ? (adaptiveView?.ready ? adaptiveView.target : calculatedCal)
     : customCal;
-  const split = { protein: proteinPct / 100, carbs: carbPct / 100, fat: fatPct / 100 };
-  const preview = buildTargets(calories, split, profile?.water_target || 8);
+  // Saved macros come back exactly as saved unless the person moves a slider.
+  // Re-deriving them from whole percentages quietly turned a 150 g protein
+  // target into 147 g the first time anything on this page was changed.
+  const stored = storedTargets(profile);
+  const macrosUntouched = !!stored && stored.protein_g + stored.carbs_g + stored.fat_g > 0
+    && !!baseline && proteinPct === baseline.proteinPct && fatPct === baseline.fatPct;
+  const split = macrosUntouched
+    ? splitFromGrams(stored.protein_g, stored.carbs_g, stored.fat_g)
+    : { protein: proteinPct / 100, carbs: carbPct / 100, fat: fatPct / 100 };
+  let preview = buildTargets(calories, split, profile?.water_target || 8);
+  if (macrosUntouched && calories === stored.calories) {
+    const exact = (g, perGram, pct) => ({ g, cal: g * perGram, pct });
+    preview = {
+      ...preview,
+      protein: exact(stored.protein_g, 4, preview.protein.pct),
+      carbs: exact(stored.carbs_g, 4, preview.carbs.pct),
+      fat: exact(stored.fat_g, 9, preview.fat.pct),
+    };
+  }
 
   // When goal changes, snap macros to that goal's recommended split. In
   // adaptive mode the goal also changes the target itself (same TDEE
@@ -328,7 +359,7 @@ export default function SettingsGoals() {
     // are left as they were until they're valid. Adaptive mode can't have them
     // (it rewrites the everyday numbers itself), so saving there turns them off.
     let dayFields = {};
-    if (supportsDay) {
+    if (supportsDay && !targetsLocked) {
       if (calMode === 'adaptive') {
         dayFields = { rest_day_targets: null, training_days: null };
       } else {
@@ -363,11 +394,14 @@ export default function SettingsGoals() {
         // Maintain has no rate, so it leaves whatever was chosen for lose/build alone.
         pace_kg_per_week: form.goal === 'maintain' ? form.pace : effectivePace,
         ...(form.goal !== 'maintain' ? { target_weight: Number(form.targetWeight) > 0 ? Number(form.targetWeight) : null } : {}),
-        calorie_mode: calMode,
-        calorie_target: preview.calories,
-        protein_g: preview.protein.g,
-        carbs_g: preview.carbs.g,
-        fat_g: preview.fat.g,
+        // The coach's numbers are left exactly as they are (see targetsLocked).
+        ...(targetsLocked ? {} : {
+          calorie_mode: calMode,
+          calorie_target: preview.calories,
+          protein_g: preview.protein.g,
+          carbs_g: preview.carbs.g,
+          fat_g: preview.fat.g,
+        }),
         water_target: preview.water,
         micro_targets: cleanedMicroTargets,
         ...(supportsNetCarbs ? { net_carbs: netCarbs } : {}),
@@ -411,6 +445,25 @@ export default function SettingsGoals() {
     return () => clearTimeout(t);
   }, [saveState]);
 
+  const handleTakeOver = async () => {
+    const who = coachOwner?.name || 'Your coach';
+    if (!window.confirm(`Take over your targets? ${who} will be told you changed them. Your numbers stay as they are until you edit them.`)) return;
+    setTakeoverBusy(true);
+    setTakeoverError(null);
+    try {
+      await overrideCoachTargets();
+      // Tell the coach, in their thread with this client. Best effort: the
+      // takeover has already happened, and the coach's client list shows it too.
+      try { await tellCoach(takeoverMessage(stored)); } catch (err) { console.error('Could not message the coach:', err); }
+      await refetchProfile?.();
+    } catch (err) {
+      console.error('Taking over targets failed:', err);
+      setTakeoverError(err?.message || "Couldn't do that — try again.");
+    } finally {
+      setTakeoverBusy(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
       <AppNav active="settings" initials={initials} />
@@ -439,7 +492,8 @@ export default function SettingsGoals() {
                 targetWeight={form.targetWeight}
                 onTargetWeightChange={(v) => set('targetWeight', v)}
                 currentKg={currentKg}
-                manualCalories={calMode === 'custom'}
+                manualCalories={calMode === 'custom' && !targetsLocked}
+                coachName={targetsLocked ? (coachOwner?.name || 'your coach') : null}
               />
             )}
             <div style={{ marginTop: '16px' }}>
@@ -458,6 +512,17 @@ export default function SettingsGoals() {
             </div>
           </Card>
 
+          {targetsLocked ? (
+            <CoachTargetsCard
+              coachName={coachOwner?.name}
+              targets={stored}
+              setAt={profile?.targets_set_at}
+              profile={profile}
+              onTakeOver={handleTakeOver}
+              busy={takeoverBusy}
+              error={takeoverError}
+            />
+          ) : (
           <div className="grid-2" style={{ alignItems: 'start' }}>
 
           <Card style={{ marginBottom: 0 }}>
@@ -622,6 +687,7 @@ export default function SettingsGoals() {
           </Card>
 
           </div>
+          )}
 
           <CalorieLimitCard
             profile={profile}
@@ -632,7 +698,7 @@ export default function SettingsGoals() {
             onConfirmEmail={() => navigate('/settings/personal')}
           />
 
-          {supportsDay && (
+          {supportsDay && !targetsLocked && (
             <RestDayTargetsCard
               inputs={restDay.inputs}
               trainingDays={restDay.trainingDays}

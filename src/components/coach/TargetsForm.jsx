@@ -150,6 +150,9 @@ export default function TargetsForm({ client, onSave, onCancel }) {
           </div>
         </div>
       )}
+      <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '0 0 12px', lineHeight: 1.5 }}>
+        {client.name || 'Your client'} will see these as targets from you, and can't change them in their settings without taking them over — which tells you.
+      </p>
       {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 10px' }}>{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button

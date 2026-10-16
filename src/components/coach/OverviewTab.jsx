@@ -6,6 +6,7 @@ import MicroTargetsCard from './MicroTargetsCard';
 import CoCoachCard from './CoCoachCard';
 import WeeklySummaryCard from './WeeklySummaryCard';
 import WeightPlanCard from './WeightPlanCard';
+import TargetsOwnership from './TargetsOwnership';
 import { Card, SectionLabel, StatRow, StatCard, EmptyChartBox, RangeToggle } from './shared';
 import { ACCENT, WATER_BLUE, AI_PURPLE, GOAL_LABELS, RANGES } from './constants';
 import { attentionFlags } from '../../lib/clientInsights';
@@ -66,6 +67,7 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
               <StatRow label="Protein" value={clientData.protein_g ? `${clientData.protein_g}g` : '—'} />
               <StatRow label="Carbs" value={clientData.carbs_g ? `${clientData.carbs_g}g` : '—'} />
               <StatRow label="Fat" value={clientData.fat_g ? `${clientData.fat_g}g` : '—'} />
+              <TargetsOwnership clientData={clientData} />
               {restActive && (
                 <>
                   <StatRow label="Training days" value={describeTrainingDays(clientData.training_days)} />

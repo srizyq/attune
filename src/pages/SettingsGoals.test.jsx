@@ -19,12 +19,22 @@ vi.mock('../hooks/useProfile', async () => {
         setProfile((p) => ({ ...p, ...fields }));
         return result;
       }, []);
-      return { profile, save };
+      // What the real refetch does after the database changed underneath us.
+      const refetch = React.useCallback(async () => {
+        await state.refetch?.();
+        if (state.afterRefetch) setProfile((p) => ({ ...p, ...state.afterRefetch }));
+      }, []);
+      return { profile, save, refetch };
     },
   };
 });
 vi.mock('../hooks/useWeightLogs', () => ({ useWeightLogs: () => ({ latest: state.latest ?? null }) }));
 vi.mock('../hooks/useAdaptiveTarget', () => ({ useAdaptiveTarget: () => ({ compute: state.compute }) }));
+vi.mock('../hooks/useCoach', () => ({
+  useMyTrainers: () => ({ active: state.activeCoaches ?? [], loading: !!state.coachesLoading }),
+  useGeneralThread: (trainerId) => ({ sendReply: (body) => state.tellCoach(trainerId, body) }),
+}));
+vi.mock('../lib/db', async (orig) => ({ ...(await orig()), overrideCoachTargets: () => state.override() }));
 
 import SettingsGoals from './SettingsGoals';
 import { calcCalories } from '../lib/calorieTargets';
@@ -43,6 +53,12 @@ beforeEach(() => {
   state.save = vi.fn().mockResolvedValue(undefined);
   state.compute = vi.fn();
   state.latest = null;
+  state.activeCoaches = [];
+  state.coachesLoading = false;
+  state.tellCoach = vi.fn().mockResolvedValue(undefined);
+  state.override = vi.fn().mockResolvedValue(undefined);
+  state.refetch = vi.fn().mockResolvedValue(undefined);
+  state.afterRefetch = null;
 });
 afterEach(cleanup);
 
@@ -320,5 +336,129 @@ describe('Settings → Goals: diet style and net carbs', () => {
     await userEvent.click(styleBtn('Keto'));
     await waitFor(() => expect(state.save).toHaveBeenCalled(), SLOW);
     expect('net_carbs' in state.save.mock.calls.at(-1)[0]).toBe(false);
+  });
+});
+
+
+// ── a coach's numbers are not the client's to quietly rewrite ──────────────────
+const COACH = { id: 'coach-1', name: 'Jordan Lee' };
+const coached = (over = {}) => ({
+  calorie_mode: 'custom', calorie_target: 2100, protein_g: 150, carbs_g: 220, fat_g: 70,
+  targets_set_by: COACH.id, targets_set_at: '2026-10-12T02:00:00Z', targets_overridden_at: null, ...over,
+});
+
+describe('Settings → Goals: macros are kept exactly as saved', () => {
+  it('does not round a saved 150 g of protein to 147 g the first time something else changes', async () => {
+    setup({ calorie_mode: 'custom', calorie_target: 2100, protein_g: 150, carbs_g: 220, fat_g: 70 });
+    await userEvent.selectOptions(screen.getByDisplayValue('Moderately active'), 'light');
+    await waitFor(() => expect(state.save).toHaveBeenCalled(), SLOW);
+    expect(state.save.mock.calls[0][0]).toMatchObject({ calorie_target: 2100, protein_g: 150, carbs_g: 220, fat_g: 70 });
+  });
+
+  it('keeps the same proportions (not rounded ones) when the calories change', async () => {
+    setup({ calorie_mode: 'calculated', calorie_target: 2100, protein_g: 150, carbs_g: 220, fat_g: 70, goal: 'lose', pace_kg_per_week: 0.5 });
+    rate(0.25);
+    await waitFor(() => expect(state.save).toHaveBeenCalled(), SLOW);
+    const saved = state.save.mock.calls[0][0];
+    const protShare = (saved.protein_g * 4) / (saved.protein_g * 4 + saved.carbs_g * 4 + saved.fat_g * 9);
+    expect(protShare).toBeCloseTo(600 / 2110, 2);
+  });
+});
+
+describe('Settings → Goals: targets set by a coach', () => {
+  it('shows the coach\'s numbers as set and offers no way to edit them here', () => {
+    state.activeCoaches = [{ id: 'l1', trainer: COACH }];
+    setup(coached());
+    expect(screen.getByText('Targets from your coach')).toBeInTheDocument();
+    expect(screen.getByText(/Jordan Lee set these on/)).toBeInTheDocument();
+    expect(screen.getByText('2,100')).toBeInTheDocument();
+    expect(screen.getByText('150g')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Calculated' })).toBeNull();
+    expect(screen.queryByLabelText('Protein percent of calories')).toBeNull();
+    expect(screen.getByText(/Your calorie target comes from Jordan Lee, so this rate won't change it/)).toBeInTheDocument();
+  });
+
+  it('autosaves other changes without touching the coach\'s numbers or rest-day targets', async () => {
+    state.activeCoaches = [{ id: 'l1', trainer: COACH }];
+    setup(coached({ rest_day_targets: { calories: 1800 }, training_days: [1, 3, 5] }));
+    await userEvent.selectOptions(screen.getByDisplayValue('Moderately active'), 'light');
+    await waitFor(() => expect(state.save).toHaveBeenCalled(), SLOW);
+    const saved = state.save.mock.calls[0][0];
+    expect(saved.activity).toBe('light');
+    for (const key of ['calorie_target', 'protein_g', 'carbs_g', 'fat_g', 'calorie_mode', 'rest_day_targets', 'training_days']) expect(saved).not.toHaveProperty(key);
+  });
+
+  it('is not locked once that coach is no longer connected', () => {
+    state.activeCoaches = []; // disconnected
+    setup(coached());
+    expect(screen.queryByText('Targets from your coach')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Calculated' })).toBeInTheDocument();
+  });
+
+  it('is not locked by a different coach\'s numbers it does not recognise… but stays locked while coaches are still loading', () => {
+    state.coachesLoading = true;
+    setup(coached());
+    expect(screen.getByText('Targets from your coach')).toBeInTheDocument();
+  });
+
+  it('is not locked when no coach ever set the targets', () => {
+    state.activeCoaches = [{ id: 'l1', trainer: COACH }];
+    setup({ calorie_mode: 'custom', calorie_target: 2100, protein_g: 150, carbs_g: 220, fat_g: 70 });
+    expect(screen.queryByText('Targets from your coach')).toBeNull();
+  });
+});
+
+describe('Settings → Goals: taking targets back from the coach', () => {
+  const lockedSetup = () => {
+    state.activeCoaches = [{ id: 'l1', trainer: COACH }];
+    state.afterRefetch = { targets_set_by: null, targets_overridden_at: '2026-10-16T01:00:00Z' };
+    setup(coached());
+  };
+
+  it('asks first, then takes them over, tells the coach what they were, and unlocks the page', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    lockedSetup();
+    await userEvent.click(screen.getByRole('button', { name: 'Take over my targets' }));
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Jordan Lee will be told'));
+    await waitFor(() => expect(state.override).toHaveBeenCalledTimes(1));
+    expect(state.tellCoach).toHaveBeenCalledWith('coach-1', expect.stringContaining('2,100 kcal · P 150g · C 220g · F 70g'));
+    expect(state.tellCoach.mock.calls[0][1]).toMatch(/taken over my own calorie and macro targets/);
+    expect(state.refetch).toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: 'Calculated' })).toBeInTheDocument(); // normal controls are back
+    expect(screen.queryByText('Targets from your coach')).toBeNull();
+    // and the numbers they had are still the numbers on the page
+    expect(kcal()).toBe(2100);
+    confirm.mockRestore();
+  });
+
+  it('does nothing if the person says no', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    lockedSetup();
+    await userEvent.click(screen.getByRole('button', { name: 'Take over my targets' }));
+    expect(state.override).not.toHaveBeenCalled();
+    expect(state.tellCoach).not.toHaveBeenCalled();
+    expect(screen.getByText('Targets from your coach')).toBeInTheDocument();
+    confirm.mockRestore();
+  });
+
+  it('does not message the coach, and says why, if the takeover itself failed', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    state.override = vi.fn().mockRejectedValue(new Error('network down'));
+    lockedSetup();
+    await userEvent.click(screen.getByRole('button', { name: 'Take over my targets' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('network down');
+    expect(state.tellCoach).not.toHaveBeenCalled();
+    expect(screen.getByText('Targets from your coach')).toBeInTheDocument();
+    confirm.mockRestore();
+  });
+
+  it('still completes the takeover if the message to the coach cannot be sent', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    state.tellCoach = vi.fn().mockRejectedValue(new Error('push failed'));
+    lockedSetup();
+    await userEvent.click(screen.getByRole('button', { name: 'Take over my targets' }));
+    expect(await screen.findByRole('button', { name: 'Calculated' })).toBeInTheDocument();
+    expect(state.override).toHaveBeenCalledTimes(1);
+    confirm.mockRestore();
   });
 });

@@ -942,12 +942,30 @@ export async function getMyClients(trainerId) {
     .eq('status', 'active')
     .order('created_at', { ascending: false });
   const base = 'id, name, goal, calorie_target, protein_g, carbs_g, fat_g, unit, micro_targets';
-  let { data, error } = await clients(`${base}, rest_day_targets, training_days`);
-  // The rest-day columns come from a later SQL update; until it's run, fall
-  // back to the original columns so the client list keeps working.
-  if (error && isMissingColumnError(error)) ({ data, error } = await clients(base));
+  const withDay = `${base}, rest_day_targets, training_days`;
+  // Newest first. The rest-day columns and then the target-ownership columns
+  // each come from a later SQL update; until it's run, fall back a step so the
+  // client list keeps working.
+  const attempts = [
+    `${withDay}, pace_kg_per_week, targets_set_by, targets_set_at, targets_overridden_at`,
+    withDay,
+    base,
+  ];
+  let data = null;
+  let error = null;
+  for (const columns of attempts) {
+    ({ data, error } = await clients(columns));
+    if (!error || !isMissingColumnError(error)) break;
+  }
   if (error) throw error;
   return data;
+}
+
+// A client taking their calorie/macro targets back from their coach (the coach
+// is told separately — see takeoverMessage in lib/coachTargets.js).
+export async function overrideCoachTargets() {
+  const { error } = await supabase.rpc('override_coach_targets');
+  if (error) throw error;
 }
 
 export async function setClientTargets(clientId, { calorie_target, protein_g, carbs_g, fat_g }) {

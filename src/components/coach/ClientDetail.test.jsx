@@ -6,6 +6,7 @@ import '@testing-library/jest-dom/vitest';
 
 vi.mock('./useClientDashboard', () => ({ useClientDashboard: () => ({ today: '2026-09-20' }) }));
 vi.mock('../../lib/db', () => ({ setClientTargets: vi.fn() }));
+vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ user: { id: 'coach-1' } }) }));
 // The tabs are tested on their own; here they're stand-ins so this file is
 // about the shell: which tab shows, keyboard behaviour, and the header.
 vi.mock('./OverviewTab', () => ({ default: () => <div>overview-panel</div> }));

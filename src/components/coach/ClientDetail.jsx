@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { setClientTargets, setClientMicroTargets, setClientDayTargets } from '../../lib/db';
+import { useAuth } from '../../hooks/useAuth';
 import { adherenceScore, adherenceTone } from '../../lib/clientInsights';
 import { useClientDashboard } from './useClientDashboard';
 import { ClientAvatar, RowActions } from './shared';
@@ -17,6 +18,7 @@ const TONE_COLOR = { good: 'var(--accent)', fair: 'var(--gold)', low: 'var(--dan
 // this replaced mixed reading (charts, diary), writing (messages, notes) and
 // output (reports) in one scroll.
 export default function ClientDetail({ client, summary, row, onSetGroup, onRevoke }) {
+  const { user } = useAuth();
   // A mutable local copy of the client's goal/target fields — resyncs from the
   // prop whenever a different client is selected, but otherwise holds whatever
   // the trainer just saved so the page reflects it without refetching the list.
@@ -38,7 +40,9 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
 
   const handleSaveTargets = async (fields, day) => {
     await setClientTargets(client.id, fields);
-    setClientData(prev => ({ ...prev, ...fields }));
+    // The database now records this coach as the owner of the numbers (and clears
+    // any "client took them over" mark) — mirror that so the page is right without a refetch.
+    setClientData(prev => ({ ...prev, ...fields, targets_set_by: user?.id ?? prev.targets_set_by, targets_set_at: new Date().toISOString(), targets_overridden_at: null }));
     // Rest-day targets are a separate call and only made when they changed.
     if (day) {
       await setClientDayTargets(client.id, day.rest, day.trainingDays);
