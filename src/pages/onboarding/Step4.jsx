@@ -6,6 +6,8 @@ import { supabase, emailRedirectTo } from '../../lib/supabase';
 import { getProfile, upsertProfile, upsertWeightLog } from '../../lib/db';
 import { todayLocalDate } from '../../lib/patterns';
 import { getCaptchaToken, captchaOptions } from '../../lib/captcha';
+import OAuthButtons from '../../components/OAuthButtons';
+import { linkProvider, readOAuthError } from '../../lib/oauth';
 
 // Writing to `profiles` immediately after a fresh signInAnonymously()
 // can occasionally hit "new row violates row-level security policy"
@@ -123,6 +125,11 @@ export default function Step4() {
           userId = data.user.id;
         }
         userIdRef.current = userId;
+        // Back from Google/Apple: the provider is linked, so this is a real
+        // account now — nothing left to fill in here. (Also covers someone
+        // who logged in with a provider on /login before ever onboarding:
+        // the profile gets seeded below first, then they go straight in.)
+        const oauthUser = !!session?.user && !session.user.is_anonymous;
         // Only seed the profile from the draft if one doesn't already
         // exist — revisiting this screen (browser back, "skip" a second
         // time, a stale bookmark) reuses the same session, and by then
@@ -144,6 +151,9 @@ export default function Step4() {
         }
         sessionStorage.removeItem('attune_onboarding');
         sessionStorage.removeItem('attune_preauth_theme');
+        if (oauthUser) { navigate('/dashboard', { replace: true }); return; }
+        const oauthError = readOAuthError();
+        if (oauthError) setError(oauthError);
       } catch (err) {
         console.error('Failed to prepare guest session:', err);
         setPrepError("Couldn't set things up — try again.");
@@ -151,7 +161,7 @@ export default function Step4() {
         setPreparing(false);
       }
     })();
-  }, []);
+  }, [navigate]);
 
   async function handleUpgrade() {
     if (!email || password.length < 8 || !userIdRef.current) return;
@@ -177,6 +187,16 @@ export default function Step4() {
     // the dashboard still "in guest mode" as far as the rest of the app
     // could tell, with no clear signal that one more step was needed.
     navigate('/onboarding/step5', { state: { email } });
+  }
+
+  async function handleOAuth(provider) {
+    if (!agreed || !userIdRef.current) return;
+    setError(null);
+    if (name) {
+      try { await upsertProfile(userIdRef.current, { name }); } catch { /* non-fatal */ }
+    }
+    const { error: linkError } = await linkProvider(provider);
+    if (linkError) setError(linkError.message);
   }
 
   const inputStyle = (filled) => ({
@@ -228,6 +248,23 @@ export default function Step4() {
           Create your account to save your goal, targets, and everything you log from here.
         </p>
 
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: '14px', textAlign: 'left', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={e => setAgreed(e.target.checked)}
+            style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--accent)' }}
+          />
+          <span>
+            I agree to the{' '}
+            <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Terms of Service</a>
+            {' '}and{' '}
+            <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a>
+          </span>
+        </label>
+
+        <OAuthButtons onSelect={handleOAuth} disabled={!agreed || !!prepError} />
+
         <div style={{ textAlign: 'left', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <input
             type="text"
@@ -266,20 +303,6 @@ export default function Step4() {
           )}
         </div>
 
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: '14px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={agreed}
-            onChange={e => setAgreed(e.target.checked)}
-            style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--accent)' }}
-          />
-          <span>
-            I agree to the{' '}
-            <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Terms of Service</a>
-            {' '}and{' '}
-            <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a>
-          </span>
-        </label>
 
         <button
           onClick={handleUpgrade}

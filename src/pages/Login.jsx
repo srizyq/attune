@@ -6,7 +6,9 @@ import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import { useResendConfirmation } from '../hooks/useResendConfirmation';
 import { usePasswordResetRequest } from '../hooks/usePasswordResetRequest';
 import PreAuthThemeToggle from '../components/PreAuthThemeToggle';
-import { upsertProfile } from '../lib/db';
+import { upsertProfile, getProfile } from '../lib/db';
+import OAuthButtons from '../components/OAuthButtons';
+import { signInWithProvider, readOAuthError } from '../lib/oauth';
 import { getCaptchaToken, captchaOptions } from '../lib/captcha';
 
 // Never reveals whether the email is actually registered — the "sent"
@@ -108,9 +110,33 @@ export default function Login() {
   // A real, already-confirmed account landing on a "log in / create an
   // account" screen doesn't make sense — most likely a stale bookmark or
   // a Settings link followed after already being signed in elsewhere.
+  // A Google/Apple sign-in for an identity we've never seen creates the
+  // account on the spot, with no profile behind it — those go through
+  // onboarding (Step4 sees the real session and skips the email form)
+  // rather than landing on an empty dashboard.
   useEffect(() => {
-    if (user && !pendingConfirmation) navigate('/dashboard', { replace: true });
+    if (!user || pendingConfirmation) return;
+    let cancelled = false;
+    (async () => {
+      let profile = null;
+      try { profile = await getProfile(user.id); } catch { /* fall through to the dashboard */ }
+      if (cancelled) return;
+      const needsOnboarding = profile === null;
+      navigate(needsOnboarding ? '/onboarding/step1' : '/dashboard', { replace: true });
+    })();
+    return () => { cancelled = true; };
   }, [user, pendingConfirmation, navigate]);
+
+  useEffect(() => {
+    const oauthError = readOAuthError();
+    if (oauthError) setError(oauthError);
+  }, []);
+
+  async function handleOAuth(provider) {
+    setError(null);
+    const { error: oauthError } = await signInWithProvider(provider);
+    if (oauthError) setError(oauthError.message);
+  }
 
   const inputStyle = (filled) => ({
     background: 'var(--bg-subtle)',
@@ -202,6 +228,8 @@ export default function Login() {
               Your current account is still waiting on email confirmation. Logging into a different account here won't touch that data, but you'll need to come back and confirm it separately to get to it.
             </div>
           )}
+
+          <OAuthButtons onSelect={handleOAuth} />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
             <input
