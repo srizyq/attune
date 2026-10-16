@@ -1,4 +1,5 @@
-import { OAUTH_PROVIDERS } from '../lib/oauth';
+import { useEffect, useState } from 'react';
+import { enabledOAuthProviders } from '../lib/oauth';
 
 const ICONS = {
   google: (
@@ -20,10 +21,18 @@ const ICONS = {
 // actual redirect; this only renders the buttons. A divider ("or") is part of
 // it so both screens stay visually identical.
 export default function OAuthButtons({ onSelect, disabled, verb = 'Continue' }) {
+  // Only providers that are switched on: none until that is known, and none at all if none are.
+  const [providers, setProviders] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    enabledOAuthProviders().then((list) => { if (!cancelled) setProviders(list); });
+    return () => { cancelled = true; };
+  }, []);
+  if (providers.length === 0) return null;
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {OAUTH_PROVIDERS.map(p => (
+        {providers.map(p => (
           <button
             key={p.id}
             type="button"

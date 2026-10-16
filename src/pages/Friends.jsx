@@ -13,6 +13,7 @@ import Switch from '../components/friends/Switch';
 import DaySummary from '../components/friends/DaySummary';
 import { friendLink, friendlyFriendsError } from '../lib/friends';
 import { todayLocalDate } from '../lib/patterns';
+import { shareOrigin } from '../lib/siteUrl';
 
 const card = { background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)' };
 const primaryBtn = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' };
@@ -48,7 +49,7 @@ export default function Friends() {
 
   async function invite() {
     if (!f.code) return;
-    const url = friendLink(window.location.origin, f.code);
+    const url = friendLink(shareOrigin(), f.code);
     try {
       if (navigator.share) await navigator.share({ title: 'Add me on Attune', text: 'Add me as a friend on Attune', url });
       else { await navigator.clipboard.writeText(url); showToast('Invite link copied'); }

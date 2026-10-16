@@ -59,7 +59,7 @@ function matches(row, key, spec) {
  * Anything the app asks for that has no fixture is recorded in `unmocked`
  * so a new endpoint can't silently go untested.
  */
-export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true, storageLog = [] } = {}) {
+export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true, storageLog = [], authProviders = [] } = {}) {
   const data = {
     profiles: [buildProfile(profile)],
     food_logs: buildFoodLogs(),
@@ -88,6 +88,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     if (url.pathname.startsWith('/auth/v1/')) {
       if (url.pathname.endsWith('/user')) return json(sess.user);
       if (url.pathname.endsWith('/token')) return json(sess);
+      if (url.pathname.endsWith('/settings')) return json({ external: Object.fromEntries(authProviders.map((p) => [p, true])) });
       if (url.pathname.endsWith('/logout')) return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } });
       return json({});
     }

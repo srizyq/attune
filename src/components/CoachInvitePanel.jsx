@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useProfile } from '../hooks/useProfile';
 import { useCoachInvites } from '../hooks/useCoach';
 import { inviteLink, inviteState, daysLeft } from '../lib/coachInvite';
+import { shareOrigin } from '../lib/siteUrl';
 import FormRow from './FormRow';
 
 const INVITE_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // legacy fallback only
@@ -76,7 +77,7 @@ export default function CoachInvitePanel({ hasClients }) {
   };
 
   const copyLink = async (invite) => {
-    const ok = await copyText(inviteLink(window.location.origin, invite.code));
+    const ok = await copyText(inviteLink(shareOrigin(), invite.code));
     if (ok) {
       setCopiedId(invite.id);
       setTimeout(() => setCopiedId(id => (id === invite.id ? null : id)), 1500);
@@ -84,7 +85,7 @@ export default function CoachInvitePanel({ hasClients }) {
   };
 
   const share = async (invite) => {
-    const url = inviteLink(window.location.origin, invite.code);
+    const url = inviteLink(shareOrigin(), invite.code);
     const text = `Join me on Attune — here's your invite${invite.label ? ` (${invite.label})` : ''}:`;
     if (navigator.share) {
       try { await navigator.share({ title: 'Attune coaching invite', text, url }); return; } catch { /* dismissed — fall through to copy */ }

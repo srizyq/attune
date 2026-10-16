@@ -13,6 +13,25 @@ export const OAUTH_PROVIDERS = [
   { id: 'apple', label: 'Apple' },
 ];
 
+// Which of the providers above are switched on in Supabase. Showing a button for
+// one that isn't ends in a raw "provider is not enabled" error page, so buttons
+// only appear for providers the project reports as enabled. Resolves to [] when
+// that can't be found out.
+let enabledPromise = null;
+export function enabledOAuthProviders() {
+  enabledPromise ??= (async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY } });
+      if (!res.ok) return [];
+      const { external } = await res.json();
+      return OAUTH_PROVIDERS.filter((p) => external?.[p.id] === true);
+    } catch {
+      return [];
+    }
+  })();
+  return enabledPromise;
+}
+
 // Log in (or, for a provider identity we haven't seen, create the account —
 // Login sends those into onboarding afterwards).
 export function signInWithProvider(provider) {
