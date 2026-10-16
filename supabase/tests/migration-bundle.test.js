@@ -28,10 +28,11 @@ describe('supabase/pending-migrations.sql', () => {
     const titles = bundleBlocks(readSchema()).map((b) => b.title);
     expect(titles[0]).toBe('Coach consent + per-client invites');
     expect(titles).toContain('Community');
-    expect(titles.at(-1)).toBe('Coach insights and target ownership');
+    expect(titles.at(-1)).toBe('Meal plan items linked to foods');
+    expect(titles).toContain('Coach insights and target ownership');
     expect(titles).toContain('Friends');
     expect(titles).toContain('Coach teams');
-    expect(titles).toHaveLength(25);
+    expect(titles).toHaveLength(26);
     titles.forEach((t, i) => expect(bundleOnDisk).toContain(`--   ${String(i + 1).padStart(2)}. ${t}`));
   });
 

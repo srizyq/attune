@@ -4,7 +4,7 @@ import { render, screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 
-const db = vi.hoisted(() => ({ getSavedMeals: vi.fn() }));
+const db = vi.hoisted(() => ({ getSavedMeals: vi.fn(), getCustomFoods: vi.fn(), searchAusnutFoods: vi.fn(), searchCommonDishes: vi.fn() }));
 vi.mock('../../lib/db', () => db);
 import MealPlanEditor from './MealPlanEditor';
 
@@ -21,7 +21,7 @@ const fillFirstBreakfast = async (name, kcal) => {
   if (kcal) await userEvent.type(screen.getByLabelText('Breakfast item 1 calories'), String(kcal));
 };
 
-beforeEach(() => { db.getSavedMeals.mockResolvedValue([]); vi.stubGlobal('confirm', vi.fn(() => true)); });
+beforeEach(() => { db.getSavedMeals.mockResolvedValue([]); db.getCustomFoods.mockResolvedValue([]); db.searchAusnutFoods.mockResolvedValue([]); db.searchCommonDishes.mockResolvedValue([]); vi.stubGlobal('confirm', vi.fn(() => true)); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 
 describe('MealPlanEditor', () => {
@@ -166,5 +166,84 @@ describe('MealPlanEditor', () => {
     rerender(<MealPlanEditor trainerId="t1" clientData={{ name: 'Alex' }} admin={{ ...admin, plan: null }} />);
     expect(screen.getByLabelText('Plan name')).toHaveValue('Meal plan');
     expect(screen.queryByLabelText('Breakfast item 1 name')).not.toBeInTheDocument();
+  });
+});
+
+
+describe('MealPlanEditor — foods from the database', () => {
+  const chicken = { id: 'F1', name: 'Chicken, breast, grilled', calories: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6 };
+  const openPicker = async (meal = 'Breakfast') => {
+    await userEvent.click(within(screen.getByText(meal).parentElement.parentElement).getByRole('button', { name: '+ From food database' }));
+  };
+  const addChicken = async () => {
+    db.searchAusnutFoods.mockResolvedValue([chicken]);
+    await openPicker();
+    await userEvent.type(screen.getByLabelText('Search foods for Breakfast'), 'chicken');
+    await userEvent.click(await screen.findByText('Chicken, breast, grilled', {}, { timeout: 3000 }));
+  };
+
+  it('searches the database and adds the food at 100 g with macros worked out', async () => {
+    setup();
+    await addChicken();
+    expect(db.searchAusnutFoods).toHaveBeenCalledWith('chicken', 8);
+    expect(screen.getByLabelText('Breakfast item 1 name')).toHaveValue('Chicken, breast, grilled');
+    expect(screen.getByLabelText('Breakfast item 1 grams')).toHaveValue(100);
+    expect(screen.getByLabelText('Breakfast item 1 calories')).toHaveValue(165);
+    expect(screen.getByLabelText('Breakfast item 1 protein')).toHaveValue(31);
+    expect(screen.queryByLabelText('Search foods for Breakfast')).not.toBeInTheDocument(); // closes after a pick
+    expect(screen.getByText('AUSNUT')).toBeInTheDocument();
+  });
+
+  it('re-works the macros when the weight changes', async () => {
+    setup();
+    await addChicken();
+    const grams = screen.getByLabelText('Breakfast item 1 grams');
+    await userEvent.clear(grams);
+    await userEvent.type(grams, '150');
+    expect(screen.getByLabelText('Breakfast item 1 calories')).toHaveValue(248);
+    expect(screen.getByLabelText('Breakfast item 1 protein')).toHaveValue(46.5);
+    expect(screen.getByLabelText('Breakfast item 1 fat')).toHaveValue(5.4);
+  });
+
+  it('typing over a number keeps it and drops the link, so the numbers never disagree', async () => {
+    setup();
+    await addChicken();
+    const kcal = screen.getByLabelText('Breakfast item 1 calories');
+    await userEvent.clear(kcal);
+    await userEvent.type(kcal, '300');
+    expect(screen.queryByLabelText('Breakfast item 1 grams')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Breakfast item 1 portion')).toBeInTheDocument();
+    expect(screen.getByLabelText('Breakfast item 1 calories')).toHaveValue(300);
+    expect(screen.getByLabelText('Breakfast item 1 protein')).toHaveValue(31);
+  });
+
+  it('saves the link with the plan, and a reloaded plan still has the weight to edit', async () => {
+    const a = setup();
+    await addChicken();
+    await userEvent.click(screen.getByRole('button', { name: 'Create plan' }));
+    const saved = a.save.mock.calls[0][0].days.mon.breakfast[0];
+    expect(saved).toMatchObject({ name: 'Chicken, breast, grilled', grams: 100, src: 'AUSNUT', per100: { calories: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6 }, calories: 165 });
+    cleanup();
+    setup({ plan: { id: 'p', name: 'Plan', notes: '', is_active: true, days: { mon: { breakfast: [saved] } } } });
+    expect(screen.getByLabelText('Breakfast item 1 grams')).toHaveValue(100);
+  });
+
+  it('says so when nothing is found, and when the search fails', async () => {
+    setup();
+    await openPicker('Lunch');
+    await userEvent.type(screen.getByLabelText('Search foods for Lunch'), 'zzzz');
+    expect(await screen.findByText(/Nothing found/, {}, { timeout: 3000 })).toBeInTheDocument();
+    db.searchAusnutFoods.mockRejectedValue(new Error('down'));
+    db.searchCommonDishes.mockRejectedValue(new Error('down'));
+    await userEvent.clear(screen.getByLabelText('Search foods for Lunch'));
+    await userEvent.type(screen.getByLabelText('Search foods for Lunch'), 'rice');
+    expect(await screen.findByText(/Nothing found/, {}, { timeout: 3000 })).toBeInTheDocument(); // each source is allowed to fail on its own
+  });
+
+  it('can be closed without picking anything', async () => {
+    setup();
+    await openPicker();
+    await userEvent.click(screen.getByRole('button', { name: 'Close food search' }));
+    expect(screen.queryByLabelText('Search foods for Breakfast')).not.toBeInTheDocument();
   });
 });

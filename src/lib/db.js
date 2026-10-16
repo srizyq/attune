@@ -1475,15 +1475,29 @@ export async function getMealPlan(trainerId, clientId) {
 }
 
 // One plan per coach/client pair, edited in place.
+// Items picked from the food database carry their link (`grams`, `per100`,
+// `src`) as well as the plain numbers. A database that hasn't had that update
+// yet refuses those extra fields (a CHECK on the plan's days), so the plan is
+// saved again without them — nothing is lost the client ever sees, only the
+// coach's ability to re-weigh the item later.
+export function stripFoodLinks(days) {
+  return Object.fromEntries(Object.entries(days || {}).map(([d, meals]) => [d, Object.fromEntries(Object.entries(meals).map(([m, items]) => [m, items.map(({ grams, per100, src, ...plain }) => plain)]))])); // eslint-disable-line no-unused-vars
+}
+
+const hasFoodLinks = (days) => Object.values(days || {}).some((meals) => Object.values(meals).some((items) => items.some((i) => i.per100 != null || i.grams != null || i.src != null)));
+
 export async function saveMealPlan(trainerId, clientId, { name, notes, days, isActive }) {
-  const { data, error } = await supabase
+  const write = (d) => supabase
     .from('meal_plans')
     .upsert(
-      { trainer_id: trainerId, client_id: clientId, name, notes: notes || null, days, is_active: isActive },
+      { trainer_id: trainerId, client_id: clientId, name, notes: notes || null, days: d, is_active: isActive },
       { onConflict: 'trainer_id,client_id' }
     )
     .select()
     .single();
+  let { data, error } = await write(days);
+  // 23514 = check_violation (the plan's days constraint).
+  if (error && error.code === '23514' && hasFoodLinks(days)) ({ data, error } = await write(stripFoodLinks(days)));
   if (error) throw error;
   return data;
 }

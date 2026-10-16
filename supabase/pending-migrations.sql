@@ -33,6 +33,7 @@
 --   23. Ingredients on a logged meal
 --   24. Friends
 --   25. Coach insights and target ownership
+--   26. Meal plan items linked to foods
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block).
@@ -3910,3 +3911,75 @@ as $$
 $$;
 revoke all on function public.get_client_summaries(date) from public, anon;
 grant execute on function public.get_client_summaries(date) to authenticated;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Meal plan items linked to foods (schema update — run against an existing DB; safe to re-run).
+-- Tests: supabase/tests/meal-plan-foods.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- A coach used to type calories and macros by hand for every item in a meal
+-- plan. An item can now come from the food database: it keeps the food's
+-- values per 100 g (`per100`), how many grams are planned (`grams`) and where
+-- they came from (`src`), so changing the grams re-works the macros. The plain
+-- numbers are still stored as before — a plan without these fields is valid —
+-- and the client's app only ever reads the plain numbers.
+create or replace function public.valid_meal_plan_days(d jsonb)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  day_key text; day_val jsonb;
+  meal_key text; meal_val jsonb;
+  item jsonb;
+  k text; v jsonb; n numeric; lim numeric;
+  pk text; pv jsonb;
+begin
+  if d is null or jsonb_typeof(d) is distinct from 'object' then return false; end if;
+  if octet_length(d::text) > 200000 then return false; end if;
+  for day_key, day_val in select key, value from jsonb_each(d) loop
+    if day_key not in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun') then return false; end if;
+    if jsonb_typeof(day_val) is distinct from 'object' then return false; end if;
+    for meal_key, meal_val in select key, value from jsonb_each(day_val) loop
+      if meal_key not in ('breakfast', 'lunch', 'dinner', 'snacks') then return false; end if;
+      if jsonb_typeof(meal_val) is distinct from 'array' or jsonb_array_length(meal_val) > 20 then return false; end if;
+      for item in select value from jsonb_array_elements(meal_val) loop
+        if jsonb_typeof(item) is distinct from 'object' then return false; end if;
+        if jsonb_typeof(item -> 'name') is distinct from 'string' or char_length(item ->> 'name') not between 1 and 120 then return false; end if;
+        for k, v in select key, value from jsonb_each(item) loop
+          if k = 'name' then
+            continue;
+          elsif k = 'label' then
+            if jsonb_typeof(v) is distinct from 'string' or char_length(v #>> '{}') > 60 then return false; end if;
+          elsif k in ('calories', 'protein_g', 'carbs_g', 'fat_g') then
+            if jsonb_typeof(v) is distinct from 'number' then return false; end if;
+            n := (v #>> '{}')::numeric;
+            -- (a variable, not an inline CASE: plpgsql's IF..THEN parser would
+            -- stop at the CASE's own THEN.)
+            lim := case when k = 'calories' then 5000 else 1000 end;
+            if n < 0 or n > lim then return false; end if;
+          elsif k = 'grams' then
+            if jsonb_typeof(v) is distinct from 'number' then return false; end if;
+            n := (v #>> '{}')::numeric;
+            if n < 0 or n > 5000 then return false; end if;
+          elsif k = 'src' then
+            if jsonb_typeof(v) is distinct from 'string' or char_length(v #>> '{}') > 30 then return false; end if;
+          elsif k = 'per100' then
+            if jsonb_typeof(v) is distinct from 'object' then return false; end if;
+            for pk, pv in select key, value from jsonb_each(v) loop
+              if pk not in ('calories', 'protein_g', 'carbs_g', 'fat_g') then return false; end if;
+              if jsonb_typeof(pv) is distinct from 'number' then return false; end if;
+              n := (pv #>> '{}')::numeric;
+              lim := case when pk = 'calories' then 1000 else 100 end;
+              if n < 0 or n > lim then return false; end if;
+            end loop;
+          else
+            return false;
+          end if;
+        end loop;
+      end loop;
+    end loop;
+  end loop;
+  return true;
+end;
+$$;

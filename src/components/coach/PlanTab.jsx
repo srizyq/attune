@@ -3,6 +3,7 @@ import { useCheckinFormAdmin } from '../../hooks/useCheckinForms';
 import { useMealPlanAdmin } from '../../hooks/useMealPlans';
 import RecipeShareCard from './RecipeShareCard';
 import MealPlanEditor from './MealPlanEditor';
+import PlanVsActualCard from './PlanVsActualCard';
 import CheckinFormEditor from './CheckinFormEditor';
 import CheckinResponses from './CheckinResponses';
 
@@ -14,6 +15,7 @@ export default function PlanTab({ client, clientData }) {
   const planAdmin = useMealPlanAdmin(client.id);
   return (
     <div>
+      <PlanVsActualCard client={client} plan={planAdmin.plan} />
       <MealPlanEditor trainerId={user?.id} clientData={clientData} admin={planAdmin} />
       <RecipeShareCard trainerId={user?.id} client={clientData} />
       <CheckinFormEditor clientData={clientData} admin={admin} />

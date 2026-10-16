@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   DAYS, MEALS, LIMITS, weekdayKey, newItem, cleanDays, validateMealPlan, mealTotals, dayTotals, planHasItems,
-  recipeToItem, itemToFood, copyDay, groceryList, groceryText, loggedPlanMeals,
-} from './mealPlan.js';
+  recipeToItem, itemToFood, copyDay, groceryList, groceryText, loggedPlanMeals, itemFromFood, setItemGrams, unlinkItem, isLinked } from './mealPlan.js';
 
 const it1 = (over = {}) => ({ name: 'Oats', label: '60g', calories: 220, protein_g: 8, carbs_g: 38, fat_g: 4, ...over });
 const PLAN = { mon: { breakfast: [it1()], lunch: [it1({ name: 'Chicken salad', label: '1 bowl', calories: 480, protein_g: 40, carbs_g: 20, fat_g: 22 })] }, wed: { breakfast: [it1()] } };
@@ -169,5 +168,76 @@ describe('loggedPlanMeals', () => {
     expect([...loggedPlanMeals(day, [])]).toEqual([]);
     expect([...loggedPlanMeals(undefined, undefined)]).toEqual([]);
     expect(loggedPlanMeals(day, [log('dinner', 'x')]).has('dinner')).toBe(false);
+  });
+});
+
+describe('items picked from the food database', () => {
+  const chicken = { key: 'ausnut:1', name: 'Chicken breast, grilled', src: 'AUSNUT', per100: { calories: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6 }, defaultGrams: 100 };
+
+  it('starts at the default weight with macros worked out from the food', () => {
+    const item = itemFromFood(chicken);
+    expect(item).toMatchObject({ name: 'Chicken breast, grilled', label: '100g', grams: 100, src: 'AUSNUT', calories: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6 });
+    expect(isLinked(item)).toBe(true);
+  });
+
+  it('re-works the macros when the weight changes — and nothing else changes', () => {
+    const item = setItemGrams(itemFromFood(chicken), 150);
+    expect(item).toMatchObject({ grams: 150, label: '150g', calories: 248, protein_g: 46.5, carbs_g: 0, fat_g: 5.4, src: 'AUSNUT' });
+    expect(item.per100).toEqual(chicken.per100); // the food's own values never drift
+    expect(setItemGrams(item, 0)).toMatchObject({ grams: 0, calories: 0, protein_g: 0 });
+    expect(setItemGrams(item, 99999).grams).toBe(LIMITS.grams);
+    expect(setItemGrams(item, -5).grams).toBe(0);
+    expect(setItemGrams(item, 'abc').grams).toBe(0);
+  });
+
+  it('leaves a plain (typed or recipe) item alone when asked to change its weight', () => {
+    const plain = newItem({ name: 'Oats', label: '60g', calories: 220 });
+    expect(setItemGrams(plain, 120)).toBe(plain);
+    expect(isLinked(plain)).toBe(false);
+  });
+
+  it('unlinking keeps the numbers the coach typed and drops the link', () => {
+    const item = { ...setItemGrams(itemFromFood(chicken), 150), calories: 300 };
+    const plain = unlinkItem(item);
+    expect(plain).toMatchObject({ name: 'Chicken breast, grilled', calories: 300, protein_g: 46.5 });
+    expect(plain).not.toHaveProperty('per100');
+    expect(plain).not.toHaveProperty('grams');
+    expect(plain).not.toHaveProperty('src');
+    expect(isLinked(plain)).toBe(false);
+  });
+
+  it('a food with no known weight becomes a plain item with the serving\'s numbers', () => {
+    const item = itemFromFood({ key: 'dish:1', name: 'Pad thai', src: 'Common dish', per100: null, defaultGrams: null, fixed: { calories: 650, protein_g: 28, carbs_g: 80, fat_g: 22 }, servingLabel: '1 plate' });
+    expect(item).toMatchObject({ name: 'Pad thai', label: '1 plate', calories: 650, protein_g: 28 });
+    expect(isLinked(item)).toBe(false);
+  });
+
+  it('is saved with the link intact, and passes validation', () => {
+    const days = { mon: { lunch: [setItemGrams(itemFromFood(chicken), 150)] } };
+    const cleaned = cleanDays(days);
+    expect(cleaned.mon.lunch[0]).toMatchObject({ grams: 150, src: 'AUSNUT', per100: { calories: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6 } });
+    expect(validateMealPlan(cleaned)).toBeNull();
+  });
+
+  it('a plain item is cleaned exactly as before, with no link fields added', () => {
+    const cleaned = cleanDays({ mon: { lunch: [newItem({ name: ' Oats ', calories: 220 })] } });
+    expect(cleaned.mon.lunch[0]).toEqual({ name: 'Oats', calories: 220, protein_g: 0, carbs_g: 0, fat_g: 0 });
+  });
+
+  it('validation says what is wrong with a bad link, matching what the database allows', () => {
+    const plan = (over) => ({ mon: { lunch: [{ name: 'x', calories: 1, ...over }] } });
+    expect(validateMealPlan(plan({ grams: 5001 }))).toMatch(/weight must be between/);
+    expect(validateMealPlan(plan({ grams: '5' }))).toMatch(/weight must be between/);
+    expect(validateMealPlan(plan({ per100: 'x' }))).toMatch(/per 100g are malformed/);
+    expect(validateMealPlan(plan({ per100: { calories: 1001 } }))).toMatch(/out of range/);
+    expect(validateMealPlan(plan({ per100: { sodium_mg: 5 } }))).toMatch(/out of range/);
+    expect(validateMealPlan(plan({ src: 'x'.repeat(31) }))).toMatch(/source is too long/);
+    expect(validateMealPlan(plan({ secret: 1 }))).toMatch(/unexpected field/);
+    expect(validateMealPlan(plan({ grams: 150, per100: { calories: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6 }, src: 'AUSNUT' }))).toBeNull();
+  });
+
+  it('logs a linked item to the food log with its weight, so the log can scale it', () => {
+    expect(itemToFood(setItemGrams(itemFromFood(chicken), 150))).toMatchObject({ servingGrams: 150, servingLabel: '150g', source: 'plan' });
+    expect(itemToFood(newItem({ name: 'Oats', label: '60g' }))).not.toHaveProperty('servingGrams');
   });
 });

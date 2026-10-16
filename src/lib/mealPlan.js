@@ -20,8 +20,10 @@ export const MEALS = [
   { key: 'dinner', label: 'Dinner' },
   { key: 'snacks', label: 'Snacks' },
 ];
-export const LIMITS = { items: 20, name: 120, label: 60, calories: 5000, macro: 1000, planName: 80, notes: 2000 };
+export const LIMITS = { items: 20, name: 120, label: 60, calories: 5000, macro: 1000, planName: 80, notes: 2000, grams: 5000, src: 30, per100Calories: 1000, per100Macro: 100 };
 const NUMERIC = ['calories', 'protein_g', 'carbs_g', 'fat_g'];
+// An item picked from the food database also keeps the food's values per 100 g
+// and the grams planned, so changing the weight re-works the macros.
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
@@ -51,6 +53,13 @@ export function cleanDays(days) {
         if (label) item.label = label;
         item.calories = Math.min(LIMITS.calories, Math.max(0, round(num(raw.calories))));
         for (const f of ['protein_g', 'carbs_g', 'fat_g']) item[f] = Math.min(LIMITS.macro, Math.max(0, round(num(raw[f]), 1)));
+        if (isObj(raw.per100) && raw.grams != null) {
+          item.grams = Math.min(LIMITS.grams, Math.max(0, round(num(raw.grams), 1)));
+          item.per100 = {};
+          for (const f of NUMERIC) item.per100[f] = Math.min(f === 'calories' ? LIMITS.per100Calories : LIMITS.per100Macro, Math.max(0, round(num(raw.per100[f]), 1)));
+          const src = String(raw.src ?? '').trim().slice(0, LIMITS.src);
+          if (src) item.src = src;
+        }
         return item;
       });
       if (items.length) meals[meal.key] = items;
@@ -84,6 +93,16 @@ export function validateMealPlan(days) {
           const max = f === 'calories' ? LIMITS.calories : LIMITS.macro;
           if (typeof item[f] !== 'number' || !Number.isFinite(item[f]) || item[f] < 0 || item[f] > max) return `${where}: ${f.replace('_g', '')} must be between 0 and ${max}.`;
         }
+        if (item.grams != null && (typeof item.grams !== 'number' || !Number.isFinite(item.grams) || item.grams < 0 || item.grams > LIMITS.grams)) return `${where}: the weight must be between 0 and ${LIMITS.grams}g.`;
+        if (item.src != null && (typeof item.src !== 'string' || item.src.length > LIMITS.src)) return `${where}: the food source is too long.`;
+        if (item.per100 != null) {
+          if (!isObj(item.per100)) return `${where}: the food's values per 100g are malformed.`;
+          for (const [k, v] of Object.entries(item.per100)) {
+            const max = k === 'calories' ? LIMITS.per100Calories : LIMITS.per100Macro;
+            if (!NUMERIC.includes(k) || typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > max) return `${where}: the food's values per 100g are out of range.`;
+          }
+        }
+        for (const k of Object.keys(item)) if (![...NUMERIC, 'name', 'label', 'grams', 'src', 'per100'].includes(k)) return `${where}: unexpected field “${k}”.`;
       }
     }
   }
@@ -123,8 +142,60 @@ export function itemToFood(item) {
     name: item.name,
     cal: num(item.calories), protein: num(item.protein_g), carbs: num(item.carbs_g), fat: num(item.fat_g),
     servingLabel: item.label || null,
+    ...(item.per100 && item.grams > 0 ? { servingGrams: item.grams } : {}),
     source: 'plan',
   };
+}
+
+// ── items picked from the food database ──────────────────────────────────────
+const linkedMacros = (per100, grams) => ({
+  calories: Math.min(LIMITS.calories, Math.max(0, Math.round((num(per100.calories) * grams) / 100))),
+  protein_g: Math.min(LIMITS.macro, Math.max(0, round((num(per100.protein_g) * grams) / 100, 1))),
+  carbs_g: Math.min(LIMITS.macro, Math.max(0, round((num(per100.carbs_g) * grams) / 100, 1))),
+  fat_g: Math.min(LIMITS.macro, Math.max(0, round((num(per100.fat_g) * grams) / 100, 1))),
+});
+
+export const isLinked = (item) => !!item?.per100 && item.grams != null;
+
+// A food-database result ({ name, src, per100, defaultGrams } — see
+// lib/planFoodSearch.js) as a plan item at its default weight.
+export function itemFromFood(food) {
+  // No known weight to scale from: a plain item with the serving's own numbers.
+  if (!food.per100) {
+    const f = food.fixed || {};
+    return newItem({
+      name: String(food.name || '').slice(0, LIMITS.name),
+      label: String(food.servingLabel || '1 serving').slice(0, LIMITS.label),
+      calories: Math.min(LIMITS.calories, Math.max(0, Math.round(num(f.calories)))),
+      protein_g: Math.min(LIMITS.macro, Math.max(0, round(num(f.protein_g), 1))),
+      carbs_g: Math.min(LIMITS.macro, Math.max(0, round(num(f.carbs_g), 1))),
+      fat_g: Math.min(LIMITS.macro, Math.max(0, round(num(f.fat_g), 1))),
+    });
+  }
+  const grams = food.defaultGrams > 0 ? food.defaultGrams : 100;
+  return newItem({
+    name: String(food.name || '').slice(0, LIMITS.name),
+    label: `${round(grams, 1)}g`,
+    grams,
+    per100: { ...food.per100 },
+    src: String(food.src || '').slice(0, LIMITS.src),
+    ...linkedMacros(food.per100, grams),
+  });
+}
+
+// Changes a linked item's weight and re-works its macros from the food's values
+// per 100 g. Anything else is returned untouched.
+export function setItemGrams(item, rawGrams) {
+  if (!isLinked(item)) return item;
+  const grams = Math.min(LIMITS.grams, Math.max(0, num(rawGrams)));
+  return { ...item, grams, label: `${round(grams, 1)}g`, ...linkedMacros(item.per100, grams) };
+}
+
+// Typing over the numbers of a linked item means the coach knows better than the
+// database — keep what they typed and drop the link, so the two never disagree.
+export function unlinkItem(item) {
+  const { per100, grams, src, ...rest } = item; // eslint-disable-line no-unused-vars
+  return rest;
 }
 
 // Copies one day's meals onto other days (deep copy — editing one afterwards

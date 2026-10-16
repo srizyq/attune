@@ -3,8 +3,9 @@ import { Card, SectionLabel } from './shared';
 import { fieldStyle, labelStyle } from './constants';
 import { getSavedMeals } from '../../lib/db';
 import {
-  DAYS, MEALS, LIMITS, cleanDays, copyDay, dayTotals, groceryList, groceryText, mealTotals, newItem, planHasItems, recipeToItem, validateMealPlan,
+  DAYS, MEALS, LIMITS, cleanDays, copyDay, dayTotals, groceryList, groceryText, isLinked, itemFromFood, mealTotals, newItem, planHasItems, recipeToItem, setItemGrams, unlinkItem, validateMealPlan,
 } from '../../lib/mealPlan';
+import PlanFoodPicker from './PlanFoodPicker';
 
 let keyCounter = 0;
 const withKey = (item) => ({ ...item, _k: item._k || `k${++keyCounter}` });
@@ -32,6 +33,8 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Which meal's food-database search is open, if any.
+  const [pickerMeal, setPickerMeal] = useState(null);
 
   useEffect(() => {
     setName(plan?.name || 'Meal plan');
@@ -118,7 +121,7 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
         {DAYS.map((d) => {
           const has = (MEALS.some((m) => (days[d.key]?.[m.key] || []).length > 0));
           return (
-            <button key={d.key} role="tab" aria-selected={activeDay === d.key} onClick={() => { setActiveDay(d.key); setCopyTo([]); }} className="btn-press"
+            <button key={d.key} role="tab" aria-selected={activeDay === d.key} onClick={() => { setActiveDay(d.key); setCopyTo([]); setPickerMeal(null); }} className="btn-press"
               style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
                 background: activeDay === d.key ? 'var(--accent-bg)' : 'var(--bg-card)', border: `1px solid ${activeDay === d.key ? 'var(--accent-dark)' : 'var(--border-strong)'}`, color: activeDay === d.key ? 'var(--accent)' : 'var(--text-muted)' }}>
               {d.short}{has ? ' •' : ''}
@@ -138,15 +141,27 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
             {items.map((it, i) => (
               <div key={it._k} style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 6 }}>
                 <input aria-label={`${meal.label} item ${i + 1} name`} placeholder="Food" value={it.name} maxLength={LIMITS.name} onChange={(e) => updateItem(meal.key, it._k, { name: e.target.value })} style={{ ...small, flex: '2 1 130px', minWidth: 0 }} />
-                <input aria-label={`${meal.label} item ${i + 1} portion`} placeholder="Portion" value={it.label ?? ''} maxLength={LIMITS.label} onChange={(e) => updateItem(meal.key, it._k, { label: e.target.value })} style={{ ...small, flex: '1 1 80px', minWidth: 0 }} />
+                {isLinked(it) ? (
+                  // From the food database: the weight is what's edited, and the macros follow it.
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 110px', minWidth: 0 }}>
+                    <input type="number" min="0" inputMode="decimal" aria-label={`${meal.label} item ${i + 1} grams`} value={it.grams} onChange={(e) => setMeal(meal.key, (xs) => xs.map((x) => (x._k === it._k ? setItemGrams(x, e.target.value) : x)))} style={{ ...small, width: 64, flex: '0 0 auto' }} />
+                    <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>g</span>
+                    {it.src && <span title={`From ${it.src}. Typing over the numbers removes this link.`} style={{ fontSize: 9, fontWeight: 700, color: 'var(--accent)', border: '1px solid var(--border-active)', borderRadius: 4, padding: '1px 4px', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{it.src}</span>}
+                  </span>
+                ) : (
+                  <input aria-label={`${meal.label} item ${i + 1} portion`} placeholder="Portion" value={it.label ?? ''} maxLength={LIMITS.label} onChange={(e) => updateItem(meal.key, it._k, { label: e.target.value })} style={{ ...small, flex: '1 1 80px', minWidth: 0 }} />
+                )}
                 {[['calories', 'kcal'], ['protein_g', 'P'], ['carbs_g', 'C'], ['fat_g', 'F']].map(([f, label]) => (
-                  <input key={f} type="number" min="0" inputMode="decimal" aria-label={`${meal.label} item ${i + 1} ${label === 'kcal' ? 'calories' : label === 'P' ? 'protein' : label === 'C' ? 'carbs' : 'fat'}`} placeholder={label} value={it[f] ?? ''} onChange={(e) => updateItem(meal.key, it._k, { [f]: e.target.value })} style={{ ...small, width: 58, flex: '0 0 auto' }} />
+                  // Typing a number over a linked item's own means the coach knows better than the
+                  // database: keep what they typed and drop the link, so the two never disagree.
+                  <input key={f} type="number" min="0" inputMode="decimal" aria-label={`${meal.label} item ${i + 1} ${label === 'kcal' ? 'calories' : label === 'P' ? 'protein' : label === 'C' ? 'carbs' : 'fat'}`} placeholder={label} value={it[f] ?? ''} onChange={(e) => setMeal(meal.key, (xs) => xs.map((x) => (x._k === it._k ? { ...unlinkItem(x), [f]: e.target.value } : x)))} style={{ ...small, width: 58, flex: '0 0 auto' }} />
                 ))}
                 <button onClick={() => setMeal(meal.key, (xs) => xs.filter((x) => x._k !== it._k))} aria-label={`Remove ${meal.label} item ${i + 1}`} className="btn-press" style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 15, padding: 4 }}><i className="ti ti-trash" /></button>
               </div>
             ))}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button onClick={() => setMeal(meal.key, (xs) => [...xs, withKey(newItem())])} disabled={items.length >= LIMITS.items} className="btn-press" style={{ ...ghost, opacity: items.length >= LIMITS.items ? 0.5 : 1 }}>+ Add item</button>
+              <button onClick={() => setPickerMeal((cur) => (cur === meal.key ? null : meal.key))} disabled={items.length >= LIMITS.items} aria-expanded={pickerMeal === meal.key} className="btn-press" style={{ ...ghost, opacity: items.length >= LIMITS.items ? 0.5 : 1, color: 'var(--accent)' }}>+ From food database</button>
               {recipes.length > 0 && (
                 <select aria-label={`Add a recipe to ${meal.label}`} value="" onChange={(e) => { const r = recipes.find((x) => x.id === e.target.value); if (r) setMeal(meal.key, (xs) => [...xs, withKey(recipeToItem(r))]); }} style={{ ...ghost, cursor: 'pointer' }}>
                   <option value="">+ From my recipes…</option>
@@ -154,6 +169,14 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
                 </select>
               )}
             </div>
+            {pickerMeal === meal.key && (
+              <PlanFoodPicker
+                trainerId={trainerId}
+                mealLabel={meal.label}
+                onClose={() => setPickerMeal(null)}
+                onPick={(food) => { setMeal(meal.key, (xs) => [...xs, withKey(itemFromFood(food))]); setPickerMeal(null); }}
+              />
+            )}
           </div>
         );
       })}
