@@ -31,6 +31,14 @@ beforeEach(() => vi.stubGlobal('confirm', vi.fn(() => false)));
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('ClientList (with summaries)', () => {
+  it('labels the score: a percent on each row, and one line saying what it measures', () => {
+    setup();
+    const badge = screen.getByLabelText('7-day adherence 100 percent');
+    expect(badge).toHaveTextContent('100%');
+    expect(badge).toHaveAttribute('title', expect.stringContaining('within 10% of their calorie target'));
+    expect(screen.getByText(/is 7-day adherence — logging consistency plus targets hit on complete days \(3\+ meals logged\)/)).toBeInTheDocument();
+  });
+
   it('puts the client who needs the most attention first, with the reason', () => {
     setup();
     expect(names()).toEqual(['Quinn', 'Pat', 'Olive']);

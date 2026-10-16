@@ -14,8 +14,16 @@ async function setup() {
   await svc(db, `insert into public.trainer_clients (trainer_id, client_id, status, consented_at) values ($1, $2, 'active', now())`, [trainer, client]);
   return { db, trainer, other, client, stranger };
 }
-const food = (db, client, offset, cal, protein = 0) =>
-  svc(db, `insert into public.food_logs (user_id, logged_date, meal, food_name, calories, protein_g) values ($1, ${day(offset)}, 'lunch', 'x', $2, $3)`, [client, cal, protein]);
+// A whole day's food (breakfast, lunch, dinner) summing exactly to `cal` — a day
+// only counts as judgeable for "on target" once 3 meal slots are logged.
+const food = async (db, client, offset, cal, protein = 0) => {
+  const a = Math.round((cal / 3) * 100) / 100;
+  const p = Math.round((protein / 3) * 100) / 100;
+  const parts = [[a, p], [a, p], [Math.round((cal - 2 * a) * 100) / 100, Math.round((protein - 2 * p) * 100) / 100]];
+  for (const [i, slot] of ['breakfast', 'lunch', 'dinner'].entries()) {
+    await svc(db, `insert into public.food_logs (user_id, logged_date, meal, food_name, calories, protein_g) values ($1, ${day(offset)}, $2, 'x', $3, $4)`, [client, slot, parts[i][0], parts[i][1]]);
+  }
+};
 
 describe('trainer_notes are private to the trainer who wrote them', () => {
   it('lets a trainer write and read notes for an active client', async () => {
@@ -96,7 +104,7 @@ describe('get_client_summaries', () => {
     const { db, trainer, client } = await setup();
     await svc(db, `update public.profiles set calorie_target = 2000, protein_g = 150, goal = 'lose' where id = $1`, [client]);
     await food(db, client, 0, 2000, 150);   // today: on target, protein hit
-    await food(db, client, -1, 2200, 100);  // on target (within 15%), protein miss
+    await food(db, client, -1, 2150, 100);  // on target (within 10%), protein miss
     await food(db, client, -2, 1000, 140);  // off target, protein hit (>=135)
     await food(db, client, -6, 1800, 150);  // edge of the 7-day window (today-6): counts
     await food(db, client, -7, 2000, 150);  // just outside: does not count
@@ -106,7 +114,7 @@ describe('get_client_summaries', () => {
     const [r] = (await as(db, trainer, `select * from public.get_client_summaries('2026-09-20')`)).rows;
     expect(r).toMatchObject({ client_name: 'Sam Client', goal: 'lose', calorie_target: 2000, protein_g: 150, days_logged_7d: 4, days_on_target_7d: 3, days_protein_7d: 3 });
     expect(Number(r.today_cal)).toBe(2000);
-    expect(Number(r.avg_cal_7d)).toBeCloseTo((2000 + 2200 + 1000 + 1800) / 4, 5);
+    expect(Number(r.avg_cal_7d)).toBeCloseTo((2000 + 2150 + 1000 + 1800) / 4, 5);
     expect(r.last_log_date.toISOString().slice(0, 10)).toBe('2026-09-20');
     expect(Number(r.latest_weight_kg)).toBe(80);
     expect(Number(r.weight_change_kg_14d)).toBe(-2);

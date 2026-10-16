@@ -34,13 +34,16 @@ function dateRange(startDate, endDate) {
 function emptyDay(date) {
   return {
     date, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fibre_g: 0, sugar_g: 0,
-    proteinBeforeNoon_g: 0, mood: null, energy: null, loggedMeals: 0,
+    proteinBeforeNoon_g: 0, mood: null, energy: null, loggedMeals: 0, mealSlots: 0,
     waterGlasses: null, breakfastLogged: false, sleepHours: null, sleepQuality: null,
   };
 }
 
 export function joinDailyData(foodLogs, checkins) {
   const byDate = new Map();
+  // loggedMeals counts food entries; a "complete" day is judged on how many of
+  // the four meal slots have something in them (see lib/adherence.js).
+  const slots = new Map();
 
   for (const log of foodLogs) {
     const date = log.logged_date;
@@ -53,6 +56,8 @@ export function joinDailyData(foodLogs, checkins) {
     row.fibre_g += Number(log.fibre_g) || 0;
     row.sugar_g += Number(log.sugar_g) || 0;
     row.loggedMeals += 1;
+    if (!slots.has(date)) slots.set(date, new Set());
+    if (log.meal) slots.get(date).add(log.meal);
     if (log.meal === 'breakfast') row.breakfastLogged = true;
     const hour = log.created_at ? new Date(log.created_at).getHours() : null;
     if (hour !== null && hour < 12) row.proteinBeforeNoon_g += Number(log.protein_g) || 0;
@@ -69,6 +74,8 @@ export function joinDailyData(foodLogs, checkins) {
     row.sleepHours = c.sleep_hours != null ? Number(c.sleep_hours) : null;
     row.sleepQuality = c.sleep_quality ?? null;
   }
+
+  for (const row of byDate.values()) row.mealSlots = slots.get(row.date)?.size ?? 0;
 
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }

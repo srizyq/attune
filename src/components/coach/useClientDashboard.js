@@ -9,6 +9,7 @@ import { computeTrendWeight, toKg, fromKg } from '../../lib/adaptiveTDEE';
 import { MICRO_NUTRIENTS, extendedSummary } from '../../lib/microNutrients';
 import { targetsForDate, dayTargetsActive } from '../../lib/dayTargets';
 import { ACCENT, WATER_BLUE, avg } from './constants';
+import { ON_TARGET_TOLERANCE, isCompleteDay, isProteinHit } from '../../lib/adherence';
 
 // Everything the trainer's client tabs read, fetched and derived once so the
 // tabs themselves are just layout. `clientData` is the (possibly just-edited)
@@ -55,35 +56,39 @@ export function useClientDashboard(client, clientData) {
   const rest = dayTargetsActive(clientData) ? clientData.rest_day_targets : null;
   const hasCalorieTarget = !!(calorieTarget || rest?.calories);
   const hasProteinTarget = !!(proteinTarget || rest?.protein_g);
-  const onCalorieTarget = (d, tolerance) => {
+  const onCalorieTarget = (d, tolerance = ON_TARGET_TOLERANCE) => {
     const t = targetFor(d.date).calories;
     return !!t && Math.abs(d.calories - t) <= t * tolerance;
   };
 
   const byDate = useMemo(() => new Map(dailyData.map(d => [d.date, d])), [dailyData]);
   const allDates = useMemo(() => dateRange(dateNDaysAgo(range - 1), today), [range, today]);
-  const filledDays = allDates.map(d => byDate.get(d) || { date: d, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, loggedMeals: 0, energy: null, mood: null });
+  const filledDays = allDates.map(d => byDate.get(d) || { date: d, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, loggedMeals: 0, mealSlots: 0, energy: null, mood: null });
   const loggedDays = filledDays.filter(d => d.loggedMeals > 0);
   const hasData = loggedDays.length > 0;
 
   const energyDays = filledDays.filter(d => d.energy != null);
+  // A day can only be judged against the targets once it's complete (3+ meal
+  // slots) — the same rule the client list and reports use.
+  const completeDays = loggedDays.filter(d => isCompleteDay(d.mealSlots));
   const stats = {
     hasData,
     loggedDays,
+    completeDays,
     energyDays,
     avgCalories: Math.round(avg(loggedDays.map(d => d.calories))),
     avgProtein: Math.round(avg(loggedDays.map(d => d.protein_g))),
     avgCarbs: Math.round(avg(loggedDays.map(d => d.carbs_g))),
     avgFat: Math.round(avg(loggedDays.map(d => d.fat_g))),
-    daysOnTarget: hasCalorieTarget ? loggedDays.filter(d => onCalorieTarget(d, 0.1)).length : 0,
+    daysOnTarget: hasCalorieTarget ? completeDays.filter(d => onCalorieTarget(d)).length : 0,
     avgEnergy: energyDays.length ? avg(energyDays.map(d => d.energy)).toFixed(1) : null,
   };
 
   const streaks = {
     logging: computeStreak(badgeData),
-    calorie: hasCalorieTarget ? streakFor(badgeData, d => d.calories > 0 && onCalorieTarget(d, 0.15)) : 0,
+    calorie: hasCalorieTarget ? streakFor(badgeData, d => d.calories > 0 && onCalorieTarget(d)) : 0,
     mood: streakFor(badgeData, d => d.mood != null),
-    protein: hasProteinTarget ? streakFor(badgeData, d => { const t = targetFor(d.date).protein_g; return !!t && d.protein_g >= t * 0.9; }) : 0,
+    protein: hasProteinTarget ? streakFor(badgeData, d => isProteinHit(d.protein_g, targetFor(d.date).protein_g)) : 0,
   };
 
   // Same heatmap-strip treatment as the client's own Expenditure page, so a

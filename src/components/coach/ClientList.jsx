@@ -7,10 +7,13 @@ import {
 } from '../../lib/clientInsights';
 import { Card, SectionLabel } from './shared';
 import { avg } from './constants';
+import { tolerancePct, COMPLETE_DAY_MEALS } from '../../lib/adherence';
 import ListRow from '../ListRow';
 import FilterChipRow from '../FilterChipRow';
 
 const SEVERITY_COLOR = { high: 'var(--danger)', medium: 'var(--gold)' };
+// What the percentage on each row means — spelled out under the filters too.
+const ADHERENCE_HELP = `7-day adherence: how consistently they log, and how often they land within ${tolerancePct()}% of their calorie target and 90% of protein, on days with ${COMPLETE_DAY_MEALS}+ meals logged.`;
 
 // One client, from get_client_summaries: activity, adherence and why they
 // might need a message — everything a coach scans a list for. Tapping the
@@ -29,7 +32,7 @@ function SummaryRow({ row, summary, index, today, onSelect }) {
         avatar={<ListRow.SquareAvatar name={row.client?.name} pct={todayPct} />}
         title={row.client?.name || 'Unnamed client'}
         subtitleParts={[activityLabel(summary, today)]}
-        trailing={score != null ? <ListRow.Badge tone={tone === 'low' ? 'warning' : 'accent'} withChevron>{score}</ListRow.Badge> : <ListRow.Chevron />}
+        trailing={score != null ? <ListRow.Badge tone={tone === 'low' ? 'warning' : 'accent'} withChevron title={ADHERENCE_HELP} label={`7-day adherence ${score} percent`}>{score}%</ListRow.Badge> : <ListRow.Chevron />}
         onClick={() => onSelect(row.client)}
       />
       {flags.length > 0 && (
@@ -175,6 +178,9 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
               <FilterChipRow.Chip>Active ({Math.max(0, clients.length - attentionCount)})</FilterChipRow.Chip>
             </FilterChipRow>
           </div>
+          <p style={{ color: 'var(--text-hint)', fontSize: 11, lineHeight: 1.5, margin: '0 0 8px' }}>
+            The % on each row is 7-day adherence — logging consistency plus targets hit on complete days ({COMPLETE_DAY_MEALS}+ meals logged).
+          </p>
           {visible.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0 4px' }}>
               {attentionOnly && !query ? 'Nobody needs attention right now.' : 'No clients match.'}

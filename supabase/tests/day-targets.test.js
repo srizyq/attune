@@ -17,8 +17,16 @@ async function setup() {
 }
 const setDay = (db, who, client, rest, days) => as(db, who, `select public.set_client_day_targets($1, $2::jsonb, $3::int[])`, [client, rest === null ? null : JSON.stringify(rest), days]);
 const stored = async (db, client) => (await svc(db, `select rest_day_targets, training_days, calorie_mode from public.profiles where id = $1`, [client])).rows[0];
-const food = (db, client, offset, cal, protein = 0) =>
-  svc(db, `insert into public.food_logs (user_id, logged_date, meal, food_name, calories, protein_g) values ($1, ${day(offset)}, 'lunch', 'x', $2, $3)`, [client, cal, protein]);
+// A whole day's food (breakfast, lunch, dinner) summing exactly to `cal` — a day
+// only counts as judgeable for "on target" once 3 meal slots are logged.
+const food = async (db, client, offset, cal, protein = 0) => {
+  const a = Math.round((cal / 3) * 100) / 100;
+  const p = Math.round((protein / 3) * 100) / 100;
+  const parts = [[a, p], [a, p], [Math.round((cal - 2 * a) * 100) / 100, Math.round((protein - 2 * p) * 100) / 100]];
+  for (const [i, slot] of ['breakfast', 'lunch', 'dinner'].entries()) {
+    await svc(db, `insert into public.food_logs (user_id, logged_date, meal, food_name, calories, protein_g) values ($1, ${day(offset)}, $2, 'x', $3, $4)`, [client, slot, parts[i][0], parts[i][1]]);
+  }
+};
 
 describe('target_for_date', () => {
   const t = async (db, base, rest, key, training, date) =>

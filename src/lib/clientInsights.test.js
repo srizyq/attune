@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   adherenceScore, adherenceTone, daysSinceLastLog, attentionFlags, needsAttention,
-  matchesSearch, sortSummaries, activityLabel, weeklySummary, INACTIVE_DAYS,
+  matchesSearch, sortSummaries, activityLabel, weeklySummary, INACTIVE_DAYS, weightPlan, describeWeightPlan,
 } from './clientInsights.js';
 
 const TODAY = '2026-09-20';
@@ -188,5 +188,124 @@ describe('weeklySummary', () => {
   it('words yesterday and days-ago', () => {
     expect(w(row({ last_log_date: '2026-09-19' })).lines.at(-1)).toBe('Last logged yesterday');
     expect(w(row({ last_log_date: '2026-09-16' })).lines.at(-1)).toBe('Last logged 4 days ago');
+  });
+});
+
+
+// ── the shared "on target" definition, weight against the plan, and ownership ──
+describe('adherenceScore with the shared definition', () => {
+  it('judges targets against the days that could be judged, not every day logged', () => {
+    // 7 logged, but today is unfinished so only 6 are judged: 5 on target of 6
+    const base = row({ days_logged_7d: 7, days_judged_7d: 6, days_on_target_7d: 5, days_protein_7d: 6 });
+    expect(adherenceScore(base)).toBe(Math.round((0.5 + 0.3 * (5 / 6) + 0.2) * 100));
+  });
+  it('counts an unfinished past day as a miss against targets (it is in the denominator)', () => {
+    const finished = row({ days_logged_7d: 4, days_judged_7d: 4, days_on_target_7d: 4, days_protein_7d: 4 });
+    const unfinished = row({ days_logged_7d: 4, days_judged_7d: 4, days_on_target_7d: 2, days_protein_7d: 2 });
+    expect(adherenceScore(finished)).toBeGreaterThan(adherenceScore(unfinished));
+  });
+  it('falls back to logged days when the database has no days_judged_7d yet', () => {
+    expect(adherenceScore(row({ days_logged_7d: 4, days_on_target_7d: 2, days_protein_7d: 2 }))).toBe(Math.round((0.5 * (4 / 7) + 0.3 * 0.5 + 0.2 * 0.5) * 100));
+  });
+  it('with nothing judgeable yet (only today, unfinished) the score is logging alone', () => {
+    expect(adherenceScore(row({ days_logged_7d: 1, days_judged_7d: 0, days_on_target_7d: 0, days_protein_7d: 0 }))).toBe(Math.round((1 / 7) * 100));
+  });
+});
+
+describe('weightPlan — actual rate against the planned pace', () => {
+  const plan = (o) => weightPlan(row({ goal: 'lose', pace_kg_per_week: 0.5, ...o }));
+  it('is on track when the rate is near the plan', () => {
+    expect(plan({ weight_rate_kg_week: -0.45 })).toMatchObject({ status: 'on-track', planned: -0.5 });
+  });
+  it('calls a flat weight stalled — the case the old two-week flag never caught', () => {
+    expect(plan({ weight_rate_kg_week: -0.04 }).status).toBe('stalled');
+    expect(plan({ weight_rate_kg_week: 0.05 }).status).toBe('stalled');
+  });
+  it('calls a real but slow loss slow, and a clearly wrong-way move wrong-way', () => {
+    expect(plan({ weight_rate_kg_week: -0.2 }).status).toBe('slow');
+    expect(plan({ weight_rate_kg_week: 0.3 }).status).toBe('wrong-way');
+  });
+  it('calls a much faster loss fast, but not a marginally faster one', () => {
+    expect(plan({ weight_rate_kg_week: -0.9 }).status).toBe('fast');
+    expect(plan({ weight_rate_kg_week: -0.6 }).status).toBe('on-track');
+  });
+  it('mirrors for building', () => {
+    const b = (r) => weightPlan(row({ goal: 'build', pace_kg_per_week: 0.25, weight_rate_kg_week: r }));
+    expect(b(0.25).status).toBe('on-track');
+    expect(b(0.02).status).toBe('stalled');
+    expect(b(-0.2).status).toBe('wrong-way');
+    expect(b(0.1).status).toBe('slow');
+  });
+  it('uses the default pace when none was chosen', () => {
+    expect(weightPlan(row({ goal: 'lose', pace_kg_per_week: null, weight_rate_kg_week: -0.05 }))).toMatchObject({ status: 'stalled', planned: -0.35 });
+  });
+  it('maintenance only cares about drift', () => {
+    expect(weightPlan(row({ goal: 'maintain', weight_rate_kg_week: 0.1 })).status).toBe('steady');
+    expect(weightPlan(row({ goal: 'maintain', weight_rate_kg_week: -0.4 })).status).toBe('drifting');
+  });
+  it('is null with no rate or no goal', () => {
+    expect(weightPlan(row({ weight_rate_kg_week: null }))).toBeNull();
+    expect(weightPlan(row({ goal: null, weight_rate_kg_week: -0.4 }))).toBeNull();
+    expect(weightPlan(null)).toBeNull();
+  });
+  it('describes the rate against the plan in plain words', () => {
+    expect(describeWeightPlan({ rate: -0.04, planned: -0.5 })).toBe('−0.04 kg/week against a plan of −0.5');
+    expect(describeWeightPlan({ rate: 0.3, planned: 0.25 })).toBe('+0.3 kg/week against a plan of +0.25');
+  });
+});
+
+describe('attentionFlags — new flags', () => {
+  const ids = (s) => attentionFlags(s, TODAY).map(f => f.id);
+  const lose = (o) => row({ goal: 'lose', pace_kg_per_week: 0.5, ...o });
+
+  it('flags weight that is not moving, with the plan in the label', () => {
+    const [f] = attentionFlags(lose({ weight_rate_kg_week: -0.03 }), TODAY);
+    expect(f).toEqual({ id: 'weight-stalled', severity: 'medium', label: 'Weight not moving: −0.03 kg/week against a plan of −0.5' });
+  });
+  it('flags a wrong-way move from the rate, and a maintenance client who is drifting', () => {
+    expect(ids(lose({ weight_rate_kg_week: 0.3 }))).toEqual(['weight-wrong-way']);
+    expect(ids(row({ goal: 'maintain', weight_rate_kg_week: -0.5 }))).toEqual(['weight-drifting']);
+  });
+  it('stays quiet when the rate is on plan, and for a slow-but-moving loss', () => {
+    expect(ids(lose({ weight_rate_kg_week: -0.45 }))).toEqual([]);
+    expect(ids(lose({ weight_rate_kg_week: -0.25 }))).toEqual([]);
+  });
+  it('falls back to the plain two-week change when there is no rate', () => {
+    expect(ids(lose({ weight_rate_kg_week: null, weight_change_kg_14d: 0.8 }))).toEqual(['weight-wrong-way']);
+    expect(ids(lose({ weight_rate_kg_week: null, weight_change_kg_14d: -0.8 }))).toEqual([]);
+  });
+  it('flags a client who often leaves days unfinished', () => {
+    const flags = attentionFlags(row({ days_logged_7d: 6, days_complete_7d: 2, days_judged_7d: 6, days_on_target_7d: 2, days_protein_7d: 2 }), TODAY);
+    expect(flags).toContainEqual({ id: 'partial-days', severity: 'medium', label: 'Only 2 of 6 logged days were complete' });
+    expect(ids(row({ days_logged_7d: 6, days_complete_7d: 5, days_judged_7d: 6 }))).toEqual([]);
+    expect(ids(row({ days_logged_7d: 6 }))).toEqual([]); // no column yet → no claim
+  });
+  it('judges "often off target" on judged days', () => {
+    // 2 of 5 judged = 40%: not under the 0.4 line. 1 of 5 is.
+    expect(ids(row({ days_logged_7d: 7, days_judged_7d: 5, days_on_target_7d: 2 }))).toEqual([]);
+    expect(ids(row({ days_logged_7d: 7, days_judged_7d: 5, days_on_target_7d: 1 }))).toEqual(['off-target']);
+  });
+  it('tells the coach a client took their targets back — for two weeks, until the coach sets them again', () => {
+    const s = row({ targets_overridden_at: '2026-09-18T03:00:00Z', targets_set_by: null });
+    expect(attentionFlags(s, TODAY)).toEqual([{ id: 'targets-changed', severity: 'medium', label: 'Changed their own targets' }]);
+    expect(ids(row({ targets_overridden_at: '2026-09-18T03:00:00Z', targets_set_by: 'coach-1' }))).toEqual([]); // coach re-set them
+    expect(ids(row({ targets_overridden_at: '2026-08-01T03:00:00Z', targets_set_by: null }))).toEqual([]);    // long ago
+  });
+});
+
+describe('weeklySummary with the shared definition', () => {
+  const full2 = row({
+    days_logged_7d: 6, days_complete_7d: 4, days_judged_7d: 6, days_on_target_7d: 3, days_protein_7d: 3,
+    avg_cal_7d: 1700, avg_cal_complete_7d: 2050, latest_weight_kg: 81.4, weight_change_kg_14d: -0.6,
+    goal: 'lose', pace_kg_per_week: 0.5, weight_rate_kg_week: -0.3,
+  });
+  it('says how many days were complete, averages over them, and judges at 10%', () => {
+    const lines = weeklySummary(full2, { today: TODAY, name: 'Sam Client' }).lines;
+    expect(lines[0]).toBe('Logged food on 6 of the last 7 days (4 complete; average 2,050 kcal on complete days, target 2,000)');
+    expect(lines[1]).toBe('Within 10% of calorie target on 3 of 6 judged days; protein target (90%+) met on 3 (a day is judged once 3+ meals are logged)');
+  });
+  it('shows the weight trend against the plan when there is a rate', () => {
+    expect(weeklySummary(full2, { today: TODAY }).lines[2]).toBe('Weight trend −0.3 kg/week against a plan of −0.5 (now 81.4 kg)');
+    expect(weeklySummary(full2, { today: TODAY, unit: 'lb' }).lines[2]).toBe('Weight trend −0.7 lb/week against a plan of −1.1 (now 179.5 lb)');
   });
 });

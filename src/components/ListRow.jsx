@@ -78,11 +78,11 @@ ListRow.Chevron = function Chevron() {
 // Numeric/text badge (e.g. an adherence score) with an optional trailing
 // chevron alongside it — badge + chevron is a common combo in the
 // reference (a value plus "this row opens something").
-ListRow.Badge = function Badge({ children, tone = 'default', withChevron = false }) {
+ListRow.Badge = function Badge({ children, tone = 'default', withChevron = false, title, label }) {
   const color = tone === 'warning' ? 'var(--warning)' : tone === 'accent' ? 'var(--accent)' : 'var(--text-secondary)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-      <span style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{children}</span>
+      <span title={title} aria-label={label} style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{children}</span>
       {withChevron && <ListRow.Chevron />}
     </div>
   );

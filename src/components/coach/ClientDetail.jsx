@@ -79,7 +79,7 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
         </div>
         {score != null && (
           <div title="Logging consistency and target hits over the last 7 days" style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: TONE_COLOR[tone], lineHeight: 1 }}>{score}</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: TONE_COLOR[tone], lineHeight: 1 }}>{score}%</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>7-day adherence</div>
           </div>
         )}

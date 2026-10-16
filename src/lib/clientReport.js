@@ -7,6 +7,7 @@ import { targetsForDate, dayTargetsActive, describeTrainingDays, TARGET_FIELDS }
 import { toKg, fromKg } from './adaptiveTDEE';
 import { daysBetween } from './dates';
 import { provenanceBreakdown, describeBreakdown } from './provenance';
+import { COMPLETE_DAY_MEALS, isOnTarget, isCompleteDay, tolerancePct } from './adherence';
 
 export const MAX_REPORT_DAYS = 366;
 
@@ -18,9 +19,9 @@ export const DAY_FILTERS = [
 
 // A "complete" day: at least this many of the four meal slots have something
 // in them. Cronometer lets the client mark a day complete; here it's inferred,
-// so the definition is stated on every report.
-export const COMPLETE_DAY_MEALS = 3;
-const ON_TARGET_TOLERANCE = 0.1; // same ±10% the dashboard's "days on target" uses
+// so the definition is stated on every report. (Defined once, with "on target",
+// in lib/adherence.js — the client list and Overview use the same one.)
+export { COMPLETE_DAY_MEALS };
 
 // The food_logs column behind each micronutrient key — defined once, with the
 // nutrient itself, in lib/microNutrients.js.
@@ -92,14 +93,16 @@ export function buildReport({ client, start, end, dayFilter = 'all', foodLogs = 
 
   const days = [...byDate.values()].map((d) => ({
     date: d.date, calories: d.calories, protein: d.protein, carbs: d.carbs, fat: d.fat, fibre: d.fibre,
-    items: d.items, meals: d.slots.size, logged: d.items > 0, complete: d.slots.size >= COMPLETE_DAY_MEALS,
+    items: d.items, meals: d.slots.size, logged: d.items > 0, complete: isCompleteDay(d.slots.size),
     mood: d.mood, energy: d.energy, water: d.water, micros: d.micros,
   }));
 
   const keep = { all: () => true, logged: (d) => d.logged, complete: (d) => d.complete }[dayFilter] || (() => true);
   const included = days.filter(keep);
   const loggedIncluded = included.filter((d) => d.logged);
-  const evaluated = loggedIncluded.map((d) => ({ ...d, target: dayTarget(d.date) })).filter((d) => d.target);
+  // Only complete days are judged against the target: a day with just breakfast
+  // logged says nothing about whether the target was hit.
+  const evaluated = loggedIncluded.filter((d) => d.complete).map((d) => ({ ...d, target: dayTarget(d.date) })).filter((d) => d.target);
 
   const energyValues = included.filter((d) => d.energy != null).map((d) => num(d.energy));
   const sortedWeights = [...weightLogs].sort((a, b) => a.logged_date.localeCompare(b.logged_date));
@@ -127,7 +130,7 @@ export function buildReport({ client, start, end, dayFilter = 'all', foodLogs = 
     avgProtein: round(mean(included.map((d) => d.protein)) ?? 0),
     avgCarbs: round(mean(included.map((d) => d.carbs)) ?? 0),
     avgFat: round(mean(included.map((d) => d.fat)) ?? 0),
-    daysOnTarget: hasAnyTarget ? evaluated.filter((d) => Math.abs(d.calories - d.target) <= d.target * ON_TARGET_TOLERANCE).length : null,
+    daysOnTarget: hasAnyTarget ? evaluated.filter((d) => isOnTarget(d.calories, d.target)).length : null,
     daysEvaluatedForTarget: hasAnyTarget ? evaluated.length : 0,
     avgEnergy: energyValues.length ? round(mean(energyValues), 1) : null,
     weight,
@@ -229,7 +232,7 @@ ${kv('Days with food logged', `${summary.loggedDays} of ${summary.rangeDays}`)}
 ${kv('Complete days (3+ meals)', `${summary.completeDays} of ${summary.rangeDays}`)}
 ${kv('Average calories', `${summary.avgCalories.toLocaleString()} kcal`)}
 ${kv('Average protein / carbs / fat', `${summary.avgProtein} / ${summary.avgCarbs} / ${summary.avgFat} g`)}
-${kv('Days within 10% of calorie target', summary.daysOnTarget == null ? '—' : `${summary.daysOnTarget} of ${summary.daysEvaluatedForTarget} logged days`)}
+${kv(`Days within ${tolerancePct()}% of calorie target`, summary.daysOnTarget == null ? '—' : `${summary.daysOnTarget} of ${summary.daysEvaluatedForTarget} complete days`)}
 ${kv('Data sources (by calories)', summary.sources.length ? describeBreakdown(summary.sources) : '—')}
 ${kv('Average energy (check-ins)', summary.avgEnergy == null ? '—' : `${summary.avgEnergy} / 10`)}
 ${w ? kv('Weight', `${w.first} → ${w.last} ${w.unit} (${w.change > 0 ? '+' : ''}${w.change} ${w.unit})`) : kv('Weight', 'No entries')}

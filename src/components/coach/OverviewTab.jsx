@@ -5,9 +5,11 @@ import TargetsForm from './TargetsForm';
 import MicroTargetsCard from './MicroTargetsCard';
 import CoCoachCard from './CoCoachCard';
 import WeeklySummaryCard from './WeeklySummaryCard';
+import WeightPlanCard from './WeightPlanCard';
 import { Card, SectionLabel, StatRow, StatCard, EmptyChartBox, RangeToggle } from './shared';
 import { ACCENT, WATER_BLUE, AI_PURPLE, GOAL_LABELS, RANGES } from './constants';
 import { attentionFlags } from '../../lib/clientInsights';
+import { tolerancePct, COMPLETE_DAY_MEALS } from '../../lib/adherence';
 import { dayTargetsActive, describeTrainingDays, TARGET_FIELDS } from '../../lib/dayTargets';
 
 const SEVERITY_COLOR = { high: 'var(--danger)', medium: 'var(--gold)' };
@@ -33,13 +35,14 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
   const handleSaveTargets = onSaveTargets;
   const { calorieTarget, hasCalorieTarget, historyLoading, calorieHeatmapDays } = d;
   const restActive = dayTargetsActive(clientData);
-  const { hasData, loggedDays, energyDays, avgCalories, avgProtein, avgCarbs, avgFat, daysOnTarget, avgEnergy } = d.stats;
+  const { hasData, loggedDays, completeDays, energyDays, avgCalories, avgProtein, avgCarbs, avgFat, daysOnTarget, avgEnergy } = d.stats;
   const { logging: loggingStreak, calorie: calorieStreak, mood: moodStreak, protein: proteinStreak } = d.streaks;
 
   return (
     <div>
       <AttentionFlags summary={summary} today={d.today} />
       <WeeklySummaryCard summary={summary} clientData={clientData} today={d.today} />
+      <WeightPlanCard summary={summary} />
       <div className="grid-2" style={{ marginBottom: 16, alignItems: 'start' }}>
         <Card style={{ marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
@@ -74,7 +77,7 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
         </Card>
         <div className="grid-2" style={{ gap: 12 }}>
           <StatCard label="Avg. calories" value={hasData ? avgCalories.toLocaleString() : '—'} hint={hasData ? `over ${loggedDays.length} logged days` : 'No data yet'} color={ACCENT} />
-          <StatCard label="Days on target" value={hasData && hasCalorieTarget ? daysOnTarget : '—'} hint={hasCalorieTarget ? (restActive ? "within 10% of each day's goal" : 'within 10% of goal') : 'No calorie target set'} color={ACCENT} />
+          <StatCard label="Days on target" value={hasData && hasCalorieTarget ? daysOnTarget : '—'} hint={hasCalorieTarget ? `of ${completeDays.length} complete day${completeDays.length === 1 ? '' : 's'} (${COMPLETE_DAY_MEALS}+ meals), within ${tolerancePct()}% of ${restActive ? "each day's goal" : 'goal'}` : 'No calorie target set'} color={ACCENT} />
           <StatCard label="Avg. protein" value={hasData ? `${avgProtein}g` : '—'} hint={hasData ? `over ${loggedDays.length} logged days` : 'No data yet'} color={WATER_BLUE} />
           <StatCard label="Avg. energy" value={avgEnergy || '—'} hint={avgEnergy ? `over ${energyDays.length} check-ins` : 'No check-ins yet'} color={AI_PURPLE} />
         </div>

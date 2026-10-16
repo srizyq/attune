@@ -91,7 +91,7 @@ describe('ClientDetail', () => {
     expect(screen.getByText('Sam Client')).toBeInTheDocument();
     expect(screen.getByText('Lose weight · Cut')).toBeInTheDocument();
     expect(screen.getByText('7-day adherence')).toBeInTheDocument();
-    expect(screen.getByText('100')).toBeInTheDocument();
+    expect(screen.getByText('100%')).toBeInTheDocument();
   });
 
   it('omits the score, without breaking, when there is no summary', () => {

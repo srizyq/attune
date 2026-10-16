@@ -8,6 +8,8 @@ import { MICRO_NUTRIENTS } from './microNutrients.js';
 const client = { name: 'Sam Client', goal: 'lose', calorie_target: 2000, protein_g: 150, carbs_g: 200, fat_g: 60, unit: 'metric' };
 const log = (date, meal, calories, extra = {}) => ({ logged_date: date, meal, calories, protein_g: 10, carbs_g: 20, fat_g: 5, ...extra });
 const base = { client, start: '2026-09-14', end: '2026-09-20' };
+// A whole day (breakfast, lunch, dinner) summing to `calories` — a day is only judged against the target once it is complete.
+const wholeDay = (date, calories) => [log(date, 'breakfast', calories * 0.25), log(date, 'lunch', calories * 0.35), log(date, 'dinner', calories * 0.4)];
 
 describe('validateRange / datesInRange', () => {
   it('accepts a normal range and describes the problems otherwise', () => {
@@ -91,11 +93,19 @@ describe('buildReport — day filters and averages', () => {
     expect(none.included).toEqual([]);
   });
   it('counts days within 10% of target among logged days only, and reports "n/a" with no target', () => {
-    const r = buildReport({ ...base, foodLogs: [log('2026-09-14', 'lunch', 2100), log('2026-09-15', 'lunch', 2300), log('2026-09-16', 'lunch', 1700)], dayFilter: 'logged' });
+    const r = buildReport({ ...base, foodLogs: [...wholeDay('2026-09-14', 2100), ...wholeDay('2026-09-15', 2300), ...wholeDay('2026-09-16', 1700)], dayFilter: 'logged' });
     expect(r.summary).toMatchObject({ daysOnTarget: 1, daysEvaluatedForTarget: 3 });
-    const noTarget = buildReport({ ...base, client: { ...client, calorie_target: null }, foodLogs: [log('2026-09-14', 'lunch', 2100)] });
+    const noTarget = buildReport({ ...base, client: { ...client, calorie_target: null }, foodLogs: wholeDay('2026-09-14', 2100) });
     expect(noTarget.summary.daysOnTarget).toBeNull();
     expect(noTarget.summary.daysEvaluatedForTarget).toBe(0);
+  });
+  it('does not judge a day with only some meals logged — breakfast alone is missing data, not a missed target', () => {
+    const r = buildReport({ ...base, foodLogs: [...wholeDay('2026-09-14', 2000), log('2026-09-15', 'lunch', 2000), log('2026-09-16', 'breakfast', 300), log('2026-09-16', 'lunch', 300)], dayFilter: 'logged' });
+    expect(r.summary).toMatchObject({ loggedDays: 3, completeDays: 1, daysOnTarget: 1, daysEvaluatedForTarget: 1 });
+  });
+  it('uses the same ±10% edge as the client list: exactly 10% is in, just past it is out', () => {
+    const r = buildReport({ ...base, foodLogs: [...wholeDay('2026-09-14', 2200), ...wholeDay('2026-09-15', 2201), ...wholeDay('2026-09-16', 1800), ...wholeDay('2026-09-17', 1799)] });
+    expect(r.summary.daysOnTarget).toBe(2);
   });
 });
 
@@ -153,12 +163,12 @@ describe('buildReport — rest-day targets', () => {
   // 2026-09-14 is a Monday. Training days Mon/Wed/Fri; everything else is a rest day.
   const dayClient = { ...client, calorie_target: 2500, rest_day_targets: { calories: 1800 }, training_days: [1, 3, 5] };
   const logs = [
-    log('2026-09-14', 'lunch', 2500), // Mon, training: on target
-    log('2026-09-15', 'lunch', 1800), // Tue, rest: on target
-    log('2026-09-16', 'lunch', 1800), // Wed, training: 1800 vs 2500 -> off
-    log('2026-09-17', 'lunch', 2500), // Thu, rest: 2500 vs 1800 -> off
-    log('2026-09-18', 'lunch', 2500), // Fri, training: on target
-    log('2026-09-19', 'lunch', 1800), // Sat, rest: on target
+    ...wholeDay('2026-09-14', 2500), // Mon, training: on target
+    ...wholeDay('2026-09-15', 1800), // Tue, rest: on target
+    ...wholeDay('2026-09-16', 1800), // Wed, training: 1800 vs 2500 -> off
+    ...wholeDay('2026-09-17', 2500), // Thu, rest: 2500 vs 1800 -> off
+    ...wholeDay('2026-09-18', 2500), // Fri, training: on target
+    ...wholeDay('2026-09-19', 1800), // Sat, rest: on target
   ];
   it('judges each day against that day\'s own target', () => {
     const r = buildReport({ ...base, client: dayClient, foodLogs: logs });

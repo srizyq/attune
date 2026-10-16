@@ -4777,3 +4777,179 @@ end;
 $$;
 revoke all on function public.friends_recipes(uuid) from public, anon;
 grant execute on function public.friends_recipes(uuid) to authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Coach insights and target ownership (schema update — run against an existing DB; safe to re-run).
+-- Tests: supabase/tests/coach-insights.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Three things the coach tools were getting wrong, fixed together because the
+-- client list reads all of them from one function:
+--
+-- 1. "On target" meant ±15% here but ±10% on the client's Overview tile and in
+--    reports, and a day with only breakfast logged counted as a logged day that
+--    the client then "missed". There is now one definition (mirrored in
+--    src/lib/adherence.js): a day is judged only when it's complete (3+ meal
+--    slots), within ±10% of that day's own target. Today is left out until it
+--    is complete, so a morning coffee isn't scored as a failed day.
+-- 2. The list could not tell whether a client's weight was moving at the pace
+--    the coach planned. It now returns the client's chosen pace and their
+--    actual rate over 28 days, as the median of pairwise slopes between
+--    weigh-ins at least 3 days apart (Theil–Sen) — the same method as
+--    robustSlopeKgPerDay in src/lib/adaptiveTDEE.js, so one water-weight
+--    weigh-in can't swing it.
+-- 3. A coach's targets could be silently replaced by the client's own Settings
+--    page. Targets set by a coach are now marked with who set them and when, and
+--    a client who takes them back records that.
+alter table public.profiles add column if not exists targets_set_by uuid references public.profiles (id) on delete set null;
+alter table public.profiles add column if not exists targets_set_at timestamptz;
+alter table public.profiles add column if not exists targets_overridden_at timestamptz;
+
+-- The trainer's set_client_targets, now recording that these numbers are the
+-- coach's. (Same signature, so it replaces the earlier definition in place.)
+create or replace function public.set_client_targets(
+  p_client_id uuid,
+  p_calorie_target int default null,
+  p_protein_g int default null,
+  p_carbs_g int default null,
+  p_fat_g int default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.trainer_clients
+    where trainer_id = auth.uid() and client_id = p_client_id and status = 'active'
+  ) then
+    raise exception 'Not an active trainer for this client';
+  end if;
+
+  update public.profiles
+  set calorie_target = coalesce(p_calorie_target, calorie_target),
+      protein_g = coalesce(p_protein_g, protein_g),
+      carbs_g = coalesce(p_carbs_g, carbs_g),
+      fat_g = coalesce(p_fat_g, fat_g),
+      calorie_mode = 'custom',
+      targets_set_by = auth.uid(),
+      targets_set_at = now(),
+      targets_overridden_at = null,
+      updated_at = now()
+  where id = p_client_id;
+end;
+$$;
+revoke all on function public.set_client_targets(uuid, int, int, int, int) from public;
+grant execute on function public.set_client_targets(uuid, int, int, int, int) to authenticated;
+
+-- A client taking their targets back from their coach. A function rather than
+-- a plain profile update so the two columns always move together and only ever
+-- for the caller's own row.
+create or replace function public.override_coach_targets()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.profiles
+  set targets_set_by = null, targets_overridden_at = now(), updated_at = now()
+  where id = auth.uid() and targets_set_by is not null;
+$$;
+revoke all on function public.override_coach_targets() from public, anon;
+grant execute on function public.override_coach_targets() to authenticated;
+
+-- get_client_summaries, third version: the shared "on target" definition, the
+-- planned-vs-actual weight rate, and who owns the client's targets.
+drop function if exists public.get_client_summaries(date);
+create function public.get_client_summaries(p_today date default current_date)
+returns table (
+  link_id uuid, client_id uuid, client_name text, group_label text, connected_at timestamptz,
+  goal text, calorie_target int, protein_g int,
+  last_log_date date, days_logged_7d int, days_on_target_7d int, days_protein_7d int,
+  avg_cal_7d numeric, today_cal numeric,
+  latest_weight_kg numeric, latest_weight_date date, weight_change_kg_14d numeric,
+  last_checkin_date date,
+  days_complete_7d int, days_judged_7d int, avg_cal_complete_7d numeric,
+  pace_kg_per_week numeric, weight_rate_kg_week numeric, weigh_ins_28d int,
+  targets_set_by uuid, targets_overridden_at timestamptz
+)
+language sql
+stable
+set search_path = public
+as $$
+  select
+    tc.id, tc.client_id, p.name, tc.group_label, tc.created_at,
+    p.goal,
+    public.target_for_date(p.calorie_target, p.rest_day_targets, 'calories', p.training_days, p_today)::int,
+    public.target_for_date(p.protein_g, p.rest_day_targets, 'protein_g', p.training_days, p_today)::int,
+    (select max(f.logged_date) from public.food_logs f where f.user_id = tc.client_id),
+    coalesce(d.days_logged, 0)::int,
+    coalesce(d.days_on_target, 0)::int,
+    coalesce(d.days_protein, 0)::int,
+    d.avg_cal,
+    coalesce(t.cal, 0),
+    w.kg, w.dt,
+    case when w.kg is not null and w0.kg is not null and w0.dt < w.dt then round(w.kg - w0.kg, 2) end,
+    (select max(c.checkin_date) from public.checkins c where c.user_id = tc.client_id),
+    coalesce(d.days_complete, 0)::int,
+    coalesce(d.days_judged, 0)::int,
+    d.avg_cal_complete,
+    p.pace_kg_per_week,
+    case when r.n >= 4 and r.span >= 10 then round((r.rate_day * 7)::numeric, 3) end,
+    coalesce(r.n, 0)::int,
+    p.targets_set_by,
+    p.targets_overridden_at
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.client_id
+  left join lateral (
+    select
+      count(*) filter (where s.cal > 0) as days_logged,
+      count(*) filter (where s.cal > 0 and s.meals >= 3) as days_complete,
+      -- Today only counts once it's complete; past days count either way (an
+      -- unfinished past day is a day the client didn't finish logging).
+      count(*) filter (where s.cal > 0 and (s.meals >= 3 or s.logged_date < p_today)) as days_judged,
+      count(*) filter (where s.cal > 0 and s.meals >= 3 and s.cal_target is not null
+                       and s.cal between s.cal_target * 0.9 and s.cal_target * 1.1) as days_on_target,
+      count(*) filter (where s.cal > 0 and s.meals >= 3 and s.prot_target is not null and s.prot >= s.prot_target * 0.9) as days_protein,
+      avg(s.cal) filter (where s.cal > 0) as avg_cal,
+      avg(s.cal) filter (where s.cal > 0 and s.meals >= 3) as avg_cal_complete
+    from (
+      select f.logged_date, sum(f.calories) as cal, sum(f.protein_g) as prot, count(distinct f.meal) as meals,
+             public.target_for_date(p.calorie_target, p.rest_day_targets, 'calories', p.training_days, f.logged_date) as cal_target,
+             public.target_for_date(p.protein_g, p.rest_day_targets, 'protein_g', p.training_days, f.logged_date) as prot_target
+      from public.food_logs f
+      where f.user_id = tc.client_id and f.logged_date > p_today - 7 and f.logged_date <= p_today
+      group by f.logged_date
+    ) s
+  ) d on true
+  left join lateral (
+    select sum(f.calories) as cal from public.food_logs f
+    where f.user_id = tc.client_id and f.logged_date = p_today
+  ) t on true
+  left join lateral (
+    select case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg, wl.logged_date as dt
+    from public.weight_logs wl where wl.user_id = tc.client_id and wl.logged_date <= p_today
+    order by wl.logged_date desc limit 1
+  ) w on true
+  left join lateral (
+    select case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg, wl.logged_date as dt
+    from public.weight_logs wl
+    where wl.user_id = tc.client_id and w.dt is not null and wl.logged_date >= w.dt - 14 and wl.logged_date <= w.dt
+    order by wl.logged_date asc limit 1
+  ) w0 on true
+  left join lateral (
+    with wi as (
+      select wl.logged_date as dt, case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg
+      from public.weight_logs wl
+      where wl.user_id = tc.client_id and wl.logged_date > p_today - 28 and wl.logged_date <= p_today
+    )
+    select (select count(*) from wi) as n,
+           (select max(dt) - min(dt) from wi) as span,
+           (select percentile_cont(0.5) within group (order by (b.kg - a.kg) / (b.dt - a.dt))
+              from wi a join wi b on b.dt - a.dt >= 3) as rate_day
+  ) r on true
+  where tc.trainer_id = auth.uid() and tc.status = 'active'
+  order by p.name nulls last;
+$$;
+revoke all on function public.get_client_summaries(date) from public, anon;
+grant execute on function public.get_client_summaries(date) to authenticated;
