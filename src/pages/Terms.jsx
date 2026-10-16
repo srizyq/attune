@@ -66,17 +66,18 @@ export default function Terms() {
         </P>
       </Section>
 
-      <Section title="6. Community">
+      <Section title="6. Friends">
         <P>
-          Community lets you share days, meals and recipes with other people. It is
-          optional, and only for people aged 16 and over. By posting you agree that:
+          Friends lets you add other people by sharing an invite link. Once you are
+          friends, each of you can see the other's calories, macros and food log for
+          the current day, and any recipes the other has chosen to share. It is
+          optional. By using it you agree that:
         </P>
         <Ul items={[
-          'You are responsible for what you post. Share only your own food logs, recipes and photos of food, and only photos you have the right to share.',
-          'You keep ownership of what you post, and you give Attune permission to show it to the people your audience setting allows, and to let them copy it into their own diary.',
-          'You will not post anything abusive, hateful, sexual, violent, or that promotes eating disorders or extreme dieting, and you will not advertise, post links, or pretend to be someone else.',
-          'Everything on Community is shared by other users, not checked by us for accuracy. Calories, macros and recipes from other people are not medical or dietary advice (see section 1).',
-          'We may remove content, restrict features, or suspend an account that breaks these rules, with or without notice, and we act on reports. You can report and block anyone from the app.',
+          'You will only send your invite link to people you want to see your day, and you understand that anyone who opens it and adds you can see what you log.',
+          'You can hide your day, or just today, and remove a friend at any time. A friend can copy a recipe you have shared into their own recipes.',
+          'What friends log is their own record, not checked by us for accuracy. Calories, macros and recipes from other people are not medical or dietary advice (see section 1).',
+          'You will not use Friends to harass anyone, or to pressure someone about food, weight or dieting.',
         ]} />
       </Section>
 

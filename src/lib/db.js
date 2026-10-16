@@ -664,6 +664,18 @@ export async function updateSavedMeal(id, { name, items, servings }) {
   return data;
 }
 
+// Show (or stop showing) a recipe to your friends.
+export async function setSavedMealShared(id, shared) {
+  const { data, error } = await supabase
+    .from('saved_meals')
+    .update({ shared_with_friends: !!shared })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteSavedMeal(id) {
   const { error } = await supabase.from('saved_meals').delete().eq('id', id);
   if (error) throw error;

@@ -16,10 +16,9 @@ const DEFAULT_RPC = {
   search_ausnut_foods_fuzzy: [], search_ausnut_foods_ranked: [], search_common_dishes_fuzzy: [],
   search_restaurant_items_ranked: [], search_restaurant_items_fuzzy: [],
   start_free_trial: null,
-  // Community is switched off unless a test turns it on.
-  community_access: false, community_feed_cards: [], community_user_cards: [], community_saved_cards: [], community_suggestions: [],
-  community_follow_requests: [], community_follow_list: [], community_blocked_list: [],
-  community_is_moderator: false, community_leave: null, community_mod_reports: [], community_mod_set_post_hidden: null, community_mod_delete_post: null, community_mod_set_banned: null, community_mod_resolve_report: null, community_search: [], community_explore: [], community_profile: [],
+  // Friends: an account with an invite code and nobody added yet.
+  friends_me: [{ invite_code: 'ABCDE12345', share_day: true }], friends_list: [], friends_hidden_days: [], friends_preview: [],
+  friends_add: null, friends_remove: null, friends_set_sharing: null, friends_set_day_hidden: null, friends_recipes: [],
 };
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
@@ -60,7 +59,7 @@ function matches(row, key, spec) {
  * Anything the app asks for that has no fixture is recorded in `unmocked`
  * so a new endpoint can't silently go untested.
  */
-export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true, screen = 'approved', storageLog = [] } = {}) {
+export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true, storageLog = [] } = {}) {
   const data = {
     profiles: [buildProfile(profile)],
     food_logs: buildFoodLogs(),
@@ -74,7 +73,6 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     barcode_products: [], common_dishes: [], afcd_foods: [], ausnut_foods: [], meal_plans: [], body_measurements: [], progress_photos: [],
     day_slots: [], fasts: [],
     restaurant_chains: [], restaurant_items: [],
-    community_profiles: [], community_posts: [], community_follows: [], community_reactions: [], community_saves: [], community_copies: [], community_blocks: [], community_reports: [],
     ...tables,
   };
   const unmocked = [];
@@ -94,8 +92,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
       return json({});
     }
 
-    // Community photos: a private bucket (uploads, signed links, deletes) and the
-    // screening function. `screen` is what the check answers; `storageLog` records
+    // Private storage (uploads, signed links, deletes). `storageLog` records
     // uploads and deletes for tests that want to look.
     if (url.pathname.startsWith('/storage/v1/object/sign/')) {
       if (req.method() === 'POST') return json({ signedURL: `${url.pathname.replace('/storage/v1', '')}?token=t` });
@@ -105,10 +102,6 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     if (url.pathname.startsWith('/storage/v1/object/')) {
       storageLog.push(`${req.method()} ${url.pathname.replace('/storage/v1/object/', '')}`);
       return json(req.method() === 'DELETE' ? [] : { Key: url.pathname.replace('/storage/v1/object/', ''), Id: 'obj' });
-    }
-    if (url.pathname.startsWith('/functions/v1/screen-photo')) {
-      storageLog.push(`SCREEN ${req.postData() || ''}`);
-      return json({ status: screen });
     }
 
     if (url.pathname.startsWith('/rest/v1/rpc/')) {

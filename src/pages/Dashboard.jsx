@@ -34,10 +34,6 @@ import YesterdayMealPrompt from '../components/YesterdayMealPrompt';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
 import { useDaySwipe } from '../hooks/useDaySwipe';
 import { weekDays, shiftWeek, latestDate } from '../lib/weekStrip';
-import { useCommunityShare } from '../hooks/useCommunityShare';
-import { buildDayPost } from '../lib/communityPosts';
-import FriendsStrip from '../components/community/FriendsStrip';
-import MilestonePrompt from '../components/community/MilestonePrompt';
 import TrialBanner from '../components/TrialBanner';
 import InstallPrompt from '../components/InstallPrompt';
 import CalorieLimitBanner from '../components/CalorieLimitBanner';
@@ -951,8 +947,6 @@ export default function Dashboard() {
     setToastAction(action);
   }
   const { byMeal: yesterdayByMeal, copy: copyFromYesterday, copying: copyingYesterday } = useCopyYesterday(viewedDate, refetchFoodLogs, showToast);
-  // Community: a Friends strip and a streak-milestone prompt, once it's switched on and joined.
-  const community = useCommunityShare((m) => showToast(m));
   // deleteFood/removeWorkout had no error handling anywhere they were
   // used — a failed delete just silently did nothing. Same reasoning as
   // DailyLog.jsx's identical wrapper: LogItemRow already catches and
@@ -1218,13 +1212,6 @@ export default function Dashboard() {
             <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={FAT} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
           </MacroGroup>
 
-          {community.canShare && community.me && <FriendsStrip me={community.me} />}
-          {community.canShare && community.me && allItems.length > 0 && isViewingToday && (
-            <MilestonePrompt
-              streak={streak}
-              onShare={(n) => community.share({ ...buildDayPost({ date: viewedDate, today, items: allItems, targetCalories: viewedTargets.calories }), initialNote: `${n}-day streak` })}
-            />
-          )}
           <ActivityRow
             workouts={workouts}
             totalCaloriesBurned={totalCaloriesBurned}
@@ -1299,7 +1286,6 @@ export default function Dashboard() {
           onSave={handleLogWorkout}
         />
       )}
-      {community.sheet}
       {toast && <Toast message={toast} error={toastError} action={toastAction} duration={toastAction ? 5000 : 2200} onDone={() => setToast(null)} />}
     </div>
   );

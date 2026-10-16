@@ -29,11 +29,9 @@ const Nutrients = lazy(() => import('./pages/Nutrients'));
 const Expenditure = lazy(() => import('./pages/Expenditure'));
 const Fasting = lazy(() => import('./pages/Fasting'));
 const Coach = lazy(() => import('./pages/Coach'));
-const Community = lazy(() => import('./pages/Community'));
-const CommunityFind = lazy(() => import('./pages/CommunityFind'));
-const CommunitySaved = lazy(() => import('./pages/CommunitySaved'));
-const CommunityProfile = lazy(() => import('./pages/CommunityProfile'));
-const CommunityModerate = lazy(() => import('./pages/CommunityModerate'));
+const Friends = lazy(() => import('./pages/Friends'));
+const FriendDay = lazy(() => import('./pages/FriendDay'));
+const JoinFriend = lazy(() => import('./pages/JoinFriend'));
 const JoinCoach = lazy(() => import('./pages/JoinCoach'));
 const DashboardRedesignHarness = lazy(() => import('./prototypes/dashboard-redesign/Harness'));
 const SettingsRedesignHarness = lazy(() => import('./prototypes/settings-redesign/Harness'));
@@ -99,11 +97,10 @@ function AnimatedRoutes() {
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
         <Route path="/settings/goals" element={<RequireAuth><SettingsGoals /></RequireAuth>} />
         <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
-        <Route path="/community" element={<RequireAuth><Community /></RequireAuth>} />
-        <Route path="/community/find" element={<RequireAuth><CommunityFind /></RequireAuth>} />
-        <Route path="/community/moderate" element={<RequireAuth><CommunityModerate /></RequireAuth>} />
-        <Route path="/community/saved" element={<RequireAuth><CommunitySaved /></RequireAuth>} />
-        <Route path="/community/u/:username" element={<RequireAuth><CommunityProfile /></RequireAuth>} />
+        <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
+        <Route path="/friends/join/:code" element={<JoinFriend />} />
+        <Route path="/friends/:id" element={<RequireAuth><FriendDay /></RequireAuth>} />
+        <Route path="/community/*" element={<Navigate to="/friends" replace />} />
         <Route path="/join/:code" element={<JoinCoach />} />
         <Route path="/profile" element={<RequireAuth><MyProfile /></RequireAuth>} />
         <Route path="/settings/personal" element={<RequireAuth><Profile /></RequireAuth>} />

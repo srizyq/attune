@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
-import { getSavedMeals, addSavedMeal, updateSavedMeal, deleteSavedMeal } from '../lib/db';
+import { getSavedMeals, addSavedMeal, updateSavedMeal, setSavedMealShared, deleteSavedMeal } from '../lib/db';
 
 // Recipes — named bundles of ingredients that log as one action, e.g.
 // "My usual breakfast" = oats + banana + honey, makes 1 serving.
@@ -38,10 +38,16 @@ export function useSavedMeals() {
     return updated;
   }, []);
 
+  const setShared = useCallback(async (id, shared) => {
+    const updated = await setSavedMealShared(id, shared);
+    setRows(prev => prev.map(r => (r.id === id ? updated : r)));
+    return updated;
+  }, []);
+
   const remove = useCallback(async (id) => {
     await deleteSavedMeal(id);
     setRows(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  return { rows, loading, refetch, create, update, remove };
+  return { rows, loading, refetch, create, update, setShared, remove };
 }

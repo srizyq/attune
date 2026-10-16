@@ -9,8 +9,6 @@ import { todayLocalDate } from '../lib/patterns';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTimeFromDate } from '../lib/mealTime';
 import AppNav from '../components/AppNav';
 import Toast from '../components/Toast';
-import { useCommunityShare } from '../hooks/useCommunityShare';
-import { buildRecipePost, canShareRecipe } from '../lib/communityPosts';
 import { Card, SectionLabel } from '../components/settings/primitives';
 import ModalPortal from '../components/ModalPortal';
 import RecipeEditor from '../components/RecipeEditor';
@@ -33,7 +31,7 @@ const inputStyle = {
 // actual "log N servings" control, matching the amount+unit interaction
 // every other food in the app already uses (see FoodSearch's AddControls)
 // rather than inventing a new one.
-function RecipeCard({ recipe, isExpanded, onToggle, onAddIngredient, onSaveEdit, onDelete, onLog, onShare, logByTime, defaultMeal, defaultTime }) {
+function RecipeCard({ recipe, isExpanded, onToggle, onAddIngredient, onSaveEdit, onDelete, onLog, onToggleShared, logByTime, defaultMeal, defaultTime }) {
   const items = useMemo(() => recipe.items || [], [recipe.items]);
   const servings = Number(recipe.servings) || 1;
   const totals = useMemo(() => sumFoodItems(items), [items]);
@@ -139,7 +137,7 @@ function RecipeCard({ recipe, isExpanded, onToggle, onAddIngredient, onSaveEdit,
 
             <FormRow>
               <FormRow.Button icon="ti-edit" onClick={() => setEditing(true)}>Edit recipe</FormRow.Button>
-              {onShare && <FormRow.Button icon="ti-share-3" onClick={() => onShare(recipe)}>Share</FormRow.Button>}
+              <FormRow.Button icon={recipe.shared_with_friends ? 'ti-users-group' : 'ti-share-3'} onClick={() => onToggleShared(recipe)}>{recipe.shared_with_friends ? 'Shared with friends' : 'Share with friends'}</FormRow.Button>
               <FormRow.Button icon="ti-trash" danger onClick={() => onDelete(recipe)}>Delete</FormRow.Button>
             </FormRow>
             </div>
@@ -178,8 +176,16 @@ export default function Recipes() {
     setToastError(isError);
   }
 
-  // "Share" on a recipe, once Community is switched on.
-  const community = useCommunityShare((m) => showToast(m));
+  async function handleToggleShared(recipe) {
+    const next = !recipe.shared_with_friends;
+    try {
+      await savedMeals.setShared(recipe.id, next);
+      showToast(next ? `${recipe.name} is now shared with your friends` : `${recipe.name} is no longer shared`);
+    } catch (err) {
+      console.error('Failed to change sharing:', err);
+      showToast('Couldn\'t change sharing. Try again.', true);
+    }
+  }
 
   function goBack() {
     if (window.history.length > 1) navigate(-1);
@@ -284,7 +290,7 @@ export default function Recipes() {
                   onSaveEdit={handleSaveEdit}
                   onDelete={handleDelete}
                   onLog={handleLog}
-                  onShare={community.canShare && canShareRecipe(recipe) ? (r) => { setExpandedId(null); community.share(buildRecipePost(r)); } : undefined}
+                  onToggleShared={handleToggleShared}
                   logByTime={logByTime}
                   defaultMeal={defaultMeal}
                   defaultTime={currentTimeHHMM()}
@@ -295,7 +301,6 @@ export default function Recipes() {
         </div>
       </div>
 
-      {community.sheet}
       {toast && <Toast message={toast} error={toastError} onDone={() => setToast(null)} />}
     </div>
   );

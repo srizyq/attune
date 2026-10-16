@@ -4501,3 +4501,279 @@ grant execute on function public.community_leave() to authenticated;
 -- macros each — so expanding the entry in the log can show them. Null for
 -- everything else.
 alter table public.food_logs add column if not exists ingredients jsonb;
+
+
+-- ═══════════════════════════════════════
+-- Friends (schema update — run against an existing DB; safe to re-run).
+-- ═══════════════════════════════════════
+-- Friends replaces Community: people add each other by opening an invite link,
+-- and a friend sees the other's calories, macros and food log for the day (and
+-- any recipes they've chosen to share). There is no feed, no posts and no
+-- photos. Everything goes through the functions below — nobody reads another
+-- person's food_logs directly.
+
+-- Your invite code, and whether friends can see your day at all.
+create table if not exists public.friend_settings (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  invite_code text not null unique default upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10)),
+  share_day boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.friend_settings enable row level security;
+-- No policies: read and changed only through friends_me / friends_set_sharing.
+
+-- One row per pair, stored with the smaller id first so a pair exists once.
+create table if not exists public.friendships (
+  user_a uuid not null references auth.users (id) on delete cascade,
+  user_b uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_a, user_b),
+  check (user_a < user_b)
+);
+create index if not exists friendships_user_b_idx on public.friendships (user_b);
+alter table public.friendships enable row level security;
+drop policy if exists "friendships: select own" on public.friendships;
+create policy "friendships: select own" on public.friendships
+  for select using (auth.uid() = user_a or auth.uid() = user_b);
+drop policy if exists "friendships: delete own" on public.friendships;
+create policy "friendships: delete own" on public.friendships
+  for delete using (auth.uid() = user_a or auth.uid() = user_b);
+
+-- Days a person has hidden from their friends.
+create table if not exists public.friend_hidden_days (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day date not null,
+  primary key (user_id, day)
+);
+alter table public.friend_hidden_days enable row level security;
+drop policy if exists "friend_hidden_days: select own" on public.friend_hidden_days;
+create policy "friend_hidden_days: select own" on public.friend_hidden_days
+  for select using (auth.uid() = user_id);
+
+-- Recipes a person has chosen to show their friends.
+alter table public.saved_meals add column if not exists shared_with_friends boolean not null default false;
+
+create or replace function public.friends_are(a uuid, b uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.friendships
+    where user_a = least(a, b) and user_b = greatest(a, b)
+  );
+$$;
+revoke all on function public.friends_are(uuid, uuid) from public, anon, authenticated;
+
+-- Can friends see this person's log for this day?
+create or replace function public.friends_day_visible(p_owner uuid, p_day date)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select coalesce((select share_day from public.friend_settings where user_id = p_owner), true)
+     and not exists (select 1 from public.friend_hidden_days where user_id = p_owner and day = p_day);
+$$;
+revoke all on function public.friends_day_visible(uuid, date) from public, anon, authenticated;
+
+-- Your invite code and sharing switch, created on first use.
+create or replace function public.friends_me()
+returns table (invite_code text, share_day boolean)
+language plpgsql security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  insert into public.friend_settings (user_id) values (uid) on conflict (user_id) do nothing;
+  return query select s.invite_code, s.share_day from public.friend_settings s where s.user_id = uid;
+end;
+$$;
+revoke all on function public.friends_me() from public, anon;
+grant execute on function public.friends_me() to authenticated;
+
+create or replace function public.friends_set_sharing(p_share boolean)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  insert into public.friend_settings (user_id, share_day) values (uid, coalesce(p_share, true))
+    on conflict (user_id) do update set share_day = excluded.share_day;
+end;
+$$;
+revoke all on function public.friends_set_sharing(boolean) from public, anon;
+grant execute on function public.friends_set_sharing(boolean) to authenticated;
+
+create or replace function public.friends_set_day_hidden(p_day date, p_hidden boolean)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if p_hidden then
+    insert into public.friend_hidden_days (user_id, day) values (uid, p_day) on conflict do nothing;
+  else
+    delete from public.friend_hidden_days where user_id = uid and day = p_day;
+  end if;
+end;
+$$;
+revoke all on function public.friends_set_day_hidden(date, boolean) from public, anon;
+grant execute on function public.friends_set_day_hidden(date, boolean) to authenticated;
+
+-- Which of the given days you have hidden (so the page can show the switch).
+create or replace function public.friends_hidden_days(p_from date, p_to date)
+returns setof date
+language sql stable security definer set search_path = public
+as $$
+  select day from public.friend_hidden_days where user_id = auth.uid() and day between p_from and p_to order by day;
+$$;
+revoke all on function public.friends_hidden_days(date, date) from public, anon;
+grant execute on function public.friends_hidden_days(date, date) to authenticated;
+
+-- Who an invite link is from — just their name, shown before you accept.
+create or replace function public.friends_preview(p_code text)
+returns table (friend_id uuid, name text, already boolean)
+language plpgsql security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  perform public.community_rate_check('friend_preview', 60);
+  return query
+    select s.user_id, coalesce(nullif(trim(p.name), ''), 'Someone'), public.friends_are(uid, s.user_id)
+    from public.friend_settings s
+    left join public.profiles p on p.id = s.user_id
+    where s.invite_code = upper(regexp_replace(coalesce(p_code, ''), '[^A-Za-z0-9]', '', 'g'));
+end;
+$$;
+revoke all on function public.friends_preview(text) from public, anon;
+grant execute on function public.friends_preview(text) to authenticated;
+
+-- Opening someone's link and tapping Add friend: you are friends straight away.
+create or replace function public.friends_add(p_code text)
+returns uuid
+language plpgsql security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  owner uuid;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  perform public.community_rate_check('friend_add', 40);
+  select user_id into owner from public.friend_settings
+    where invite_code = upper(regexp_replace(coalesce(p_code, ''), '[^A-Za-z0-9]', '', 'g'));
+  if owner is null then raise exception 'friends_invalid_code'; end if;
+  if owner = uid then raise exception 'friends_self'; end if;
+  insert into public.friend_settings (user_id) values (uid) on conflict (user_id) do nothing;
+  insert into public.friendships (user_a, user_b) values (least(uid, owner), greatest(uid, owner)) on conflict do nothing;
+  return owner;
+end;
+$$;
+revoke all on function public.friends_add(text) from public, anon;
+grant execute on function public.friends_add(text) to authenticated;
+
+create or replace function public.friends_remove(p_friend uuid)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  delete from public.friendships where user_a = least(uid, p_friend) and user_b = greatest(uid, p_friend);
+end;
+$$;
+revoke all on function public.friends_remove(uuid) from public, anon;
+grant execute on function public.friends_remove(uuid) to authenticated;
+
+-- Your friends with their totals for one day. hidden = true means they are not
+-- showing that day (totals are then null); items counts what they logged.
+create or replace function public.friends_list(p_day date)
+returns table (
+  friend_id uuid, name text, hidden boolean, items bigint,
+  calories numeric, protein_g numeric, carbs_g numeric, fat_g numeric,
+  calorie_target numeric, protein_target numeric, carbs_target numeric, fat_target numeric
+)
+language plpgsql stable security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  return query
+    select f.friend, coalesce(nullif(trim(p.name), ''), 'Friend'), not vis.visible,
+      case when vis.visible then t.items else 0 end,
+      case when vis.visible then t.calories end,
+      case when vis.visible then t.protein end,
+      case when vis.visible then t.carbs end,
+      case when vis.visible then t.fat end,
+      p.calorie_target::numeric, p.protein_g::numeric, p.carbs_g::numeric, p.fat_g::numeric
+    from (
+      select case when user_a = uid then user_b else user_a end as friend
+      from public.friendships where user_a = uid or user_b = uid
+    ) f
+    left join public.profiles p on p.id = f.friend
+    cross join lateral (select public.friends_day_visible(f.friend, p_day) as visible) vis
+    cross join lateral (
+      select count(*) as items, coalesce(sum(l.calories), 0) as calories, coalesce(sum(l.protein_g), 0) as protein,
+             coalesce(sum(l.carbs_g), 0) as carbs, coalesce(sum(l.fat_g), 0) as fat
+      from public.food_logs l where l.user_id = f.friend and l.logged_date = p_day
+    ) t
+    order by lower(coalesce(nullif(trim(p.name), ''), 'Friend'));
+end;
+$$;
+revoke all on function public.friends_list(date) from public, anon;
+grant execute on function public.friends_list(date) to authenticated;
+
+-- One friend's day: who they are, their targets and the foods they logged.
+create or replace function public.friends_day(p_friend uuid, p_day date)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  prof public.profiles%rowtype;
+  visible boolean;
+  logs jsonb := '[]'::jsonb;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if not public.friends_are(uid, p_friend) then raise exception 'friends_not_friends'; end if;
+  select * into prof from public.profiles where id = p_friend;
+  visible := public.friends_day_visible(p_friend, p_day);
+  if visible then
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id', l.id, 'meal', l.meal, 'food_name', l.food_name, 'brand', l.brand,
+      'calories', l.calories, 'protein_g', l.protein_g, 'carbs_g', l.carbs_g, 'fat_g', l.fat_g,
+      'serving_grams', l.serving_grams, 'logged_amount', l.logged_amount, 'logged_unit', l.logged_unit,
+      'serving_label', l.serving_label, 'logged_at', l.logged_at, 'created_at', l.created_at,
+      'ingredients', l.ingredients
+    ) order by l.logged_at nulls last, l.created_at), '[]'::jsonb)
+    into logs
+    from public.food_logs l where l.user_id = p_friend and l.logged_date = p_day;
+  end if;
+  return jsonb_build_object(
+    'friend_id', p_friend,
+    'name', coalesce(nullif(trim(prof.name), ''), 'Friend'),
+    'hidden', not visible,
+    'targets', jsonb_build_object('calories', prof.calorie_target, 'protein_g', prof.protein_g, 'carbs_g', prof.carbs_g, 'fat_g', prof.fat_g),
+    'logs', logs
+  );
+end;
+$$;
+revoke all on function public.friends_day(uuid, date) from public, anon;
+grant execute on function public.friends_day(uuid, date) to authenticated;
+
+-- The recipes a friend has chosen to share.
+create or replace function public.friends_recipes(p_friend uuid)
+returns table (id uuid, name text, items jsonb, servings numeric, created_at timestamptz)
+language plpgsql stable security definer set search_path = public
+as $$
+begin
+  if auth.uid() is null then raise exception 'Not signed in'; end if;
+  if not public.friends_are(auth.uid(), p_friend) then raise exception 'friends_not_friends'; end if;
+  return query
+    select m.id, m.name, m.items, m.servings, m.created_at
+    from public.saved_meals m where m.user_id = p_friend and m.shared_with_friends
+    order by m.created_at desc;
+end;
+$$;
+revoke all on function public.friends_recipes(uuid) from public, anon;
+grant execute on function public.friends_recipes(uuid) to authenticated;

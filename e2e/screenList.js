@@ -13,6 +13,7 @@ export const SCREENS = [
   { name: 'settings', path: '/settings' },
   { name: 'settings-goals', path: '/settings/goals' },
   { name: 'coach', path: '/coach' },
+  { name: 'friends', path: '/friends', wait: 'No friends yet' },
   { name: 'profile', path: '/profile' },
   { name: 'personal-details', path: '/settings/personal' },
 ];

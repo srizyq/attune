@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LogoMark from './LogoMark';
 import QuickActionSheet from './QuickActionSheet';
-import { useCommunityAccess } from '../hooks/useCommunityAccess';
 
 // Desktop sidebar keeps the fuller set of primary pages. Mobile trims to
 // the 4 highest-frequency destinations plus a center "+" for everything
@@ -21,9 +20,9 @@ const MOBILE_ITEMS = [
 const MOBILE_ITEMS_RIGHT = [
   { id: 'coach', label: 'Coach', icon: 'ti-users', path: '/coach' },
 ];
-// With Community switched on, its tab takes the Coach slot — Coach lives inside
-// it (Friends | Coach), so the Coach pages keep this tab lit.
-const COMMUNITY_ITEM = { id: 'community', label: 'Community', icon: 'ti-world', path: '/community' };
+// Friends takes the Coach slot — Coach lives inside it (Friends | Coach), so
+// the Coach pages keep this tab lit.
+const FRIENDS_ITEM = { id: 'friends', label: 'Friends', icon: 'ti-users-group', path: '/friends' };
 
 // One shared shape for every bottom-nav tab (not just the two MOBILE_ITEMS
 // arrays — Settings below is the same button, just with no array entry of
@@ -53,9 +52,8 @@ function MobileNavButton({ isActive, label, icon, onClick }) {
 export default function AppNav({ active, initials }) {
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const { enabled: communityOn } = useCommunityAccess();
-  const swap = (item) => (communityOn && item.id === 'coach' ? COMMUNITY_ITEM : item);
-  const isActive = (item) => active === item.id || (communityOn && item.id === 'community' && active === 'coach');
+  const swap = (item) => (item.id === 'coach' ? FRIENDS_ITEM : item);
+  const isActive = (item) => active === item.id || (item.id === 'friends' && active === 'coach');
 
   return (
     <>

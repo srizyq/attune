@@ -12,8 +12,7 @@ import ClientDetail from '../components/coach/ClientDetail';
 import { needsAttention } from '../lib/clientInsights';
 import { todayLocalDate } from '../lib/patterns';
 import PageHeader from '../components/PageHeader';
-import CommunityTabs from '../components/community/CommunityTabs';
-import { useCommunityAccess } from '../hooks/useCommunityAccess';
+import FriendsTabs from '../components/friends/FriendsTabs';
 import SegmentedControl from '../components/SegmentedControl';
 
 function timeOfDayGreeting() {
@@ -60,7 +59,6 @@ export default function Coach() {
   const allLoggedToday = clients.length > 0 && resolvedStatuses.length === clients.length && loggedTodayCount === clients.length;
 
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
-  const { enabled: communityOn } = useCommunityAccess();
   const isTrainer = !!profile?.coach_pass;
   const attentionCount = summaries.filter(s => needsAttention(s, today)).length;
   const selectedSummary = selectedClient ? summaries.find(s => s.client_id === selectedClient.id) : undefined;
@@ -112,8 +110,8 @@ export default function Coach() {
         </PageHeader>
 
         <div className="page-pad">
-          {/* With Community on, Coach sits inside its tab: Friends | Coach. */}
-          {communityOn && <CommunityTabs active="coach" />}
+          {/* Coach sits inside the Friends tab: Friends | Coach. */}
+          <FriendsTabs active="coach" />
           {!isTrainer ? (
             <ClientCoachHub />
           ) : trainerTab === 'my-coach' ? (
