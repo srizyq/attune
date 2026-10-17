@@ -173,7 +173,7 @@ export function PillButton({ active, onClick, children, style, ...rest }) {
 // every option should stay visible, like the four meals.
 export function PillRow({ children, style, label, wrap = false }) {
   return (
-    <div role="group" aria-label={label} style={{ display: 'flex', gap: 8, ...(wrap ? { flexWrap: 'wrap' } : { overflowX: 'auto', margin: '0 -2px', padding: '2px', scrollbarWidth: 'none' }), ...style }}>
+    <div role="group" aria-label={label} style={{ display: 'flex', gap: 8, ...(wrap ? { flexWrap: 'wrap' } : { overflowX: 'auto', overflowY: 'hidden', margin: '0 -2px', padding: '2px', scrollbarWidth: 'none' }), ...style }}>
       {children}
     </div>
   );

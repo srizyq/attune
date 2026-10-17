@@ -2467,7 +2467,7 @@ export default function FoodSearch() {
               foods" list would only get in the way. */}
           {browsing && (
             <>
-              <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", overflowY: "hidden", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
                 {[
                   { id: "frequent", label: "Frequently logged" },
                   { id: "recent", label: "Recently logged" },

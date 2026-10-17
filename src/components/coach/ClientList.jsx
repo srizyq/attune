@@ -11,42 +11,61 @@ import { tolerancePct, COMPLETE_DAY_MEALS } from '../../lib/adherence';
 import ListRow from '../ListRow';
 import FilterChipRow from '../FilterChipRow';
 
+// Red only for what is urgent; everything else stays in the app's palette.
 const SEVERITY_COLOR = { high: 'var(--danger)', medium: 'var(--gold)' };
-// What the percentage on each row means — spelled out under the filters too.
+const TONE_COLOR = { good: 'var(--accent-secondary)', fair: 'var(--gold)', low: 'var(--danger)' };
+// What the percentage on each row means — shown behind the (i) button.
 const ADHERENCE_HELP = `7-day adherence: how consistently they log, and how often they land within ${tolerancePct()}% of their calorie target and 90% of protein, on days with ${COMPLETE_DAY_MEALS}+ meals logged.`;
 
-// One client, from get_client_summaries: activity, adherence and why they
-// might need a message — everything a coach scans a list for. Tapping the
-// row opens ClientDetail (via onSelect); the group-tag/disconnect actions
-// that used to live inline here now live in ClientDetail's own header,
-// since the row is a single tap target now rather than a name + inline
-// actions.
+// A small tinted pill (no outline) for the reasons a client needs a look.
+function Tag({ color, children }) {
+  return (
+    <span style={{
+      display: 'inline-block', maxWidth: '100%', boxSizing: 'border-box', padding: '4px 10px', borderRadius: 99,
+      fontSize: 12, fontWeight: 700, lineHeight: 1.3, overflowWrap: 'anywhere',
+      color: `color-mix(in srgb, ${color} 75%, var(--text-primary))`,
+      background: `color-mix(in srgb, ${color} 14%, var(--bg-card))`,
+    }}>{children}</span>
+  );
+}
+
+// One client as its own card, from get_client_summaries: activity, adherence
+// and why they might need a message — everything a coach scans a list for.
+// The whole card is the tap target (opens ClientDetail via onSelect); the
+// reasons sit inside it, so nothing ever overlaps a divider line. The
+// group-tag/disconnect actions live in ClientDetail's own header.
 function SummaryRow({ row, summary, index, today, onSelect, unreadCount = 0 }) {
   const score = adherenceScore(summary);
   const tone = adherenceTone(score);
   const flags = attentionFlags(summary, today);
   const todayPct = summary.calorie_target && summary.today_cal ? Number(summary.today_cal) / summary.calorie_target : 0;
+  const open = () => onSelect(row.client);
   return (
     <div className="stagger-item" style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}>
-      <ListRow
-        avatar={<ListRow.SquareAvatar name={row.client?.name} pct={todayPct} />}
-        title={row.client?.name || 'Unnamed client'}
-        subtitleParts={[activityLabel(summary, today)]}
-        trailing={score != null ? <ListRow.Badge tone={tone === 'low' ? 'warning' : 'accent'} withChevron title={ADHERENCE_HELP} label={`7-day adherence ${score} percent`}>{score}%</ListRow.Badge> : <ListRow.Chevron />}
-        onClick={() => onSelect(row.client)}
-      />
-      {(flags.length > 0 || unreadCount > 0) && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '-6px 0 6px 56px' }}>
-          {unreadCount > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 20, padding: '2px 8px' }}>
-              {unreadCount} new {unreadCount === 1 ? 'message' : 'messages'}
-            </span>
+      <Card
+        role="button" tabIndex={0} onClick={open}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
+        className="btn-press"
+        style={{ padding: 14, marginBottom: 10, cursor: 'pointer' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <ListRow.SquareAvatar name={row.client?.name} pct={todayPct} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{row.client?.name || 'Unnamed client'}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{activityLabel(summary, today)}</div>
+          </div>
+          {score != null && (
+            <span role="img" title={ADHERENCE_HELP} aria-label={`7-day adherence ${score} percent`} style={{ fontSize: 20, fontWeight: 800, color: TONE_COLOR[tone] || 'var(--text-secondary)', flexShrink: 0 }}>{score}%</span>
           )}
-          {flags.slice(0, 2).map(f => (
-            <span key={f.id} style={{ fontSize: 11, fontWeight: 600, color: SEVERITY_COLOR[f.severity], border: `1px solid ${SEVERITY_COLOR[f.severity]}`, borderRadius: 20, padding: '2px 8px' }}>{f.label}</span>
-          ))}
+          <ListRow.Chevron />
         </div>
-      )}
+        {(flags.length > 0 || unreadCount > 0) && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
+            {unreadCount > 0 && <Tag color="var(--accent-secondary)">{unreadCount} new {unreadCount === 1 ? 'message' : 'messages'}</Tag>}
+            {flags.slice(0, 2).map(f => <Tag key={f.id} color={SEVERITY_COLOR[f.severity]}>{f.label}</Tag>)}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
@@ -122,102 +141,132 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
     });
   }, [clients]);
 
-  return (
-    <Card style={{ marginBottom: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <SectionLabel icon="ti-users">Your clients</SectionLabel>
+  const [showHelp, setShowHelp] = useState(false);
+  const statusChip = summariesSupported && hasClients ? (
+    attentionCount === 0 ? (
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent-secondary)', fontSize: 12, fontWeight: 700 }}>
+        <i className="ti ti-circle-check" /> All on track
+      </span>
+    ) : (
+      <span style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>{attentionCount} need{attentionCount === 1 ? 's' : ''} attention</span>
+    )
+  ) : !summariesSupported && hasClients && resolvedCount > 0 ? (
+    allLoggedToday ? (
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent-secondary)', fontSize: 12, fontWeight: 700 }}>
+        <i className="ti ti-circle-check" /> All caught up
+      </span>
+    ) : (
+      <span style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>{loggedTodayCount}/{resolvedCount} logged today</span>
+    )
+  ) : null;
+
+  const heading = (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+        <SectionLabel icon="ti-users" style={{ margin: 0 }}>Your clients</SectionLabel>
         {summariesSupported && hasClients && (
-          attentionCount === 0 ? (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent)', fontSize: 12, fontWeight: 600, marginBottom: 18 }}>
-              <i className="ti ti-circle-check" /> All on track
-            </span>
-          ) : (
-            <span style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 600, marginBottom: 18 }}>{attentionCount} need{attentionCount === 1 ? 's' : ''} attention</span>
-          )
-        )}
-        {!summariesSupported && hasClients && resolvedCount > 0 && (
-          allLoggedToday ? (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent)', fontSize: 12, fontWeight: 600, marginBottom: 18 }}>
-              <i className="ti ti-circle-check" /> All caught up
-            </span>
-          ) : (
-            <span style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 600, marginBottom: 18 }}>{loggedTodayCount}/{resolvedCount} logged today</span>
-          )
+          <button type="button" onClick={() => setShowHelp(v => !v)} aria-expanded={showHelp} aria-label="About the percentage" className="hit-slop"
+            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', fontSize: 16, display: 'flex', cursor: 'pointer' }}>
+            <i className="ti ti-info-circle" aria-hidden="true" />
+          </button>
         )}
       </div>
+      {statusChip}
+    </div>
+  );
 
-      {loading ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
-      ) : !hasClients ? (
-        <div style={{ textAlign: 'center', padding: '20px 12px' }}>
-          <i className="ti ti-users" style={{ fontSize: 28, color: 'var(--text-hint)' }} />
-          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>
-            Once a client accepts your invite, they'll show up here.
-          </p>
-        </div>
-      ) : summariesSupported ? (
-        <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-            <input
-              type="search"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Search clients"
-              aria-label="Search clients"
-              style={{ width: '100%', padding: '8px 12px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-            />
+  // Not the summaries path (or nobody yet): a single card, as before.
+  if (!(summariesSupported && hasClients && !loading)) {
+    return (
+      <Card style={{ marginBottom: 0 }}>
+        {heading}
+        {loading ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+        ) : !hasClients ? (
+          <div style={{ textAlign: 'center', padding: '20px 12px' }}>
+            <i className="ti ti-users" style={{ fontSize: 28, color: 'var(--text-hint)' }} />
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>
+              Once a client accepts your invite, they'll show up here.
+            </p>
+          </div>
+        ) : (
+          groupedClients.map(([label, rows]) => (
+            <div key={label}>
+              {groupedClients.length > 1 && (
+                <div style={{ color: 'var(--text-hint)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '14px 0 4px' }}>
+                  {label} <span style={{ fontWeight: 500 }}>({rows.length})</span>
+                </div>
+              )}
+              {rows.map((row, i) => (
+                <LegacyClientRow key={row.id} row={row} index={i} onSelect={onSelect} onStatus={onStatus} />
+              ))}
+            </div>
+          ))
+        )}
+      </Card>
+    );
+  }
+
+  const sortLabel = SORTS.find(x => x.id === sortId)?.label || 'Sort';
+  return (
+    <section>
+      {heading}
+      {showHelp && (
+        <p style={{ color: 'var(--text-secondary)', fontSize: 12, lineHeight: 1.5, margin: '0 0 12px' }}>
+          The % on each card is 7-day adherence.
+        </p>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+        <input
+          type="search"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search clients"
+          aria-label="Search clients"
+          style={{ width: '100%', padding: '12px 14px', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+        />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+          <FilterChipRow>
+            <FilterChipRow.Chip
+              active={attentionOnly}
+              onClick={() => setAttentionOnly(v => !v)}
+              onClear={attentionOnly ? () => setAttentionOnly(false) : undefined}
+            >
+              Needs attention{attentionCount > 0 ? ` (${attentionCount})` : ''}
+            </FilterChipRow.Chip>
+            <FilterChipRow.Chip
+              active={unreadOnly}
+              onClick={() => setUnreadOnly(v => !v)}
+              onClear={unreadOnly ? () => setUnreadOnly(false) : undefined}
+            >
+              Unread{unread.size > 0 ? ` (${unread.size})` : ''}
+            </FilterChipRow.Chip>
+          </FilterChipRow>
+          {/* The real <select> sits invisibly over a tidy pill, so it keeps the
+              native picker (and screen-reader behaviour) without a boxed dropdown. */}
+          <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 20, background: 'var(--chip-bg)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, minHeight: 32, boxSizing: 'border-box' }}>
+            <i className="ti ti-arrows-sort" aria-hidden="true" style={{ fontSize: 14 }} />
+            <span>Sort: {sortLabel}</span>
             <select
               value={sortId}
               onChange={e => setSortId(e.target.value)}
               aria-label="Sort clients"
-              style={{ width: '100%', padding: '8px 10px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', boxSizing: 'border-box' }}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', border: 'none', fontSize: 16 }}
             >
-              {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              {SORTS.map(x => <option key={x.id} value={x.id}>{x.label}</option>)}
             </select>
-            <FilterChipRow>
-              <FilterChipRow.Chip
-                active={attentionOnly}
-                onClick={() => setAttentionOnly(v => !v)}
-                onClear={attentionOnly ? () => setAttentionOnly(false) : undefined}
-              >
-                Needs attention{attentionCount > 0 ? ` (${attentionCount})` : ''}
-              </FilterChipRow.Chip>
-              <FilterChipRow.Chip
-                active={unreadOnly}
-                onClick={() => setUnreadOnly(v => !v)}
-                onClear={unreadOnly ? () => setUnreadOnly(false) : undefined}
-              >
-                Unread{unread.size > 0 ? ` (${unread.size})` : ''}
-              </FilterChipRow.Chip>
-            </FilterChipRow>
-          </div>
-          <p style={{ color: 'var(--text-hint)', fontSize: 11, lineHeight: 1.5, margin: '0 0 8px' }}>
-            The % on each row is 7-day adherence.
-          </p>
-          {visible.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0 4px' }}>
-              {unreadOnly && !query ? 'No unread messages.' : attentionOnly && !query ? 'Nobody needs attention right now.' : 'No clients match.'}
-            </p>
-          ) : (
-            visible.map(({ row, summary }, i) => (
-              <SummaryRow key={row.id} row={row} summary={summary} index={i} today={today} onSelect={onSelect} unreadCount={unread.get(summary.client_id)?.unread || 0} />
-            ))
-          )}
-        </>
+          </label>
+        </div>
+      </div>
+      {visible.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0 4px' }}>
+          {unreadOnly && !query ? 'No unread messages.' : attentionOnly && !query ? 'Nobody needs attention right now.' : 'No clients match.'}
+        </p>
       ) : (
-        groupedClients.map(([label, rows]) => (
-          <div key={label}>
-            {groupedClients.length > 1 && (
-              <div style={{ color: 'var(--text-hint)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '14px 0 4px' }}>
-                {label} <span style={{ fontWeight: 500 }}>({rows.length})</span>
-              </div>
-            )}
-            {rows.map((row, i) => (
-              <LegacyClientRow key={row.id} row={row} index={i} onSelect={onSelect} onStatus={onStatus} />
-            ))}
-          </div>
+        visible.map(({ row, summary }, i) => (
+          <SummaryRow key={row.id} row={row} summary={summary} index={i} today={today} onSelect={onSelect} unreadCount={unread.get(summary.client_id)?.unread || 0} />
         ))
       )}
-    </Card>
+    </section>
   );
 }

@@ -13,21 +13,22 @@ export function RowActions({ row, onSetGroup, onRevoke }) {
     setEditingGroup(false);
     await onSetGroup(row.id, groupInput.trim());
   };
+  const pill = { display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", maxWidth: '100%' };
   return (
     <>
       {editingGroup ? (
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
           <input
             value={groupInput}
             onChange={e => setGroupInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') saveGroup(); if (e.key === 'Escape') setEditingGroup(false); }}
             autoFocus
-            placeholder="Group"
+            placeholder="Group name"
             aria-label="Group name"
-            style={{ width: 90, padding: '4px 8px', fontSize: 11, background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 6, color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }}
+            style={{ width: 150, minWidth: 0, minHeight: 44, boxSizing: 'border-box', padding: '0 14px', fontSize: 16, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 99, color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }}
           />
-          <button onClick={saveGroup} aria-label="Save group" className="btn-press" style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 13, padding: 2 }}>
-            <i className="ti ti-check" />
+          <button onClick={saveGroup} aria-label="Save group" className="btn-press" style={{ ...pill, width: 44, padding: 0, justifyContent: 'center', background: 'var(--accent)', color: 'var(--accent-contrast)', fontSize: 16 }}>
+            <i className="ti ti-check" aria-hidden="true" />
           </button>
         </div>
       ) : (
@@ -36,14 +37,10 @@ export function RowActions({ row, onSetGroup, onRevoke }) {
           className="btn-press"
           title="Set group"
           aria-label="Set group"
-          style={{
-            background: row.group_label ? 'var(--bg-primary)' : 'none',
-            border: row.group_label ? '1px solid var(--border-default)' : 'none',
-            borderRadius: 20, padding: row.group_label ? '3px 10px' : 4,
-            color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', flexShrink: 0, fontFamily: "'Plus Jakarta Sans', sans-serif",
-          }}
+          style={{ ...pill, background: 'var(--chip-bg)', color: 'var(--text-secondary)' }}
         >
-          {row.group_label || <i className="ti ti-tag" />}
+          <i className="ti ti-tag" aria-hidden="true" style={{ fontSize: 15 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.group_label || 'Add to group'}</span>
         </button>
       )}
       <button
@@ -51,9 +48,9 @@ export function RowActions({ row, onSetGroup, onRevoke }) {
         title="Disconnect"
         aria-label="Disconnect client"
         className="btn-press"
-        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}
+        style={{ ...pill, background: 'transparent', color: 'var(--danger)', boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent)' }}
       >
-        <i className="ti ti-x" />
+        <i className="ti ti-user-minus" aria-hidden="true" style={{ fontSize: 15 }} /> Disconnect
       </button>
     </>
   );
@@ -63,9 +60,34 @@ export function RowActions({ row, onSetGroup, onRevoke }) {
 // Coach) — re-exported here so existing imports keep working.
 export { Card };
 
-export function SectionLabel({ icon, children }) {
+// The header row of a card: a caps label on the left and, optionally, one
+// action on the right (CardAction). Centre-aligned with a 44px minimum so the
+// action is a proper tap target and never sits on the label's baseline.
+export function CardHeader({ icon, children, action }) {
   return (
-    <p style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 44, marginBottom: 8 }}>
+      <SectionLabel icon={icon} style={{ margin: 0 }}>{children}</SectionLabel>
+      {action}
+    </div>
+  );
+}
+
+// A small pill button for a card header ("Edit", "Copy summary").
+export function CardAction({ onClick, icon, children }) {
+  return (
+    <button
+      type="button" onClick={onClick} className="btn-press"
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 14px', margin: '0 -6px 0 0', border: 'none', borderRadius: 99, background: 'transparent', color: 'var(--accent-secondary)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: 'nowrap' }}
+    >
+      {icon && <i className={`ti ${icon}`} aria-hidden="true" style={{ fontSize: 14 }} />}
+      {children}
+    </button>
+  );
+}
+
+export function SectionLabel({ icon, children, style }) {
+  return (
+    <p style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 18px', ...style }}>
       {icon && <i className={`ti ${icon}`} style={{ fontSize: 13 }} />}
       {children}
     </p>

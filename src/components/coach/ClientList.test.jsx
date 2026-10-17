@@ -57,12 +57,15 @@ describe('ClientList — unread messages', () => {
 });
 
 describe('ClientList (with summaries)', () => {
-  it('labels the score: a percent on each row, and one line saying what it measures', () => {
+  it('labels the score: a percent on each card, and a line saying what it measures behind the (i)', async () => {
     setup();
     const badge = screen.getByLabelText('7-day adherence 100 percent');
     expect(badge).toHaveTextContent('100%');
     expect(badge).toHaveAttribute('title', expect.stringContaining('within 10% of their calorie target'));
-    expect(screen.getByText(/is 7-day adherence/)).toBeInTheDocument();
+    const explain = /is 7-day adherence/;
+    expect(screen.queryByText(explain)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'About the percentage' }));
+    expect(screen.getByText(explain)).toBeInTheDocument();
   });
 
   it('puts the client who needs the most attention first, with the reason', () => {

@@ -17,6 +17,9 @@ export function probe({ ignore = [], scrolledToEnd = false, allowDocumentScroll 
   const visible = (el) => {
     const cs = style(el);
     if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return false;
+    // The inside of a collapsed <details> is laid out but never shown.
+    const closed = el.closest('details:not([open])');
+    if (closed && !(el.closest('summary') && el.closest('summary').parentElement === closed)) return false;
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0;
   };

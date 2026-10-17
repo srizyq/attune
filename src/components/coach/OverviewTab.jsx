@@ -7,7 +7,7 @@ import CoCoachCard from './CoCoachCard';
 import WeeklySummaryCard from './WeeklySummaryCard';
 import WeightPlanCard from './WeightPlanCard';
 import TargetsOwnership from './TargetsOwnership';
-import { Card, SectionLabel, StatRow, StatCard, EmptyChartBox, RangeToggle } from './shared';
+import { Card, SectionLabel, CardHeader, CardAction, StatRow, StatCard, EmptyChartBox, RangeToggle } from './shared';
 import { ACCENT, WATER_BLUE, AI_PURPLE, GOAL_LABELS, RANGES } from './constants';
 import { attentionFlags } from '../../lib/clientInsights';
 import { tolerancePct, COMPLETE_DAY_MEALS } from '../../lib/adherence';
@@ -46,18 +46,7 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
       <WeightPlanCard summary={summary} />
       <div className="grid-2" style={{ marginBottom: 16, alignItems: 'start' }}>
         <Card style={{ marginBottom: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <SectionLabel icon="ti-target">Goal &amp; targets</SectionLabel>
-            {!editingTargets && (
-              <button
-                onClick={() => setEditingTargets(true)}
-                className="btn-press"
-                style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 18, display: 'flex', alignItems: 'center', gap: 4 }}
-              >
-                <i className="ti ti-pencil" style={{ fontSize: 12 }} /> Edit
-              </button>
-            )}
-          </div>
+          <CardHeader icon="ti-target" action={!editingTargets ? <CardAction onClick={() => setEditingTargets(true)} icon="ti-pencil">Edit</CardAction> : undefined}>Goal &amp; targets</CardHeader>
           {editingTargets ? (
             <TargetsForm client={clientData} onSave={handleSaveTargets} onCancel={() => setEditingTargets(false)} />
           ) : (

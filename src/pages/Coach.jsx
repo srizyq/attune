@@ -5,14 +5,12 @@ import { useMyClients, useClientSummaries, useClientMessages } from '../hooks/us
 import AppNav from '../components/AppNav';
 import ClientCoachHub from '../components/ClientCoachHub';
 import CoachInvitePanel from '../components/CoachInvitePanel';
-import LogoMark from '../components/LogoMark';
 import ClientList from '../components/coach/ClientList';
 import TeamCard from '../components/coach/TeamCard';
 import ClientDetail from '../components/coach/ClientDetail';
 import ClientMessagesInbox from '../components/coach/ClientMessagesInbox';
 import { needsAttention } from '../lib/clientInsights';
 import { todayLocalDate } from '../lib/patterns';
-import PageHeader from '../components/PageHeader';
 import FriendsTabs from '../components/friends/FriendsTabs';
 import SegmentedControl from '../components/SegmentedControl';
 
@@ -90,52 +88,51 @@ export default function Coach() {
 
   if (!profile) return null;
 
+  // The line above the My clients | My coach switch — who needs a look today.
+  const greetingLine = clients.length === 0
+    ? `${timeOfDayGreeting()} — invite your first client below`
+    : summariesSupported
+    ? (summariesLoading
+        ? `${timeOfDayGreeting()} — checking in on your clients…`
+        : attentionCount === 0
+        ? `${timeOfDayGreeting()} — everyone's on track${unreadNote}`
+        : `${timeOfDayGreeting()} — ${attentionCount} of ${clients.length} clients need attention${unreadNote}`)
+    : resolvedStatuses.length === 0
+    ? `${timeOfDayGreeting()} — checking in on your clients…`
+    : allLoggedToday
+    ? `${timeOfDayGreeting()} — everyone's logged today`
+    : `${timeOfDayGreeting()} — ${loggedTodayCount}/${clients.length} clients logged today`;
+
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <AppNav active="coach" initials={initials} />
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <PageHeader
-          leading={<LogoMark size={24} />}
-          title={isTrainer && trainerTab === 'clients' ? 'Coach Mode' : 'Coach'}
-          subtitle={!isTrainer || trainerTab === 'my-coach' ? undefined : selectedClient ? (selectedClient.name || 'Client') : (
-                  clients.length === 0
-                    ? `${timeOfDayGreeting()} — invite your first client below`
-                    : summariesSupported
-                    ? (summariesLoading
-                        ? `${timeOfDayGreeting()} — checking in on your clients…`
-                        : attentionCount === 0
-                        ? `${timeOfDayGreeting()} — everyone's on track${unreadNote}`
-                        : `${timeOfDayGreeting()} — ${attentionCount} of ${clients.length} clients need attention${unreadNote}`)
-                    : resolvedStatuses.length === 0
-                    ? `${timeOfDayGreeting()} — checking in on your clients…`
-                    : allLoggedToday
-                    ? `${timeOfDayGreeting()} — everyone's logged today`
-                    : `${timeOfDayGreeting()} — ${loggedTodayCount}/${clients.length} clients logged today`
-                )}
-        >
+        <div className="page-pad" style={{ paddingTop: 14 }}>
+          {/* Friends | Coach sits at the very top, like the Friends tab it belongs to. */}
+          <FriendsTabs active="coach" />
           {isTrainer && trainerTab === 'clients' && selectedClient ? (
             <button
               onClick={() => setSelectedClient(null)}
               className="btn-press"
-              style={{ padding: '9px 16px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 16px', margin: '0 0 14px', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
-              ← All clients
+              <i className="ti ti-arrow-left" aria-hidden="true" /> All clients
             </button>
           ) : isTrainer ? (
-            <SegmentedControl
-              value={trainerTab}
-              onChange={setTrainerTab}
-              options={[
-                { id: 'clients', label: 'My clients' },
-                { id: 'my-coach', label: 'My coach' },
-              ]}
-            />
+            <div style={{ marginBottom: 16 }}>
+              {trainerTab === 'clients' && (
+                <p style={{ margin: '0 2px 8px', fontSize: 13, lineHeight: 1.4, color: 'var(--text-muted)' }}>{greetingLine}</p>
+              )}
+              <SegmentedControl
+                value={trainerTab}
+                onChange={setTrainerTab}
+                options={[
+                  { id: 'clients', label: 'My clients' },
+                  { id: 'my-coach', label: 'My coach' },
+                ]}
+              />
+            </div>
           ) : null}
-        </PageHeader>
-
-        <div className="page-pad">
-          {/* Coach sits inside the Friends tab: Friends | Coach. */}
-          <FriendsTabs active="coach" />
           {!isTrainer ? (
             <ClientCoachHub />
           ) : trainerTab === 'my-coach' ? (

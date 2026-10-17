@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, SectionLabel } from './shared';
+import { Card, CardHeader, CardAction } from './shared';
 import { MICRO_GROUPS, fieldStyle, labelStyle } from './constants';
 import { MICRO_NUTRIENTS } from '../../lib/microNutrients';
 import { microTargetsToInputs, parseMicroTargetInputs } from '../../lib/microTargets';
@@ -38,14 +38,7 @@ export default function MicroTargetsCard({ clientData, onSave }) {
 
   return (
     <Card style={{ marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <SectionLabel icon="ti-apple">Nutrient targets</SectionLabel>
-        {!editing && (
-          <button onClick={startEditing} className="btn-press" style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 18, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <i className="ti ti-pencil" style={{ fontSize: 12 }} /> Edit
-          </button>
-        )}
-      </div>
+      <CardHeader icon="ti-apple" action={!editing ? <CardAction onClick={startEditing} icon="ti-pencil">Edit</CardAction> : undefined}>Nutrient targets</CardHeader>
 
       {!editing ? (
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>

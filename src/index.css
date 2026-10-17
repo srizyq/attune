@@ -245,6 +245,46 @@ html, body {
   overscroll-behavior-y: none;
 }
 
+/* Checkboxes and radios are 13px by default — too small to tap. 24px, in the
+   app's accent, wherever one is used (the labels around them add the rest of
+   the tap area). */
+input[type='checkbox'],
+input[type='radio'] {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Nothing should drag in a direction it isn't meant to scroll.
+   A strip that scrolls sideways (overflow-x: auto) silently becomes
+   scrollable UP/DOWN too — CSS turns the other axis from `visible` into
+   `auto` — so if its content is even 1px taller than its box (a tab's
+   underline, say) a finger drag moved the tab labels up and down inside
+   it, half-clipping them. Sideways strips are therefore locked to one axis
+   here, and vertical panels (the page area, sheets, modals) are locked the
+   other way: they can't be dragged sideways, and neither one hands its
+   drag on to the page behind it. Elements that set their own overflow-y /
+   overflow-x are left alone. */
+[style*="overflow-x: auto"]:not([style*="overflow-y"]),
+[style*="overflow-x: scroll"]:not([style*="overflow-y"]) {
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
+[style*="overflow-y: auto"]:not([style*="overflow-x"]),
+[style*="overflow-y: scroll"]:not([style*="overflow-x"]) {
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+/* The page area of every screen: each page sets `overflow: auto` inline,
+   which allows sideways drift whenever anything is a hair too wide. */
+.app-content-pad {
+  overflow-x: hidden !important;
+  overscroll-behavior: none;
+}
+
 /* `overscroll-behavior-x` above only stops the visual rubber-band bounce
    — it does nothing about Safari/WKWebView's actual system "swipe from
    the left edge to go back" gesture, which is a separate interactive-pop

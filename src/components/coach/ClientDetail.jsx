@@ -88,18 +88,18 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
             <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>7-day adherence</div>
           </div>
         )}
-        {row && onSetGroup && onRevoke && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <RowActions row={row} onSetGroup={onSetGroup} onRevoke={onRevoke} />
-          </div>
-        )}
       </div>
+      {row && onSetGroup && onRevoke && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+          <RowActions row={row} onSetGroup={onSetGroup} onRevoke={onRevoke} />
+        </div>
+      )}
 
       <div
         role="tablist"
         aria-label="Client sections"
         onKeyDown={onKeyDown}
-        style={{ display: 'flex', gap: 4, overflowX: 'auto', borderBottom: '1px solid var(--border-default)', marginBottom: 20, scrollbarWidth: 'none' }}
+        style={{ display: 'flex', gap: 4, overflowX: 'auto', overflowY: 'hidden', borderBottom: '1px solid var(--border-default)', marginBottom: 20, scrollbarWidth: 'none' }}
       >
         {TABS.map(t => {
           const active = tab === t.id;
@@ -115,7 +115,7 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
               onClick={() => setTab(t.id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', background: 'none', border: 'none', flexShrink: 0,
-                borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, marginBottom: -1,
+                borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, marginBottom: -1, minHeight: 44,
                 color: active ? 'var(--accent)' : 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >

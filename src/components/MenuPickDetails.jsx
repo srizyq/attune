@@ -133,7 +133,7 @@ export function QuickTweaks({ tweaks, active, onToggle }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
       <span style={{ flexShrink: 0, fontSize: 10, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Quick tweak:</span>
-      <div role="group" aria-label="Quick tweaks" style={{ display: 'flex', gap: 8, overflowX: 'auto', flex: 1, minWidth: 0, padding: '2px 0', scrollbarWidth: 'none' }}>
+      <div role="group" aria-label="Quick tweaks" style={{ display: 'flex', gap: 8, overflowX: 'auto', overflowY: 'hidden', flex: 1, minWidth: 0, padding: '2px 0', scrollbarWidth: 'none' }}>
         {tweaks.map((t, i) => {
           const on = active.has(i);
           return (

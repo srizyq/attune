@@ -32,11 +32,11 @@ FilterChipRow.Chip = function Chip({ active = false, onClick, onClear, children 
       aria-pressed={interactive ? active : undefined}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
-        padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+        padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, minHeight: 32, boxSizing: 'border-box',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
-        border: `1px solid ${active ? 'var(--accent-dark)' : 'var(--border-default)'}`,
-        background: active ? 'var(--accent-bg)' : 'var(--bg-card)',
-        color: active ? 'var(--accent)' : 'var(--text-muted)',
+        border: 'none',
+        background: active ? 'var(--accent)' : 'var(--chip-bg)',
+        color: active ? 'var(--accent-contrast)' : 'var(--text-secondary)',
         cursor: interactive ? 'pointer' : 'default',
         whiteSpace: 'nowrap',
       }}

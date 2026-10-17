@@ -114,7 +114,7 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
         <textarea id="plan-notes" value={notes} maxLength={LIMITS.notes} rows={2} onChange={(e) => { setNotes(e.target.value); setSaved(false); }} style={{ ...fieldStyle, resize: 'vertical' }} />
       </div>
 
-      <div role="tablist" aria-label="Day of the week" style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 14, paddingBottom: 2 }}>
+      <div role="tablist" aria-label="Day of the week" style={{ display: 'flex', gap: 6, overflowX: 'auto', overflowY: 'hidden', marginBottom: 14, paddingBottom: 2 }}>
         {DAYS.map((d) => {
           const has = (MEALS.some((m) => (days[d.key]?.[m.key] || []).length > 0));
           return (
