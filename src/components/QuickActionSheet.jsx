@@ -6,8 +6,7 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 // own nav slot (barcode scan, photo scan, menu scan, recipes, custom
 // food) lives here instead.
 //
-// Scans deep-link straight into their modal on Food search (via
-// location-state flags read there); Recipes now has its own real page
+// Scans open their own pages (/scan/barcode, /scan/photo, /scan/menu); Recipes now has its own real page
 // (src/pages/Recipes.jsx) instead of landing on the general search page
 // or a cramped popup. Log weight goes to Expenditure (Progress's old
 // weight chart lives there now) — that's the only place a new weight
@@ -16,9 +15,9 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 // history), where a fast is started and ended.
 const TOP_ACTIONS = [
   { id: 'log-food', label: 'Log food', icon: 'ti-search', to: '/food' },
-  { id: 'barcode', label: 'Scan barcode', icon: 'ti-barcode', to: '/food', state: { openScan: true } },
-  { id: 'photo', label: 'Scan photo', icon: 'ti-camera', to: '/food', state: { openPhotoScan: true } },
-  { id: 'menu', label: 'Scan menu', icon: 'ti-tools-kitchen-2', to: '/food', state: { openMenuScan: true } },
+  { id: 'barcode', label: 'Scan barcode', icon: 'ti-barcode', to: '/scan/barcode' },
+  { id: 'photo', label: 'Scan photo', icon: 'ti-camera', to: '/scan/photo' },
+  { id: 'menu', label: 'Scan menu', icon: 'ti-tools-kitchen-2', to: '/scan/menu' },
 ];
 const BOTTOM_ACTIONS = [
   { id: 'weight', label: 'Log weight', icon: 'ti-scale', to: '/expenditure' },

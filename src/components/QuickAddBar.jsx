@@ -30,7 +30,7 @@ export default function QuickAddBar({ selectedDate, currentSlotId, onOpenQuickMa
         <button onClick={() => go({ openVoice: true })} title="Voice search" aria-label="Voice search" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
           <i className="ti ti-microphone" />
         </button>
-        <button onClick={() => go({ openScan: true })} title="Scan barcode" aria-label="Scan barcode" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
+        <button onClick={() => navigate('/scan/barcode', { state: { date: selectedDate, presetSlotId: currentSlotId } })} title="Scan barcode" aria-label="Scan barcode" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
           <i className="ti ti-barcode" />
         </button>
       </div>

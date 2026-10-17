@@ -6,6 +6,7 @@ import './appshell.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { installGlobalErrorReporting } from './lib/reportError'
+import { initNativeKeyboard } from './lib/nativeKeyboard'
 
 // The bare `<script>` vite-plugin-pwa injects automatically only calls
 // navigator.serviceWorker.register() — it has no idea a new version ever
@@ -15,6 +16,7 @@ import { installGlobalErrorReporting } from './lib/reportError'
 // `registerType: 'autoUpdate'` needs to mean anything in practice.
 registerSW({ immediate: true })
 installGlobalErrorReporting()
+initNativeKeyboard()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

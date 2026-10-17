@@ -572,3 +572,15 @@
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* The iOS keyboard is open (class set by lib/nativeKeyboard.js): the bottom
+   nav and + button would sit on top of it, so they step aside, and the page
+   no longer needs room for them. */
+.kb-open .app-bottom-nav {
+  display: none;
+}
+@media (max-width: 860px) {
+  .kb-open .app-content-pad {
+    padding-bottom: 16px;
+  }
+}

@@ -27,8 +27,6 @@ import { ChainResultCards, ChainMenu } from '../components/RestaurantChains';
 import { loggedRowToFood, favouriteRowToFood } from '../lib/foodRows';
 import { withBrand } from '../lib/format';
 import AppNav from '../components/AppNav';
-import PhotoScanModal from '../components/PhotoScanModal';
-import MenuScanModal from '../components/MenuScanModal';
 import MarqueeText from '../components/MarqueeText';
 import Toast from '../components/Toast';
 import { useClosingTransition } from '../hooks/useClosingTransition';
@@ -45,6 +43,7 @@ import { toKcal } from '../lib/energy';
 import ServingStepper from '../components/ServingStepper';
 import { targetsForDate } from '../lib/dayTargets';
 import { fetchWithTimeout } from '../lib/http';
+import { SCAN_PATHS, legacyScanKind, withoutLegacyScanFlags } from '../lib/scanRoutes';
 import { rankFoods, foodMatchRank } from '../lib/foodRank';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -581,7 +580,8 @@ const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', 
 //    chrome (no separate ScanModal wrapper) since it needs to switch
 //    between a full-screen camera step and a normal modal card depending
 //    on internal state. ─────────────────────────────────────────────────
-function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, showSlots, recipeMode = false }) {
+// Exported for the barcode scan page (src/pages/Scan.jsx).
+export function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selectedDate, showSlots, recipeMode = false }) {
   const { user } = useAuth();
   const { profile } = useProfile();
   // Read-only here — logs for today's day-budget-impact preview, not
@@ -1806,13 +1806,6 @@ export default function FoodSearch() {
     setToast(message);
     setToastError(isError);
   }
-  // Dashboard's "Scan barcode" shortcut links here with { openScan: true }
-  // to jump straight into the scanner instead of landing on plain search.
-  // The quick-action sheet's "Scan photo" does the same with openPhotoScan.
-  const [scanOpen, setScanOpen] = useState(!!location.state?.openScan);
-  const [photoScanOpen, setPhotoScanOpen] = useState(!!location.state?.openPhotoScan);
-  // The quick-action sheet's "Scan menu" does the same with openMenuScan.
-  const [menuScanOpen, setMenuScanOpen] = useState(!!location.state?.openMenuScan);
   // The quick-action sheet's "Custom food" does the same with openCreateFood.
   const [createFoodOpen, setCreateFoodOpen] = useState(!!location.state?.openCreateFood);
   // Set when "Save as custom food" is used from a photo/menu scan result —
@@ -1820,18 +1813,20 @@ export default function FoodSearch() {
   // instead of a blank form, so a food you've already corrected once
   // never needs an AI guess again.
   const [createFoodPrefill, setCreateFoodPrefill] = useState(null);
-  const [builderMode, setBuilderMode] = useState(!!location.state?.openMealBuilder);
-  const [builderItems, setBuilderItems] = useState([]);
+  // Coming back from a scan page mid-recipe brings the recipe with it (restoreBuilder).
+  const [builderMode, setBuilderMode] = useState(!!location.state?.openMealBuilder || !!location.state?.restoreBuilder);
+  const [builderItems, setBuilderItems] = useState(() => location.state?.restoreBuilder?.items || []);
   const [builderReviewOpen, setBuilderReviewOpen] = useState(false);
   // Set when the builder was entered to edit an existing recipe (via
   // /recipes' Edit button) rather than create a new one — routes the
   // eventual save through savedMeals.update instead of .create.
-  const [editingRecipeId, setEditingRecipeId] = useState(null);
-  const [editDraftMeta, setEditDraftMeta] = useState(null); // name/servings carried from the recipe editor
+  const [editingRecipeId, setEditingRecipeId] = useState(() => location.state?.restoreBuilder?.editingRecipeId || null);
+  const [editDraftMeta, setEditDraftMeta] = useState(() => location.state?.restoreBuilder?.editDraftMeta || null); // name/servings carried from the recipe editor
   // Whether the builder was entered from the Recipes page at all (new or
   // edit) — determines whether finishing (save or cancel) returns there
   // instead of just closing back to plain Food search.
-  const [builderFromRecipes, setBuilderFromRecipes] = useState(!!location.state?.openMealBuilder);
+  const [builderFromRecipes, setBuilderFromRecipes] = useState(!!location.state?.openMealBuilder || !!location.state?.restoreBuilder?.fromRecipes);
+  const editAppliedRef = useRef(false);
   // The quick-action sheet ("+" in the bottom nav) is present on every
   // page, including this one — tapping it while already on /food
   // re-navigates to the SAME route with new state, which React Router
@@ -1843,13 +1838,27 @@ export default function FoodSearch() {
   // even to the same route) fixes it without affecting cross-route loads,
   // which already worked via the initializer above.
   useEffect(() => {
-    if (location.state?.openScan) setScanOpen(true);
-    if (location.state?.openPhotoScan) setPhotoScanOpen(true);
-    if (location.state?.openMenuScan) setMenuScanOpen(true);
-    if (location.state?.openCreateFood) setCreateFoodOpen(true);
+    // The scans are their own pages now; anything still asking for one the old
+    // way (a saved link, a test) is forwarded there.
+    const legacy = legacyScanKind(location.state);
+    if (legacy) {
+      const rest = withoutLegacyScanFlags(location.state);
+      // Opened while starting a recipe: the scan page needs to know it is one.
+      if (rest.openMealBuilder) { delete rest.openMealBuilder; rest.builder = { items: [], fromRecipes: true }; }
+      navigate(SCAN_PATHS[legacy], { replace: true, state: rest });
+      return;
+    }
+    if (location.state?.openCreateFood) { if (location.state.createFoodPrefill) setCreateFoodPrefill(location.state.createFoodPrefill); setCreateFoodOpen(true); }
+    if (location.state?.focusSearch) setTimeout(() => inputRef.current?.focus(), 0);
+    if (location.state?.restoreBuilder) {
+      const r = location.state.restoreBuilder;
+      setBuilderMode(true); setBuilderItems(r.items || []); setBuilderFromRecipes(!!r.fromRecipes);
+      setEditingRecipeId(r.editingRecipeId || null); setEditDraftMeta(r.editDraftMeta || null);
+      if (r.editingRecipeId) editAppliedRef.current = true;
+    }
     if (location.state?.openMealBuilder) { setBuilderMode(true); setBuilderItems([]); setBuilderFromRecipes(true); }
     if (location.state?.presetSlotId) setActiveSlotId(location.state.presetSlotId);
-  }, [location.state]);
+  }, [location.state, navigate]);
   // No presetSlotId was given (a plain nav-bar "+" tap rather than a link
   // from a specific slot) — falls back to whichever slot is "current" as
   // soon as daySlots actually has rows, mirroring activeMeal's mealFromDate
@@ -1863,7 +1872,6 @@ export default function FoodSearch() {
   // flags above) before pre-filling the builder, and the ref stops this
   // from re-firing and stomping in-progress edits once rows next update
   // (e.g. right after this same edit is saved).
-  const editAppliedRef = useRef(false);
   useEffect(() => {
     const editId = location.state?.editMealBuilder;
     if (!editId || editAppliedRef.current) return;
@@ -2227,17 +2235,6 @@ export default function FoodSearch() {
     return logFood(food, meal, loggedAt);
   }
 
-  // Anything a scanner finds: an ingredient while a recipe is being built,
-  // otherwise an entry in the log. (It used to always go to the log, so a
-  // barcode scanned mid-recipe never reached the recipe.)
-  async function handleScanned(food, meal, loggedAt) {
-    if (builderMode) { addToBuilder(food); return; }
-    await addFoodLog(food, meal, loggedAt);
-    refetchRecent();
-    lastLogged.refetch();
-    showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`);
-  }
-
   async function handleDeleteCustom(food) {
     await customFoods.remove(food.customId);
     showToast(`${withBrand(food.name, food.brand)} removed`);
@@ -2246,6 +2243,18 @@ export default function FoodSearch() {
 
   function handleToggle(id) {
     setExpandedId(prev => (prev === id ? null : id));
+  }
+
+  // The scans are pages of their own; where this search was (day, meal or time
+  // slot, and a recipe in progress) goes with the person so they log to the
+  // right place and the recipe comes back with its new ingredients.
+  function openScan(kind) {
+    navigate(SCAN_PATHS[kind], {
+      state: {
+        date: selectedDate, openMeal: activeMeal, presetTime: activeTime, presetSlotId: activeSlotId,
+        builder: builderMode ? { items: builderItems, fromRecipes: builderFromRecipes, editingRecipeId, editDraftMeta } : undefined,
+      },
+    });
   }
 
   function cancelBuilder() {
@@ -2384,10 +2393,10 @@ export default function FoodSearch() {
               never crowd/overflow it on narrow phones (they used to live
               inline with the input and get cut off). */}
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <div onClick={() => setScanOpen(true)} style={{ flex: 1, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px 12px", color: "var(--accent)", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-dark)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border-active)"}>
+            <div onClick={() => openScan("barcode")} style={{ flex: 1, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px 12px", color: "var(--accent)", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-dark)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border-active)"}>
               <i className="ti ti-barcode" style={{ fontSize: 14 }} /> Scan barcode
             </div>
-            <div onClick={() => setPhotoScanOpen(true)} style={{ flex: 1, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px 12px", color: "var(--accent)", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-dark)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border-active)"}>
+            <div onClick={() => openScan("photo")} style={{ flex: 1, background: "var(--accent-bg)", border: "1px solid var(--border-active)", borderRadius: 8, padding: "9px 12px", color: "var(--accent)", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-dark)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border-active)"}>
               <i className="ti ti-camera" style={{ fontSize: 14 }} /> Scan photo
             </div>
           </div>
@@ -2731,43 +2740,6 @@ export default function FoodSearch() {
             <button onClick={cancelBuilder} style={{ background: "none", border: "1px solid var(--border-default)", borderRadius: 8, padding: "7px 12px", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Cancel</button>
           </div>
         </div>
-      )}
-
-      {/* Scan modal */}
-      {scanOpen && (
-        <BarcodeScanner
-          recipeMode={builderMode}
-          onClose={() => setScanOpen(false)}
-          defaultMeal={activeMeal} selectedDate={selectedDate}
-          defaultTime={activeTime}
-          showSlots={showSlots}
-          onAddFood={handleScanned}
-        />
-      )}
-
-      {/* Photo scan modal */}
-      {photoScanOpen && (
-        <PhotoScanModal
-          recipeMode={builderMode}
-          onClose={() => setPhotoScanOpen(false)}
-          defaultMeal={activeMeal} selectedDate={selectedDate}
-          defaultTime={activeTime}
-          showSlots={showSlots}
-          onAddFood={handleScanned}
-          onCreateCustom={(prefill) => { setPhotoScanOpen(false); setCreateFoodPrefill(prefill || null); setCreateFoodOpen(true); }}
-          onSearchManually={() => { setPhotoScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
-        />
-      )}
-
-      {/* Menu scan modal */}
-      {menuScanOpen && (
-        <MenuScanModal
-          onClose={() => setMenuScanOpen(false)}
-          showSlots={showSlots}
-          selectedDate={selectedDate}
-          onAddFood={handleScanned}
-          onSearchManually={() => { setMenuScanOpen(false); setTimeout(() => inputRef.current?.focus(), 0); }}
-        />
       )}
 
       {/* Create a custom food */}

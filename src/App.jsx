@@ -16,6 +16,8 @@ import Dashboard from './pages/Dashboard'
 import FoodSearch from "./pages/FoodSearch";
 import DailyLog from "./pages/DailyLog";
 import { locationChanged, isPageTransition } from './lib/routeTransition';
+import Toast from './components/Toast';
+import { onAppToast } from './lib/appToast';
 
 // Secondary screens load on demand so the first paint ships less JS. The
 // bottom-nav tabs (Dashboard, Food, Log) stay eager to keep tab switches instant.
@@ -30,6 +32,7 @@ const Expenditure = lazy(() => import('./pages/Expenditure'));
 const Fasting = lazy(() => import('./pages/Fasting'));
 const Coach = lazy(() => import('./pages/Coach'));
 const Friends = lazy(() => import('./pages/Friends'));
+const Scan = lazy(() => import('./pages/Scan'));
 const FriendDay = lazy(() => import('./pages/FriendDay'));
 const JoinFriend = lazy(() => import('./pages/JoinFriend'));
 const JoinCoach = lazy(() => import('./pages/JoinCoach'));
@@ -88,6 +91,9 @@ function AnimatedRoutes() {
         <Route path="/onboarding/step5" element={<Step5 />} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/food" element={<RequireAuth><FoodSearch /></RequireAuth>} />
+        <Route path="/scan/barcode" element={<RequireAuth><Scan kind="barcode" /></RequireAuth>} />
+        <Route path="/scan/photo" element={<RequireAuth><Scan kind="photo" /></RequireAuth>} />
+        <Route path="/scan/menu" element={<RequireAuth><Scan kind="menu" /></RequireAuth>} />
         <Route path="/recipes" element={<RequireAuth><Recipes /></RequireAuth>} />
         <Route path="/progress" element={<Navigate to="/expenditure" replace />} />
         <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
@@ -149,12 +155,21 @@ function useVisualViewportHeight() {
   }, []);
 }
 
+// Confirmations that outlive the screen that caused them (a scan page logs
+// food and then closes) — see lib/appToast.js.
+function AppToastHost() {
+  const [toast, setToast] = useState(null);
+  useEffect(() => onAppToast((t) => setToast({ ...t, id: Date.now() })), []);
+  return toast ? <Toast key={toast.id} message={toast.message} error={toast.isError} onDone={() => setToast(null)} /> : null;
+}
+
 export default function App() {
   useVisualViewportHeight();
   return (
     <AuthProvider>
       <BrowserRouter>
         <AnimatedRoutes />
+        <AppToastHost />
       </BrowserRouter>
     </AuthProvider>
   )

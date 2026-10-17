@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useProfile } from '../hooks/useProfile';
 import { ThemeContext } from './themeContext';
+import { setNativeKeyboardTheme } from '../lib/nativeKeyboard';
 
 // The single owner of profile.theme — every page that wants to change
 // theme calls setTheme from useTheme() rather than writing profile.theme
@@ -55,6 +56,9 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     document.body.style.background = theme === 'light' ? '#f8f6fa' : '#0e0a08';
   }, [theme]);
+
+  // The iOS keyboard follows the app's theme (no-op outside the iOS app).
+  useEffect(() => { setNativeKeyboardTheme(theme); }, [theme]);
 
   const setTheme = useCallback((next) => {
     setThemeState(next);
