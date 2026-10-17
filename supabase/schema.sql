@@ -5024,3 +5024,76 @@ begin
   return true;
 end;
 $$;
+
+
+-- ═══════════════════════════════════════
+-- Barcode corrections (schema update — run against an existing DB; safe to
+-- re-run).
+-- ═══════════════════════════════════════
+-- Fixing the numbers on a scanned product corrects them for everyone who scans
+-- it afterwards: the corrected product is stored in barcode_products (even if it
+-- first came from another database) and takes priority when that barcode is
+-- scanned. Every change keeps the previous values so a bad edit can be undone.
+alter table public.barcode_products add column if not exists corrected_at timestamptz;
+alter table public.barcode_products add column if not exists corrected_by uuid references auth.users (id) on delete set null;
+
+create table if not exists public.barcode_product_edits (
+  id uuid primary key default gen_random_uuid(),
+  barcode text not null,
+  edited_by uuid references auth.users (id) on delete set null,
+  old_values jsonb,
+  new_values jsonb not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists barcode_product_edits_barcode_idx on public.barcode_product_edits (barcode, created_at desc);
+alter table public.barcode_product_edits enable row level security;
+-- No policies: only the server (service role) and the function below touch it.
+
+create or replace function public.barcode_correct(
+  p_barcode text, p_name text, p_brand text, p_serving text, p_serving_grams numeric, p_serving_unit text,
+  p_calories numeric, p_protein_g numeric, p_carbs_g numeric, p_fat_g numeric,
+  p_fibre_g numeric, p_sodium_mg numeric, p_sugar_g numeric
+)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  old_row public.barcode_products%rowtype;
+  fresh jsonb;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if coalesce(p_barcode, '') !~ '^[0-9]{6,14}$' then raise exception 'barcode_fix_invalid'; end if;
+  if coalesce(trim(p_name), '') = '' then raise exception 'barcode_fix_invalid'; end if;
+  if p_calories is null or p_calories < 0 or p_calories > 5000
+     or coalesce(p_protein_g, 0) not between 0 and 1000 or coalesce(p_carbs_g, 0) not between 0 and 1000
+     or coalesce(p_fat_g, 0) not between 0 and 1000 or coalesce(p_fibre_g, 0) not between 0 and 1000
+     or coalesce(p_sugar_g, 0) not between 0 and 1000 or coalesce(p_sodium_mg, 0) not between 0 and 100000 then
+    raise exception 'barcode_fix_invalid';
+  end if;
+  if not public.rate_limit_hit('barcode_fix:' || uid::text, 30, 86400) then raise exception 'barcode_fix_rate_limited'; end if;
+
+  fresh := jsonb_build_object(
+    'name', trim(p_name), 'brand', nullif(trim(coalesce(p_brand, '')), ''), 'serving', coalesce(nullif(trim(coalesce(p_serving, '')), ''), '1 serving'),
+    'serving_grams', p_serving_grams, 'serving_unit', case when p_serving_unit = 'ml' then 'ml' else 'g' end,
+    'calories', round(p_calories), 'protein_g', coalesce(p_protein_g, 0), 'carbs_g', coalesce(p_carbs_g, 0), 'fat_g', coalesce(p_fat_g, 0),
+    'fibre_g', coalesce(p_fibre_g, 0), 'sodium_mg', coalesce(p_sodium_mg, 0), 'sugar_g', coalesce(p_sugar_g, 0)
+  );
+
+  select * into old_row from public.barcode_products where barcode = p_barcode;
+  insert into public.barcode_product_edits (barcode, edited_by, old_values, new_values)
+    values (p_barcode, uid, case when old_row.barcode is null then null else to_jsonb(old_row) end, fresh);
+
+  insert into public.barcode_products as b (barcode, name, brand, serving, serving_grams, serving_unit, calories, protein_g, carbs_g, fat_g, fibre_g, sodium_mg, sugar_g, created_by, corrected_at, corrected_by)
+  values (p_barcode, fresh->>'name', fresh->>'brand', fresh->>'serving', p_serving_grams, fresh->>'serving_unit', (fresh->>'calories')::numeric,
+          (fresh->>'protein_g')::numeric, (fresh->>'carbs_g')::numeric, (fresh->>'fat_g')::numeric, (fresh->>'fibre_g')::numeric,
+          (fresh->>'sodium_mg')::numeric, (fresh->>'sugar_g')::numeric, uid, now(), uid)
+  on conflict (barcode) do update set
+    serving = excluded.serving, serving_grams = excluded.serving_grams, serving_unit = excluded.serving_unit,
+    calories = excluded.calories, protein_g = excluded.protein_g, carbs_g = excluded.carbs_g, fat_g = excluded.fat_g,
+    fibre_g = excluded.fibre_g, sodium_mg = excluded.sodium_mg, sugar_g = excluded.sugar_g,
+    corrected_at = now(), corrected_by = uid;
+end;
+$$;
+revoke all on function public.barcode_correct(text, text, text, text, numeric, text, numeric, numeric, numeric, numeric, numeric, numeric, numeric) from public, anon;
+grant execute on function public.barcode_correct(text, text, text, text, numeric, text, numeric, numeric, numeric, numeric, numeric, numeric, numeric) to authenticated;

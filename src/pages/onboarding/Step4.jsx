@@ -36,6 +36,14 @@ async function withRetry(fn, attempts = 5, delayMs = 400) {
   throw lastErr;
 }
 
+// The saved answers have done their job once an account exists.
+function finishOnboarding() {
+  try {
+    sessionStorage.removeItem('attune_onboarding');
+    sessionStorage.removeItem('attune_preauth_theme');
+  } catch { /* storage blocked */ }
+}
+
 function randomGuestName() {
   return `Guest ${Math.floor(1000 + Math.random() * 9000)}`;
 }
@@ -130,16 +138,20 @@ export default function Step4() {
         // who logged in with a provider on /login before ever onboarding:
         // the profile gets seeded below first, then they go straight in.)
         const oauthUser = !!session?.user && !session.user.is_anonymous;
-        // Only seed the profile from the draft if one doesn't already
-        // exist — revisiting this screen (browser back, "skip" a second
-        // time, a stale bookmark) reuses the same session, and by then
-        // sessionStorage's draft is already empty, so writing it
-        // unconditionally would silently wipe real goal/stats/target
-        // data back to null on every repeat visit.
+        // Seed the profile from the draft when there isn't one yet. Revisiting
+        // this screen reuses the same session, so a real account's profile is
+        // never overwritten (only a guest's, to pick up edited answers).
         const existingProfile = await withRetry(() => getProfile(userId));
-        if (!existingProfile) {
-          const draft = JSON.parse(rawDraft || '{}');
-          await withRetry(() => upsertProfile(userId, draftToProfileFields(draft)));
+        const draft = JSON.parse(rawDraft || '{}');
+        // Someone who went Back to change their answers and returned: the
+        // guest profile already exists from the first visit, so write the
+        // edited answers over it (keeping the name it already has). Never for
+        // a real account — those are sent on to the dashboard just below.
+        const isGuest = !session?.user || !!session.user.is_anonymous;
+        const reseed = !!existingProfile && isGuest && !!rawDraft;
+        if (!existingProfile || reseed) {
+          const fields = draftToProfileFields(draft);
+          await withRetry(() => upsertProfile(userId, reseed ? { ...fields, name: existingProfile.name || fields.name } : fields));
           // The weight collected during onboarding only ever reached
           // profiles.weight — Dashboard's weight tile and Progress' weight
           // chart both read from weight_logs instead, which stayed empty,
@@ -149,9 +161,9 @@ export default function Step4() {
             await withRetry(() => upsertWeightLog(userId, todayLocalDate(), Number(draft.weight), draft.unit === 'imperial' ? 'lb' : 'kg'));
           }
         }
-        sessionStorage.removeItem('attune_onboarding');
-        sessionStorage.removeItem('attune_preauth_theme');
-        if (oauthUser) { navigate('/dashboard', { replace: true }); return; }
+        // The answers stay in sessionStorage until the account is created, so
+        // Back to the details pages still shows them (see finishOnboarding).
+        if (oauthUser) { finishOnboarding(); navigate('/dashboard', { replace: true }); return; }
         const oauthError = readOAuthError();
         if (oauthError) setError(oauthError);
       } catch (err) {
@@ -173,7 +185,7 @@ export default function Step4() {
     const { error: updateError } = await supabase.auth.updateUser({ email, password }, { emailRedirectTo });
     setLoading(false);
     if (updateError) {
-      setError(updateError.message.includes('already registered')
+      setError(/already (been )?registered/i.test(updateError.message) || updateError.code === 'email_exists'
         ? 'That email is already registered — try logging in instead.'
         : updateError.message);
       return;
@@ -186,6 +198,7 @@ export default function Step4() {
     // same screen — this was the confusing part: dropping straight into
     // the dashboard still "in guest mode" as far as the rest of the app
     // could tell, with no clear signal that one more step was needed.
+    finishOnboarding();
     navigate('/onboarding/step5', { state: { email } });
   }
 
@@ -215,14 +228,14 @@ export default function Step4() {
 
   if (preparing) {
     return (
-      <OnboardingLayout step={4}>
+      <OnboardingLayout step={4} showSkip={false}>
         <p style={{ color: 'var(--text-muted)' }}>Setting things up…</p>
       </OnboardingLayout>
     );
   }
 
   return (
-    <OnboardingLayout step={4}>
+    <OnboardingLayout step={4} showSkip={false}>
       <div style={{ width: '100%', maxWidth: '480px', textAlign: 'center' }}>
 
         <div style={{
@@ -253,7 +266,7 @@ export default function Step4() {
             type="checkbox"
             checked={agreed}
             onChange={e => setAgreed(e.target.checked)}
-            style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--accent)' }}
+            style={{ width: 24, height: 24, minWidth: 24, minHeight: 24, marginTop: 0, flexShrink: 0, accentColor: 'var(--accent)' }}
           />
           <span>
             I agree to the{' '}
@@ -296,10 +309,18 @@ export default function Step4() {
             autoComplete="new-password"
           />
           {(prepError || error) && (
-            <div style={{
+            <div role="alert" style={{
               background: '#1a0f0f', border: '1px solid #c0707040', borderRadius: '8px',
               padding: '10px 14px', fontSize: '13px', color: 'var(--danger)',
-            }}>{prepError || error}</div>
+            }}>
+              {prepError || error}
+              {/already registered/i.test(error || '') && (
+                <>
+                  {' '}
+                  <button type="button" onClick={() => navigate('/login')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--accent)', fontFamily: 'inherit', fontSize: 13, textDecoration: 'underline', cursor: 'pointer' }}>Log in</button>
+                </>
+              )}
+            </div>
           )}
         </div>
 
@@ -323,6 +344,14 @@ export default function Step4() {
           }}
         >
           {loading ? 'Creating account…' : 'Create account & continue →'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/onboarding/step3')}
+          style={{ width: '100%', minHeight: 48, padding: '14px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: '10px', color: 'var(--text-secondary)', fontSize: '15px', fontFamily: "'Plus Jakarta Sans', sans-serif", cursor: 'pointer', marginBottom: '14px' }}
+        >
+          ← Back to your details
         </button>
 
         <p style={{ color: 'var(--text-hint)', fontSize: '12px', lineHeight: 1.6 }}>

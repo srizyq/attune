@@ -16,6 +16,7 @@ const DEFAULT_RPC = {
   search_ausnut_foods_fuzzy: [], search_ausnut_foods_ranked: [], search_common_dishes_fuzzy: [],
   search_restaurant_items_ranked: [], search_restaurant_items_fuzzy: [],
   start_free_trial: null,
+  barcode_correct: null,
   // Friends: an account with an invite code and nobody added yet.
   friends_me: [{ invite_code: 'ABCDE12345', share_day: true }], friends_list: [], friends_hidden_days: [], friends_preview: [],
   friends_add: null, friends_remove: null, friends_set_sharing: null, friends_set_day_hidden: null, friends_recipes: [],
@@ -88,6 +89,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     if (url.pathname.startsWith('/auth/v1/')) {
       if (url.pathname.endsWith('/user')) return json(sess.user);
       if (url.pathname.endsWith('/token')) return json(sess);
+      if (url.pathname.endsWith('/signup')) return json({ ...sess, user: { ...sess.user, is_anonymous: true, email: '' } });
       if (url.pathname.endsWith('/settings')) return json({ external: Object.fromEntries(authProviders.map((p) => [p, true])) });
       if (url.pathname.endsWith('/logout')) return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } });
       return json({});

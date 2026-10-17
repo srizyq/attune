@@ -81,20 +81,20 @@ test('a barcode nobody has added asks to add it; the add form has an optional la
   await expect(page.getByText('Not in our database yet')).toBeVisible();
   await expect(page.getByText(/9310232962474/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Take photo' })).toHaveCount(0);
-  await expect(page.getByPlaceholder('Product name')).toHaveCount(0);
+  await expect(page.getByLabel('Product name', { exact: true })).toHaveCount(0);
   await assertLayout(page, testInfo, 'x-barcode-not-found-prompt', ctx);
 
   // Yes → the add-product form, still with no camera until asked.
   await page.getByRole('button', { name: /Add this product/ }).click();
-  await page.getByPlaceholder('Product name').waitFor();
+  await page.getByLabel('Product name', { exact: true }).waitFor();
   await expect(page.getByRole('button', { name: 'Take photo' })).toHaveCount(0);
   await page.getByRole('button', { name: /Photograph the nutrition label/ }).click();
   await page.getByRole('button', { name: 'Take photo' }).click();
 
-  await expect(page.getByPlaceholder('Calories')).toHaveValue('190');
-  await expect(page.getByPlaceholder('Protein (g)')).toHaveValue('12');
+  await expect(page.getByLabel('Energy', { exact: true })).toHaveValue('190');
+  await expect(page.getByLabel('Protein (g)', { exact: true })).toHaveValue('12');
   await expect(page.getByText(/Nobody has added this product yet/)).toBeVisible();
-  await page.getByPlaceholder('Product name').fill('Choc protein bar');
+  await page.getByLabel('Product name', { exact: true }).fill('Choc protein bar');
   await assertLayout(page, testInfo, 'x-barcode-label-filled', ctx);
   await page.getByRole('button', { name: /Save|Add/ }).last().click();
   await expect(page.getByText('Choc protein bar').first()).toBeVisible();
@@ -105,7 +105,7 @@ test('backing out of the add form returns to the question; Not now closes the sc
   await page.route('**/world.openfoodfacts.org/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 0 }) }));
   await openBarcodeLookup(page, '9310232962474');
   await page.getByRole('button', { name: /Add this product/ }).click();
-  await page.getByPlaceholder('Product name').waitFor();
+  await page.getByLabel('Product name', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByText('Not in our database yet')).toBeVisible();
   // The two buttons that only closed the sheet or duplicated this one are gone.
@@ -122,5 +122,5 @@ test('every lookup failing is a connection problem, not a missing product', asyn
   await page.route('**/rest/v1/barcode_products**', (route) => route.abort());
   await openBarcodeLookup(page, '9310232962474');
   await expect(page.getByText(/Couldn't look up this product/)).toBeVisible({ timeout: 25000 });
-  await expect(page.getByPlaceholder('Product name')).toHaveCount(0);
+  await expect(page.getByLabel('Product name', { exact: true })).toHaveCount(0);
 });

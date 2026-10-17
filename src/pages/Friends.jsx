@@ -89,13 +89,9 @@ export default function Friends() {
         )}
 
         <div style={{ ...card, padding: '6px 16px', marginTop: 6 }}>
-          <Switch id="share-day" title="Share my day with friends" checked={f.shareDay} onChange={guard(f.changeSharing)}>
-            Friends see your calories, macros and food log for today.
-          </Switch>
+          <Switch id="share-day" title="Share my day with friends" checked={f.shareDay} onChange={guard(f.changeSharing)} />
           <div style={{ borderTop: '1px solid var(--border-default)' }}>
-            <Switch id="hide-today" title="Hide today" disabled={!f.shareDay} checked={f.shareDay && f.dayHidden} onChange={guard(f.changeDayHidden)}>
-              Keep just today's log private. Tomorrow is shared again.
-            </Switch>
+            <Switch id="hide-today" title="Hide today" disabled={!f.shareDay} checked={f.shareDay && f.dayHidden} onChange={guard(f.changeDayHidden)} />
           </div>
         </div>
       </>

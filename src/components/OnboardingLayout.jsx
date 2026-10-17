@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import PreAuthThemeToggle from './PreAuthThemeToggle';
 
-export default function OnboardingLayout({ children, step, totalSteps = 4, showSkip = true }) {
+export default function OnboardingLayout({ children, step, totalSteps = 4, showSkip = true, showLogin = true }) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = usePreAuthTheme();
   const progress = (step / totalSteps) * 100;
@@ -95,6 +95,19 @@ export default function OnboardingLayout({ children, step, totalSteps = 4, showS
       }}>
         {children}
       </div>
+
+      {/* Someone who already has an account can get to login from any step. */}
+      {showLogin && (
+        <div style={{ textAlign: 'center', padding: '0 24px calc(28px + var(--safe-bottom, 0px))' }}>
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', padding: '12px 8px', minHeight: 44 }}
+          >
+            Already have an account? <span style={{ color: 'var(--accent)' }}>Log in</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

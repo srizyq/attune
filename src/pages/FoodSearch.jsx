@@ -13,7 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { todayLocalDate } from '../lib/patterns';
 import { latestDate } from '../lib/weekStrip';
 import { microsFromOFF } from '../lib/offNutrients';
-import { getBarcodeProduct, addBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems, getRestaurantChains } from '../lib/db';
+import { getBarcodeProduct, addBarcodeProduct, correctBarcodeProduct, searchAusnutFoods, searchCommonDishes, searchRestaurantItems, getRestaurantChains } from '../lib/db';
 import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
@@ -39,6 +39,9 @@ import DateStepper from '../components/DateStepper';
 import FormRow from '../components/FormRow';
 import BarcodeResult from '../components/scan/BarcodeResult';
 import { ScanPage, ScanCard } from '../components/scan/ScanKit';
+import NutritionFields, { Labeled } from '../components/scan/NutritionFields';
+import RecalculateBarcodeSheet from '../components/scan/RecalculateBarcodeSheet';
+import { toKcal } from '../lib/energy';
 import ServingStepper from '../components/ServingStepper';
 import { targetsForDate } from '../lib/dayTargets';
 import { fetchWithTimeout } from '../lib/http';
@@ -558,6 +561,8 @@ async function lookupSharedBarcodeProduct(barcode) {
     // "we don't actually know the packet's real serving" case as OFF's
     // null serving_size and FatSecret's serving_id "0" above.
     servingIsFallback: !row.serving_grams,
+    // Someone corrected this product's numbers: they win over other databases.
+    corrected: !!row.corrected_at,
   };
 }
 
@@ -568,7 +573,7 @@ function stripMeta(food) {
   return rest;
 }
 
-const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', servingUnit: 'g', cal: '', protein: '', carbs: '', fat: '', fibre: '', sodium: '', sugar: '' };
+const BLANK_NEW_PRODUCT = { name: '', brand: '', serving: '', servingGrams: '', servingUnit: 'g', cal: '', energyUnit: 'kcal', protein: '', carbs: '', fat: '', fibre: '', sodium: '', sugar: '' };
 
 // ─── Barcode scan — menu/plate photo scanning live elsewhere as
 //    MenuScanModal/PhotoScanModal, proxied through server-side /api routes
@@ -649,6 +654,9 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
   // The label photo in the add form is optional: the camera only opens when asked for.
   const [labelCameraOpen, setLabelCameraOpen] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
+  // "Fix nutrition" sheet, and the note shown after a fix has been saved.
+  const [recalcOpen, setRecalcOpen] = useState(false);
+  const [fixNote, setFixNote] = useState(null);
 
   async function startScanner() {
     setError(null); setNotFound(false); setResult(null); setLooking(true);
@@ -794,8 +802,10 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       // mistyped energy value), and a second source usually has it right.
       const usable = candidates.filter(f => !looksLikeEmptyNutrition(f));
       const consistent = usable.find(f => !caloriesLookInconsistent(f));
-      const found = consistent || usable[0] || candidates[0] || null;
-      setCalorieWarning(!!found && !consistent && caloriesLookInconsistent(found));
+      // A product someone has corrected beats every database's own figures.
+      const fixed = shared?.corrected ? shared : null;
+      const found = fixed || consistent || usable[0] || candidates[0] || null;
+      setCalorieWarning(!!found && !fixed && !consistent && caloriesLookInconsistent(found));
       if (!found) {
         setResult(null);
         // Every source erroring is a connection problem, not a missing product —
@@ -812,6 +822,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         return;
       }
       setError(null);
+      setFixNote(found.corrected ? "Numbers corrected by another user" : null);
       // The display extras can come from Open Food Facts even when another
       // source supplied the numbers.
       setProductMeta(off?.meta || found.meta || null);
@@ -891,6 +902,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         servingGrams: data.servingGrams != null ? String(data.servingGrams) : p.servingGrams,
         servingUnit: data.servingUnit === "ml" ? "ml" : "g",
         cal: String(data.cal ?? 0),
+        energyUnit: "kcal",
         protein: String(data.protein ?? 0),
         carbs: String(data.carbs ?? 0),
         fat: String(data.fat ?? 0),
@@ -917,7 +929,7 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         serving: newProduct.serving.trim() || "1 serving",
         serving_grams: newProduct.servingGrams ? Number(newProduct.servingGrams) : null,
         serving_unit: newProduct.servingUnit === "ml" ? "ml" : "g",
-        calories: Number(newProduct.cal) || 0,
+        calories: toKcal(newProduct.cal, newProduct.energyUnit),
         protein_g: Number(newProduct.protein) || 0,
         carbs_g: Number(newProduct.carbs) || 0,
         fat_g: Number(newProduct.fat) || 0,
@@ -949,6 +961,24 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
       setLabelError("Couldn't save this product. Check your connection and try again.");
     } finally {
       setSavingProduct(false);
+    }
+  }
+
+  // Saves a corrected set of numbers: what's about to be logged changes at once,
+  // and the product itself is corrected for everyone who scans it afterwards.
+  async function applyFix(fixed) {
+    const next = { ...result, ...fixed, corrected: true };
+    setResult(next);
+    setCalorieWarning(false);
+    try {
+      await correctBarcodeProduct(scannedBarcode, {
+        name: next.name, brand: next.brand, serving: next.serving || (next.servingGrams ? `${next.servingGrams}${next.servingUnit || "g"}` : null),
+        servingGrams: next.servingGrams, servingUnit: next.servingUnit, ...fixed,
+      });
+      setFixNote("Updated for everyone who scans this product");
+    } catch (err) {
+      console.error("Couldn't save the corrected product:", err);
+      setFixNote("Updated here, but couldn't save for others");
     }
   }
 
@@ -1099,6 +1129,8 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
         disabled={!servings}
         onAdd={() => { logCurrent(); onClose(); }}
         onAddAndScan={() => { const name = result.name; logCurrent(); reset(); setLoggedNote(name); }}
+        onRecalculate={() => setRecalcOpen(true)} fixNote={fixNote}
+        sheet={recalcOpen && <RecalculateBarcodeSheet result={result} onClose={() => setRecalcOpen(false)} onApply={applyFix} />}
       />
     );
   }
@@ -1165,9 +1197,13 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
             Nobody has added this product yet. Add it once and it's here for everyone who scans it.
           </div>
           <ScanCard>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <input type="text" placeholder="Product name" value={newProduct.name} onChange={e => updateNewProduct("name", e.target.value)} style={field} />
-              <input type="text" placeholder="Brand (optional)" value={newProduct.brand} onChange={e => updateNewProduct("brand", e.target.value)} style={field} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Labeled id="np-name" label="Product name">
+                <input id="np-name" type="text" placeholder="e.g. Chocolate protein bar" value={newProduct.name} onChange={e => updateNewProduct("name", e.target.value)} style={field} />
+              </Labeled>
+              <Labeled id="np-brand" label="Brand (optional)">
+                <input id="np-brand" type="text" placeholder="e.g. Maxi Muscle" value={newProduct.brand} onChange={e => updateNewProduct("brand", e.target.value)} style={field} />
+              </Labeled>
             </div>
           </ScanCard>
 
@@ -1200,37 +1236,37 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           )}
 
           <ScanCard>
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8 }}>
-              <input type="text" placeholder="Serving (e.g. 1 cup)" value={newProduct.serving} onChange={e => updateNewProduct("serving", e.target.value)}
-                style={{ ...field, gridColumn: "1 / -1" }} />
-              {[
-                ["cal", "Calories"], ["protein", "Protein (g)"], ["carbs", "Carbs (g)"], ["fat", "Fat (g)"],
-                ["fibre", "Fibre (g)"], ["sodium", "Sodium (mg)"], ["sugar", "Sugar (g)"],
-              ].map(([key, label]) => (
-                <input key={key} type="number" inputMode="decimal" placeholder={label} value={newProduct[key]} onChange={e => updateNewProduct(key, e.target.value)} style={field} />
-              ))}
-              {/* Split from the mapped fields above since it needs the g/ml
-                  toggle alongside it — whichever's picked here becomes this
-                  product's servingUnit for every future scan, same as the
-                  live FatSecret/Open Food Facts lookups (see unitsFor in
-                  lib/foodMath.js), so a manually-added drink gets an ml
-                  amount/unit option later instead of g/kg/lb/oz. */}
-              <div style={{ display: "flex", gap: 6, minWidth: 0 }}>
-                <input type="number" inputMode="decimal" placeholder={newProduct.servingUnit === "ml" ? "Serving (ml)" : "Serving (g)"} value={newProduct.servingGrams} onChange={e => updateNewProduct("servingGrams", e.target.value)}
-                  style={{ ...field, flex: 1, width: "auto" }} />
-                {["g", "ml"].map(u => (
-                  <button key={u} type="button" onClick={() => updateNewProduct("servingUnit", u)}
-                    style={{
-                      width: 40, flexShrink: 0, borderRadius: 12, fontSize: 12, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
-                      background: newProduct.servingUnit === u ? "var(--accent)" : "var(--bg-card)",
-                      color: newProduct.servingUnit === u ? "var(--accent-contrast)" : "var(--text-secondary)",
-                      border: `1px solid ${newProduct.servingUnit === u ? "var(--accent)" : "var(--border-strong)"}`,
-                    }}
-                  >
-                    {u}
-                  </button>
-                ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
+                <Labeled id="np-serving" label="Serving description">
+                  <input id="np-serving" type="text" placeholder="e.g. 1 bar, 1 cup" value={newProduct.serving} onChange={e => updateNewProduct("serving", e.target.value)} style={field} />
+                </Labeled>
+                {/* The g/ml toggle sits beside the serving size — whichever's
+                    picked becomes this product's servingUnit for every future
+                    scan, same as the live FatSecret/Open Food Facts lookups
+                    (see unitsFor in lib/foodMath.js), so a manually-added
+                    drink gets an ml amount/unit option later instead of
+                    g/kg/lb/oz. */}
+                <Labeled id="np-serving-size" label={`Serving size (${newProduct.servingUnit === "ml" ? "ml" : "g"})`}>
+                  <div style={{ display: "flex", gap: 6, minWidth: 0 }}>
+                    <input id="np-serving-size" type="number" inputMode="decimal" placeholder={newProduct.servingUnit === "ml" ? "e.g. 250" : "e.g. 40"} value={newProduct.servingGrams} onChange={e => updateNewProduct("servingGrams", e.target.value)}
+                      style={{ ...field, flex: 1, width: "auto" }} />
+                    {["g", "ml"].map(u => (
+                      <button key={u} type="button" aria-pressed={newProduct.servingUnit === u} onClick={() => updateNewProduct("servingUnit", u)}
+                        style={{
+                          width: 48, minHeight: 44, flexShrink: 0, borderRadius: 12, fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
+                          background: newProduct.servingUnit === u ? "var(--accent)" : "var(--bg-card)",
+                          color: newProduct.servingUnit === u ? "var(--accent-contrast)" : "var(--text-secondary)",
+                          border: `1px solid ${newProduct.servingUnit === u ? "var(--accent)" : "var(--border-strong)"}`,
+                        }}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </Labeled>
               </div>
+              <NutritionFields idPrefix="np" values={newProduct} onChange={updateNewProduct} />
             </div>
           </ScanCard>
 

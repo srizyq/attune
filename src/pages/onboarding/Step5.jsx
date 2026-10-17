@@ -55,14 +55,14 @@ export default function Step5() {
 
   if (checking) {
     return (
-      <OnboardingLayout step={4} showSkip={false}>
+      <OnboardingLayout step={4} showSkip={false} showLogin={false}>
         <p style={{ color: 'var(--text-muted)' }}>Checking your account…</p>
       </OnboardingLayout>
     );
   }
 
   return (
-    <OnboardingLayout step={4} showSkip={false}>
+    <OnboardingLayout step={4} showSkip={false} showLogin={false}>
       <div style={{ width: '100%', maxWidth: '480px', textAlign: 'center' }}>
         <div style={{
           width: '64px', height: '64px', borderRadius: '16px', background: 'var(--accent-bg)',

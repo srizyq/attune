@@ -35,7 +35,7 @@ export default function BarcodeResult({
   amount, setAmount, unit, setUnit, units, servingUnit, gramsEquivalent,
   meal, setMeal, time, setTime, showSlots, recipeMode,
   dailyTarget, consumed, isFavourite, onToggleFavourite,
-  onAdd, onAddAndScan, disabled,
+  onAdd, onAddAndScan, disabled, onRecalculate, fixNote, sheet,
 }) {
   const hasTarget = dailyTarget.calories > 0;
   const dailyPct = percentOf(scaled.cal, dailyTarget.calories);
@@ -100,6 +100,13 @@ export default function BarcodeResult({
           </div>
         </div>
       </ScanCard>
+
+      {fixNote && (
+        <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', padding: '12px 14px', marginBottom: 12, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+          <i aria-hidden="true" className="ti ti-circle-check" style={{ color: 'var(--accent-secondary)', fontSize: 16, flexShrink: 0, marginTop: 1 }} />
+          <span>{fixNote}</span>
+        </div>
+      )}
 
       {calorieWarning && (
         <div role="alert" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: 'var(--bg-card)', border: '1px solid var(--gold)', borderRadius: 'var(--card-radius)', padding: '12px 14px', marginBottom: 12, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
@@ -184,6 +191,15 @@ export default function BarcodeResult({
         </ScanCard>
       )}
 
+      {onRecalculate && (
+        <button
+          type="button" onClick={onRecalculate}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', minHeight: 44, marginBottom: 12, background: 'transparent', border: '1px solid var(--border-strong)', borderRadius: 'var(--card-radius)', color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+        >
+          <i className="ti ti-edit" aria-hidden="true" style={{ fontSize: 16 }} /> Numbers look wrong? Recalculate
+        </button>
+      )}
+
       <ScanCard>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>Nutrition facts</div>
@@ -210,6 +226,7 @@ export default function BarcodeResult({
           </div>
         </ScanCard>
       )}
+      {sheet}
     </ScanPage>
   );
 }

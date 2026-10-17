@@ -132,14 +132,14 @@ test('barcode-add-product-fits', async ({ page, context }, testInfo) => {
   await page.getByRole('button', { name: 'Look up' }).click();
   // A product nobody has added asks whether to add it; yes opens the form.
   await page.getByRole('button', { name: /Add this product/ }).click();
-  await page.getByPlaceholder('Product name').waitFor();
-  await page.getByPlaceholder('Calories').fill('285');
+  await page.getByLabel('Product name', { exact: true }).waitFor();
+  await page.getByLabel('Energy', { exact: true }).fill('285');
   await page.waitForTimeout(400);
 
   // Every field sits inside the sheet — nothing pokes out of its right edge.
   const sheetRight = await page.evaluate(() => document.documentElement.clientWidth);
-  for (const ph of ['Product name', 'Brand (optional)', 'Serving (e.g. 1 cup)', 'Calories', 'Protein (g)', 'Sodium (mg)']) {
-    const box = await page.getByPlaceholder(ph).boundingBox();
+  for (const ph of ['Product name', 'Brand (optional)', 'Serving description', 'Energy', 'Protein (g)', 'Sodium (mg)']) {
+    const box = await page.getByLabel(ph, { exact: true }).boundingBox();
     expect(box.x, ph).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width, `${ph} stays inside the screen`).toBeLessThanOrEqual(sheetRight);
   }

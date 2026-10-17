@@ -800,6 +800,19 @@ export async function addBarcodeProduct(userId, barcode, fields) {
   return data;
 }
 
+// Corrects a scanned product's nutrition for everyone who scans it afterwards
+// (stored in barcode_products and preferred over other databases for this
+// barcode). `fields` are per the product's own serving, in kcal.
+export async function correctBarcodeProduct(barcode, fields) {
+  const { error } = await supabase.rpc('barcode_correct', {
+    p_barcode: barcode, p_name: fields.name, p_brand: fields.brand || null, p_serving: fields.serving || null,
+    p_serving_grams: fields.servingGrams ?? null, p_serving_unit: fields.servingUnit === 'ml' ? 'ml' : 'g',
+    p_calories: fields.cal, p_protein_g: fields.protein, p_carbs_g: fields.carbs, p_fat_g: fields.fat,
+    p_fibre_g: fields.fibre, p_sodium_mg: fields.sodium, p_sugar_g: fields.sugar,
+  });
+  if (error) throw error;
+}
+
 // ─── ausnut_foods (AUSNUT 2023, read-only — see supabase/schema.sql for the
 // afcd_foods -> ausnut_foods migration history) ─────────────────────────────
 // AUSNUT names are written adjective-first ("Pie, savoury, meat, commercial"),
