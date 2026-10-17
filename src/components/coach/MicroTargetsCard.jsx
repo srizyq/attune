@@ -55,9 +55,6 @@ export default function MicroTargetsCard({ clientData, onSave }) {
         </p>
       ) : (
         <>
-          <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '-6px 0 16px', lineHeight: 1.5 }}>
-            Leave a box blank to use the standard guideline shown in it.
-          </p>
           {MICRO_GROUPS.map(group => (
             <div key={group.label} style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>{group.label}</div>

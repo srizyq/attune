@@ -100,7 +100,7 @@ describe('Settings → Goals: weekly rate', () => {
 
   it('explains that Custom calories are not driven by the rate', () => {
     setup({ calorie_mode: 'custom', calorie_target: 2100 });
-    expect(screen.getByText(/set by hand \(Custom\), so this rate won't change it/)).toBeInTheDocument();
+    expect(screen.getByText(/set by hand, so this rate won't change them/)).toBeInTheDocument();
     cleanup();
     setup({ calorie_mode: 'calculated' });
     expect(screen.queryByText(/set by hand/)).toBeNull();
@@ -302,7 +302,6 @@ describe('Settings → Goals: diet style and net carbs', () => {
     const { container } = setup({ net_carbs: false });
     await userEvent.click(styleBtn('Keto'));
     fireEvent.change(fatSlider(container), { target: { value: '65' } });
-    expect(screen.getByText(/Custom split/)).toBeInTheDocument();
     expect(styleBtn('Keto')).toHaveAttribute('aria-pressed', 'false');
     await userEvent.click(styleBtn('Balanced'));
     expect(pct('Protein percent of calories')).toBe(35); // lose's recommended split

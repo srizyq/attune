@@ -53,7 +53,7 @@ export default function GoalRateCard({ goal, unit, paceKg, onPaceChange, targetW
       </p>
       {manualCalories && (
         <p role="note" style={{ color: 'var(--gold)', fontSize: 12, margin: '8px 0 0', lineHeight: 1.5 }}>
-          Your calorie target is set by hand (Custom), so this rate won't change it. Switch to Calculated or Adaptive to have your calories follow it.
+          Your calories are set by hand, so this rate won't change them.
         </p>
       )}
       {coachName && (

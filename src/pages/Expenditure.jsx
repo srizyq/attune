@@ -415,7 +415,7 @@ export default function Expenditure() {
                   Nothing to show yet in this range
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--text-muted)', maxWidth: 420, lineHeight: 1.6 }}>
-                  Start logging meals and check in on mood in the dashboard — your charts, streaks, and trends will appear here as your data builds up.
+                  Log meals and your charts will appear here.
                 </div>
               </div>
               <button
@@ -453,7 +453,7 @@ export default function Expenditure() {
             hasAnyLogs && (
               <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)', fontSize: 13, background: 'var(--bg-subtle)', border: '1px dashed var(--border-strong)', borderRadius: 12, marginBottom: 20 }}>
                 <i className="ti ti-chart-line" style={{ fontSize: 32, color: 'var(--text-hint)', display: 'block', marginBottom: 10 }} />
-                Log weight and food consistently for a couple of weeks to see your expenditure trend here.
+                Log weight and food for a couple of weeks to see your trend.
               </div>
             )
           ) : (
@@ -474,10 +474,9 @@ export default function Expenditure() {
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-hint)', marginBottom: 16 }}>{startLabel} – {endLabel}</div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
-                Difference is expenditure minus what you actually ate — positive means you ran a deficit, negative means a surplus.
+                Positive means a deficit, negative a surplus.
               </div>
               <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 2 }}>Expenditure trend</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Darker = higher estimated burn that day</div>
               <DayHeatmapStrip days={tdeeHeatmapDays} color={AI_PURPLE} />
             </Card>
           )}
@@ -519,7 +518,6 @@ export default function Expenditure() {
             </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Real calories burned — coming soon</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>Once connected to Apple Health or Google Fit, actual burned calories will show here alongside the estimate above.</div>
             </div>
           </div>
 

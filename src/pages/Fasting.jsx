@@ -62,9 +62,6 @@ function StartPanel({ busy, onStart }) {
   return (
     <Card style={{ padding: 20 }}>
       <SectionLabel>Start a fast</SectionLabel>
-      <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, margin: '-6px 0 14px' }}>
-        Pick how long you plan to go without eating. Your goal is "fasting hours : eating hours".
-      </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         {FAST_PRESETS.map((p) => (
           <button key={p.hours} type="button" className="btn-press" onClick={() => { setCustom(false); setHours(p.hours); }} style={chipStyle(!custom && hours === p.hours)} aria-pressed={!custom && hours === p.hours}>
@@ -155,12 +152,12 @@ function RunningPanel({ fast, nowMs, busy, onEnd, onDiscard }) {
   );
 }
 
-function NotifyCard({ running }) {
+function NotifyCard() {
   const notifs = useFastEndNotifications();
   const [error, setError] = useState(null);
   return (
     <Card style={{ padding: 20 }}>
-      <FieldRow label="Notify me when my fast ends" hint={notifs.enabled ? "We'll send a push when you reach your goal (within about 15 minutes, and not overnight)" : 'A push when you reach your goal, even with the app closed'}>
+      <FieldRow label="Notify me when my fast ends">
         <Toggle
           on={notifs.enabled}
           onChange={async (on) => {
@@ -176,9 +173,6 @@ function NotifyCard({ running }) {
       </FieldRow>
       {!pushSupported() && <p style={{ color: 'var(--danger)', fontSize: 12, margin: 0 }}>Push notifications aren't supported in this browser.</p>}
       {error && <p style={{ color: 'var(--danger)', fontSize: 12, margin: 0 }}>{error}</p>}
-      {!notifs.enabled && running && !error && (
-        <p style={{ color: 'var(--text-hint)', fontSize: 12, margin: 0 }}>Turn this on and we'll tell you when this fast is done.</p>
-      )}
     </Card>
   );
 }
@@ -248,7 +242,7 @@ export default function Fasting() {
               {running
                 ? <RunningPanel fast={running} nowMs={nowMs} busy={busy} onEnd={end} onDiscard={discard} />
                 : <StartPanel busy={busy} onStart={start} />}
-              <NotifyCard running={!!running} />
+              <NotifyCard />
               <HistoryCard history={history} />
             </>
           )}

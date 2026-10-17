@@ -64,7 +64,7 @@ export function CropViewer({ photo, box, onClose }) {
         {!cropUrl && !failed && <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>Loading…</div>}
         {failed && <div style={{ padding: '16px 0', fontSize: 12, color: 'var(--text-muted)' }}>Couldn't cut out that part of the photo.</div>}
         <p style={{ margin: '10px 0 0', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          If this isn't the dish you picked, the numbers may be off — use the box below to tell it what you got.
+          If this isn't the dish you picked, the numbers may be off.
         </p>
       </div>
     </div>

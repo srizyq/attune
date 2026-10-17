@@ -208,7 +208,7 @@ export default function Nutrients() {
                       <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>PRO</span>
                     )}
                   </div>
-                  {extendedNote(extendedInfo) && <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 0 10px', lineHeight: 1.5 }}>{extendedNote(extendedInfo)}{group.keys.some((k) => summary.perKey[k]?.estimated > 0) ? ' Foods without data borrow it from the closest similar food — totals marked ~ include those estimates.' : ''}</p>}
+                  {extendedNote(extendedInfo) && <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 0 10px', lineHeight: 1.5 }}>{extendedNote(extendedInfo)}{group.keys.some((k) => summary.perKey[k]?.estimated > 0) ? ' ~ marks totals that include estimates.' : ''}</p>}
                   <div className="grid-3">
                     {group.keys.map(key => {
                       const n = MICRO_NUTRIENTS.find(m => m.key === key);

@@ -78,7 +78,7 @@ export default function Friends() {
         {f.friends.length === 0 ? (
           <div style={{ ...card, padding: '22px 18px', marginBottom: 16, textAlign: 'center' }}>
             <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 18 }}>No friends yet</div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.55, margin: '6px 0 16px' }}>Send your link to a friend. When they open it and tap Add friend, you'll each see the other's day here.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.55, margin: '6px 0 16px' }}>Send your link to a friend to see each other's day here.</p>
             <button type="button" onClick={invite} style={primaryBtn}><i className="ti ti-share-3" aria-hidden="true" />Invite a friend</button>
           </div>
         ) : (

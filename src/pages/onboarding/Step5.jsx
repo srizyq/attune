@@ -76,7 +76,7 @@ export default function Step5() {
         <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '28px' }}>
           We sent a confirmation link to{' '}
           <span style={{ color: 'var(--text-secondary)' }}>{email || 'your email'}</span>.
-          Click it to finish setting up your account — this page will move on by itself once you do.
+          Open it to finish.
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28, color: 'var(--text-hint)', fontSize: 13 }}>

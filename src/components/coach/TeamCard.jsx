@@ -91,7 +91,7 @@ export default function TeamCard() {
       <Card>
         <SectionLabel icon="ti-users-group">Team</SectionLabel>
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
-          Coach alongside colleagues? A team shows who's on it and lets you bring a teammate in on a client — your clients are never shared unless they agree to it. Everyone keeps their own Coach Pass.
+          Create a team to bring a teammate in on a client. Clients are only shared if they agree.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>

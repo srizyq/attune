@@ -46,7 +46,7 @@ describe('RestDayTargetsCard', () => {
 
   it('in adaptive mode explains why it is unavailable instead of offering inputs', () => {
     setup({ adaptive: true });
-    expect(screen.getByText(/Adaptive calories re-work your everyday target/)).toBeInTheDocument();
+    expect(screen.getByText(/Rest-day targets aren't available with Adaptive calories/)).toBeInTheDocument();
     expect(screen.getByText(/turns any rest-day targets off/)).toBeInTheDocument();
     expect(screen.queryByLabelText('Rest-day calories (kcal)')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Monday' })).not.toBeInTheDocument();

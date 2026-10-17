@@ -18,12 +18,12 @@ export default function RestDayTargetsCard({ inputs, trainingDays, onChange, bas
       <SectionLabel>Training &amp; rest days</SectionLabel>
       {adaptive ? (
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>
-          Adaptive calories re-work your everyday target on their own, so separate rest-day targets aren't available in this mode. Switch to Calculated or Custom above to use them. Saving in adaptive mode turns any rest-day targets off.
+          Rest-day targets aren't available with Adaptive calories. Saving in adaptive mode turns any rest-day targets off.
         </p>
       ) : (
         <>
           <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 14px', lineHeight: 1.5 }}>
-            Optional. Your targets above apply on training days. Choose your training days and set different numbers for the rest — leave a field blank to keep it the same. These are fixed numbers, so update them if your goal or everyday target changes.
+            Your targets above apply on training days. Set different numbers for the rest; leave a field blank to keep it the same.
           </p>
           <div role="group" aria-label="Training days" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
             {WEEKDAYS.map((d) => {

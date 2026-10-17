@@ -35,11 +35,6 @@ describe('PlanVsActualCard', () => {
     expect(screen.getByText(/Plan 900 kcal · ate 1,200 kcal/)).toBeInTheDocument();
   });
 
-  it('is honest about what "from the plan" means', async () => {
-    render(<PlanVsActualCard client={client} plan={plan} />);
-    expect(await screen.findByText(/means they tapped Log on their plan/)).toBeInTheDocument();
-  });
-
   it('renders nothing without a plan, or with an empty one — and does not even fetch', () => {
     expect(render(<PlanVsActualCard client={client} plan={null} />).container).toBeEmptyDOMElement();
     expect(render(<PlanVsActualCard client={client} plan={{ id: 'p', days: {} }} />).container).toBeEmptyDOMElement();

@@ -230,7 +230,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
                       <SegmentedControl options={availableUnits} value={unit} onChange={setUnit} fill={false} />
                     )}
                   </div>
-                  {!hasKnownWeight && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>No serving weight on record for this item — edit calories directly and protein/carbs/fat scale with it. Delete and re-add it via search for gram-accurate editing.</div>}
+                  {!hasKnownWeight && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>No serving weight, so calories and macros scale together.</div>}
                   {item.source === 'photo' && (
                     <button
                       type="button"

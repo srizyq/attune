@@ -102,7 +102,7 @@ test.describe('import from another app', () => {
     await openApp({ page, context }, testInfo);
     await openImport(page);
     await upload(page, [csv('d.csv', 'Date,Food,Calories\n05/03/2025,Toast,100\n06/03/2025,Eggs,150')]);
-    await expect(page.getByText(/could be read two ways/)).toBeVisible();
+    await expect(page.getByText(/Date order/)).toBeVisible();
     await expect(page.getByText('5 Mar 2025 – 6 Mar 2025')).toBeVisible();
     await page.getByLabel('Date order').selectOption('mdy');
     await expect(page.getByText(/3 May 2025 – 3 Jun/)).toBeVisible();
@@ -112,7 +112,7 @@ test.describe('import from another app', () => {
     await openApp({ page, context }, testInfo);
     await openImport(page);
     await upload(page, [csv('notes.csv', 'Title,Body\nHello,World')]);
-    await expect(page.getByText(/Nothing we could import/)).toBeVisible();
+    await expect(page.getByText(/Nothing to import/)).toBeVisible();
     await expect(page.getByRole('button', { name: /^Import/ })).toHaveCount(0);
     await page.getByRole('button', { name: 'Choose different files' }).click();
     await expect(page.getByText('Bring your history with you')).toBeVisible();

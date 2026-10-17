@@ -180,7 +180,7 @@ export default function ImportDataModal({ onClose, closing }) {
           <Card style={{ marginBottom: 16 }}>
             <SectionLabel>Bring your history with you</SectionLabel>
             <p style={{ ...muted, margin: '0 0 12px' }}>
-              Use the "export my data" option in your old app (usually on its website's settings), then choose the file or zip you get — MyFitnessPal, Cronometer, Lose It and most similar apps work. Food diaries and weight history come across.
+              Choose the export file or zip from your old app (MyFitnessPal, Cronometer, Lose It and similar).
             </p>
             <p style={{ ...muted, margin: '0 0 16px' }}>
               The file is read on your device. You'll see what was found before anything is saved.
@@ -197,7 +197,7 @@ export default function ImportDataModal({ onClose, closing }) {
             )}
           </Card>
           <p style={{ ...muted, margin: 0, color: 'var(--text-hint)' }}>
-            Imported foods come in as one serving per row, with the calories and macros your old app recorded, and are marked as imported. Exercise, recipes and goals aren't imported.
+            Imported foods are marked as imported. Exercise, recipes and goals aren't imported.
           </p>
         </>
       )}
@@ -208,7 +208,7 @@ export default function ImportDataModal({ onClose, closing }) {
             <SectionLabel>What we found</SectionLabel>
             {nothing ? (
               <p style={{ ...muted, color: 'var(--text-secondary)', margin: 0 }}>
-                Nothing we could import. We look for a date column plus calories (a food diary) or a weight column (a weight log).
+                Nothing to import. We look for a date plus calories, or a weight.
               </p>
             ) : (
               <>
@@ -264,7 +264,7 @@ export default function ImportDataModal({ onClose, closing }) {
               )}
               {parsed.dateOrderGuessed && (
                 <div style={{ marginTop: 12 }}>
-                  <p style={{ ...muted, margin: '0 0 6px' }}>Dates like 05/03/2026 could be read two ways. We've assumed day first:</p>
+                  <p style={{ ...muted, margin: '0 0 6px' }}>Date order:</p>
                   <select
                     aria-label="Date order" value={parsed.dateOrder} onChange={(e) => setDateOrder(e.target.value)}
                     style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '8px 10px', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit' }}

@@ -42,7 +42,7 @@ export default function TrialEndedPaywall() {
           Your free month has ended
         </div>
         <p style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.6, margin: '0 0 22px' }}>
-          Subscribe to keep unlimited AI scans, full micronutrient tracking, and everything else Pro unlocked — or continue on the free plan.
+          Subscribe to keep Pro, or continue on the free plan.
         </p>
         <button
           onClick={() => { ack(); navigate('/pricing'); }}

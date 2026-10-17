@@ -145,7 +145,7 @@ export default function CoachInvitePanel({ hasClients }) {
     <div style={card}>
       <SectionLabel icon="ti-user-plus">{hasClients ? 'Invite another client' : 'Invite your first client'}</SectionLabel>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 14px', lineHeight: 1.6 }}>
-        Each invite works once and expires after 7 days. Your client sees exactly what you'll have access to and has to accept before anything is shared.
+        Each invite works once and expires after 7 days. Your client has to accept before anything is shared.
       </p>
 
       <FormRow>

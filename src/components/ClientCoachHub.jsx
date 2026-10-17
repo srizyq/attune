@@ -30,7 +30,7 @@ function CoachPassUpsell({ profile, pendingConfirmation, onGoToProfile, onGoToPr
           Become a coach
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 440, lineHeight: 1.5 }}>
-          Get your own dashboard to manage clients' nutrition, weight, and check-ins in one place — {COACH_PASS_PRICE}.
+          Manage clients' nutrition, weight and check-ins — {COACH_PASS_PRICE}.
         </div>
       </div>
       {/* Signup is already real at this point (RequireAuth's

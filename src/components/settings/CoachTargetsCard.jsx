@@ -23,7 +23,7 @@ export default function CoachTargetsCard({ coachName, targets, setAt, profile, o
     <Card>
       <SectionLabel>Targets from your coach</SectionLabel>
       <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '-6px 0 16px', lineHeight: 1.6 }}>
-        {name} set these{setAt ? ` on ${shortDate(setAt)}` : ''}. They stay exactly as they are while you're being coached — your goal, activity and weekly rate above don't change them.
+        {name} set these{setAt ? ` on ${shortDate(setAt)}` : ''}. Your goal and activity settings don't change them.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 14, marginBottom: hasRest ? 14 : 18 }}>
         <Stat label="Calories" value={targets ? targets.calories.toLocaleString() : '—'} />
@@ -45,7 +45,7 @@ export default function CoachTargetsCard({ coachName, targets, setAt, profile, o
         >
           {busy ? 'Taking over…' : 'Take over my targets'}
         </button>
-        <span style={{ color: 'var(--text-hint)', fontSize: 12 }}>{name} will be told. Your numbers stay as they are until you change them.</span>
+        <span style={{ color: 'var(--text-hint)', fontSize: 12 }}>{name} will be told.</span>
       </div>
       {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '10px 0 0' }}>{error}</p>}
     </Card>

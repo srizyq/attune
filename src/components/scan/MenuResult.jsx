@@ -265,7 +265,7 @@ export function MenuList({
         </button>
       )}
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 4px 8px', lineHeight: 1.5 }}>
-        Tick every dish you had to add them together, or open one to adjust its portion first. These are AI estimates from your menu photo.
+        Tick the dishes you had. These are AI estimates.
       </p>
     </ScanPage>
   );

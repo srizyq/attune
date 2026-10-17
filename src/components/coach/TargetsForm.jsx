@@ -106,13 +106,12 @@ export default function TargetsForm({ client, onSave, onCancel }) {
         <MacroPreviewBar label="Protein" grams={computed.protein.g} calories={computed.protein.cal} pct={split.protein} color="var(--macro-protein)" />
         <MacroPreviewBar label="Carbs" grams={computed.carbs.g} calories={computed.carbs.cal} pct={split.carbs} color="var(--macro-carbs)" />
         <MacroPreviewBar label="Fat" grams={computed.fat.g} calories={computed.fat.cal} pct={split.fat} color="var(--macro-fat)" />
-        <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '2px 0 0' }}>Carbs ({carbPct}%) fill whatever protein and fat leave.</p>
       </div>
       {supportsDay && (
         <div style={{ margin: '16px 0 14px', paddingTop: 14, borderTop: '1px solid var(--border-default)' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Rest days (optional)</div>
           <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 12px', lineHeight: 1.5 }}>
-            The targets above apply on training days. Pick the training days, then set different targets for the other days — leave a field blank to keep the same number.
+            The targets above apply on training days. Set different targets for the other days; leave a field blank to keep the same.
           </p>
           <div role="group" aria-label="Training days" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
             {WEEKDAYS.map(d => {

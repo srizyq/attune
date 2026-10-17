@@ -49,29 +49,24 @@ function AdaptiveTargetPanel({ loading, result, goal, paceKg, unit, onRefresh })
       'no-weight-logs': 'Log your weight from the dashboard to get started — adaptive targeting learns from your real weight trend over time.',
       'not-enough-span': `Keep logging weight — ${result.daysNeeded} more day${result.daysNeeded === 1 ? '' : 's'} of spread before there's enough of a trend to work from.`,
       'not-enough-weigh-ins': `Log your weight on ${result.daysNeeded} more day${result.daysNeeded === 1 ? '' : 's'} — a few weigh-ins are needed so one off day on the scale can't skew your target.`,
-      'implausible-estimate': "Your logged food and weight don't add up to a believable maintenance level — usually a few days of unfinished food logging. Keep logging and it'll settle.",
-      'not-enough-logged-days': `Log food on ${result.daysNeeded} more day${result.daysNeeded === 1 ? '' : 's'} within your weight-logging window — the estimate needs to see what you're actually eating, not just the scale.`,
+      'implausible-estimate': "Your logs don't add up to a believable maintenance level yet. Keep logging.",
+      'not-enough-logged-days': `Log food on ${result.daysNeeded} more day${result.daysNeeded === 1 ? '' : 's'} to estimate this.`,
     };
     return (
       <div style={{ textAlign: 'center' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 10px' }}>
           {messages[result.reason] || 'Not enough data yet to estimate this.'}
         </p>
-        <p style={{ color: 'var(--text-hint)', fontSize: '11px', margin: 0 }}>
-          Until then, this uses your Calculated target as a placeholder.
-        </p>
       </div>
     );
   }
   const { estimate } = result;
-  const trendDirection = estimate.weightChangeKg > 0 ? 'up' : estimate.weightChangeKg < 0 ? 'down' : 'flat';
   const goalLabel = { lose: 'Lose weight', maintain: 'Stay balanced', build: 'Build muscle' }[goal] || 'your goal';
   return (
     <div style={{ textAlign: 'center' }}>
       <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 8px' }}>
-        Estimated maintenance: <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{estimate.tdee.toLocaleString()} kcal</span>, from your trend weight going {trendDirection} {Math.abs(estimate.weightChangeKg)}kg
-        over {estimate.spanDays} days while averaging {estimate.avgCalIn.toLocaleString()} kcal/day ({estimate.loggedDayCount} logged days).
-        Adjusted for your "{goalLabel}" goal to {result.target.toLocaleString()} kcal — this updates as you keep logging.
+        Estimated maintenance: <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{estimate.tdee.toLocaleString()} kcal</span>.
+        Adjusted for your "{goalLabel}" goal to {result.target.toLocaleString()} kcal.
       </p>
       {goal !== 'maintain' && (
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 8px' }} data-testid="adaptive-rate">

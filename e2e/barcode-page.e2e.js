@@ -61,7 +61,7 @@ test('barcode result page shows the product, extras from Open Food Facts, and lo
   await result.getByRole('button', { name: '½ serving' }).click();
   await expect(log).not.toHaveText(before);
 
-  await result.getByRole('button', { name: 'Dinner' }).click();
+  await result.getByRole('button', { name: 'Dinner', exact: true }).click();
   await expect(result.getByRole('button', { name: /to Dinner$/ })).toBeVisible();
   await result.getByRole('button', { name: /to Dinner$/ }).click();
   await expect.poll(() => posts.length).toBe(1);

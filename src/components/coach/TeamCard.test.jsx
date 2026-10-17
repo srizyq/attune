@@ -78,7 +78,7 @@ describe('TeamCard — not on a team', () => {
 
   it('explains that clients are never shared without their say-so', () => {
     setup(null);
-    expect(screen.getByText(/never shared unless they agree/)).toBeInTheDocument();
+    expect(screen.getByText(/only shared if they agree/)).toBeInTheDocument();
   });
 });
 

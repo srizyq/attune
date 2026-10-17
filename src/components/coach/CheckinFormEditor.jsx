@@ -74,9 +74,6 @@ export default function CheckinFormEditor({ clientData, admin }) {
   return (
     <Card>
       <SectionLabel icon="ti-clipboard-check">Check-in form</SectionLabel>
-      <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '-6px 0 16px', lineHeight: 1.5 }}>
-        {clientData.name || 'Your client'} sees this on their Coach tab and gets a nudge when it's due.
-      </p>
 
       {questions.length === 0 && !form && (
         <div style={{ marginBottom: 16 }}>

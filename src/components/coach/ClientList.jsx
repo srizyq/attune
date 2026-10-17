@@ -192,7 +192,7 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
             </FilterChipRow>
           </div>
           <p style={{ color: 'var(--text-hint)', fontSize: 11, lineHeight: 1.5, margin: '0 0 8px' }}>
-            The % on each row is 7-day adherence — logging consistency plus targets hit on complete days ({COMPLETE_DAY_MEALS}+ meals logged).
+            The % on each row is 7-day adherence.
           </p>
           {visible.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 0 4px' }}>

@@ -93,7 +93,7 @@ export default function CalorieLimitCard({ profile, today, onSave, onUpgrade, pe
       <Card>
         {heading}
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 14px', lineHeight: 1.5 }}>
-          Hold your daily calories to a different number for a set time — like a 2-week cut before a holiday — and have it switch back on its own afterwards. Pro only.
+          Hold your calories to a different number for a set time. Pro only.
         </p>
         <button
           onClick={pendingConfirmation ? onConfirmEmail : onUpgrade}
@@ -147,7 +147,7 @@ export default function CalorieLimitCard({ profile, today, onSave, onUpgrade, pe
     <Card>
       {heading}
       <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 14px', lineHeight: 1.5 }}>
-        Starts today and switches back to your usual target by itself when it ends. Protein, carbs and fat targets scale to match.
+        Switches back to your usual target when it ends.
       </p>
 
       <label htmlFor="limit-calories" style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Calories a day</label>

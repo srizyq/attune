@@ -272,7 +272,7 @@ export default function Recipes() {
             <Card style={{ textAlign: 'center', padding: 32 }}>
               <i className="ti ti-tools-kitchen-2" style={{ fontSize: 28, color: 'var(--text-hint)' }} />
               <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>
-                No recipes yet. Build one from foods you cook often — add ingredients, say how many servings it makes, and log it in one tap from now on.
+                No recipes yet. Build one from foods you cook often and log it in one tap.
               </p>
             </Card>
           ) : filtered.length === 0 ? (

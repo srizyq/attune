@@ -107,7 +107,7 @@ export default function ReportsTab({ client, clientData }) {
       )}
 
       <div style={{ marginBottom: 14 }}>
-        <label htmlFor="report-filter" style={labelStyle}>Which days to include in the averages</label>
+        <label htmlFor="report-filter" style={labelStyle}>Days to include</label>
         <select id="report-filter" value={dayFilter} onChange={e => setDayFilter(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
           {DAY_FILTERS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
         </select>

@@ -92,7 +92,7 @@ describe('ReportsTab', () => {
 
   it('applies the day filter', async () => {
     setup();
-    await userEvent.selectOptions(screen.getByLabelText(/Which days to include/), 'complete');
+    await userEvent.selectOptions(screen.getByLabelText(/Days to include/), 'complete');
     await generate();
     await userEvent.click(screen.getByRole('button', { name: /Download CSV/ }));
     const lines = out.downloadTextFile.mock.calls[0][1].split('\r\n');

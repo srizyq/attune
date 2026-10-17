@@ -98,9 +98,6 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
   return (
     <Card>
       <SectionLabel icon="ti-calendar-week">Meal plan</SectionLabel>
-      <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '-6px 0 16px', lineHeight: 1.5 }}>
-        {clientData.name || 'Your client'} sees this on their Coach tab and can log a meal in one tap.
-      </p>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
         <div style={{ flex: 1, minWidth: 180 }}>

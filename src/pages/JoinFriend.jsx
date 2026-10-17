@@ -71,7 +71,7 @@ function Confirm({ code }) {
                 </div>
               ) : (
                 <>
-                  <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6, margin: '0 0 24px' }}>You'll each see the other's calories, macros and food log for the day, plus any recipes they share. You can hide your day or remove a friend whenever you like.</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6, margin: '0 0 24px' }}>You'll each see the other's calories, macros and food log for the day, plus shared recipes.</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <button type="button" onClick={add} disabled={busy} style={{ ...button(true), opacity: busy ? 0.6 : 1 }}>{busy ? 'Adding…' : 'Add friend'}</button>
                     <Link to="/friends" style={button(false)}>Not now</Link>
@@ -114,7 +114,7 @@ export default function JoinFriend() {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
           <h1 style={{ fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 700, margin: '0 0 8px', textAlign: 'center' }}>A friend invited you</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6, margin: '0 0 28px', textAlign: 'center' }}>Create an account or log in to see who it is and add them as a friend. Nothing is shared until you do.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6, margin: '0 0 28px', textAlign: 'center' }}>Create an account or log in to add them. Nothing is shared until you do.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Link to="/onboarding/welcome" style={button(true)}>Create an account</Link>
             <Link to="/login" style={button(false)}>I already have an account</Link>

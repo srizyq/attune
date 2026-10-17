@@ -62,7 +62,7 @@ describe('ClientList (with summaries)', () => {
     const badge = screen.getByLabelText('7-day adherence 100 percent');
     expect(badge).toHaveTextContent('100%');
     expect(badge).toHaveAttribute('title', expect.stringContaining('within 10% of their calorie target'));
-    expect(screen.getByText(/is 7-day adherence — logging consistency plus targets hit on complete days \(3\+ meals logged\)/)).toBeInTheDocument();
+    expect(screen.getByText(/is 7-day adherence/)).toBeInTheDocument();
   });
 
   it('puts the client who needs the most attention first, with the reason', () => {

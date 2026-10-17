@@ -192,7 +192,7 @@ export default function FriendDay() {
         <div style={{ marginTop: 28, textAlign: 'center' }}>
           {confirmRemove ? (
             <div role="alertdialog" aria-label="Remove friend" style={{ ...card, padding: 16 }}>
-              <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--text-secondary)' }}>Remove {name}? You'll stop seeing each other's days. You can add each other again with a new link.</p>
+              <p style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--text-secondary)' }}>Remove {name}? You'll stop seeing each other's days.</p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button type="button" onClick={() => setConfirmRemove(false)} style={{ flex: 1, minHeight: 44, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 14, color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
                 <button type="button" onClick={remove} style={{ flex: 1, minHeight: 44, background: 'var(--danger)', border: 'none', borderRadius: 14, color: '#fff', fontFamily: 'inherit', fontSize: 14, cursor: 'pointer' }}>Remove</button>

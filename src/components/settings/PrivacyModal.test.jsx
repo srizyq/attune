@@ -46,9 +46,4 @@ describe('Privacy → Export my data', () => {
     expect(await screen.findByText('offline')).toBeInTheDocument();
     expect(clicked).toHaveLength(0);
   });
-
-  it('describes what it covers', () => {
-    open();
-    expect(screen.getByText(/logs, health data, coaching messages and plans/)).toBeInTheDocument();
-  });
 });

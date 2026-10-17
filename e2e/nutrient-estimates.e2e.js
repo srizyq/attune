@@ -32,7 +32,7 @@ test('foods without micronutrients get marked estimates; unknowns show a dash, n
   const dash = page.getByText('—', { exact: true });
   await expect(dash.first()).toBeVisible();
   // The B-vitamin group explains where its estimates come from.
-  await expect(page.getByText(/Foods without data borrow it from the closest similar food/).first()).toBeVisible();
+  await expect(page.getByText(/marks totals that include estimates/).first()).toBeVisible();
   // The estimate is flagged with a ~ on the total.
   await expect(page.getByText(/^~/).first()).toBeVisible();
   await assertLayout(page, testInfo, 'x-nutrients-estimates', ctx);

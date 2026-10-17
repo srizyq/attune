@@ -23,7 +23,7 @@ describe('TargetsForm — calories drive the macros', () => {
     const onSave = setup(base);
     expect(proteinSlider()).toHaveValue('29');
     expect(fatSlider()).toHaveValue('26');
-    expect(screen.getByText(/Carbs \(45%\)/)).toBeInTheDocument();
+    expect(screen.getByText('Carbs').parentElement).toHaveTextContent(/45%/);
     await userEvent.click(screen.getByRole('button', { name: 'Save targets' }));
     expect(onSave).toHaveBeenCalledWith({ calorie_target: 2500, protein_g: 181, carbs_g: 281, fat_g: 72 }, undefined);
   });
@@ -64,7 +64,7 @@ describe('TargetsForm — calories drive the macros', () => {
     fireEvent.change(proteinSlider(), { target: { value: '60' } }); // protein 60, fat clamped to leave carbs >= 0
     fireEvent.change(fatSlider(), { target: { value: '50' } });
     expect(fatSlider()).toHaveValue('40'); // min(50, 100 - 60)
-    expect(screen.getByText(/Carbs \(0%\)/)).toBeInTheDocument();
+    expect(screen.getByText('Carbs').parentElement).toHaveTextContent(/0%/);
   });
 
   it('clamps the protein slider itself the same way, when fat is raised first', () => {
@@ -72,14 +72,14 @@ describe('TargetsForm — calories drive the macros', () => {
     fireEvent.change(fatSlider(), { target: { value: '50' } });
     fireEvent.change(proteinSlider(), { target: { value: '60' } });
     expect(proteinSlider()).toHaveValue('50'); // min(60, 100 - 50)
-    expect(screen.getByText(/Carbs \(0%\)/)).toBeInTheDocument();
+    expect(screen.getByText('Carbs').parentElement).toHaveTextContent(/0%/);
   });
 
   it('defaults a client with no targets at all to the standard "maintain" split', () => {
     setup({ id: 'c2' });
     expect(proteinSlider()).toHaveValue('30');
     expect(fatSlider()).toHaveValue('30');
-    expect(screen.getByText(/Carbs \(40%\)/)).toBeInTheDocument();
+    expect(screen.getByText('Carbs').parentElement).toHaveTextContent(/40%/);
   });
 
   it('uses the goal\'s recommended split for a client with a goal but no targets yet', () => {

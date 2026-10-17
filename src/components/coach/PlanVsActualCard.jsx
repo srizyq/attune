@@ -50,7 +50,7 @@ export default function PlanVsActualCard({ client, plan }) {
             {s.fromPlan} of {s.plannedMeals} planned meals logged from the plan
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 14px', lineHeight: 1.5 }}>
-            {s.somethingElse} ate something else · {s.skipped} not logged{s.pending ? ` · ${s.pending} still to come today` : ''}. “From the plan” means they tapped Log on their plan — food they searched for instead counts as something else, since it can't be matched to the plan.
+            {s.somethingElse} ate something else · {s.skipped} not logged{s.pending ? ` · ${s.pending} still to come today` : ''}.
           </p>
           {result.days.map((d) => (
             <div key={d.date} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '8px 0', borderBottom: '1px solid var(--border-default)' }}>
