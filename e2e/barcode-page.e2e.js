@@ -61,12 +61,14 @@ test('barcode result page shows the product, extras from Open Food Facts, and lo
   await result.getByRole('button', { name: '½ serving' }).click();
   await expect(log).not.toHaveText(before);
 
-  await result.getByRole('button', { name: 'Dinner', exact: true }).click();
-  await expect(result.getByRole('button', { name: /to Dinner$/ })).toBeVisible();
-  await result.getByRole('button', { name: /to Dinner$/ }).click();
+  // Breakfast, exactly: the default meal depends on the time of day, and the
+  // pinned button's own name ("Log 70 kcal to Dinner") contains the meal too.
+  await result.getByRole('button', { name: 'Breakfast', exact: true }).click();
+  await expect(result.getByRole('button', { name: /to Breakfast$/ })).toBeVisible();
+  await result.getByRole('button', { name: /to Breakfast$/ }).click();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0].food_name).toContain('Oikos Pro');
-  expect(posts[0].meal).toMatch(/dinner/i);
+  expect(posts[0].meal).toMatch(/breakfast/i);
   await expect(page.getByTestId('barcode-result')).toHaveCount(0);
 });
 
