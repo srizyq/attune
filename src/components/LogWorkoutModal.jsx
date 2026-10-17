@@ -83,9 +83,6 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
             />
           </div>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--text-hint)', marginBottom: 18 }}>
-          Estimated from your weight, type, intensity, and duration — edit it if you know the real number.
-        </div>
 
         {error && <div style={{ background: '#1a0f0f', border: '1px solid #c0707040', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--danger)', marginBottom: 14 }}>{error}</div>}
 

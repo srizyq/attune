@@ -62,11 +62,11 @@ export default function PrivacyModal({ onClose, closing, onImport }) {
     <SettingsModal title="Privacy" onClose={onClose} closing={closing}>
       <Card style={{ marginBottom: 16 }}>
         <SectionLabel>Your data</SectionLabel>
-        <FieldRow label="Export my data" hint="Download everything we hold about you — logs, health data, coaching messages and plans — as a file">
+        <FieldRow label="Export my data">
           <ExportDataButton />
         </FieldRow>
         {onImport && (
-          <FieldRow label="Import from another app" hint="Bring in your food diary and weight history from MyFitnessPal, Cronometer, Lose It and similar apps">
+          <FieldRow label="Import from another app">
             <button
               onClick={onImport}
               style={{
@@ -83,12 +83,12 @@ export default function PrivacyModal({ onClose, closing, onImport }) {
       <Card style={{ marginBottom: 0 }}>
         <SectionLabel>Legal</SectionLabel>
         <Link to="/privacy" style={{ textDecoration: 'none' }}>
-          <FieldRow label="Privacy Policy" hint="What we collect, why, and who it's shared with">
+          <FieldRow label="Privacy Policy">
             <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16 }} />
           </FieldRow>
         </Link>
         <Link to="/terms" style={{ textDecoration: 'none' }}>
-          <FieldRow label="Terms of Service" hint="The terms you agreed to when you signed up">
+          <FieldRow label="Terms of Service">
             <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16 }} />
           </FieldRow>
         </Link>

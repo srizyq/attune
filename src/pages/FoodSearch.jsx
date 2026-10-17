@@ -1046,11 +1046,6 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
 
         {looking && (
           <>
-            <div style={{ position: "absolute", top: "calc(24px + env(safe-area-inset-top))", left: 64, right: 64, textAlign: "center" }}>
-              <span style={{ display: "inline-block", maxWidth: "100%", padding: "6px 14px", borderRadius: 99, background: "rgba(20,17,16,0.6)", border: "1px solid rgba(255,255,255,0.18)", fontSize: 13, fontWeight: 600, color: "#f6f2fa" }}>
-                Point your camera at a barcode
-              </span>
-            </div>
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
               <div style={{ position: "relative", width: "min(78%, 340px)", height: 150 }}>
                 {[["top", "left"], ["top", "right"], ["bottom", "left"], ["bottom", "right"]].map(([v, h]) => (
@@ -1210,7 +1205,6 @@ function BarcodeScanner({ onAddFood, onClose, defaultMeal, defaultTime, selected
           {!labelPreview && !labelAnalyzing && (
             labelCameraOpen ? (
               <ScanCard>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>Take a photo of the nutrition facts label — it'll fill in the numbers below.</div>
                 <CameraCapture onCapture={(file) => { setLabelCameraOpen(false); handleLabelPhoto(file); }} hint="Fit the whole nutrition panel in frame" />
               </ScanCard>
             ) : (

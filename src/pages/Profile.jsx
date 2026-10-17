@@ -321,7 +321,6 @@ export default function Profile() {
         {/* Top bar */}
         <PageHeader
           title="Personal details"
-          subtitle="Your name, body stats and account"
           onBack={() => navigate('/settings')}
           backLabel="Back to Settings"
         />
@@ -368,7 +367,7 @@ export default function Profile() {
             <FieldRow
               label="Pro"
               hint={
-                !hasProAccess(profile) ? 'Unlimited AI scans, custom micronutrient targets, and more'
+                !hasProAccess(profile) ? undefined
                   : profile?.stripe_pro_subscription_id ? `Active subscription · ${profile?.pro_status || 'active'}`
                   : isTrialActive(profile) ? `Free trial — ${trialDaysLeft(profile)} day${trialDaysLeft(profile) === 1 ? '' : 's'} left`
                   : profile?.is_premium ? 'Comp access'
@@ -379,7 +378,7 @@ export default function Profile() {
             </FieldRow>
             {/* A row like the ones around it (label left, button right), not a bare
                 left-hugging button between two right-aligned ones. */}
-            <FieldRow label="Sign out" hint="Leaves this device signed out until you log in again">
+            <FieldRow label="Sign out">
               <button
                 onClick={requestLogout}
                 style={{
@@ -407,7 +406,7 @@ export default function Profile() {
 
           <Card>
             <SectionLabel>Appearance</SectionLabel>
-            <FieldRow label="Theme" hint={theme === 'light' ? 'Light — matches most of the day' : 'Dark — easier on the eyes at night'}>
+            <FieldRow label="Theme">
               <SegmentedControl options={THEME_OPTIONS} value={theme} onChange={setTheme} fill={false} />
             </FieldRow>
           </Card>
@@ -435,9 +434,6 @@ export default function Profile() {
               <FieldRow label="Height">
                 <TextInput value={form.height} onChange={v => set('height', v)} onBlur={() => flushNowRef.current()} type="number" suffix={form.unit === 'imperial' ? 'in' : 'cm'} width="90px" ariaLabel="Height" />
               </FieldRow>
-              <p style={{ color: 'var(--text-hint)', fontSize: '12px', margin: '14px 0 0' }}>
-                These feed your calculated calorie target on the Goals tab in Settings.
-              </p>
             </Card>
           </div>
 

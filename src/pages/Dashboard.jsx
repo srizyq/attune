@@ -630,7 +630,6 @@ function ActivityRow({ workouts, totalCaloriesBurned, onLogWorkout, onDeleteWork
         <ActivityStat icon="ti-flame" iconColor="var(--burn)" label="Burned" active={!!totalCaloriesBurned} value={totalCaloriesBurned ? Math.round(totalCaloriesBurned).toLocaleString() : '—'} chip="Active" />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
-        <span style={{ fontSize: 11, color: 'var(--text-hint)', fontWeight: 700 }}>Steps will sync from Apple Health / Google Fit once the native app ships.</span>
         <button onClick={onLogWorkout} className="hit-slop" style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', padding: 0, flexShrink: 0, marginLeft: 12 }}>
           <i className="ti ti-plus" style={{ fontSize: 13 }} /> Log workout
         </button>

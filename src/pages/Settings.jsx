@@ -146,7 +146,7 @@ export default function Settings() {
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         {/* Top bar */}
-        <PageHeader title="Settings" subtitle="Manage your goals, profile and preferences" />
+        <PageHeader title="Settings" />
 
         <div className="page-pad">
           {/* Profile preview — stays at the top, tap through to the full

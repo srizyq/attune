@@ -166,15 +166,12 @@ export default function CoachModal({ onClose, closing }) {
         >
           <div>
             <div style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600 }}>Coach tab</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>
-              {profile?.coach_pass ? 'See your clients’ logged data and leave comments' : 'Your trainer, notes, and coaching tools'}
-            </div>
           </div>
           <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16, flexShrink: 0 }} />
         </button>
         {profile?.coach_pass && (
           <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border-default)' }}>
-            <FieldRow label="Your logo" hint="Shown to your clients wherever they see your name">
+            <FieldRow label="Your logo">
               <CoachLogoUpload profile={profile} saveProfile={saveProfile} />
             </FieldRow>
           </div>

@@ -97,7 +97,7 @@ export default function Coach() {
         <PageHeader
           leading={<LogoMark size={24} />}
           title={isTrainer && trainerTab === 'clients' ? 'Coach Mode' : 'Coach'}
-          subtitle={!isTrainer || trainerTab === 'my-coach' ? "Your trainer, notes, and coaching tools" : selectedClient ? (selectedClient.name || 'Client') : (
+          subtitle={!isTrainer || trainerTab === 'my-coach' ? undefined : selectedClient ? (selectedClient.name || 'Client') : (
                   clients.length === 0
                     ? `${timeOfDayGreeting()} — invite your first client below`
                     : summariesSupported

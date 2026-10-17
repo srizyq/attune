@@ -257,9 +257,6 @@ export default function Step4() {
         }}>
           Ready to start tracking
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '36px' }}>
-          Create your account to save your goal, targets, and everything you log from here.
-        </p>
 
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: '14px', textAlign: 'left', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, cursor: 'pointer' }}>
           <input

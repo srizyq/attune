@@ -148,7 +148,6 @@ export default function BarcodeResult({
       <ScanCard>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
           <Eyebrow>Adjust portion</Eyebrow>
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-secondary)', textAlign: 'right' }}>Nutrition scales automatically</span>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
           <ServingStepper amount={amount} setAmount={setAmount} step={unit === 'serving' ? 0.5 : unit === 'g' || unit === 'ml' ? 10 : 1} />

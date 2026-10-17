@@ -233,7 +233,7 @@ export default function Fasting() {
       <AppNav active="dashboard" initials={(profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A'} />
 
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <PageHeader title="Fasting" subtitle="Time your fasts and get told when they end" onBack={() => navigate('/dashboard')} backLabel="Back to Dashboard" />
+        <PageHeader title="Fasting" onBack={() => navigate('/dashboard')} backLabel="Back to Dashboard" />
 
         <div className="page-pad" style={{ maxWidth: 560 }}>
           {unavailable ? (

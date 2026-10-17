@@ -497,7 +497,7 @@ export default function SettingsGoals() {
               />
             )}
             <div style={{ marginTop: '16px' }}>
-              <FieldRow label="Activity level" hint="Used to estimate your daily energy use">
+              <FieldRow label="Activity level">
                 <Select
                   value={form.activity}
                   onChange={v => set('activity', v)}
@@ -585,11 +585,7 @@ export default function SettingsGoals() {
               </>
             ) : calMode === 'adaptive' ? (
               <AdaptiveTargetPanel loading={adaptiveLoading} result={adaptiveView} goal={form.goal} paceKg={effectivePace} unit={form.unit} onRefresh={() => refreshAdaptive(form.goal, effectivePace)} />
-            ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', margin: 0 }}>
-                Calculated from your stats, goal and activity level. Switch to Custom to set it manually.
-              </p>
-            )}
+            ) : null}
           </Card>
 
           <Card style={{ marginBottom: 0 }}>
@@ -616,7 +612,6 @@ export default function SettingsGoals() {
                   );
                 })}
               </div>
-              {dietStyle === 'custom' && <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '8px 0 0' }}>Custom split — set with the sliders below.</p>}
               {dietStyle === 'keto' && (
                 <p style={{ color: 'var(--text-hint)', fontSize: 11, margin: '8px 0 0', lineHeight: 1.5 }}>
                   Very low carb, high fat. It isn't right for everyone — check with a doctor first if you have a medical condition, are pregnant, or take medication.
@@ -626,7 +621,7 @@ export default function SettingsGoals() {
 
             {supportsNetCarbs && (
               <div style={{ marginBottom: '20px' }}>
-                <FieldRow label="Count net carbs" hint="Carbs minus fibre — your carb target and totals use net carbs">
+                <FieldRow label="Count net carbs">
                   <Toggle on={netCarbs} onChange={setNetCarbs} />
                 </FieldRow>
               </div>
@@ -672,7 +667,6 @@ export default function SettingsGoals() {
               <div style={{ height: '6px', background: 'var(--border-default)', borderRadius: '99px', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${carbPct}%`, background: 'var(--macro-carbs)', borderRadius: '99px', transition: 'width 0.2s' }} />
               </div>
-              <p style={{ color: 'var(--text-hint)', fontSize: '11px', marginTop: '6px' }}>Carbs fill whatever's left so your split always totals 100%.</p>
             </div>
 
             {/* Live preview */}
@@ -726,17 +720,11 @@ export default function SettingsGoals() {
                 </div>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center', padding: 20 }}>
                   <i className="ti ti-lock" style={{ fontSize: 20, color: 'var(--accent)' }} />
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 340 }}>
-                    Set your own target for every nutrient on the Nutrients page instead of the default guideline — Pro only.
-                  </p>
                   <UpgradeProButton pendingConfirmation={pendingConfirmation} onGoToProfile={() => navigate('/settings/personal')} onGoToPricing={() => navigate('/pricing')} />
                 </div>
               </div>
             ) : (
               <>
-                <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 16px' }}>
-                  Leave a field blank to use the default guideline instead.
-                </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
                   {MICRO_NUTRIENTS.map(n => (
                     <div key={n.key}>

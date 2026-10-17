@@ -77,7 +77,7 @@ test('"Log & scan another" logs the product and goes straight back to the camera
   await lookup(page, '036000291452');
   await page.getByRole('button', { name: /Log & scan another/ }).click();
   await expect.poll(() => posts.length).toBe(1);
-  await expect(page.getByText('Point your camera at a barcode')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Enter barcode manually/ })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: /Logged Oikos Pro/ })).toBeVisible();
   await expect(page.getByTestId('barcode-result')).toHaveCount(0);
 });

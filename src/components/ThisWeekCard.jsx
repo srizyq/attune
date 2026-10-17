@@ -38,7 +38,6 @@ export default function ThisWeekCard({ summary }) {
   return (
     <Card style={{ padding: 20, marginBottom: 20 }}>
       <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 2 }}>This week</div>
-      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>The last 7 days, including today</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '18px 16px' }}>
         <Stat label="Avg. calories" value={avgCalories != null ? avgCalories.toLocaleString() : '—'} hint={calorieHint} />
         <Stat label="Days logged" value={`${daysLogged}/7`} hint={daysOnTarget != null ? `${daysOnTarget} on target` : 'Set a calorie target to track this'} />

@@ -76,7 +76,7 @@ test('a missed item can be added, and any item can be removed', async ({ page, c
 
   await r.getByRole('button', { name: 'Remove Steamed asparagus spears' }).click();
   await expect(r.getByText('3 items detected in your photo')).toBeVisible();
-  await r.getByRole('button', { name: 'Dinner' }).click();
+  await r.getByRole('button', { name: 'Dinner', exact: true }).click();
   await r.getByRole('button', { name: /^Log plate \(592 kcal\) to Dinner/ }).click();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0]).toMatchObject({ source: 'photo', calories: 592 });

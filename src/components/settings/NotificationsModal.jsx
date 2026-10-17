@@ -18,7 +18,7 @@ export default function NotificationsModal({ onClose, closing }) {
     <SettingsModal title="Notifications" onClose={onClose} closing={closing}>
       <Card style={{ marginBottom: 16 }}>
         <SectionLabel>Reminders</SectionLabel>
-        <FieldRow label="Daily reminder" hint={reminders.enabled ? `Nudges you at ${reminderTimeInput} if you haven't logged anything yet` : "Nudge to log food if you haven't yet"}>
+        <FieldRow label="Daily reminder">
           <Toggle
             on={reminders.enabled}
             onChange={async (on) => {
@@ -43,7 +43,6 @@ export default function NotificationsModal({ onClose, closing }) {
               }}
               style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '7px 10px', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit' }}
             />
-            <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Time in your device's local timezone</span>
           </div>
         )}
         {!pushSupported() && (
@@ -62,7 +61,7 @@ export default function NotificationsModal({ onClose, closing }) {
 
       <Card style={{ marginBottom: 0 }}>
         <SectionLabel>Updates</SectionLabel>
-        <FieldRow label="Trainer updates" hint="When your trainer leaves you a note or sends a check-in">
+        <FieldRow label="Trainer updates">
           <Toggle
             on={trainerNotifs.enabled}
             onChange={async (on) => {
@@ -79,7 +78,7 @@ export default function NotificationsModal({ onClose, closing }) {
         {trainerNotifError && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 16px' }}>{trainerNotifError}</p>}
         {profile?.coach_pass && (
           <>
-            <FieldRow label="Client activity" hint="When a client messages you, plus a morning heads-up if any haven't logged in 3+ days">
+            <FieldRow label="Client activity">
               <Toggle
                 on={activityNotifs.enabled}
                 onChange={async (on) => {

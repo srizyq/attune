@@ -219,9 +219,6 @@ export default function Login() {
             fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 30px)',
             fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center',
           }}>Welcome back</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: pendingConfirmation ? '18px' : '28px', textAlign: 'center' }}>
-            Log in to pick up where you left off.
-          </p>
 
           {pendingConfirmation && (
             <div style={{ background: '#1a1410', border: '1px solid #3a2e1e', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#c09a70', marginBottom: '18px', lineHeight: 1.5 }}>

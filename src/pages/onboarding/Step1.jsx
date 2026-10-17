@@ -58,9 +58,6 @@ export default function Step1() {
         }}>
           What's your main goal?
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '40px' }}>
-          We'll set your calorie targets and macro splits around this.
-        </p>
 
         {/* Goal cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '36px' }}>

@@ -64,7 +64,6 @@ function MacroBar({ label, grams, calories, pct, color, delay = 0 }) {
 
 export default function Step3() {
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
   const [targets, setTargets] = useState(null);
   const [editingMacros, setEditingMacros] = useState(false);
 
@@ -90,7 +89,6 @@ export default function Step3() {
   useEffect(() => {
     const saved = JSON.parse(sessionStorage.getItem('attune_onboarding') || '{}');
     const age = saved.dateOfBirth ? ageFromDOB(saved.dateOfBirth) : saved.age;
-    setData({ ...saved, age });
 
     if (age && saved.weight && saved.height && saved.activity && saved.goal) {
       const bmr = calcBMR(saved.weight, saved.height, age, saved.unit || 'metric', saved.sex);
@@ -127,8 +125,6 @@ export default function Step3() {
     );
   }
 
-  const goalLabels = { lose: 'weight loss', maintain: 'maintenance', build: 'muscle building' };
-
   return (
     <OnboardingLayout step={3}>
       <div style={{ width: '100%', maxWidth: '520px' }}>
@@ -148,9 +144,6 @@ export default function Step3() {
           }}>
             Here's your daily plan
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>
-            Optimised for {goalLabels[data?.goal] || 'your goal'}. You can adjust these any time.
-          </p>
         </div>
 
         {/* Calorie card */}
@@ -212,9 +205,6 @@ export default function Step3() {
             </div>
           )}
           <MacroBar label="Carbohydrates" grams={targets.carbs.g}   calories={targets.carbs.cal}   pct={targets.carbs.pct}   color="var(--macro-carbs)" delay={100} />
-          {editingMacros && (
-            <p style={{ color: 'var(--text-hint)', fontSize: '11px', margin: '-10px 0 16px' }}>Carbs fill whatever's left, so the split always totals 100%.</p>
-          )}
           <MacroBar label="Fat"           grams={targets.fat.g}     calories={targets.fat.cal}      pct={targets.fat.pct}     color="var(--macro-fat)" delay={200} />
           {editingMacros && (
             <div style={{ marginTop: '-10px' }}>
