@@ -107,16 +107,6 @@ export default function MessagesTab({ client, clientData, d, onViewed }) {
                   const cat = COMMENT_CATEGORIES.find(x => x.id === c.category) || COMMENT_CATEGORIES[0];
                   return (
                     <div key={c.id} className="stagger-item" style={{ display: 'flex', justifyContent: fromClient ? 'flex-start' : 'flex-end', gap: 8 }}>
-                      {!fromClient && (
-                        <button
-                          onClick={() => removeComment(c.id)}
-                          className="btn-press"
-                          style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 13, flexShrink: 0, alignSelf: 'flex-end', padding: 4 }}
-                          title="Delete"
-                        >
-                          <i className="ti ti-trash" />
-                        </button>
-                      )}
                       <div style={{
                         maxWidth: '80%', padding: '10px 14px',
                         background: fromClient ? 'var(--bg-primary)' : 'var(--accent-bg)',
@@ -130,9 +120,22 @@ export default function MessagesTab({ client, clientData, d, onViewed }) {
                           </div>
                         )}
                         <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, lineHeight: 1.5 }}>{c.body}</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '4px 0 0', textAlign: fromClient ? 'left' : 'right' }}>
-                          {c.comment_date ? `On ${c.comment_date} · ` : ''}{new Date(c.created_at).toLocaleString()}
-                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 4 }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+                            {c.comment_date ? `On ${c.comment_date} · ` : ''}{new Date(c.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                          </span>
+                          {!fromClient && (
+                            <button
+                              onClick={() => removeComment(c.id)}
+                              className="btn-press"
+                              aria-label="Delete"
+                              title="Delete"
+                              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, width: 36, height: 36, margin: '-8px -10px -8px 0', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                            >
+                              <i className="ti ti-trash" aria-hidden="true" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

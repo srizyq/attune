@@ -53,10 +53,10 @@ export default function CoachNote({ note, onDismiss, onClick, style }) {
       {onDismiss && (
         <button
           onClick={(e) => { e.stopPropagation(); onDismiss(); }}
-          style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 16, flexShrink: 0, padding: 0, lineHeight: 1 }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 18, flexShrink: 0, width: 44, height: 44, margin: '-13px -14px -13px 0', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           aria-label="Dismiss"
         >
-          ×
+          <i className="ti ti-x" aria-hidden="true" />
         </button>
       )}
     </div>

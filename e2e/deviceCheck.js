@@ -13,6 +13,9 @@ export function findLayoutProblems() {
   const visible = (e) => {
     const s = getComputedStyle(e);
     if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity === 0) return false;
+    // The inside of a collapsed <details> is laid out but never shown.
+    const closed = e.closest('details:not([open])');
+    if (closed && !(e.closest('summary') && e.closest('summary').parentElement === closed)) return false;
     const r = e.getBoundingClientRect();
     return r.width > 0 && r.height > 0;
   };
