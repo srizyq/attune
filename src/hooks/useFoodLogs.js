@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { addFoodLog, deleteFoodLog, updateFoodLog, getFoodLogsForDate, getDaySlots, createDaySlot, updateDaySlot, deleteDaySlot } from '../lib/db';
+import { addFoodLog, deleteFoodLog, updateFoodLog, moveFoodLogsToSlot, getFoodLogsForDate, getDaySlots, createDaySlot, updateDaySlot, deleteDaySlot } from '../lib/db';
 import { mealFromDate } from '../lib/mealTime';
 import { mapSlotRow, buildSlotTimeline } from '../lib/daySlots';
 import { extendedFromRow, EXTENDED_KEYS } from '../lib/microNutrients';
@@ -164,6 +164,13 @@ export function useFoodLogs(date) {
     return updated;
   }, []);
 
+  // Moves foods into a slot (null = Uncategorised); the local rows follow at once.
+  const moveToSlot = useCallback(async (ids, slotId) => {
+    await moveFoodLogsToSlot(ids, slotId);
+    const moved = new Set(ids);
+    setLogs(prev => prev.map(l => (moved.has(l.id) ? { ...l, slot_id: slotId ?? null } : l)));
+  }, []);
+
   // Slot CRUD — same shape as the food-log actions above (call the db.js
   // function, patch local state from its result rather than re-fetching).
   const addSlot = useCallback(async (fields) => {
@@ -188,5 +195,5 @@ export function useFoodLogs(date) {
     setSlotRows(prev => prev.filter(s => s.id !== id));
   }, []);
 
-  return { logs, meals, daySlots, slotTimeline, loading, addFood, deleteFood, updateFood, addSlot, editSlot, removeSlot, refetch };
+  return { logs, meals, daySlots, slotTimeline, loading, addFood, deleteFood, updateFood, moveToSlot, addSlot, editSlot, removeSlot, refetch };
 }

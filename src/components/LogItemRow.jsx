@@ -59,7 +59,7 @@ function MacroReadout({ value, unit, label, color }) {
 // Macros are never edited directly; every macro/micronutrient is scaled
 // proportionally from the currently-logged amount so the numbers always
 // stay internally consistent.
-export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSave, isPremium = false, readOnly = false }) {
+export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSave, isPremium = false, readOnly = false, slots = null }) {
   // Older items logged before serving_grams was tracked have no real
   // weight on record. Silently guessing 100g there would look precise
   // without being true — so weight-based units are only offered when we
@@ -70,6 +70,8 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
   const [unit, setUnit] = useState(() => initialEditState(item).unit);
   const [meal, setMeal] = useState(item.meal);
   const [time, setTime] = useState(() => dateToHHMM(effectiveLoggedAt(item)));
+  // Slots mode: which slot this food sits in ('' = Uncategorised).
+  const [slotId, setSlotId] = useState(item.slotId || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [recalcOpen, setRecalcOpen] = useState(false);
@@ -85,6 +87,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
     setUnit(init.unit);
     setMeal(item.meal);
     setTime(dateToHHMM(effectiveLoggedAt(item)));
+    setSlotId(item.slotId || '');
   }, [isExpanded, item, hasKnownWeight]);
 
   const availableUnits = editUnitsFor(item);
@@ -121,6 +124,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
         ...(hasKnownWeight ? { loggedAmount: Number(amount) || null, loggedUnit: unit } : {}),
         meal: isPremium ? item.meal : meal,
         loggedAt: isPremium ? timeStringToDate(time, effectiveLoggedAt(item)) : (item.loggedAt ? new Date(item.loggedAt) : null),
+        ...(slots ? { slotId: slotId || null } : {}),
       });
     } catch (err) {
       console.error('Failed to save food log edits:', err);
@@ -250,6 +254,15 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
                     <>
                       <label style={labelStyle}>Logged at</label>
                       <input style={{ ...fieldStyle, width: 130 }} type="time" value={time} onChange={e => setTime(e.target.value)} />
+                      {slots && (
+                        <>
+                          <label htmlFor="log-item-slot" style={{ ...labelStyle, marginTop: 12 }}>Slot</label>
+                          <select id="log-item-slot" style={{ ...fieldStyle, width: '100%', cursor: 'pointer' }} value={slotId} onChange={e => setSlotId(e.target.value)}>
+                            <option value="">Uncategorised</option>
+                            {slots.map(sl => <option key={sl.id} value={sl.id}>{sl.label}</option>)}
+                          </select>
+                        </>
+                      )}
                     </>
                   ) : (
                     <>

@@ -143,7 +143,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
       // Writes: echo back so the UI proceeds; nothing is persisted.
       let body = {};
       try { body = JSON.parse(req.postData() || '{}'); } catch { /* ignore */ }
-      const echoed = (Array.isArray(body) ? body : [body]).map((row, i) => ({ id: `new-${Date.now()}-${i}`, created_at: new Date().toISOString(), ...(rows[0] || {}), ...row }));
+      const echoed = (Array.isArray(body) ? body : [body]).map((row, i) => ({ ...(rows[0] || {}), id: `new-${Date.now()}-${i}`, created_at: new Date().toISOString(), ...row }));
       if ((req.headers().accept || '').includes('vnd.pgrst.object+json')) return json(echoed[0], 201);
       return json(echoed, req.method() === 'POST' ? 201 : 200);
     }

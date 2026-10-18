@@ -200,6 +200,15 @@ export async function updateDaySlot(id, fields) {
   return data;
 }
 
+// Puts already-logged foods into a slot (or, with null, back into Uncategorised).
+// Only the slot changes: the food keeps its own time and numbers.
+export async function moveFoodLogsToSlot(ids, slotId) {
+  if (!ids?.length) return [];
+  const { data, error } = await supabase.from('food_logs').update({ slot_id: slotId ?? null }).in('id', ids).select();
+  if (error) throw error;
+  return data;
+}
+
 // Deliberately doesn't touch the slot's food_logs rows — their slot_id goes
 // null via the FK's "on delete set null" (see schema.sql), so a deleted
 // slot's food isn't destroyed, it just falls into buildSlotTimeline's

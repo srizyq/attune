@@ -52,7 +52,7 @@ export function buildSlotTimeline(slots, items) {
 
   const segments = sorted.map((s) => byId.get(s.id));
   if (unsorted.length > 0) {
-    segments.push({ type: 'unsorted', id: 'unsorted', label: 'Unsorted', items: unsorted });
+    segments.push({ type: 'unsorted', id: 'unsorted', label: 'Uncategorised', items: unsorted });
   }
   return segments;
 }

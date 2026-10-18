@@ -62,7 +62,7 @@ export default function DailyLog() {
   const isToday = selectedDate === today;
 
   const { note: nutritionCoachNote, dismiss: dismissNutritionCoachNote } = useCoachNote('nutrition', selectedDate);
-  const { meals, daySlots, slotTimeline, loading, deleteFood, updateFood, addFood, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
+  const { meals, daySlots, slotTimeline, loading, deleteFood, updateFood, moveToSlot, addFood, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
 
@@ -212,6 +212,11 @@ export default function DailyLog() {
                 onAddSlot={addSlot}
                 onEditSlot={editSlot}
                 onDeleteSlot={removeSlot}
+                onMoveToSlot={moveToSlot}
+                onGroupIntoSlot={async (ids, fields) => {
+                  const created = await addSlot(fields);
+                  if (created) await moveToSlot(ids, created.id);
+                }}
                 emptyMessage={isToday ? 'Nothing set up for today yet — add your first slot below.' : 'Nothing set up this day.'}
               />
               <QuickAddBar

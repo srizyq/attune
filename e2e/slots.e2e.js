@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openApp, settle } from './harness.js';
+import { openApp, settle, assertLayout } from './harness.js';
 import { USER_ID } from './fixtures.js';
 
 // Slots mode (Pro): food added to a slot lands in that slot, whichever way it is
@@ -57,4 +57,106 @@ test('a barcode scanned from a slot logs into that slot', async ({ page, context
   await page.getByTestId('barcode-result').getByRole('button', { name: /^Log \d+ kcal at / }).click();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0].slot_id).toBe('s-lunch');
+});
+
+// ── Moving foods between slots ──────────────────────────────────────────────
+const FOODS = [
+  log('f-oats', 'Oats', { calories: 300, slot_id: 's-morning' }),
+  log('f-egg', 'Boiled egg', { calories: 140 }),
+  log('f-rice', 'Rice bowl', { calories: 420 }),
+];
+const openLog = async (page, testInfo, context, extra = {}) => {
+  const ctx = await openApp({ page, context }, testInfo, { ...PRO, tables: { day_slots: SLOTS, food_logs: FOODS, ...extra } });
+  await page.goto('/log');
+  await settle(page);
+  return ctx;
+};
+const segment = (page, name) => page.locator('[data-drop-slot]').filter({ hasText: name }).first();
+
+test('Uncategorised is called Uncategorised, and foods can be ticked and moved into an existing slot', async ({ page, context }, testInfo) => {
+  const ctx = await openLog(page, testInfo, context);
+  await assertLayout(page, testInfo, 'x-slots-list', ctx);
+  const patches = slotWrites(page);
+  await expect(page.getByText(/^Uncategorised · /)).toBeVisible();
+  await expect(page.getByText(/Unsorted/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Select foods' }).click();
+  await page.getByRole('checkbox', { name: 'Select Boiled egg' }).check();
+  await page.getByRole('checkbox', { name: 'Select Rice bowl' }).check();
+  await expect(page.getByText('2 selected')).toBeVisible();
+  await assertLayout(page, testInfo, 'x-slots-selecting', ctx);
+  await page.getByRole('button', { name: 'Move to slot' }).click();
+  await page.getByRole('dialog', { name: 'Move to slot' }).getByRole('button', { name: /Lunch Break/ }).click();
+  await expect.poll(() => patches.length).toBe(1);
+  expect(patches[0]).toEqual({ slot_id: 's-lunch' });
+  // Both are in Lunch Break now, which shows their total; Uncategorised is gone.
+  await expect(page.getByRole('toolbar', { name: 'Selected foods' })).toHaveCount(0);
+  await expect(segment(page, 'Lunch Break')).toContainText('560 kcal');
+  await expect(page.getByText(/^Uncategorised · /)).toHaveCount(0);
+});
+
+test('select foods, then group them into a brand new slot', async ({ page, context }, testInfo) => {
+  await openLog(page, testInfo, context);
+  const patches = slotWrites(page);
+  const created = [];
+  page.on('request', (r) => { if (r.url().includes('/rest/v1/day_slots') && r.method() === 'POST') created.push(JSON.parse(r.postData() || '{}')); });
+  await page.getByRole('button', { name: 'Select foods' }).click();
+  await page.getByRole('checkbox', { name: 'Select Boiled egg' }).check();
+  await page.getByRole('button', { name: 'New slot' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Group into new slot' });
+  await expect(dialog.getByRole('button', { name: 'Create slot' })).toBeDisabled();
+  await dialog.getByLabel('Slot name').fill('Pre-workout');
+  await dialog.getByLabel('Time').fill('07:15');
+  await dialog.getByRole('button', { name: 'Create slot' }).click();
+  await expect.poll(() => created.length).toBe(1);
+  expect(created[0]).toMatchObject({ label: 'Pre-workout', slot_time: '07:15' });
+  await expect.poll(() => patches.length).toBe(1);
+  expect(patches[0].slot_id).toBeTruthy();
+  await expect(segment(page, 'Pre-workout')).toContainText('140 kcal');
+});
+
+test('a single food can be moved from its edit sheet', async ({ page, context }, testInfo) => {
+  await openLog(page, testInfo, context);
+  const patches = slotWrites(page);
+  await page.getByText(/^Uncategorised · /).click();
+  await page.getByText('Boiled egg').first().click();
+  await page.getByLabel('Slot', { exact: true }).selectOption('s-morning');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect.poll(() => patches.length).toBeGreaterThan(0);
+  expect(patches.at(-1).slot_id).toBe('s-morning');
+});
+
+test('dragging a food onto a slot moves it there', async ({ page, context }, testInfo) => {
+  // A tall screen, so the food isn't under the quick-add bar pinned to the bottom.
+  const { width } = page.viewportSize();
+  await page.setViewportSize({ width, height: 1300 });
+  await openLog(page, testInfo, context);
+  const patches = slotWrites(page);
+  await page.getByText(/^Uncategorised · /).click();
+  const handle = page.getByRole('button', { name: 'Drag Boiled egg to another slot' });
+  const from = await handle.boundingBox();
+  const target = await segment(page, 'Morning Fuel').boundingBox();
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(target.x + target.width / 2, target.y + 20, { steps: 8 });
+  await expect(segment(page, 'Morning Fuel')).toHaveCSS('border-top-width', '2px'); // lit up as the drop target
+  await page.mouse.up();
+  await expect.poll(() => patches.length).toBe(1);
+  expect(patches[0]).toEqual({ slot_id: 's-morning' });
+  await expect(segment(page, 'Morning Fuel')).toContainText('440 kcal');
+});
+
+test('dropping a food back where it already is does nothing', async ({ page, context }, testInfo) => {
+  const { width } = page.viewportSize();
+  await page.setViewportSize({ width, height: 1300 });
+  await openLog(page, testInfo, context);
+  const patches = slotWrites(page);
+  await page.getByText(/^Uncategorised · /).click();
+  const handle = page.getByRole('button', { name: 'Drag Boiled egg to another slot' });
+  const from = await handle.boundingBox();
+  await page.mouse.move(from.x + 10, from.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 40, from.y + 12, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  expect(patches).toHaveLength(0);
 });

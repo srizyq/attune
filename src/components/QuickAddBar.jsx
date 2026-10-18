@@ -23,7 +23,7 @@ export default function QuickAddBar({ selectedDate, currentSlotId, onOpenQuickMa
   return (
     <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg-primary)', paddingTop: 10, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, padding: '9px 8px 9px 12px' }}>
-        <button onClick={() => go({})} style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-hint)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, padding: 0 }}>
+        <button onClick={() => go({})} style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-hint)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, padding: 0, minHeight: 36 }}>
           <i className="ti ti-search" style={{ flexShrink: 0 }} />
           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Scan barcode, describe food, or type…</span>
         </button>
