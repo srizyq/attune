@@ -18,7 +18,7 @@ import { expandFoodSlang } from '../lib/foodSlang';
 import { supabase } from '../lib/supabase';
 import CameraCapture from '../components/CameraCapture';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTime12h, formatTimeFromDate } from '../lib/mealTime';
-import { slotFromTime } from '../lib/daySlots';
+import { slotFromTime, slotFor } from '../lib/daySlots';
 import { scaleFood, sumFoodItems, UNITS, unitsFor, amountToServings, formatAmountUnit, caloriesLookInconsistent } from '../lib/foodMath';
 import { ausnutExtraMicros } from '../lib/ausnutFood';
 import { mapRestaurantItemRow } from '../lib/restaurantFood';
@@ -2216,7 +2216,7 @@ export default function FoodSearch() {
 
   async function logFood(food, meal, loggedAt) {
     try {
-      await addFoodLog(food, meal, loggedAt, showSlots ? activeSlotId : null);
+      await addFoodLog(food, meal, loggedAt, showSlots ? (activeSlotId ?? slotFor(daySlots, { at: loggedAt })) : null);
       refetchRecent(); lastLogged.refetch();
       showToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ""}`);
       setExpandedId(null);
@@ -2296,7 +2296,7 @@ export default function FoodSearch() {
         // conceptually a single dish.
         const totals = sumFoodItems(snapshot);
         const perServing = scaleFood(totals, 1 / (Number(servings) || 1));
-        await addFoodLog({ ...perServing, name, servingLabel: '1 serving', source: 'recipe' }, mealToLog, timeToLog);
+        await addFoodLog({ ...perServing, name, servingLabel: '1 serving', source: 'recipe' }, mealToLog, timeToLog, showSlots ? (activeSlotId ?? slotFor(daySlots, { at: timeToLog })) : null);
         refetchRecent(); lastLogged.refetch();
       }
       showToast(`${editingRecipeId ? 'Updated' : 'Saved'} "${name}"${mealToLog ? ` and logged to ${mealToLog}` : timeToLog ? ` and logged at ${formatTimeFromDate(timeToLog)}` : ""}`);

@@ -7,6 +7,7 @@ import { useFoodLogs } from '../hooks/useFoodLogs';
 import { scaleFood, sumFoodItems, formatAmountUnit } from '../lib/foodMath';
 import { todayLocalDate } from '../lib/patterns';
 import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTimeFromDate } from '../lib/mealTime';
+import { slotFor } from '../lib/daySlots';
 import AppNav from '../components/AppNav';
 import Toast from '../components/Toast';
 import { Card, SectionLabel } from '../components/settings/primitives';
@@ -156,7 +157,7 @@ export default function Recipes() {
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const savedMeals = useSavedMeals();
   const today = todayLocalDate();
-  const { addFood, refetch: refetchLogs } = useFoodLogs(today);
+  const { addFood, daySlots, refetch: refetchLogs } = useFoodLogs(today);
 
   const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const dailyLogView = profile?.daily_log_view || 'meals';
@@ -207,7 +208,8 @@ export default function Recipes() {
       await addFood(
         { ...scaled, name: recipe.name, servingLabel: `${servingsToLog} serving${servingsToLog === 1 ? '' : 's'}`, source: 'recipe' },
         logByTime ? null : meal,
-        loggedAt
+        loggedAt,
+        logByTime ? slotFor(daySlots, { at: loggedAt }) : null
       );
       refetchLogs();
       showToast(`${recipe.name} added${logByTime ? ` at ${formatTimeFromDate(loggedAt)}` : ` to ${meal}`}`);

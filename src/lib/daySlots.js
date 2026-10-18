@@ -57,6 +57,15 @@ export function buildSlotTimeline(slots, items) {
   return segments;
 }
 
+/**
+ * Which slot a new food goes into: the one it was opened from (when that slot
+ * still exists), otherwise the one its time falls in, otherwise none.
+ */
+export function slotFor(slots, { presetSlotId = null, at = null } = {}) {
+  if (presetSlotId && (slots || []).some((s) => s.id === presetSlotId)) return presetSlotId;
+  return slotFromTime(slots, at instanceof Date ? at : new Date())?.id ?? null;
+}
+
 // The slot a new item should default into when the add-food flow wasn't
 // told an explicit one (no "APPEND TO <slot>" tap) — the latest slot whose
 // time is at or before now, mirroring mealFromDate's time-of-day default for

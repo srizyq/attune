@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatSlotTime, mapSlotRow, buildSlotTimeline, slotFromTime } from './daySlots';
+import { formatSlotTime, mapSlotRow, buildSlotTimeline, slotFromTime, slotFor } from './daySlots';
 
 const row = (over = {}) => ({
   id: 's1', label: 'Morning Fuel', slot_time: '08:30:00', sort_order: 0,
@@ -78,5 +78,21 @@ describe('slotFromTime', () => {
 
   it('returns null for a day with no slots', () => {
     expect(slotFromTime([], new Date())).toBeNull();
+  });
+});
+
+describe('slotFor', () => {
+  const slots = [slot({ id: 's1', slotTime: '08:30' }), slot({ id: 's2', slotTime: '12:45' })];
+
+  it('uses the slot the food was opened from, when it still exists', () => {
+    expect(slotFor(slots, { presetSlotId: 's1', at: new Date(2026, 0, 1, 14, 0) })).toBe('s1');
+  });
+  it('falls back to the slot its time falls in when there is no preset, or the preset is gone', () => {
+    expect(slotFor(slots, { at: new Date(2026, 0, 1, 14, 0) })).toBe('s2');
+    expect(slotFor(slots, { presetSlotId: 'deleted', at: new Date(2026, 0, 1, 9, 0) })).toBe('s1');
+  });
+  it('is null on a day with no slots', () => {
+    expect(slotFor([], { presetSlotId: 's1' })).toBeNull();
+    expect(slotFor(undefined, {})).toBeNull();
   });
 });

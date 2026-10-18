@@ -6,6 +6,7 @@ import { hasProAccess } from '../lib/proAccess';
 import { todayLocalDate } from '../lib/patterns';
 import { latestDate } from '../lib/weekStrip';
 import { mealFromDate, currentTimeHHMM, formatTimeFromDate } from '../lib/mealTime';
+import { slotFor } from '../lib/daySlots';
 import { withBrand } from '../lib/format';
 import { canGoBack } from '../lib/scanRoutes';
 import { showAppToast } from '../lib/appToast';
@@ -29,7 +30,7 @@ export default function Scan({ kind }) {
   const showSlots = isPremium && (profile?.daily_log_view || 'meals') === 'slots';
   const today = todayLocalDate();
   const [selectedDate] = useState(() => (state.date && state.date <= latestDate(today) ? state.date : today));
-  const { addFood } = useFoodLogs(selectedDate);
+  const { addFood, daySlots } = useFoodLogs(selectedDate);
 
   const [defaultMeal] = useState(() => {
     const requested = state.openMeal && state.openMeal.charAt(0).toUpperCase() + state.openMeal.slice(1);
@@ -60,7 +61,10 @@ export default function Scan({ kind }) {
       showAppToast(`${withBrand(food.name, food.brand)} added to recipe`);
       return;
     }
-    await addFood(food, meal, loggedAt);
+    // In Slots mode the food goes into the slot the scan was opened from (or the
+    // one that matches its time), never into Uncategorised by accident.
+    const slotId = showSlots ? slotFor(daySlots, { presetSlotId: state.presetSlotId, at: loggedAt }) : null;
+    await addFood(food, meal, loggedAt, slotId);
     showAppToast(`${withBrand(food.name, food.brand)} added${meal ? ` to ${meal}` : loggedAt ? ` at ${formatTimeFromDate(loggedAt)}` : ''}`);
   }
 
