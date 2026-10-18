@@ -4,6 +4,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // The short commit this build came from (set by Vercel), shown in problem reports.
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify((process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || 'dev'),
+  },
   server: {
     port: Number(process.env.PORT) || 5183,
   },

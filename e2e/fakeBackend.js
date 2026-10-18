@@ -16,7 +16,7 @@ const DEFAULT_RPC = {
   search_ausnut_foods_fuzzy: [], search_ausnut_foods_ranked: [], search_common_dishes_fuzzy: [],
   search_restaurant_items_ranked: [], search_restaurant_items_fuzzy: [],
   start_free_trial: null,
-  barcode_correct: null,
+  barcode_correct: null, is_app_admin: false, submit_app_report: 'report-1',
   // Friends: an account with an invite code and nobody added yet.
   friends_me: [{ invite_code: 'ABCDE12345', share_day: true }], friends_list: [], friends_hidden_days: [], friends_preview: [],
   friends_add: null, friends_remove: null, friends_set_sharing: null, friends_set_day_hidden: null, friends_recipes: [],
@@ -73,7 +73,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     trainer_clients: [], trainer_comments: [], trainer_notes: [], coach_invites: [], push_subscriptions: [],
     barcode_products: [], common_dishes: [], afcd_foods: [], ausnut_foods: [], meal_plans: [], body_measurements: [], progress_photos: [],
     day_slots: [], fasts: [],
-    restaurant_chains: [], restaurant_items: [],
+    restaurant_chains: [], restaurant_items: [], app_reports: [], app_admins: [],
     ...tables,
   };
   const unmocked = [];

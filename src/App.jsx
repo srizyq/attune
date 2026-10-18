@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard'
 import FoodSearch from "./pages/FoodSearch";
 import DailyLog from "./pages/DailyLog";
 import { locationChanged, isPageTransition } from './lib/routeTransition';
+import { rememberScreen } from './lib/lastScreen';
 import Toast from './components/Toast';
 import { onAppToast } from './lib/appToast';
 
@@ -34,6 +35,8 @@ const Coach = lazy(() => import('./pages/Coach'));
 const Friends = lazy(() => import('./pages/Friends'));
 const Scan = lazy(() => import('./pages/Scan'));
 const FriendDay = lazy(() => import('./pages/FriendDay'));
+const ReportProblem = lazy(() => import('./pages/ReportProblem'));
+const AdminReports = lazy(() => import('./pages/AdminReports'));
 const JoinFriend = lazy(() => import('./pages/JoinFriend'));
 const JoinCoach = lazy(() => import('./pages/JoinCoach'));
 const DashboardRedesignHarness = lazy(() => import('./prototypes/dashboard-redesign/Harness'));
@@ -57,6 +60,8 @@ function AnimatedRoutes() {
   const navType = useNavigationType(); // 'PUSH' | 'POP' | 'REPLACE'
   const [renderedLocation, setRenderedLocation] = useState(location);
   const [animClass, setAnimClass] = useState('');
+
+  useEffect(() => { rememberScreen(location.pathname); }, [location.pathname]);
 
   useEffect(() => {
     if (!locationChanged(location, renderedLocation)) return;
@@ -110,6 +115,8 @@ function AnimatedRoutes() {
         <Route path="/join/:code" element={<JoinCoach />} />
         <Route path="/profile" element={<RequireAuth><MyProfile /></RequireAuth>} />
         <Route path="/settings/personal" element={<RequireAuth><Profile /></RequireAuth>} />
+        <Route path="/settings/report" element={<RequireAuth><ReportProblem /></RequireAuth>} />
+        <Route path="/admin/reports" element={<RequireAuth><AdminReports /></RequireAuth>} />
         <Route path="/pricing" element={<RequireAuth><Pricing /></RequireAuth>} />
         <Route path="/prototypes/dashboard-redesign" element={<DashboardRedesignHarness />} />
         <Route path="/prototypes/settings-redesign" element={<SettingsRedesignHarness />} />

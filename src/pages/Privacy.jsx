@@ -23,6 +23,7 @@ export default function Privacy() {
           <><b>Photos you submit</b> for photo scan, menu scan, or nutrition label scan. These are sent to our AI provider for one-time analysis and are <b>not stored</b> by us afterward — we keep the resulting nutrition estimate, not the image.</>,
           <><b>Voice recordings</b> when you use voice search or voice corrections. The audio is sent for one-time transcription and is <b>not stored</b> by us afterward.</>,
           <><b>Friends</b>, if you use it: your invite code, who you are friends with, which recipes you share, and whether you hide your day. Friends can see your name, and your calories, macros and food log for the current day.</>,
+          <><b>Problem reports</b> you send from Settings: your message, an optional screenshot, the screen you were on, the app version, your device and the last few error messages, and your email if you allow us to reply. We keep them to fix the problem.</>,
           <><b>Reminder and notification settings</b>, including the push subscription your browser creates if you turn reminders on.</>,
           <><b>Coach Mode data</b>, if you connect a trainer and client account: the connection itself, comments a trainer leaves, and the nutrition data a client's account shares with their connected trainer.</>,
           <><b>Basic usage metadata</b> needed to run the product, like your monthly AI-scan count (to enforce the free-tier limit) and whether your account is Pro.</>,
@@ -44,7 +45,7 @@ export default function Privacy() {
         <P>We use a small number of third-party services to run Attune. Each only sees the data it needs to do its job:</P>
         <Ul items={[
           <><b>Supabase</b> — hosts our database and handles authentication. All of your account and log data lives here.</>,
-          <><b>Anthropic (Claude)</b> — processes photos you submit for AI food/menu/label recognition. Anthropic receives the image and a description of the task, not your account identity.</>,
+          <><b>Anthropic (Claude)</b> — processes photos you submit for AI food/menu/label recognition, and may read the text of a problem report to suggest a fix (the fix is reviewed by a person before anything changes). Anthropic receives the image and a description of the task, not your account identity.</>,
           <><b>OpenAI</b> — transcribes voice recordings for voice search and voice corrections. OpenAI receives the audio, not your account identity.</>,
           <><b>Resend</b> — delivers the account emails we send you, such as email confirmation and password reset. It receives the address and the message.</>,
           <><b>Google Fonts</b> — serves the app's typefaces. Google receives your IP address and device information when the fonts load.</>,

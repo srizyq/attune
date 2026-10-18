@@ -25,4 +25,13 @@ describe('ErrorBoundary', () => {
     expect(screen.getByRole('button', { name: 'Reload' })).toBeInTheDocument();
     expect(reportError).toHaveBeenCalledWith(expect.objectContaining({ message: 'render exploded' }), expect.anything());
   });
+
+  it('offers to report the problem, and the report will carry what crashed', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { getRecentErrors, _resetRecentErrors } = await import('../lib/recentErrors');
+    _resetRecentErrors();
+    render(<ErrorBoundary><Boom /></ErrorBoundary>);
+    expect(screen.getByRole('link', { name: 'Report this' })).toHaveAttribute('href', '/settings/report');
+    expect(getRecentErrors()).toContain('render exploded');
+  });
 });

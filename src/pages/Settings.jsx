@@ -9,6 +9,7 @@ import PrivacyModal from '../components/settings/PrivacyModal';
 import ImportDataModal from '../components/settings/ImportDataModal';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
+import { isAppAdmin } from '../lib/reports';
 
 // Which "page" each section opens as — short sections (a couple of field
 // rows) are quick to check and dismiss, so they open as a popup right
@@ -31,6 +32,7 @@ const SECTIONS = [
   { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'modal' },
   { id: 'plans',   icon: 'ti-credit-card',  label: 'Plans & Billing', kind: 'route', path: '/pricing' },
   { id: 'privacy', icon: 'ti-shield-lock',  label: 'Privacy',         kind: 'modal' },
+  { id: 'report',  icon: 'ti-bug',          label: 'Report a problem', kind: 'route', path: '/settings/report' },
 ];
 
 // One entry per individual setting (not per section) so a search like
@@ -61,7 +63,11 @@ const SEARCH_INDEX = [
   { section: 'privacy', label: 'Import from another app', keywords: 'import myfitnesspal cronometer lose it csv zip switch diary history migrate' },
   { section: 'privacy', label: 'Privacy Policy', keywords: 'privacy policy legal data' },
   { section: 'privacy', label: 'Terms of Service', keywords: 'terms service legal' },
+  { section: 'report', label: 'Report a problem', keywords: 'report problem bug issue feedback broken wrong error help' },
 ];
+
+// Only people on the admin list see this row.
+const REPORTS_SECTION = { id: 'reports', icon: 'ti-inbox', label: 'Reports', kind: 'route', path: '/admin/reports' };
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -73,6 +79,9 @@ export default function Settings() {
   const [openModal, setOpenModal] = useState(null); // null | 'notifs' | 'coach' | 'privacy' | 'import'
   const [modalClosing, setModalClosing] = useState(false);
   const [query, setQuery] = useState('');
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => { isAppAdmin().then(setAdmin); }, []);
+  const sections = useMemo(() => (admin ? [...SECTIONS, REPORTS_SECTION] : SECTIONS), [admin]);
 
   function closeModal() {
     setModalClosing(true);
@@ -80,7 +89,7 @@ export default function Settings() {
   }
 
   function openSection(id) {
-    const section = SECTIONS.find(s => s.id === id);
+    const section = sections.find(s => s.id === id);
     if (!section) return;
     if (section.kind === 'page') navigate('/settings/goals');
     else if (section.kind === 'route') navigate(section.path);
@@ -242,7 +251,7 @@ export default function Settings() {
             /* Grouped list — every section title visible at once, no tabs
                to switch between and lose track of what else exists. */
             <Card style={{ padding: 0, marginBottom: 0, overflow: 'hidden' }}>
-              {SECTIONS.map((s, idx) => (
+              {sections.map((s, idx) => (
                 <button
                   key={s.id}
                   onClick={() => openSection(s.id)}
@@ -250,7 +259,7 @@ export default function Settings() {
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', minHeight: 64,
                     background: 'transparent', border: 'none', borderRadius: 0,
-                    borderBottom: idx < SECTIONS.length - 1 ? '1px solid var(--border-default)' : 'none',
+                    borderBottom: idx < sections.length - 1 ? '1px solid var(--border-default)' : 'none',
                     cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   }}
                 >

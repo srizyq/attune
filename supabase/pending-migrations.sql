@@ -35,6 +35,7 @@
 --   25. Coach insights and target ownership
 --   26. Meal plan items linked to foods
 --   27. Barcode corrections
+--   28. Problem reports
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block).
@@ -4057,3 +4058,118 @@ end;
 $$;
 revoke all on function public.barcode_correct(text, text, text, text, numeric, text, numeric, numeric, numeric, numeric, numeric, numeric, numeric) from public, anon;
 grant execute on function public.barcode_correct(text, text, text, text, numeric, text, numeric, numeric, numeric, numeric, numeric, numeric, numeric) to authenticated;
+
+
+-- ═══════════════════════════════════════
+-- Problem reports (schema update — run against an existing DB; safe to re-run).
+-- ═══════════════════════════════════════
+-- "Report a problem" in Settings: what went wrong, an optional screenshot, and
+-- details that make it reproducible (screen, app version, device, recent error
+-- messages). Admins (below) review them; the server turns each into a GitHub
+-- issue that Claude can draft a fix for (a pull request someone approves).
+
+-- Who may read every report and change its status. No policies: only the
+-- function below and the service role look at this.
+create table if not exists public.app_admins (
+  user_id uuid primary key references auth.users (id) on delete cascade
+);
+alter table public.app_admins enable row level security;
+insert into public.app_admins (user_id)
+  select id from auth.users where lower(email) in ('csrreddy9@gmail.com', 'attun3app@gmail.com')
+  on conflict do nothing;
+
+create or replace function public.is_app_admin()
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (select 1 from public.app_admins where user_id = auth.uid());
+$$;
+revoke all on function public.is_app_admin() from public, anon;
+grant execute on function public.is_app_admin() to authenticated;
+
+create table if not exists public.app_reports (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete set null,
+  message text not null check (char_length(message) between 5 and 2000),
+  contact_email text,
+  screen text,
+  app_version text,
+  user_agent text,
+  viewport text,
+  errors jsonb not null default '[]'::jsonb,
+  screenshot_path text,
+  status text not null default 'new' check (status in ('new', 'claude_working', 'pr_open', 'fixed', 'wont_fix', 'duplicate')),
+  github_issue_url text,
+  pr_url text,
+  admin_note text,
+  notified_at timestamptz,
+  claude_requested_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists app_reports_created_idx on public.app_reports (created_at desc);
+create index if not exists app_reports_user_idx on public.app_reports (user_id);
+alter table public.app_reports enable row level security;
+
+drop policy if exists "app_reports: read own or admin" on public.app_reports;
+create policy "app_reports: read own or admin" on public.app_reports
+  for select using (auth.uid() = user_id or public.is_app_admin());
+drop policy if exists "app_reports: admin update" on public.app_reports;
+create policy "app_reports: admin update" on public.app_reports
+  for update using (public.is_app_admin()) with check (public.is_app_admin());
+-- No insert policy: people submit through submit_app_report, which checks the
+-- text and applies the daily limit.
+
+create or replace function public.submit_app_report(
+  p_message text, p_contact_ok boolean, p_screen text, p_app_version text, p_user_agent text,
+  p_viewport text, p_errors jsonb, p_screenshot_path text
+)
+returns uuid
+language plpgsql security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  msg text := trim(coalesce(p_message, ''));
+  mail text;
+  errs jsonb;
+  shot text := nullif(trim(coalesce(p_screenshot_path, '')), '');
+  rid uuid;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if char_length(msg) < 5 or char_length(msg) > 2000 then raise exception 'report_invalid'; end if;
+  -- A screenshot must be one this person uploaded to their own folder.
+  if shot is not null and shot not like uid::text || '/%' then raise exception 'report_invalid'; end if;
+  if not public.rate_limit_hit('app_report:' || uid::text, 3, 86400) then raise exception 'report_rate_limited'; end if;
+
+  if coalesce(p_contact_ok, true) then select email into mail from auth.users where id = uid; end if;
+  select coalesce(jsonb_agg(left(e.v, 300)), '[]'::jsonb) into errs
+  from (select value #>> '{}' as v from jsonb_array_elements(case when jsonb_typeof(p_errors) = 'array' then p_errors else '[]'::jsonb end) limit 10) e;
+
+  insert into public.app_reports (user_id, message, contact_email, screen, app_version, user_agent, viewport, errors, screenshot_path)
+  values (uid, msg, mail, left(p_screen, 300), left(p_app_version, 40), left(p_user_agent, 300), left(p_viewport, 40), errs, shot)
+  returning id into rid;
+  return rid;
+end;
+$$;
+revoke all on function public.submit_app_report(text, boolean, text, text, text, text, jsonb, text) from public, anon;
+grant execute on function public.submit_app_report(text, boolean, text, text, text, text, jsonb, text) to authenticated;
+
+create or replace function public.app_reports_touch()
+returns trigger language plpgsql as $$
+begin new.updated_at := now(); return new; end;
+$$;
+drop trigger if exists app_reports_touch on public.app_reports;
+create trigger app_reports_touch before update on public.app_reports for each row execute function public.app_reports_touch();
+
+-- Screenshots: a private bucket; each person writes only into their own folder,
+-- only admins read them.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('report-screenshots', 'report-screenshots', false, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 5242880, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
+
+drop policy if exists "report-screenshots: owner can upload" on storage.objects;
+create policy "report-screenshots: owner can upload" on storage.objects
+  for insert with check (bucket_id = 'report-screenshots' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "report-screenshots: admin can read" on storage.objects;
+create policy "report-screenshots: admin can read" on storage.objects
+  for select using (bucket_id = 'report-screenshots' and public.is_app_admin());

@@ -31,6 +31,7 @@ describe('supabase/pending-migrations.sql', () => {
     expect(titles).toContain('Coach insights and target ownership');
     expect(titles).toContain('Friends');
     expect(titles).toContain('Barcode corrections');
+    expect(titles).toContain('Problem reports');
     expect(titles).toContain('Coach teams');
     expect(new Set(titles).size).toBe(titles.length); // no block listed twice
     titles.forEach((t, i) => expect(bundleOnDisk).toContain(`--   ${String(i + 1).padStart(2)}. ${t}`));

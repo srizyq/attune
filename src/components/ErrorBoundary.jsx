@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { reportError } from '../lib/reportError';
+import { recordRecentError } from '../lib/recentErrors';
 
 // Catches a crash while rendering any screen, so one bad component shows a
 // recovery screen instead of leaving a blank page with no way out. It sits
@@ -12,6 +13,7 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
+    recordRecentError(error); // so "Report this" can say what crashed
     reportError(error, { componentStack: info?.componentStack });
   }
 
@@ -27,6 +29,9 @@ export default class ErrorBoundary extends Component {
           <button onClick={() => window.location.reload()} style={{ padding: '11px 20px', borderRadius: 8, border: 'none', background: 'var(--accent, #e87d4a)', color: 'var(--accent-contrast, #fff)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
             Reload
           </button>
+          <a href="/settings/report" style={{ padding: '11px 20px', borderRadius: 8, border: '1px solid var(--border-default, #333)', color: 'var(--text-secondary, #bbb)', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            Report this
+          </a>
           <a href="/dashboard" style={{ padding: '11px 20px', borderRadius: 8, border: '1px solid var(--border-default, #333)', color: 'var(--text-secondary, #bbb)', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
             Go to dashboard
           </a>

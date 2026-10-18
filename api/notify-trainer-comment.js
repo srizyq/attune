@@ -8,6 +8,8 @@
 //     trainerId }                      — a client replied to their trainer
 //                                        (called from useCoach.js sendReply).
 //
+// (It also carries Community events and problem reports — see below.)
+//
 // Both reuse the push_subscriptions/VAPID/web-push setup that
 // api/send-reminders.js already has. The caller is always authenticated and
 // is checked against an *active* trainer_clients link, so neither direction
@@ -18,6 +20,7 @@ import webpush from 'web-push';
 import { replyPayload, withinThrottle } from './_coachPush.js';
 import { rateLimit, tooManyRequests } from './_rateLimit.js';
 import { handleCommunityEvent, resendSender, supabaseStore } from './_communityNotify.js';
+import { handleReportEvent, supabaseReportStore, githubClient } from './_reportNotify.js';
 
 async function sendToSubscriptions(supabase, subs, payload) {
   const body = JSON.stringify(payload);
@@ -90,6 +93,20 @@ export default async function handler(req, res) {
       sendEmail: resendSender(process.env),
       moderatorEmail: process.env.COMMUNITY_MODERATOR_EMAIL || undefined,
       appUrl: process.env.APP_URL || `https://${req.headers.host || 'attune.app'}`,
+    });
+    res.status(result.status).json(result.json);
+    return;
+  }
+
+  // Problem reports: the admin email and the GitHub issue (see _reportNotify.js).
+  if (body.report) {
+    const result = await handleReportEvent({
+      body,
+      callerId,
+      store: supabaseReportStore(supabase),
+      sendEmail: resendSender(process.env),
+      github: githubClient(process.env),
+      appUrl: process.env.APP_URL || `https://${req.headers.host || 'attun3.com'}`,
     });
     res.status(result.status).json(result.json);
     return;

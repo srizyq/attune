@@ -8,7 +8,7 @@
 // storage objects), then the auth user itself — every table references it
 // with `on delete cascade`, so the rows follow.
 
-const BUCKETS = ['progress-photos', 'coach-logos', 'community-photos'];
+const BUCKETS = ['progress-photos', 'coach-logos', 'community-photos', 'report-screenshots'];
 const DEAD_STATUSES = new Set(['canceled', 'incomplete_expired']);
 
 async function cancelSubscriptions(stripe, customerId) {

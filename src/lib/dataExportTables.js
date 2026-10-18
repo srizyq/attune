@@ -27,6 +27,7 @@ export const EXPORT_TABLES = [
   { key: 'communityReactions', label: 'Community reactions', table: 'community_reactions', col: 'user_id', order: [] },
   { key: 'communitySaves', label: 'Community saves', table: 'community_saves', col: 'user_id', order: [] },
   { key: 'communityFollowing', label: 'Community follows', table: 'community_follows', col: 'follower_id', order: [] },
+  { key: 'problemReports', label: 'Problem reports you sent', table: 'app_reports', col: 'user_id', order: ['created_at', 'id'] },
   { key: 'friendSettings', label: 'Friends settings', table: 'friend_settings', col: 'user_id', order: [] },
   { key: 'friendHiddenDays', label: 'Days hidden from friends', table: 'friend_hidden_days', col: 'user_id', order: [] },
 ];
@@ -52,6 +53,7 @@ export const EXPORT_EXCLUDED = {
   community_push_log: 'notification delivery log',
   community_reports: 'moderation reports',
   community_testers: 'staff-managed access list',
+  app_admins: 'staff roles',
 };
 
 
