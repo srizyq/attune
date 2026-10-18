@@ -13,6 +13,8 @@ import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { digestDue, digestPayload, pickInactive, checkinPayload, pickDueForms, withinWakingHours } from './_coachPush.js';
 import { pickFinishedFasts, fastEndPayload } from './_fastPush.js';
+import { processTeamNotices, supabaseNoticeStore } from './_teamNotices.js';
+import { resendSender } from './_communityNotify.js';
 
 function localDateAndTime(timezone) {
   const now = new Date();
@@ -371,5 +373,17 @@ export default async function handler(req, res) {
     console.error('Fast-end nudges failed:', err);
   }
 
-  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest, checkins, freeMonth, fastEnds });
+  // Emails to clients whose coach's team owner can now view their data.
+  let teamNotices = { checked: 0, sent: 0 };
+  try {
+    teamNotices = await processTeamNotices({
+      store: supabaseNoticeStore(supabase),
+      sendEmail: resendSender(process.env),
+      appUrl: process.env.APP_URL || 'https://attun3.com',
+    });
+  } catch (err) {
+    console.error('Team-view notices failed:', err);
+  }
+
+  res.status(200).json({ checked: (profiles || []).length, sent, skipped, digest, checkins, freeMonth, fastEnds, teamNotices });
 }

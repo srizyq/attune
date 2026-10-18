@@ -33,7 +33,7 @@ function AttentionFlags({ summary, today }) {
   );
 }
 
-export default function OverviewTab({ clientData, d, editingTargets, setEditingTargets, onSaveTargets, onSaveMicroTargets, summary }) {
+export default function OverviewTab({ clientData, d, editingTargets, setEditingTargets, onSaveTargets, onSaveMicroTargets, summary, readOnly = false }) {
   const handleSaveTargets = onSaveTargets;
   const { calorieTarget, hasCalorieTarget, historyLoading, calorieHeatmapDays } = d;
   const restActive = dayTargetsActive(clientData);
@@ -57,7 +57,7 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
       <WeightPlanCard summary={summary} />
       <div className="grid-2" style={{ marginBottom: 16, alignItems: 'start' }}>
         <Card style={{ marginBottom: 0 }}>
-          <CardHeader icon="ti-target" action={!editingTargets ? <CardAction onClick={() => setEditingTargets(true)} icon="ti-pencil">Edit</CardAction> : undefined}>Goal &amp; targets</CardHeader>
+          <CardHeader icon="ti-target" action={!editingTargets && !readOnly ? <CardAction onClick={() => setEditingTargets(true)} icon="ti-pencil">Edit</CardAction> : undefined}>Goal &amp; targets</CardHeader>
           {editingTargets ? (
             <TargetsForm client={clientData} onSave={handleSaveTargets} onCancel={() => setEditingTargets(false)} />
           ) : (
@@ -85,9 +85,9 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
         </div>
       </div>
 
-      <MicroTargetsCard clientData={clientData} onSave={onSaveMicroTargets} />
+      {!readOnly && <MicroTargetsCard clientData={clientData} onSave={onSaveMicroTargets} />}
 
-      <CoCoachCard clientId={clientData.id} clientName={clientData.name} />
+      {!readOnly && <CoCoachCard clientId={clientData.id} clientName={clientData.name} />}
 
       <div style={{ marginBottom: 16 }}>
         <RangeToggle value={d.range} onChange={d.setRange} options={RANGES} />

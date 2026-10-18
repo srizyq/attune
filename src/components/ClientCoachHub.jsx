@@ -13,6 +13,7 @@ import FormRow from './FormRow';
 import Card from './Card';
 import { coachPassButtonLabel, COACH_PASS_PRICE } from '../lib/coachPass';
 import { targetsForDate, dayTargetsActive, describeTrainingDays } from '../lib/dayTargets';
+import { teamOwnerNotice } from '../lib/coachAccess';
 import { todayLocalDate } from '../lib/patterns';
 
 // Points at the pricing page rather than starting checkout right here —
@@ -202,6 +203,9 @@ export default function ClientCoachHub({ showUpsell = true }) {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{trainer.name || 'Your trainer'}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Connected {new Date(link.created_at).toLocaleDateString()}</div>
+                {link.teamOwnerName && (
+                  <div data-testid="team-owner-notice" style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, maxWidth: 340, lineHeight: 1.4 }}>{teamOwnerNotice(link.teamOwnerName, trainer.name ? `${trainer.name}'s` : null)}</div>
+                )}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>

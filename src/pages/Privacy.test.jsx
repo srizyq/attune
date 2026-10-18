@@ -32,7 +32,8 @@ describe('Privacy policy', () => {
     expect(text).toMatch(/Nothing is shared until you accept/);
     expect(text).toMatch(/take them over at any time; your coach is then told/);
     expect(text).toMatch(/private notes about you[\s\S]*you can't see them in the app/);
-    expect(text).toMatch(/same team gives a coach no access/);
+    expect(text).toMatch(/same team gives another coach no access/);
+    expect(text).toMatch(/owner of the team: they can view \(not edit\) what your coach can see/);
     expect(text).toMatch(/access ends immediately/);
     expect(text).toMatch(/already have downloaded a report/);
   });

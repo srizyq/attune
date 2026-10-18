@@ -8,7 +8,7 @@ import {
   getClientSummaries, getTrainerNotes, addTrainerNote, updateTrainerNote, deleteTrainerNote, getWorkoutLogsForRange,
   getTrainerComments, addTrainerComment, deleteTrainerComment, getLatestCoachComment,
   getGeneralThread, addClientReply, getRecentClientMessages,
-  getFoodLogsForDate,
+  getFoodLogsForDate, getTeamClients,
 } from '../lib/db';
 import { extractInviteCode } from '../lib/coachInvite';
 import { getSeenAt, setSeenAt, countUnread } from '../lib/coachInbox';
@@ -54,6 +54,27 @@ export function useMyClients() {
   }, [refetch]);
 
   return { clients, loading, refetch, redeemCode, revoke, setGroup };
+}
+
+// The clients of the coaches on a team the caller owns, with a summary for each
+// (see get_client_summaries' 'team' scope). Does nothing unless `enabled`.
+export function useTeamClients(today, enabled) {
+  const { user } = useAuth();
+  const [state, setState] = useState({ clients: [], summaries: [], loading: !!enabled, supported: true });
+
+  const refetch = useCallback(async () => {
+    if (!user || !enabled) { setState((s) => ({ ...s, loading: false })); return; }
+    try {
+      const [clients, summaries] = await Promise.all([getTeamClients(user.id), getClientSummaries(today, 'team')]);
+      setState({ clients: clients || [], summaries: summaries || [], loading: false, supported: clients !== null && summaries !== null });
+    } catch (err) {
+      console.error('Failed to load team clients:', err);
+      setState((s) => ({ ...s, loading: false }));
+    }
+  }, [user, today, enabled]);
+
+  useEffect(() => { refetch(); }, [refetch]);
+  return { ...state, refetch };
 }
 
 export function useMyTrainers() {

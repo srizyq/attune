@@ -1,7 +1,8 @@
 // src/pages/Coach.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useProfile } from '../hooks/useProfile';
-import { useMyClients, useClientSummaries, useClientMessages } from '../hooks/useCoach';
+import { useMyClients, useClientSummaries, useClientMessages, useTeamClients } from '../hooks/useCoach';
+import { useTeam } from '../hooks/useTeam';
 import AppNav from '../components/AppNav';
 import PageHeader from '../components/PageHeader';
 import ClientCoachHub from '../components/ClientCoachHub';
@@ -47,7 +48,16 @@ export default function Coach() {
   // nutritionist, say) — this tab is how they reach that relationship's
   // notes/chat/targets without it being hidden behind their own trainer
   // dashboard, which is what the Coach tab otherwise shows exclusively.
-  const [trainerTab, setTrainerTab] = useState('clients'); // 'clients' | 'my-coach'
+  const [trainerTab, setTrainerTab] = useState('clients'); // 'clients' | 'team' | 'my-coach'
+
+  // The owner of a team can read (not edit) their teammates' clients.
+  const { team } = useTeam();
+  const isTeamOwner = !!team?.is_owner && (team.members?.length || 0) > 1;
+  const teamClients = useTeamClients(today, isTeamOwner);
+  const [selectedTeamClient, setSelectedTeamClient] = useState(null);
+  // If the team goes away (ownership ends) while this tab is open, fall back.
+  useEffect(() => { if (trainerTab === 'team' && team !== undefined && !isTeamOwner) { setTrainerTab('clients'); setSelectedTeamClient(null); } }, [trainerTab, team, isTeamOwner]);
+  const selectedTeamCoach = selectedTeamClient ? teamClients.summaries.find(s => s.client_id === selectedTeamClient.id)?.coach_name || null : null;
 
   // Rows resolve their own "logged today" status independently (see
   // ClientPreviewRow) and report it up here for both the header greeting
@@ -73,7 +83,8 @@ export default function Coach() {
   // leaving the page scrolled with its first lines under the sticky title.
   const scrollRef = useRef(null);
   const selectedId = selectedClient?.id ?? null;
-  useEffect(() => { scrollRef.current?.scrollTo?.({ top: 0 }); }, [selectedId, trainerTab]);
+  const selectedTeamId = selectedTeamClient?.id ?? null;
+  useEffect(() => { scrollRef.current?.scrollTo?.({ top: 0 }); }, [selectedId, selectedTeamId, trainerTab]);
 
   const hasClients = clients.length > 0;
   const invitePanel = <CoachInvitePanel hasClients={hasClients} />;
@@ -126,6 +137,14 @@ export default function Coach() {
             >
               <i className="ti ti-arrow-left" aria-hidden="true" /> All clients
             </button>
+          ) : isTrainer && trainerTab === 'team' && selectedTeamClient ? (
+            <button
+              onClick={() => setSelectedTeamClient(null)}
+              className="btn-press"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 16px', margin: '0 0 14px', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              <i className="ti ti-arrow-left" aria-hidden="true" /> All team clients
+            </button>
           ) : isTrainer ? (
             <div style={{ marginBottom: 16 }}>
               {trainerTab === 'clients' && (
@@ -136,6 +155,7 @@ export default function Coach() {
                 onChange={setTrainerTab}
                 options={[
                   { id: 'clients', label: 'My clients' },
+                  ...(isTeamOwner ? [{ id: 'team', label: 'Team clients' }] : []),
                   { id: 'my-coach', label: 'My coach' },
                 ]}
               />
@@ -145,6 +165,27 @@ export default function Coach() {
             <ClientCoachHub />
           ) : trainerTab === 'my-coach' ? (
             <ClientCoachHub showUpsell={false} />
+          ) : trainerTab === 'team' ? (
+            selectedTeamClient ? (
+              <ClientDetail
+                key={selectedTeamClient.id}
+                client={selectedTeamClient}
+                summary={teamClients.summaries.find(s => s.client_id === selectedTeamClient.id)}
+                readOnly
+                coachName={selectedTeamCoach}
+              />
+            ) : (
+              <ClientList
+                title="Team clients" showCoach hideUnread
+                emptyText="Your teammates have no active clients yet."
+                clients={teamClients.clients}
+                loading={teamClients.loading}
+                summaries={teamClients.summaries}
+                summariesSupported={teamClients.supported}
+                today={today}
+                onSelect={setSelectedTeamClient}
+              />
+            )
           ) : !selectedClient ? (
             <>
             <ClientMessagesInbox unread={unread} clients={clients} onOpen={(c) => openClient(c, 'messages')} />

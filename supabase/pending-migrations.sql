@@ -36,6 +36,7 @@
 --   26. Meal plan items linked to foods
 --   27. Barcode corrections
 --   28. Problem reports
+--   29. Team owners see their team's clients
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block).
@@ -1406,6 +1407,8 @@ grant execute on function public.get_client_summaries(date) to authenticated;
 -- a client — share_client_with_teammate — which creates an ordinary *pending*
 -- link that the client must accept, exactly like an invite code. Until they do,
 -- the teammate can see nothing (every trainer read policy needs status active).
+-- (One exception, added later in "Team owners see their team's clients": the
+-- team's OWNER can read, not edit, the clients of the coaches on the team.)
 --
 -- The three tables have RLS on and no policies: they are reached only through
 -- the functions below, which is what makes "owner only", the size cap and
@@ -4173,3 +4176,291 @@ create policy "report-screenshots: owner can upload" on storage.objects
 drop policy if exists "report-screenshots: admin can read" on storage.objects;
 create policy "report-screenshots: admin can read" on storage.objects
   for select using (bucket_id = 'report-screenshots' and public.is_app_admin());
+
+
+-- ═══════════════════════════════════════
+-- Team owners see their team's clients (schema update — run against an existing
+-- DB; safe to re-run).
+-- Tests: supabase/tests/team-owner.test.js
+-- ═══════════════════════════════════════
+-- The owner of a coach team can READ the clients of the coaches on their team:
+-- the same data a coach sees (food, weight, check-ins, workouts, measurements,
+-- progress photos, plans and forms), read-only. NOT the messages between a
+-- coach and their client, and NOT the coach's private notes — those policies
+-- are left exactly as they were. Access follows the team: a coach who leaves
+-- (or a client who disconnects from that coach) takes it away at once. Clients
+-- are told: get_my_coach_links names the owner, and a notice row is queued for
+-- an email (see api/_teamNotices.js).
+
+-- Is the caller the owner of a team that p_trainer (someone else) is on?
+create or replace function public.is_team_owner_of(p_trainer uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.coach_team_members o
+    join public.coach_team_members m on m.team_id = o.team_id
+    where o.user_id = auth.uid() and o.role = 'owner'
+      and m.user_id = p_trainer and m.user_id <> auth.uid()
+  );
+$$;
+revoke all on function public.is_team_owner_of(uuid) from public, anon;
+grant execute on function public.is_team_owner_of(uuid) to authenticated;
+
+-- ... and does p_client have an ACTIVE link to one of those coaches?
+create or replace function public.is_team_owner_of_client(p_client uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.trainer_clients tc
+    where tc.client_id = p_client and tc.status = 'active' and public.is_team_owner_of(tc.trainer_id)
+  );
+$$;
+revoke all on function public.is_team_owner_of_client(uuid) from public, anon;
+grant execute on function public.is_team_owner_of_client(uuid) to authenticated;
+
+-- A coach's name, for the caller if it is that coach or owns their team.
+create or replace function public.coach_name_for(p_trainer uuid)
+returns text
+language sql stable security definer set search_path = public
+as $$
+  select coalesce(nullif(trim(p.name), ''), 'Coach')
+  from public.profiles p
+  where p.id = p_trainer and (p_trainer = auth.uid() or public.is_team_owner_of(p_trainer));
+$$;
+revoke all on function public.coach_name_for(uuid) from public, anon;
+grant execute on function public.coach_name_for(uuid) to authenticated;
+
+-- Read-only: select policies only, layered on the existing ones.
+drop policy if exists "trainer_clients: select as team owner" on public.trainer_clients;
+create policy "trainer_clients: select as team owner" on public.trainer_clients
+  for select using (status = 'active' and public.is_team_owner_of(trainer_id));
+drop policy if exists "profiles: select as team owner of client" on public.profiles;
+create policy "profiles: select as team owner of client" on public.profiles
+  for select using (public.is_team_owner_of_client(id));
+drop policy if exists "food_logs: select as team owner of client" on public.food_logs;
+create policy "food_logs: select as team owner of client" on public.food_logs
+  for select using (public.is_team_owner_of_client(user_id));
+drop policy if exists "weight_logs: select as team owner of client" on public.weight_logs;
+create policy "weight_logs: select as team owner of client" on public.weight_logs
+  for select using (public.is_team_owner_of_client(user_id));
+drop policy if exists "checkins: select as team owner of client" on public.checkins;
+create policy "checkins: select as team owner of client" on public.checkins
+  for select using (public.is_team_owner_of_client(user_id));
+drop policy if exists "workout_logs: select as team owner of client" on public.workout_logs;
+create policy "workout_logs: select as team owner of client" on public.workout_logs
+  for select using (public.is_team_owner_of_client(user_id));
+drop policy if exists "body_measurements: select as team owner of client" on public.body_measurements;
+create policy "body_measurements: select as team owner of client" on public.body_measurements
+  for select using (public.is_team_owner_of_client(user_id));
+drop policy if exists "progress_photos: select as team owner of client" on public.progress_photos;
+create policy "progress_photos: select as team owner of client" on public.progress_photos
+  for select using (public.is_team_owner_of_client(user_id));
+drop policy if exists "meal_plans: select as team owner of client" on public.meal_plans;
+create policy "meal_plans: select as team owner of client" on public.meal_plans
+  for select using (public.is_team_owner_of_client(client_id));
+drop policy if exists "checkin_forms: select as team owner of client" on public.checkin_forms;
+create policy "checkin_forms: select as team owner of client" on public.checkin_forms
+  for select using (public.is_team_owner_of_client(client_id));
+drop policy if exists "checkin_responses: select as team owner of client" on public.checkin_responses;
+create policy "checkin_responses: select as team owner of client" on public.checkin_responses
+  for select using (public.is_team_owner_of_client(client_id));
+-- Photo files, compared as text (a cast of the folder name could raise).
+drop policy if exists "progress-photos: team owner can read client photos" on storage.objects;
+create policy "progress-photos: team owner can read client photos" on storage.objects
+  for select using (
+    bucket_id = 'progress-photos'
+    and exists (
+      select 1 from public.trainer_clients tc
+      where tc.client_id::text = (storage.foldername(name))[1]
+        and tc.status = 'active' and public.is_team_owner_of(tc.trainer_id)
+    )
+  );
+
+-- get_client_summaries, fourth version: p_scope 'team' lists the clients of the
+-- coaches on a team the caller OWNS (read-only; see is_team_owner_of), each row
+-- naming its coach. The default scope is the caller's own clients, as before.
+drop function if exists public.get_client_summaries(date);
+drop function if exists public.get_client_summaries(date, text);
+create function public.get_client_summaries(p_today date default current_date, p_scope text default 'mine')
+returns table (
+  link_id uuid, client_id uuid, client_name text, group_label text, connected_at timestamptz,
+  goal text, calorie_target int, protein_g int,
+  last_log_date date, days_logged_7d int, days_on_target_7d int, days_protein_7d int,
+  avg_cal_7d numeric, today_cal numeric,
+  latest_weight_kg numeric, latest_weight_date date, weight_change_kg_14d numeric,
+  last_checkin_date date,
+  days_complete_7d int, days_judged_7d int, avg_cal_complete_7d numeric,
+  pace_kg_per_week numeric, weight_rate_kg_week numeric, weigh_ins_28d int,
+  targets_set_by uuid, targets_overridden_at timestamptz,
+  coach_id uuid, coach_name text
+)
+language sql
+stable
+set search_path = public
+as $$
+  select
+    tc.id, tc.client_id, p.name, tc.group_label, tc.created_at,
+    p.goal,
+    public.target_for_date(p.calorie_target, p.rest_day_targets, 'calories', p.training_days, p_today)::int,
+    public.target_for_date(p.protein_g, p.rest_day_targets, 'protein_g', p.training_days, p_today)::int,
+    (select max(f.logged_date) from public.food_logs f where f.user_id = tc.client_id),
+    coalesce(d.days_logged, 0)::int,
+    coalesce(d.days_on_target, 0)::int,
+    coalesce(d.days_protein, 0)::int,
+    d.avg_cal,
+    coalesce(t.cal, 0),
+    w.kg, w.dt,
+    case when w.kg is not null and w0.kg is not null and w0.dt < w.dt then round(w.kg - w0.kg, 2) end,
+    (select max(c.checkin_date) from public.checkins c where c.user_id = tc.client_id),
+    coalesce(d.days_complete, 0)::int,
+    coalesce(d.days_judged, 0)::int,
+    d.avg_cal_complete,
+    p.pace_kg_per_week,
+    case when r.n >= 4 and r.span >= 10 then round((r.rate_day * 7)::numeric, 3) end,
+    coalesce(r.n, 0)::int,
+    p.targets_set_by,
+    p.targets_overridden_at,
+    tc.trainer_id,
+    public.coach_name_for(tc.trainer_id)
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.client_id
+  left join lateral (
+    select
+      count(*) filter (where s.cal > 0) as days_logged,
+      count(*) filter (where s.cal > 0 and s.meals >= 3) as days_complete,
+      -- Today only counts once it's complete; past days count either way (an
+      -- unfinished past day is a day the client didn't finish logging).
+      count(*) filter (where s.cal > 0 and (s.meals >= 3 or s.logged_date < p_today)) as days_judged,
+      count(*) filter (where s.cal > 0 and s.meals >= 3 and s.cal_target is not null
+                       and s.cal between s.cal_target * 0.9 and s.cal_target * 1.1) as days_on_target,
+      count(*) filter (where s.cal > 0 and s.meals >= 3 and s.prot_target is not null and s.prot >= s.prot_target * 0.9) as days_protein,
+      avg(s.cal) filter (where s.cal > 0) as avg_cal,
+      avg(s.cal) filter (where s.cal > 0 and s.meals >= 3) as avg_cal_complete
+    from (
+      select f.logged_date, sum(f.calories) as cal, sum(f.protein_g) as prot, count(distinct f.meal) as meals,
+             public.target_for_date(p.calorie_target, p.rest_day_targets, 'calories', p.training_days, f.logged_date) as cal_target,
+             public.target_for_date(p.protein_g, p.rest_day_targets, 'protein_g', p.training_days, f.logged_date) as prot_target
+      from public.food_logs f
+      where f.user_id = tc.client_id and f.logged_date > p_today - 7 and f.logged_date <= p_today
+      group by f.logged_date
+    ) s
+  ) d on true
+  left join lateral (
+    select sum(f.calories) as cal from public.food_logs f
+    where f.user_id = tc.client_id and f.logged_date = p_today
+  ) t on true
+  left join lateral (
+    select case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg, wl.logged_date as dt
+    from public.weight_logs wl where wl.user_id = tc.client_id and wl.logged_date <= p_today
+    order by wl.logged_date desc limit 1
+  ) w on true
+  left join lateral (
+    select case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg, wl.logged_date as dt
+    from public.weight_logs wl
+    where wl.user_id = tc.client_id and w.dt is not null and wl.logged_date >= w.dt - 14 and wl.logged_date <= w.dt
+    order by wl.logged_date asc limit 1
+  ) w0 on true
+  left join lateral (
+    with wi as (
+      select wl.logged_date as dt, case when wl.unit = 'lb' then wl.weight * 0.45359237 else wl.weight end as kg
+      from public.weight_logs wl
+      where wl.user_id = tc.client_id and wl.logged_date > p_today - 28 and wl.logged_date <= p_today
+    )
+    select (select count(*) from wi) as n,
+           (select max(dt) - min(dt) from wi) as span,
+           (select percentile_cont(0.5) within group (order by (b.kg - a.kg) / (b.dt - a.dt))
+              from wi a join wi b on b.dt - a.dt >= 3) as rate_day
+  ) r on true
+  where tc.status = 'active'
+    and case when p_scope = 'team' then public.is_team_owner_of(tc.trainer_id) else tc.trainer_id = auth.uid() end
+  order by p.name nulls last;
+$$;
+revoke all on function public.get_client_summaries(date, text) from public, anon;
+grant execute on function public.get_client_summaries(date, text) to authenticated;
+
+-- get_my_coach_links again, now also naming the owner of the coach's team (when
+-- the coach is on one and isn't its owner), so a client sees who else can view
+-- their data.
+drop function if exists public.get_my_coach_links();
+create function public.get_my_coach_links()
+returns table (
+  id uuid, status text, created_at timestamptz, consented_at timestamptz,
+  trainer_id uuid, trainer_name text, trainer_logo_url text, referred_by_name text, team_owner_name text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select tc.id, tc.status, tc.created_at, tc.consented_at, tc.trainer_id, p.name, p.coach_logo_url,
+         (select nullif(trim(r.name), '') from public.profiles r where r.id = tc.referred_by),
+         (select coalesce(nullif(trim(o.name), ''), 'The team owner')
+          from public.coach_team_members m
+          join public.coach_team_members om on om.team_id = m.team_id and om.role = 'owner'
+          join public.profiles o on o.id = om.user_id
+          where m.user_id = tc.trainer_id and om.user_id <> tc.trainer_id)
+  from public.trainer_clients tc
+  join public.profiles p on p.id = tc.trainer_id
+  where tc.client_id = auth.uid() and tc.status in ('pending', 'active')
+  order by tc.created_at desc;
+$$;
+revoke all on function public.get_my_coach_links() from public, anon;
+grant execute on function public.get_my_coach_links() to authenticated;
+
+-- A queue of "the owner of your coach's team can see your data" emails, one per
+-- owner and client. Rows are added when a coach joins a team (for their current
+-- clients) and when a client of a team member becomes active; the server sends
+-- the email and fills in emailed_at.
+create table if not exists public.team_view_notices (
+  client_id uuid not null references auth.users (id) on delete cascade,
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  trainer_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  emailed_at timestamptz,
+  primary key (client_id, owner_id)
+);
+alter table public.team_view_notices enable row level security;
+-- No policies: only the server (service role) and the triggers below use it.
+
+create or replace function public.queue_team_view_notices(p_trainer uuid)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  insert into public.team_view_notices (client_id, owner_id, trainer_id)
+  select tc.client_id, om.user_id, p_trainer
+  from public.trainer_clients tc
+  join public.coach_team_members m on m.user_id = p_trainer
+  join public.coach_team_members om on om.team_id = m.team_id and om.role = 'owner'
+  where tc.trainer_id = p_trainer and tc.status = 'active' and om.user_id <> p_trainer
+  on conflict (client_id, owner_id) do nothing;
+end;
+$$;
+revoke all on function public.queue_team_view_notices(uuid) from public, anon, authenticated;
+
+create or replace function public.team_member_joined()
+returns trigger language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.queue_team_view_notices(new.user_id);
+  return new;
+end;
+$$;
+drop trigger if exists team_member_joined on public.coach_team_members;
+create trigger team_member_joined after insert on public.coach_team_members for each row execute function public.team_member_joined();
+
+create or replace function public.client_link_activated()
+returns trigger language plpgsql security definer set search_path = public
+as $$
+begin
+  if new.status = 'active' and (tg_op = 'INSERT' or old.status is distinct from 'active') then
+    perform public.queue_team_view_notices(new.trainer_id);
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists client_link_activated on public.trainer_clients;
+create trigger client_link_activated after insert or update of status on public.trainer_clients for each row execute function public.client_link_activated();

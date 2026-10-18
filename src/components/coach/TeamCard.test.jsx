@@ -76,9 +76,9 @@ describe('TeamCard — not on a team', () => {
     expect(t.join).toHaveBeenCalledTimes(1);
   });
 
-  it('explains that clients are never shared without their say-so', () => {
+  it('says the owner can view the team\'s clients, and that clients are told', () => {
     setup(null);
-    expect(screen.getByText(/only shared if they agree/)).toBeInTheDocument();
+    expect(screen.getByText(/As owner you can view your teammates' clients, read-only, and those clients are told/)).toBeInTheDocument();
   });
 });
 
@@ -91,7 +91,12 @@ describe('TeamCard — on a team', () => {
     expect(screen.getByText('OWNER')).toBeInTheDocument();
     expect(screen.getByText('1 client')).toBeInTheDocument();
     expect(screen.getByText('3 clients')).toBeInTheDocument();
-    expect(screen.getByText(/names and client counts, not clients/)).toBeInTheDocument();
+    expect(screen.getByText(/You can view your teammates' clients, read-only .* Those clients are told/)).toBeInTheDocument();
+  });
+
+  it('tells a member that the owner can view their clients', () => {
+    setup(inTeam({ is_owner: false, members: [member({ user_id: 'owner', role: 'owner', name: 'Olive Owner' }), member({ user_id: 'me', role: 'member' })] }));
+    expect(screen.getByText(/The team owner can view your clients, read-only .* and your clients are told/)).toBeInTheDocument();
   });
 
   it('flags a teammate whose Coach Pass has lapsed', () => {

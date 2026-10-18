@@ -91,7 +91,7 @@ export default function TeamCard() {
       <Card>
         <SectionLabel icon="ti-users-group">Team</SectionLabel>
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
-          Create a team to bring a teammate in on a client. Clients are only shared if they agree.
+          Create a team to bring a teammate in on a client. As owner you can view your teammates' clients, read-only, and those clients are told.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
@@ -122,7 +122,9 @@ export default function TeamCard() {
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.members.length} of {t.max_members} members</span>
       </div>
       <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '0 0 16px', lineHeight: 1.5 }}>
-        Teammates see each other's names and client counts, not clients. A client is only shared with a teammate if the client accepts.
+        {t.is_owner
+          ? "You can view your teammates' clients, read-only (not their messages or notes). Those clients are told. Other teammates see only names and client counts."
+          : "The team owner can view your clients, read-only (not your messages or notes), and your clients are told. Other teammates see only names and client counts."}
       </p>
 
       <div style={{ marginBottom: 16 }}>

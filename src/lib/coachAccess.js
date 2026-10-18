@@ -21,4 +21,9 @@ export const COACH_CAN_DO = [
   { icon: 'ti-clipboard-check', text: 'Send you a check-in form to fill in' },
 ];
 
+// Said to a client whose coach is on a team: the team's owner can also look.
+export function teamOwnerNotice(ownerName, coachName) {
+  return `${ownerName}, who owns ${coachName || 'their'} team, can also view this. They can't edit it or see your messages.`;
+}
+
 export const COACH_REASSURANCE = 'You can disconnect at any time, and they lose access immediately.';

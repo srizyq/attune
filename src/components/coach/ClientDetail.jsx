@@ -17,7 +17,12 @@ const TONE_COLOR = { good: 'var(--accent)', fair: 'var(--gold)', low: 'var(--dan
 // One client, split into six tabs so each stays short: the long single page
 // this replaced mixed reading (charts, diary), writing (messages, notes) and
 // output (reports) in one scroll.
-export default function ClientDetail({ client, summary, row, onSetGroup, onRevoke, initialTab = 'overview', onMessagesViewed }) {
+// `readOnly` is the team owner's view of a teammate's client: the same data, no
+// editing, and no messages (those stay between the coach and their client).
+const READ_ONLY_TABS = ['overview', 'diary', 'progress', 'reports'];
+
+export default function ClientDetail({ client, summary, row, onSetGroup, onRevoke, initialTab = 'overview', onMessagesViewed, readOnly = false, coachName = null }) {
+  const tabs = readOnly ? TABS.filter(t => READ_ONLY_TABS.includes(t.id)) : TABS;
   const { user } = useAuth();
   // A mutable local copy of the client's goal/target fields — resyncs from the
   // prop whenever a different client is selected, but otherwise holds whatever
@@ -64,12 +69,12 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
 
   // WAI-ARIA tabs: arrows move between tabs, Home/End jump to the ends.
   const onKeyDown = (e) => {
-    const idx = TABS.findIndex(t => t.id === tab);
-    const next = { ArrowRight: (idx + 1) % TABS.length, ArrowLeft: (idx - 1 + TABS.length) % TABS.length, Home: 0, End: TABS.length - 1 }[e.key];
+    const idx = tabs.findIndex(t => t.id === tab);
+    const next = { ArrowRight: (idx + 1) % tabs.length, ArrowLeft: (idx - 1 + tabs.length) % tabs.length, Home: 0, End: tabs.length - 1 }[e.key];
     if (next == null) return;
     e.preventDefault();
-    setTab(TABS[next].id);
-    tabRefs.current[TABS[next].id]?.focus();
+    setTab(tabs[next].id);
+    tabRefs.current[tabs[next].id]?.focus();
   };
 
   return (
@@ -89,7 +94,14 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
           </div>
         )}
       </div>
-      {row && onSetGroup && onRevoke && (
+      {readOnly && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 32, padding: '0 12px', borderRadius: 99, background: 'var(--chip-bg)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, overflowWrap: 'anywhere' }}>
+            <i className="ti ti-eye" aria-hidden="true" />{coachName ? `Coach: ${coachName} · ` : ''}View only
+          </span>
+        </div>
+      )}
+      {!readOnly && row && onSetGroup && onRevoke && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
           <RowActions row={row} onSetGroup={onSetGroup} onRevoke={onRevoke} />
         </div>
@@ -101,7 +113,7 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
         onKeyDown={onKeyDown}
         style={{ display: 'flex', gap: 4, overflowX: 'auto', overflowY: 'hidden', borderBottom: '1px solid var(--border-default)', marginBottom: 20, scrollbarWidth: 'none' }}
       >
-        {TABS.map(t => {
+        {tabs.map(t => {
           const active = tab === t.id;
           return (
             <button
@@ -128,7 +140,7 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
 
       <div role="tabpanel" id={`client-panel-${tab}`} aria-labelledby={`client-tab-${tab}`}>
         {tab === 'overview' && (
-          <OverviewTab clientData={clientData} d={d} summary={summary} editingTargets={editingTargets} setEditingTargets={setEditingTargets} onSaveTargets={handleSaveTargets} onSaveMicroTargets={handleSaveMicroTargets} />
+          <OverviewTab readOnly={readOnly} clientData={clientData} d={d} summary={summary} editingTargets={editingTargets} setEditingTargets={setEditingTargets} onSaveTargets={handleSaveTargets} onSaveMicroTargets={handleSaveMicroTargets} />
         )}
         {tab === 'diary' && <DiaryTab d={d} />}
         {tab === 'progress' && <ProgressTab client={client} d={d} />}

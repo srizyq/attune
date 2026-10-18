@@ -1,4 +1,4 @@
-import { COACH_CAN_SEE, COACH_CAN_DO, COACH_REASSURANCE } from '../lib/coachAccess';
+import { COACH_CAN_SEE, COACH_CAN_DO, COACH_REASSURANCE, teamOwnerNotice } from '../lib/coachAccess';
 
 function initialsOf(name) {
   return (name || 'C').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'C';
@@ -55,6 +55,9 @@ export default function CoachConsentCard({ link, variant = 'invite', busy = fals
 
       <Bullets title={`${name} will be able to see`} items={COACH_CAN_SEE} />
       <Bullets title="And can" items={COACH_CAN_DO} />
+      {link.teamOwnerName && (
+        <p data-testid="team-owner-notice" style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.5 }}>{teamOwnerNotice(link.teamOwnerName, `${name}'s`)}</p>
+      )}
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 16px', lineHeight: 1.5 }}>{COACH_REASSURANCE}</p>
 
       {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 12px' }}>{error}</p>}

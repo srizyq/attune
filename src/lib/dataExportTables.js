@@ -54,6 +54,7 @@ export const EXPORT_EXCLUDED = {
   community_reports: 'moderation reports',
   community_testers: 'staff-managed access list',
   app_admins: 'staff roles',
+  team_view_notices: 'a queue of emails telling clients their coach\'s team owner can view their data',
 };
 
 

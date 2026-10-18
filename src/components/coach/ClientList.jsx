@@ -34,7 +34,7 @@ function Tag({ color, children }) {
 // The whole card is the tap target (opens ClientDetail via onSelect); the
 // reasons sit inside it, so nothing ever overlaps a divider line. The
 // group-tag/disconnect actions live in ClientDetail's own header.
-function SummaryRow({ row, summary, index, today, onSelect, unreadCount = 0 }) {
+function SummaryRow({ row, summary, index, today, onSelect, unreadCount = 0, showCoach = false }) {
   const score = adherenceScore(summary);
   const tone = adherenceTone(score);
   const flags = attentionFlags(summary, today);
@@ -53,6 +53,7 @@ function SummaryRow({ row, summary, index, today, onSelect, unreadCount = 0 }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{row.client?.name || 'Unnamed client'}</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{activityLabel(summary, today)}</div>
+            {showCoach && summary.coach_name && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, overflowWrap: 'anywhere' }}>Coach: {summary.coach_name}</div>}
           </div>
           {score != null && (
             <span role="img" title={ADHERENCE_HELP} aria-label={`7-day adherence ${score} percent`} style={{ fontSize: 20, fontWeight: 800, color: TONE_COLOR[tone] || 'var(--text-secondary)', flexShrink: 0 }}>{score}%</span>
@@ -107,7 +108,7 @@ function LegacyClientRow({ row, index, onSelect, onStatus }) {
 // The trainer's client list. With summaries (one query for everyone) it can
 // search, sort and flag who needs attention; without them — the database
 // update not applied yet — it falls back to the previous per-client rows.
-export default function ClientList({ clients, loading, summaries, summariesSupported, today, onSelect, onStatus, loggedTodayCount, resolvedCount, allLoggedToday, unread = new Map() }) {
+export default function ClientList({ clients, loading, summaries, summariesSupported, today, onSelect, onStatus, loggedTodayCount, resolvedCount, allLoggedToday, unread = new Map(), title = 'Your clients', showCoach = false, hideUnread = false, emptyText = "Once a client accepts your invite, they'll show up here." }) {
   const [query, setQuery] = useState('');
   const [sortId, setSortId] = useState('attention');
   const [attentionOnly, setAttentionOnly] = useState(false);
@@ -163,7 +164,7 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
   const heading = (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-        <SectionLabel icon="ti-users" style={{ margin: 0 }}>Your clients</SectionLabel>
+        <SectionLabel icon="ti-users" style={{ margin: 0 }}>{title}</SectionLabel>
         {summariesSupported && hasClients && (
           <button type="button" onClick={() => setShowHelp(v => !v)} aria-expanded={showHelp} aria-label="About the percentage" className="hit-slop"
             style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', fontSize: 16, display: 'flex', cursor: 'pointer' }}>
@@ -186,7 +187,7 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
           <div style={{ textAlign: 'center', padding: '20px 12px' }}>
             <i className="ti ti-users" style={{ fontSize: 28, color: 'var(--text-hint)' }} />
             <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>
-              Once a client accepts your invite, they'll show up here.
+              {emptyText}
             </p>
           </div>
         ) : (
@@ -234,13 +235,15 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
             >
               Needs attention{attentionCount > 0 ? ` (${attentionCount})` : ''}
             </FilterChipRow.Chip>
-            <FilterChipRow.Chip
-              active={unreadOnly}
-              onClick={() => setUnreadOnly(v => !v)}
-              onClear={unreadOnly ? () => setUnreadOnly(false) : undefined}
-            >
-              Unread{unread.size > 0 ? ` (${unread.size})` : ''}
-            </FilterChipRow.Chip>
+            {!hideUnread && (
+              <FilterChipRow.Chip
+                active={unreadOnly}
+                onClick={() => setUnreadOnly(v => !v)}
+                onClear={unreadOnly ? () => setUnreadOnly(false) : undefined}
+              >
+                Unread{unread.size > 0 ? ` (${unread.size})` : ''}
+              </FilterChipRow.Chip>
+            )}
           </FilterChipRow>
           {/* The real <select> sits invisibly over a tidy pill, so it keeps the
               native picker (and screen-reader behaviour) without a boxed dropdown. */}
@@ -264,7 +267,7 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
         </p>
       ) : (
         visible.map(({ row, summary }, i) => (
-          <SummaryRow key={row.id} row={row} summary={summary} index={i} today={today} onSelect={onSelect} unreadCount={unread.get(summary.client_id)?.unread || 0} />
+          <SummaryRow key={row.id} row={row} summary={summary} index={i} today={today} onSelect={onSelect} showCoach={showCoach} unreadCount={unread.get(summary.client_id)?.unread || 0} />
         ))
       )}
     </section>

@@ -983,6 +983,24 @@ export async function getMyClients(trainerId) {
   return data;
 }
 
+// The clients of the other coaches on a team the caller owns (read-only; the
+// rows are the same shape as getMyClients, plus which coach each belongs to).
+// null until the database update has been run.
+export async function getTeamClients(userId) {
+  const columns = 'id, name, goal, calorie_target, protein_g, carbs_g, fat_g, unit, micro_targets, rest_day_targets, training_days, pace_kg_per_week, targets_set_by, targets_set_at, targets_overridden_at';
+  const { data, error } = await supabase
+    .from('trainer_clients')
+    .select(`id, status, created_at, group_label, trainer_id, client:profiles!trainer_clients_client_id_fkey(${columns})`)
+    .eq('status', 'active')
+    .neq('trainer_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    if (isMissingColumnError(error)) return null;
+    throw error;
+  }
+  return data;
+}
+
 // A client taking their calorie/macro targets back from their coach (the coach
 // is told separately — see takeoverMessage in lib/coachTargets.js).
 export async function overrideCoachTargets() {
@@ -1066,6 +1084,8 @@ export async function getMyTrainers(clientId) {
       consented_at: r.consented_at,
       // Who suggested this coach (set when a coach brings in a teammate) — null otherwise.
       referredByName: r.referred_by_name ?? null,
+      // The owner of the coach's team, who can also view (not edit) what the coach sees.
+      teamOwnerName: r.team_owner_name ?? null,
       trainer: { id: r.trainer_id, name: r.trainer_name, coach_logo_url: r.trainer_logo_url },
     }));
   }
@@ -1272,8 +1292,9 @@ export async function deletePushSubscriptionByEndpoint(endpoint) {
 // One row per active client with the numbers the client list is built from
 // (see get_client_summaries in schema.sql). null means the function isn't
 // there yet — the list then falls back to per-client history queries.
-export async function getClientSummaries(todayIso) {
-  const { data, error } = await supabase.rpc('get_client_summaries', { p_today: todayIso });
+// scope 'team' lists the clients of the coaches on a team the caller owns.
+export async function getClientSummaries(todayIso, scope = 'mine') {
+  const { data, error } = await supabase.rpc('get_client_summaries', scope === 'team' ? { p_today: todayIso, p_scope: 'team' } : { p_today: todayIso });
   if (error) {
     if (isMissingFunctionError(error)) return null;
     throw error;
