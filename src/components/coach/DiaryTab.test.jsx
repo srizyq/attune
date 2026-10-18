@@ -49,3 +49,28 @@ describe('DiaryTab micronutrients', () => {
     for (const n of MICRO_NUTRIENTS) expect(screen.getAllByText(n.label).length, n.key).toBeGreaterThan(0);
   });
 });
+
+describe('DiaryTab day summary', () => {
+  it('shows the day\'s calories and macros against the client\'s targets, above the food log', () => {
+    const d = dash({ dayTotals: { calories: 1240, protein: 96.4, carbs: 130, fat: 41 }, dayTargets: { calories: 2000, protein: 150, carbs: 220, fat: 70 } });
+    render(<DiaryTab d={d} />);
+    const summary = screen.getByTestId('day-summary');
+    expect(summary).toHaveTextContent('1,240');
+    expect(summary).toHaveTextContent('2,000 kcal');
+    expect(summary).toHaveTextContent('96.4g');
+    expect(summary).toHaveTextContent('Protein · 150g');
+    const log = screen.getByText(/^Food log —/);
+    expect(summary.compareDocumentPosition(log) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('still shows the (empty) summary on a day with nothing logged', () => {
+    const d = dash({ meals: { breakfast: [], lunch: [], dinner: [], snacks: [] }, hasAnyFood: false, dayTotals: { calories: 0, protein: 0, carbs: 0, fat: 0 }, dayTargets: { calories: 2000 } });
+    render(<DiaryTab d={d} />);
+    expect(screen.getByTestId('day-summary')).toHaveTextContent('2,000 kcal');
+  });
+
+  it('says loading while the foods load', () => {
+    render(<DiaryTab d={dash({ foodLoading: true })} />);
+    expect(screen.queryByTestId('day-summary')).toBeNull();
+  });
+});

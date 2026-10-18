@@ -1,6 +1,7 @@
 import DayHeatmapStrip from '../DayHeatmapStrip';
 import MacroSplitBar from '../MacroSplitBar';
 import StreakItem from '../StreakItem';
+import DaySummary from '../DaySummary';
 import TargetsForm from './TargetsForm';
 import MicroTargetsCard from './MicroTargetsCard';
 import CoCoachCard from './CoCoachCard';
@@ -42,6 +43,16 @@ export default function OverviewTab({ clientData, d, editingTargets, setEditingT
   return (
     <div>
       <AttentionFlags summary={summary} today={d.today} />
+      <Card>
+        <SectionLabel icon="ti-chart-donut">Today</SectionLabel>
+        {historyLoading ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
+        ) : d.todayTotals?.calories > 0 ? (
+          <DaySummary totals={d.todayTotals} targets={d.todayTargets} />
+        ) : (
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Nothing logged yet today.</p>
+        )}
+      </Card>
       <WeeklySummaryCard summary={summary} clientData={clientData} today={d.today} />
       <WeightPlanCard summary={summary} />
       <div className="grid-2" style={{ marginBottom: 16, alignItems: 'start' }}>

@@ -149,12 +149,26 @@ export function useClientDashboard(client, clientData) {
   }, [meals]);
   const extendedInfo = useMemo(() => extendedSummary(Object.values(meals).flat()), [meals]);
 
+  // Calories and macros for the picked day (summed from the same meals) and for
+  // today (from the history rows), each beside the targets that apply that day.
+  const asTargets = (t) => ({ calories: t.calories, protein: t.protein_g, carbs: t.carbs_g, fat: t.fat_g });
+  const dayTotals = useMemo(() => {
+    const all = Object.values(meals).flat();
+    const sum = (key) => all.reduce((s, i) => s + (Number(i[key]) || 0), 0);
+    return { calories: sum('cal'), protein: sum('protein'), carbs: sum('carbs'), fat: sum('fat') };
+  }, [meals]);
+  const dayTargets = asTargets(targetFor(date));
+  const todayRow = byDate.get(today);
+  const todayTotals = { calories: todayRow?.calories || 0, protein: todayRow?.protein_g || 0, carbs: todayRow?.carbs_g || 0, fat: todayRow?.fat_g || 0 };
+  const todayTargets = asTargets(targetFor(today));
+
   return {
     today, date, setDate, range, setRange,
     calorieTarget, proteinTarget, hasCalorieTarget, targetFor, weightUnit,
     historyLoading, stats, streaks, calorieHeatmapDays,
     weightLogs, latestWeight, weightLoading, weightChartData, chartOptions,
     meals, foodLoading, checkin,
+    dayTotals, dayTargets, todayTotals, todayTargets,
     microTotals, extendedInfo, microTargets: clientData.micro_targets || {}, hasAnyFood: Object.values(meals).some(items => items.length > 0),
     workouts, workoutsLoading,
   };

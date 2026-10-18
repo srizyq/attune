@@ -2,6 +2,7 @@ import { useState } from 'react';
 import DaySelector from '../DaySelector';
 import LogItemRow from '../LogItemRow';
 import MicroCard from '../MicroCard';
+import DaySummary from '../DaySummary';
 import { Card, SectionLabel, StatRow } from './shared';
 import WorkoutsCard from './WorkoutsCard';
 import ProvenanceBadge from './ProvenanceBadge';
@@ -39,6 +40,15 @@ export default function DiaryTab({ d }) {
           </div>
         </div>
       )}
+
+      <Card>
+        <SectionLabel icon="ti-chart-donut">Summary — {date}</SectionLabel>
+        {foodLoading ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
+        ) : (
+          <DaySummary totals={d.dayTotals} targets={d.dayTargets} />
+        )}
+      </Card>
 
       <div className="grid-2" style={{ alignItems: 'start', marginBottom: 16 }}>
         <Card style={{ marginBottom: 0 }}>

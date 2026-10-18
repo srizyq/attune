@@ -3,15 +3,17 @@ import { openApp, settle, assertLayout } from './harness.js';
 import { findLayoutProblems } from './deviceCheck.js';
 import { COACH_BACKEND } from './coachFixtures.js';
 
-// Coach page: Friends | Coach is the very first thing, then the greeting line,
-// then My clients | My coach. No "Coach Mode" title. Each client is its own
-// card with their reasons as tags inside it.
+// Coach page: a "Coach" title (like the Friends tab), then Friends | Coach, the
+// greeting line, then My clients | My coach. Each client is its own card with
+// their reasons as tags inside it.
 const top = async (loc) => (await loc.boundingBox()).y;
 
-test('Friends | Coach first, then the greeting, then My clients | My coach; no title', async ({ page, context }, testInfo) => {
+test('title Coach, then Friends | Coach, then the greeting, then My clients | My coach', async ({ page, context }, testInfo) => {
   const ctx = await openApp({ page, context }, testInfo, COACH_BACKEND);
   await page.goto('/coach');
   await settle(page);
+  const title = page.getByRole('heading', { name: 'Coach', exact: true });
+  await expect(title).toBeVisible();
   await expect(page.getByText('Coach Mode')).toHaveCount(0);
   const friendsCoach = page.getByRole('tablist', { name: 'Friends sections' });
   const greeting = page.getByText(/need attention/).first();
@@ -19,6 +21,7 @@ test('Friends | Coach first, then the greeting, then My clients | My coach; no t
   await expect(friendsCoach).toBeVisible();
   await expect(myClients).toBeVisible();
   const [a, b, c] = [await top(friendsCoach), await top(greeting), await top(myClients)];
+  expect(await top(title), 'the Coach title is above Friends | Coach').toBeLessThan(a);
   expect(a, 'Friends | Coach is above the greeting').toBeLessThan(b);
   expect(b, 'the greeting is above My clients | My coach').toBeLessThan(c);
   await assertLayout(page, testInfo, 'x-coach-clients', ctx);

@@ -1,5 +1,6 @@
 import ServingStepper from '../ServingStepper';
 import DayBudgetImpact from '../DayBudgetImpact';
+import SeeDetails from '../FoodDetails';
 import { formatTime12h } from '../../lib/mealTime';
 import { energySplit, percentOf, macroNotes, nutritionRows, dietaryBadges, nutriScoreInfo, productInsight } from '../../lib/scanInsights';
 import {
@@ -215,6 +216,7 @@ export default function BarcodeResult({
             {r.dv != null && <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', flexShrink: 0 }}>{r.dv}%</span>}
           </div>
         ))}
+              <SeeDetails food={scaled} style={{ marginTop: 6, padding: 0 }} />
       </ScanCard>
 
       {badges.length > 0 && (

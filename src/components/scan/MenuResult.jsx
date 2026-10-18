@@ -2,6 +2,7 @@ import DayBudgetImpact from '../DayBudgetImpact';
 import VoiceMicButton from '../VoiceMicButton';
 import { SourcePill, PortionRow, PortionSkeleton, IncludesRow, QuickTweaks } from '../MenuPickDetails';
 import { dishLabel, isHighProtein, isLowCarb, menuAdvice } from '../../lib/scanInsights';
+import SeeDetails from '../FoodDetails';
 import {
   ScanPage, ScanCard, Eyebrow, Chip, InsightCard, MacroTile, PillButton, PillRow,
   PrimaryButton, GhostButton, IconTile, SelectDot,
@@ -316,6 +317,7 @@ export function MenuReview({
         {detail && (
           <IncludesRow allergens={detail.allergens} sodiumMg={adjusted.sodium} sodium={adjusted.sodium} fibre={adjusted.fibre} sugar={adjusted.sugar} />
         )}
+        <SeeDetails food={{ ...adjusted, name: data.name, source: 'menu' }} style={{ marginTop: 4, padding: 0 }} />
       </ScanCard>
 
       {dailyTarget.calories > 0 && (

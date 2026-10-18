@@ -7,7 +7,7 @@ import PageHeader from '../components/PageHeader';
 import Toast from '../components/Toast';
 import Avatar from '../components/Avatar';
 import LogItemRow from '../components/LogItemRow';
-import DaySummary from '../components/friends/DaySummary';
+import DaySummary from '../components/DaySummary';
 import { MEAL_LABELS } from '../components/coach/constants';
 import { getFriendDay, getFriendRecipes, removeFriend, friendlyFriendsError } from '../lib/friends';
 import { sumFoodItems, scaleFood, formatAmountUnit } from '../lib/foodMath';

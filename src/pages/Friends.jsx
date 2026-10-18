@@ -10,7 +10,7 @@ import Toast from '../components/Toast';
 import Avatar from '../components/Avatar';
 import FriendsTabs from '../components/friends/FriendsTabs';
 import Switch from '../components/friends/Switch';
-import DaySummary from '../components/friends/DaySummary';
+import DaySummary from '../components/DaySummary';
 import { friendLink, friendlyFriendsError } from '../lib/friends';
 import { todayLocalDate } from '../lib/patterns';
 import { shareOrigin } from '../lib/siteUrl';

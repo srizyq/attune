@@ -17,13 +17,13 @@ const MACRO_COLOR = {
 const tint = (color, pct = 14) => `color-mix(in srgb, ${color} ${pct}%, var(--bg-card))`;
 const ink = (color) => `color-mix(in srgb, ${color} 72%, var(--text-primary))`;
 
-export function ScanPage({ title, onBack, closing, headerRight, footer, children, backLabel = 'Close', testId }) {
+export function ScanPage({ title, onBack, closing, headerRight, footer, children, backLabel = 'Close', testId, zIndex = 200 }) {
   return (
     <ModalPortal>
       <div
         className={`sheet-panel${closing ? ' is-closing' : ''}`}
         data-testid={testId}
-        style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', fontFamily: FONT }}
+        style={{ position: 'fixed', inset: 0, zIndex, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', fontFamily: FONT }}
       >
         <div style={{ flexShrink: 0, paddingTop: 'env(safe-area-inset-top)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px 10px', minWidth: 0 }}>

@@ -4,6 +4,7 @@ import VoiceMicButton from '../VoiceMicButton';
 import { formatTime12h } from '../../lib/mealTime';
 import { getCategoryStyle } from '../../lib/foodCategories';
 import { energySplit, percentOf, plateInsight, DAILY_VALUES } from '../../lib/scanInsights';
+import SeeDetails from '../FoodDetails';
 import {
   ScanPage, ScanCard, Eyebrow, Chip, InsightCard, SplitBar, MacroTile, PillButton, PillRow,
   PrimaryButton, GhostButton, IconTile,
@@ -79,6 +80,7 @@ function ItemCard({ ingredient, scaled, onGramsChange, onRemove, canRemove }) {
             <span style={{ color: 'var(--macro-carbs)' }}>C: {scaled.carbs}g</span>
             <span style={{ color: 'var(--macro-fat)' }}>F: {scaled.fat}g</span>
           </div>
+          <SeeDetails food={{ ...scaled, name: ingredient.name, servingGrams: Number(ingredient.grams) || scaled.servingGrams || null, source: 'photo' }} style={{ marginTop: 2, padding: 0, justifyContent: 'flex-start' }} />
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 12, padding: '6px 6px 6px 12px', borderRadius: 14, background: 'var(--chip-bg)' }}>

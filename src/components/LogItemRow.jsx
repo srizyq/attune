@@ -5,6 +5,7 @@ import { scaleFood, formatAmountUnit, initialEditState, editUnitsFor, editServin
 import { dateToHHMM, timeStringToDate } from '../lib/mealTime';
 import RecalculatePhotoModal from './RecalculatePhotoModal';
 import SegmentedControl from './SegmentedControl';
+import SeeDetails from './FoodDetails';
 import ListRow from './ListRow';
 import FormRow from './FormRow';
 import SwipeToDelete from './SwipeToDelete';
@@ -212,12 +213,15 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
             )}
 
             {readOnly ? (
+              <>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <MacroReadout value={Math.round(item.cal)} unit="" label="Calories" color={C.green} />
                 <MacroReadout value={round1(item.protein)} unit="g" label="Protein" color={C.protein} />
                 <MacroReadout value={round1(item.carbs)} unit="g" label="Carbs" color={C.blue} />
                 <MacroReadout value={round1(item.fat)} unit="g" label="Fat" color={C.purple} />
               </div>
+              <SeeDetails food={item} style={{ marginTop: 10, padding: 0 }} />
+              </>
             ) : (
               <>
                 <div style={{ marginBottom: 12 }}>
@@ -262,6 +266,7 @@ export default function LogItemRow({ item, isExpanded, onToggle, onDelete, onSav
                   <MacroReadout value={round1(preview.carbs)} unit="g" label="Carbs" color={C.blue} />
                   <MacroReadout value={round1(preview.fat)} unit="g" label="Fat" color={C.purple} />
                 </div>
+                <SeeDetails food={item} style={{ margin: '-6px 0 8px', padding: 0 }} />
                 {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 12, margin: '0 0 12px' }}>{error}</p>}
                 <FormRow gap={8}>
                   <FormRow.Button icon="ti-device-floppy" primary onClick={handleSave} disabled={saving || !servings}>

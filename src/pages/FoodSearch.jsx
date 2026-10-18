@@ -39,6 +39,7 @@ import BarcodeResult from '../components/scan/BarcodeResult';
 import { ScanPage, ScanCard } from '../components/scan/ScanKit';
 import NutritionFields, { Labeled } from '../components/scan/NutritionFields';
 import RecalculateBarcodeSheet from '../components/scan/RecalculateBarcodeSheet';
+import SeeDetails from '../components/FoodDetails';
 import { toKcal } from '../lib/energy';
 import ServingStepper from '../components/ServingStepper';
 import { targetsForDate } from '../lib/dayTargets';
@@ -1674,6 +1675,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
               <span style={{ color: "var(--accent)", fontWeight: 600 }}>{scaled.cal}</span> kcal{unit !== servingUnit && ` · ≈${gramsEquivalent}${servingUnit}`}
             </div>
           </div>
+          <SeeDetails food={scaled} style={{ margin: "-6px 0 6px", padding: 0 }} />
           <AddControls
             amount={amount} setAmount={setAmount}
             unit={unit} setUnit={setUnit}

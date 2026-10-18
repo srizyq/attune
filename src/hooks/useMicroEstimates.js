@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { searchAusnutStrict } from '../lib/db';
-import { cachedSearch, estimateItems, missingKeys } from '../lib/microEstimate';
+import { cachedSearch, estimateItem, estimateItems, missingKeys } from '../lib/microEstimate';
 
 const EMPTY = new Map();
 // One shared cache, so moving between days (or back to one) doesn't repeat lookups.
@@ -26,4 +26,27 @@ export function useMicroEstimates(items) {
   }, [key]);
 
   return key && state.key === key ? state.estimates : EMPTY;
+}
+
+/**
+ * The same kind of estimate for one food (a search result, a scan, a logged
+ * item): { micros, from } once found, or null while looking / when nothing similar exists.
+ */
+export function useFoodEstimate(food) {
+  const needs = !!food && Number(food.cal) > 0 && missingKeys(food).length > 0;
+  const key = needs ? `${food.name}|${food.brand || ''}|${food.servingGrams}|${food.cal}|${food.ingredients?.length || 0}` : '';
+  const [state, setState] = useState({ key: '', estimate: null });
+
+  useEffect(() => {
+    if (!key) return undefined;
+    let cancelled = false;
+    estimateItem(food, search)
+      .then((estimate) => { if (!cancelled) setState({ key, estimate }); })
+      .catch(() => { if (!cancelled) setState({ key, estimate: null }); });
+    return () => { cancelled = true; };
+    // `food` is represented by `key`; re-running on the key is what's wanted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  return key && state.key === key ? state.estimate : null;
 }

@@ -1,8 +1,9 @@
 // src/pages/Coach.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useProfile } from '../hooks/useProfile';
 import { useMyClients, useClientSummaries, useClientMessages } from '../hooks/useCoach';
 import AppNav from '../components/AppNav';
+import PageHeader from '../components/PageHeader';
 import ClientCoachHub from '../components/ClientCoachHub';
 import CoachInvitePanel from '../components/CoachInvitePanel';
 import ClientList from '../components/coach/ClientList';
@@ -68,6 +69,12 @@ export default function Coach() {
   const selectedSummary = selectedClient ? summaries.find(s => s.client_id === selectedClient.id) : undefined;
   const selectedRow = selectedClient ? clients.find(r => r.client?.id === selectedClient.id) : undefined;
 
+  // Opening a client (or going back to the list) starts at the top, instead of
+  // leaving the page scrolled with its first lines under the sticky title.
+  const scrollRef = useRef(null);
+  const selectedId = selectedClient?.id ?? null;
+  useEffect(() => { scrollRef.current?.scrollTo?.({ top: 0 }); }, [selectedId, trainerTab]);
+
   const hasClients = clients.length > 0;
   const invitePanel = <CoachInvitePanel hasClients={hasClients} />;
   const clientList = (
@@ -106,9 +113,10 @@ export default function Coach() {
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <AppNav active="coach" initials={initials} />
-      <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-        <div className="page-pad" style={{ paddingTop: 14 }}>
-          {/* Friends | Coach sits at the very top, like the Friends tab it belongs to. */}
+      <div ref={scrollRef} className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        {/* A title like the Friends tab has, then Friends | Coach. */}
+        <PageHeader title="Coach" />
+        <div className="page-pad">
           <FriendsTabs active="coach" />
           {isTrainer && trainerTab === 'clients' && selectedClient ? (
             <button
