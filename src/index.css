@@ -583,3 +583,10 @@ input[type='range']::-moz-range-thumb {
   border: 3px solid var(--bg-card);
   box-shadow: 0 0 0 1px var(--border-strong);
 }
+
+/* Drawn close "X" and expand chevron, so no glyph characters are needed. Both inherit the text colour. */
+.x-mark { position: relative; display: inline-block; width: 1em; height: 1em; vertical-align: middle; }
+.x-mark::before, .x-mark::after { content: ''; position: absolute; left: 10%; top: calc(50% - 0.0625em); width: 80%; height: 0.125em; min-height: 1.5px; background: currentColor; border-radius: 1px; }
+.x-mark::before { transform: rotate(45deg); }
+.x-mark::after { transform: rotate(-45deg); }
+.chev { display: inline-block; width: 0.55em; height: 0.55em; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-0.15em) rotate(45deg); }

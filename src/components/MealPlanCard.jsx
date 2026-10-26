@@ -52,7 +52,7 @@ function Plan({ plan }) {
           {withLog && (
             <button onClick={() => logMeal(meal.key)} disabled={done || busyMeal !== null} className="btn-press" aria-label={done ? `${meal.label} logged` : `Log ${meal.label}`}
               style={{ padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: done ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", background: done ? 'transparent' : 'var(--accent-bg)', border: `1px solid ${done ? 'var(--border-default)' : 'var(--border-active)'}`, color: done ? 'var(--text-muted)' : 'var(--accent)' }}>
-              {busyMeal === meal.key ? 'Logging…' : done ? 'Logged ✓' : 'Log this meal'}
+              {busyMeal === meal.key ? 'Logging…' : done ? 'Logged' : 'Log this meal'}
             </button>
           )}
         </div>

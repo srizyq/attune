@@ -141,56 +141,56 @@ const CANDIDATES = [
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.proteinBeforeNoon_g >= 30,
-    icon: '⚡', title: 'Protein timing', accentColor: '#9867c5',
+    title: 'Protein timing', accentColor: '#9867c5',
     body: (c) =>
       `You average ${c.withAvg.toFixed(1)}/10 energy on days you log 30g+ protein before noon, vs ${c.withoutAvg.toFixed(1)}/10 otherwise — a ${Math.abs(c.delta).toFixed(1)}-point ${c.delta >= 0 ? 'lift' : 'drop'} across ${c.withCount + c.withoutCount} logged days.`,
   },
   {
     metricKey: 'moodScore', scale: 5,
     predicate: d => isWeekend(d.date),
-    icon: '📅', title: 'Weekday vs weekend', accentColor: '#b188d8',
+    title: 'Weekday vs weekend', accentColor: '#b188d8',
     body: (c) =>
       `Your mood runs ${c.delta >= 0 ? 'higher' : 'lower'} on weekends (${c.withAvg.toFixed(1)}/5) than weekdays (${c.withoutAvg.toFixed(1)}/5) — worth noticing if weekday routines are the lever you can actually pull.`,
   },
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.carbs_g > 0 && d.protein_g > 0 && d.carbs_g / Math.max(d.protein_g, 1) > 2.5,
-    icon: '🍚', title: 'Carb-heavy days', accentColor: '#6c7054',
+    title: 'Carb-heavy days', accentColor: '#6c7054',
     body: (c) =>
       `On carb-heavy days (carbs more than 2.5x your protein), energy averages ${c.withAvg.toFixed(1)}/10 vs ${c.withoutAvg.toFixed(1)}/10 on more balanced days.`,
   },
   {
     metricKey: 'moodScore', scale: 5,
     predicate: d => d.calories > 0 && d.calories < 1200,
-    icon: '🍽️', title: 'Under-fuelling', accentColor: '#c07070',
+    title: 'Under-fuelling', accentColor: '#c07070',
     body: (c) =>
       `Days you log under 1,200 kcal average ${c.withAvg.toFixed(1)}/5 mood vs ${c.withoutAvg.toFixed(1)}/5 on fuller days — under-eating may be costing you more than the calorie deficit is worth.`,
   },
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.fibre_g >= 25,
-    icon: '🌾', title: 'Fibre intake', accentColor: '#7fae5f',
+    title: 'Fibre intake', accentColor: '#7fae5f',
     body: (c) =>
       `On days you log 25g+ fibre, energy averages ${c.withAvg.toFixed(1)}/10 vs ${c.withoutAvg.toFixed(1)}/10 on lower-fibre days — across ${c.withCount + c.withoutCount} logged days.`,
   },
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.waterGlasses != null && d.waterGlasses >= 6,
-    icon: '💧', title: 'Hydration', accentColor: '#b188d8',
+    title: 'Hydration', accentColor: '#b188d8',
     body: (c) =>
       `Days you log 6+ glasses of water average ${c.withAvg.toFixed(1)}/10 energy vs ${c.withoutAvg.toFixed(1)}/10 on lower-hydration days.`,
   },
   {
     metricKey: 'moodScore', scale: 5,
     predicate: d => d.sugar_g >= 50,
-    icon: '🍬', title: 'Sugar intake', accentColor: '#d98fb0',
+    title: 'Sugar intake', accentColor: '#d98fb0',
     body: (c) =>
       `On days you log 50g+ sugar, mood averages ${c.withAvg.toFixed(1)}/5 vs ${c.withoutAvg.toFixed(1)}/5 on lower-sugar days.`,
   },
   {
     metricKey: 'energy', scale: 10,
     predicate: d => d.breakfastLogged === true,
-    icon: '🌅', title: 'Breakfast', accentColor: '#e8c468',
+    title: 'Breakfast', accentColor: '#e8c468',
     body: (c) =>
       `Days you log breakfast average ${c.withAvg.toFixed(1)}/10 energy vs ${c.withoutAvg.toFixed(1)}/10 on days you skip it.`,
   },
@@ -206,7 +206,7 @@ function proteinEnergyCorrelation(dailyData) {
   const r = pearsonCorrelation(rows.map(d => d.protein_g), rows.map(d => d.energy));
   if (r == null || Math.abs(r) < 0.3) return null;
   return {
-    icon: '🔗', title: 'Protein & energy', accentColor: '#7e6b93',
+    title: 'Protein & energy', accentColor: '#7e6b93',
     effectSize: Math.abs(r),
     body: `Across ${rows.length} logged days, more protein tends to track with ${r >= 0 ? 'higher' : 'lower'} energy (r = ${r.toFixed(2)}) — not a guarantee, but a real trend in your own data.`,
   };
@@ -223,20 +223,20 @@ export function generateInsights(dailyData, max = 3) {
   for (const c of CANDIDATES) {
     const cmp = segmentComparison(dailyData, c.predicate, c.metricKey);
     if (!cmp) continue;
-    scored.push({ icon: c.icon, title: c.title, accentColor: c.accentColor, body: c.body(cmp), effectSize: Math.abs(cmp.delta) / c.scale });
+    scored.push({ title: c.title, accentColor: c.accentColor, body: c.body(cmp), effectSize: Math.abs(cmp.delta) / c.scale });
   }
   const corr = proteinEnergyCorrelation(dailyData);
   if (corr) scored.push(corr);
 
   scored.sort((a, b) => b.effectSize - a.effectSize);
-  const results = scored.slice(0, max).map(({ icon, title, accentColor, body }) => ({ icon, title, accentColor, body }));
+  const results = scored.slice(0, max).map(({ title, accentColor, body }) => ({ title, accentColor, body }));
 
   if (results.length === 0) {
     const daysLogged = dailyData.filter(d => d.loggedMeals > 0).length;
     const daysCheckedIn = dailyData.filter(d => d.mood != null).length;
     const needed = Math.max(0, MIN_SAMPLE * 2 - Math.min(daysLogged, daysCheckedIn));
     results.push({
-      icon: '🌱', title: 'Building your patterns', accentColor: '#9867c5',
+      title: 'Building your patterns', accentColor: '#9867c5',
       body: needed > 0
         ? `Log food and check in on mood for about ${needed} more day${needed === 1 ? '' : 's'} and I'll start surfacing real patterns — not generic tips, actual correlations from your own data.`
         : `Nothing statistically meaningful yet across your logged days — keep going and patterns will surface as your data builds up.`,

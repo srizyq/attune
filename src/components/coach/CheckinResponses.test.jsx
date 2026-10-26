@@ -23,12 +23,12 @@ describe('CheckinResponses', () => {
 
   it('shows the trend for a scale question once there are two or more answers, oldest first', () => {
     render(<CheckinResponses responses={[r('b', '2026-09-20T01:00:00Z', 8, false, ''), r('a', '2026-09-06T01:00:00Z', 4, true, 'x')]} />);
-    expect(screen.getByText('4 → 8')).toBeInTheDocument();
+    expect(screen.getByText('4, 8')).toBeInTheDocument();
   });
 
   it('shows no trend line for a single response', () => {
     render(<CheckinResponses responses={[r('a', '2026-09-20T01:00:00Z', 8, false, '')]} />);
-    expect(screen.queryByText(/→/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^\d+(, \d+)+$/)).not.toBeInTheDocument();
   });
 
   it('renders a text answer as text, not markup, and marks empty answers', () => {

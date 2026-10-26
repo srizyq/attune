@@ -34,7 +34,7 @@ describe('BodyProgressPanel (coach view)', () => {
     ] } });
     expect(screen.getByText('96 cm')).toBeInTheDocument();
     expect(screen.getByText(/2 entries/)).toBeInTheDocument();
-    expect(screen.getByText(/−2 since previous/)).toBeInTheDocument();
+    expect(screen.getByText(/-2 since previous/)).toBeInTheDocument();
     expect(screen.getByText('19%')).toBeInTheDocument();
     expect(screen.getByText(/1 entry/)).toBeInTheDocument();
   });

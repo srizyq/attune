@@ -27,7 +27,7 @@ describe('Privacy → Export my data', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Export my data' }));
     await waitFor(() => expect(clicked).toEqual(['attune-data-export-2026-10-16.json']));
     expect(h.exportMyData).toHaveBeenCalledWith('u1');
-    expect(await screen.findByRole('button', { name: 'Downloaded ✓' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Downloaded' })).toBeInTheDocument();
     expect(screen.queryByRole('status')).toBeNull();
   });
 

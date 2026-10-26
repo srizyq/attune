@@ -121,7 +121,7 @@ export default function MealPlanEditor({ trainerId, clientData, admin }) {
             <button key={d.key} role="tab" aria-selected={activeDay === d.key} onClick={() => { setActiveDay(d.key); setCopyTo([]); setPickerMeal(null); }} className="btn-press"
               style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
                 background: activeDay === d.key ? 'var(--accent-bg)' : 'var(--bg-card)', border: `1px solid ${activeDay === d.key ? 'var(--accent-dark)' : 'var(--border-strong)'}`, color: activeDay === d.key ? 'var(--accent)' : 'var(--text-muted)' }}>
-              {d.short}{has ? ' •' : ''}
+              {d.short}{has ? ' ·' : ''}
             </button>
           );
         })}

@@ -24,7 +24,7 @@ export default function CheckinResponses({ responses }) {
                 return (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, padding: '3px 0' }}>
                     <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{trend.join(' → ')}</span>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{trend.join(', ')}</span>
                   </div>
                 );
               })}

@@ -6,11 +6,11 @@
 // thing; sleep is hours plus a 1–5 quality rating.
 
 export const MOODS = [
-  { id: 'great', emoji: '😄', label: 'Great' },
-  { id: 'good', emoji: '🙂', label: 'Good' },
-  { id: 'okay', emoji: '😐', label: 'Okay' },
-  { id: 'low', emoji: '😔', label: 'Low' },
-  { id: 'tired', emoji: '😴', label: 'Tired' },
+  { id: 'great', label: 'Great' },
+  { id: 'good', label: 'Good' },
+  { id: 'okay', label: 'Okay' },
+  { id: 'low', label: 'Low' },
+  { id: 'tired', label: 'Tired' },
 ];
 
 export const ENERGY_LABELS = ['Drained', 'Low', 'Steady', 'Good', 'Buzzing'];
@@ -67,7 +67,7 @@ export function tileSummary(checkin) {
   const mood = moodFor(checkin?.mood);
   const level = energyToLevel(checkin?.energy);
   return {
-    mood: mood ? `${mood.emoji} ${mood.label}` : null,
+    mood: mood ? mood.label : null,
     energy: level ? `${level}/5` : null,
     sleep: formatSleep(checkin?.sleep_hours),
   };

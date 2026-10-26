@@ -82,7 +82,7 @@ export function weightPlan(s) {
   return { status, rate, planned };
 }
 
-const signedKg = (n) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(Math.round(n * 100) / 100)}`;
+const signedKg = (n) => `${n > 0 ? '+' : n < 0 ? '-' : ''}${Math.abs(Math.round(n * 100) / 100)}`;
 export const describeWeightPlan = (plan) => (plan.planned === 0
   ? `${signedKg(plan.rate)} kg/week`
   : `${signedKg(plan.rate)} kg/week against a plan of ${signedKg(plan.planned)}`);
@@ -239,11 +239,11 @@ export function weeklySummary(s, { today, name, unit = 'kg' } = {}) {
     const now = oneDp(fromKgTo(Number(s.latest_weight_kg), unit));
     const plan = weightPlan(s);
     if (plan) {
-      const rate = (n) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${oneDp(Math.abs(fromKgTo(n, unit)))}`;
+      const rate = (n) => `${n > 0 ? '+' : n < 0 ? '-' : ''}${oneDp(Math.abs(fromKgTo(n, unit)))}`;
       lines.push(`Weight trend ${rate(plan.rate)} ${unit}/week${plan.planned ? ` against a plan of ${rate(plan.planned)}` : ''} (now ${now} ${unit})`);
     } else if (s.weight_change_kg_14d != null) {
       const change = fromKgTo(Number(s.weight_change_kg_14d), unit);
-      const sign = change > 0 ? '+' : change < 0 ? '−' : '';
+      const sign = change > 0 ? '+' : change < 0 ? '-' : '';
       lines.push(`Weight ${sign}${oneDp(Math.abs(change))} ${unit} over the last 2 weeks (now ${now} ${unit})`);
     } else {
       lines.push(`Weight ${now} ${unit} (no earlier weigh-in in the last 2 weeks to compare)`);
@@ -255,5 +255,5 @@ export function weeklySummary(s, { today, name, unit = 'kg' } = {}) {
 
   const first = String(name ?? '').trim().split(/\s+/)[0] || 'Client';
   const header = `${first} — the 7 days to ${today ? shortDate(today) : 'today'}`;
-  return { header, lines, text: [header, ...lines.map((l) => `• ${l}`)].join('\n') };
+  return { header, lines, text: [header, ...lines.map((l) => `- ${l}`)].join('\n') };
 }

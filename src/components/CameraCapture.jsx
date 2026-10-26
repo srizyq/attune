@@ -151,7 +151,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
                 color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               }}
             >
-              ✕
+              <span className="x-mark" aria-hidden="true" />
             </button>
           )}
 
@@ -232,7 +232,7 @@ export default function CameraCapture({ onCapture, hint, fullScreen = false, onC
               aria-label="Close camera"
               style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top))', left: 16, width: 38, height: 38, borderRadius: '50%', background: 'rgba(40,40,40,0.8)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
             >
-              ✕
+              <span className="x-mark" aria-hidden="true" />
             </button>
           )}
           <i className="ti ti-camera-off" style={{ fontSize: 32, color: '#555' }} />

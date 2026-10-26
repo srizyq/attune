@@ -32,7 +32,7 @@ export default function InstallPrompt({ style }) {
         >
           {mode === 'ios' ? 'Show me how' : 'Install'}
         </button>
-        <button onClick={dismiss} aria-label="Dismiss" style={{ flexShrink: 0, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 18, lineHeight: 1, cursor: 'pointer', padding: '8px 6px', minHeight: 36 }}>✕</button>
+        <button onClick={dismiss} aria-label="Dismiss" style={{ flexShrink: 0, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 18, lineHeight: 1, cursor: 'pointer', padding: '8px 6px', minHeight: 36 }}><span className="x-mark" aria-hidden="true" /></button>
       </div>
 
       {stepsOpen && (
@@ -45,7 +45,7 @@ export default function InstallPrompt({ style }) {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <h3 style={{ margin: 0, fontSize: 17, color: 'var(--text-primary)' }}>Add Attune to your Home Screen</h3>
-              <button onClick={() => setStepsOpen(false)} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, cursor: 'pointer', padding: '4px 6px' }}>✕</button>
+              <button onClick={() => setStepsOpen(false)} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, cursor: 'pointer', padding: '4px 6px' }}><span className="x-mark" aria-hidden="true" /></button>
             </div>
             <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {STEPS.map((s, i) => (

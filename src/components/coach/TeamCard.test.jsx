@@ -101,7 +101,7 @@ describe('TeamCard — on a team', () => {
 
   it('flags a teammate whose Coach Pass has lapsed', () => {
     setup(inTeam({ members: [member({ user_id: 'me', role: 'owner' }), member({ user_id: 'm1', has_pass: false, client_count: 0 })] }));
-    expect(screen.getByText('No clients yet • Coach Pass inactive')).toBeInTheDocument();
+    expect(screen.getByText('No clients yet · Coach Pass inactive')).toBeInTheDocument();
   });
 
   it('opening your own row (as owner) offers no remove action', async () => {

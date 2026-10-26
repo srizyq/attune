@@ -44,7 +44,7 @@ describe('tweakChipLabel', () => {
 
 describe('includesLine', () => {
   it('joins allergens and a high-sodium flag', () => {
-    expect(includesLine(['Dairy', 'Gluten'], 1180)).toBe('Includes Dairy, Gluten • High sodium (1,180mg)');
+    expect(includesLine(['Dairy', 'Gluten'], 1180)).toBe('Includes Dairy, Gluten · High sodium (1,180mg)');
   });
   it('omits sodium when it is not high', () => {
     expect(includesLine(['Dairy'], 300)).toBe('Includes Dairy');

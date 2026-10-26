@@ -43,7 +43,7 @@ function ExportDataButton() {
           cursor: state === 'loading' ? 'default' : 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
         }}
       >
-        {state === 'loading' ? 'Preparing…' : done ? 'Downloaded ✓' : 'Export my data'}
+        {state === 'loading' ? 'Preparing…' : done ? 'Downloaded' : 'Export my data'}
       </button>
       {done && state.skipped.length > 0 && (
         <span role="status" style={{ color: 'var(--gold)', fontSize: 11, textAlign: 'right', lineHeight: 1.4 }}>

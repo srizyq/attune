@@ -81,7 +81,7 @@ describe('MealPlanEditor', () => {
     setup({ plan: existing });
     expect(screen.getByText(/Monday total/)).toBeInTheDocument();
     expect(screen.getByText(/220 kcal · P 8g · C 38g · F 4g/)).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Mon/ })).toHaveTextContent('•');
+    expect(screen.getByRole('tab', { name: /Mon/ })).toHaveTextContent('·');
     await userEvent.click(screen.getByRole('tab', { name: /Tue/ }));
     expect(screen.queryByLabelText('Breakfast item 1 name')).not.toBeInTheDocument();
     expect(screen.getByText(/0 kcal/)).toBeInTheDocument();
@@ -141,7 +141,7 @@ describe('MealPlanEditor', () => {
     await userEvent.click(screen.getByRole('button', { name: /Grocery list \(1\)/ }));
     expect(screen.getByText('Oats (60g) ×2')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Copy list' }));
-    expect(writeText).toHaveBeenCalledWith('• Oats (60g) ×2');
+    expect(writeText).toHaveBeenCalledWith('- Oats (60g) ×2');
   });
 
   it('removes the plan only after confirming, and shows a failure', async () => {

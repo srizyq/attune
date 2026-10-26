@@ -283,7 +283,7 @@ export default function Step2() {
                         {displayRate}{displayUnit}/wk
                       </div>
                       <div style={{ color: 'var(--text-hint)', fontSize: '11px' }}>
-                        {goal === 'lose' ? '−' : '+'}{dailyKcal} kcal/day
+                        {goal === 'lose' ? '-' : '+'}{dailyKcal} kcal/day
                       </div>
                     </button>
                   );
@@ -352,7 +352,7 @@ export default function Step2() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
-            ←
+            Back
           </button>
           <button
             onClick={handleNext}
@@ -371,7 +371,7 @@ export default function Step2() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
-            Continue →
+            Continue
           </button>
         </div>
       </div>

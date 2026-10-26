@@ -108,7 +108,7 @@ describe('MealPlanCard', () => {
     expect(within(list).getByText('Oats (60g) ×2')).toBeInTheDocument(); // Mon + Tue
     expect(within(list).getByText('Chicken salad')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Copy list' }));
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('• Oats (60g) ×2'));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('- Oats (60g) ×2'));
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
   });
 

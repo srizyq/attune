@@ -9,6 +9,9 @@ const CLIENTS = [
   { id: 'c3', name: 'A client with a rather long name to check wrapping', goal: 'maintain', calorie_target: 2400, protein_g: 160, carbs_g: 260, fat_g: 80 },
 ];
 
+// A client's card in the list (the tap target), not its Message button.
+export const clientCard = (page, name) => page.locator('div[role="button"]', { hasText: name });
+
 export const COACH_BACKEND = {
   profile: { coach_pass: true, coach_mode: true, coach_invite_code: 'ABCD1234', coach_pass_status: 'active', name: 'Coach Sam' },
   tables: {
@@ -46,5 +49,25 @@ export const TEAM_OWNER_BACKEND = {
     get_my_team: TEAM(true),
     // Own clients by default, the teammates' when the scope says team.
     get_client_summaries: (req) => (/"p_scope":"team"/.test(req.postData() || '') ? [teamSummary] : COACH_BACKEND.rpc.get_client_summaries),
+  },
+};
+
+// The same coach with twelve clients, enough for search and sort to appear.
+const MANY = Array.from({ length: 9 }, (_, i) => ({ id: `z${i}`, name: `Zed Client ${i + 1}`, goal: 'maintain', calorie_target: 2000, protein_g: 140, carbs_g: 220, fat_g: 70 }));
+export const COACH_BACKEND_MANY = {
+  ...COACH_BACKEND,
+  tables: {
+    ...COACH_BACKEND.tables,
+    trainer_clients: [
+      ...COACH_BACKEND.tables.trainer_clients,
+      ...MANY.map((client, i) => ({ id: `lz${i}`, status: 'active', created_at: new Date(Date.now() - (i + 5) * 86400000).toISOString(), group_label: null, trainer_id: TRAINER_ID, client_id: client.id, client })),
+    ],
+  },
+  rpc: {
+    ...COACH_BACKEND.rpc,
+    get_client_summaries: [
+      ...COACH_BACKEND.rpc.get_client_summaries,
+      ...MANY.map((client, i) => ({ link_id: `lz${i}`, client_id: client.id, client_name: client.name, group_label: null, connected_at: new Date(Date.now() - 30 * 86400000).toISOString(), goal: 'maintain', calorie_target: 2000, protein_g: 140, last_log_date: daysAgo(0), days_logged_7d: 7, days_on_target_7d: 7, days_protein_7d: 7, days_judged_7d: 7, days_complete_7d: 7, today_cal: 1500, weight_change_kg_14d: 0 })),
+    ],
   },
 };

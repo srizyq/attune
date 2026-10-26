@@ -13,7 +13,7 @@ export function SourcePill({ label, quote, onInspect }) {
       <i className="ti ti-camera" aria-hidden="true" style={{ color: 'var(--accent)', fontSize: 18, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         <span style={{ fontWeight: 600 }}>{label}</span>
-        {quote && <> • <em>“{quote}”</em></>}
+        {quote && <> · <em>“{quote}”</em></>}
       </div>
       {onInspect && (
         <button onClick={onInspect} style={{ flexShrink: 0, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '6px 0 6px 8px', minHeight: 32, fontFamily: 'inherit' }}>
@@ -58,7 +58,7 @@ export function CropViewer({ photo, box, onClose }) {
       <div role="dialog" aria-modal="true" aria-label="Where this dish was read on the menu" onClick={(e) => e.stopPropagation()} className="modal-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 14, padding: 14, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Read from your photo</span>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, cursor: 'pointer', padding: '4px 6px' }}>✕</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 20, lineHeight: 1, cursor: 'pointer', padding: '4px 6px' }}><span className="x-mark" aria-hidden="true" /></button>
         </div>
         {cropUrl && <img src={cropUrl} alt="The part of the menu photo this dish was read from" style={{ width: '100%', borderRadius: 8, display: 'block' }} />}
         {!cropUrl && !failed && <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>Loading…</div>}
@@ -150,7 +150,7 @@ export function QuickTweaks({ tweaks, active, onToggle }) {
                 fontWeight: on ? 600 : 500,
               }}
             >
-              {on ? '✓ ' : ''}{tweakChipLabel(t)}
+              {tweakChipLabel(t)}
             </button>
           );
         })}

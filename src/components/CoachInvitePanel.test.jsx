@@ -55,7 +55,7 @@ describe('CoachInvitePanel', () => {
     setup({ invites: [open()] });
     await userEvent.click(screen.getByRole('button', { name: 'Copy link' }));
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/join/ABCD2345`);
-    expect(await screen.findByRole('button', { name: 'Copied ✓' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
   });
 
   it('uses the native share sheet when there is one', async () => {

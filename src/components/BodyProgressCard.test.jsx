@@ -77,7 +77,7 @@ describe('BodyProgressCard', () => {
       { id: '2', kind: 'waist', logged_date: '2026-09-01', value: 83, unit: 'cm' },
     ] } });
     expect(screen.getByText('81 cm')).toBeInTheDocument();
-    expect(screen.getByText('−2')).toBeInTheDocument();
+    expect(screen.getByText('-2')).toBeInTheDocument();
   });
 
   it('uploads a chosen photo, dated today', async () => {

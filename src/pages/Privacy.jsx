@@ -61,7 +61,7 @@ export default function Privacy() {
       <Section title="4. Data retention & deletion">
         <P>
           We keep your data for as long as your account is active. You can delete your
-          account and all associated data yourself at any time from Profile → Delete
+          account and all associated data yourself at any time from Profile, then Delete
           account. This removes your logs, health data, photos and settings and cancels
           any subscription, and it can't be undone. If you can't sign in, contact us
           (below) and we'll do it for you. Payment records held by Stripe, and backups,

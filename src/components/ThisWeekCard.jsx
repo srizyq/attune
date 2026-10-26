@@ -5,7 +5,7 @@ import { formatSleep } from '../lib/dayCheckin';
 // lib/weeklySummary.js. A fixed rolling week, independent of the page's range
 // picker below it.
 
-const signed = (n) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toLocaleString()}`;
+const signed = (n) => `${n > 0 ? '+' : n < 0 ? '-' : ''}${Math.abs(n).toLocaleString()}`;
 
 function Stat({ label, value, hint }) {
   return (

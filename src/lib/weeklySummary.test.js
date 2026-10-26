@@ -15,7 +15,7 @@ describe('weeklySummary — food', () => {
   it('averages only days with food logged, over exactly the last seven days', () => {
     const s = sum({ dailyData: [
       day('2026-09-28', 9999), // 8 days ago — outside
-      day('2026-09-29', 1800, 120), // first day of the window (today − 6)
+      day('2026-09-29', 1800, 120), // first day of the window (today - 6)
       day('2026-10-01', 2200, 80),
       day('2026-10-02', 0, 0), // a day with only a check-in row
       day('2026-10-05', 2000, 100), // today — inside

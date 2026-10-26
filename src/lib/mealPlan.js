@@ -234,7 +234,7 @@ export function groceryList(days, { onlyDays = null } = {}) {
 }
 
 export function groceryText(list) {
-  return list.map((g) => `• ${g.name}${g.label ? ` (${g.label})` : ''}${g.count > 1 ? ` ×${g.count}` : ''}`).join('\n');
+  return list.map((g) => `- ${g.name}${g.label ? ` (${g.label})` : ''}${g.count > 1 ? ` ×${g.count}` : ''}`).join('\n');
 }
 
 // Which of a day's planned meals has the client already logged from the plan?

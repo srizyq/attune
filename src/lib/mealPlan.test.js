@@ -131,8 +131,8 @@ describe('groceryList', () => {
     expect(groceryList(undefined)).toEqual([]);
   });
   it('prints as a plain list', () => {
-    expect(groceryText(groceryList(plan))).toBe('• Oats (60g) ×2\n• Oats (80g)\n• Salmon (150g)');
-    expect(groceryText([{ name: 'Rice', label: '', count: 1 }])).toBe('• Rice');
+    expect(groceryText(groceryList(plan))).toBe('- Oats (60g) ×2\n- Oats (80g)\n- Salmon (150g)');
+    expect(groceryText([{ name: 'Rice', label: '', count: 1 }])).toBe('- Rice');
   });
 });
 

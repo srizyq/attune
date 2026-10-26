@@ -8,21 +8,18 @@ const goals = [
     id: 'lose',
     label: 'Lose weight',
     desc: 'Burn fat while keeping energy up',
-    icon: '↓',
     color: 'var(--water-blue)',
   },
   {
     id: 'maintain',
     label: 'Stay balanced',
     desc: 'Maintain weight and build healthy habits',
-    icon: '◎',
     color: 'var(--accent)',
   },
   {
     id: 'build',
     label: 'Build muscle',
     desc: 'Fuel growth with the right macros',
-    icon: '↑',
     color: 'var(--ai-purple)',
   },
 ];
@@ -85,24 +82,6 @@ export default function Step1() {
                   transform: isSelected ? 'translateX(4px)' : 'translateX(0)',
                 }}
               >
-                {/* Icon */}
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '10px',
-                  background: isSelected ? `color-mix(in srgb, ${g.color} 9%, transparent)` : 'var(--bg-card)',
-                  border: `1px solid ${isSelected ? g.color : 'var(--border-default)'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '20px',
-                  color: isSelected ? g.color : 'var(--text-hint)',
-                  flexShrink: 0,
-                  transition: 'all 0.2s ease',
-                  fontWeight: 400,
-                }}>
-                  {g.icon}
-                </div>
 
                 {/* Text */}
                 <div style={{ flex: 1 }}>
@@ -157,7 +136,7 @@ export default function Step1() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
-            ←
+            Back
           </button>
           <button
             onClick={handleNext}
@@ -176,7 +155,7 @@ export default function Step1() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
-            Continue →
+            Continue
           </button>
         </div>
       </div>

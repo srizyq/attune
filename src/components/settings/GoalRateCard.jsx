@@ -49,7 +49,7 @@ export default function GoalRateCard({ goal, unit, paceKg, onPaceChange, targetW
         <span>Slower</span><span>Faster</span>
       </div>
       <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '8px 0 0' }}>
-        {goal === 'lose' ? '−' : '+'}{offset.toLocaleString()} kcal/day from your maintenance
+        {goal === 'lose' ? '-' : '+'}{offset.toLocaleString()} kcal/day from your maintenance
       </p>
       {manualCalories && (
         <p role="note" style={{ color: 'var(--gold)', fontSize: 12, margin: '8px 0 0', lineHeight: 1.5 }}>

@@ -158,16 +158,16 @@ describe('weeklySummary', () => {
     expect(r.lines).toEqual([
       'Logged food on 6 of the last 7 days (average 1,950 kcal, target 2,000)',
       'Within 15% of calorie target on 5 of 6 logged days; protein target (90%+) met on 4',
-      'Weight \u22120.6 kg over the last 2 weeks (now 81.4 kg)',
+      'Weight -0.6 kg over the last 2 weeks (now 81.4 kg)',
       'Last logged today',
     ]);
-    expect(r.text).toBe(`${r.header}\n${r.lines.map(l => '\u2022 ' + l).join('\n')}`);
+    expect(r.text).toBe(`${r.header}\n${r.lines.map(l => '- ' + l).join('\n')}`);
   });
   it('is null without a summary', () => {
     expect(weeklySummary(null, { today: TODAY })).toBeNull();
   });
   it('converts weight to the client\'s own unit', () => {
-    expect(w(full, { unit: 'lb' }).lines[2]).toBe('Weight \u22121.4 lb over the last 2 weeks (now 179.5 lb)');
+    expect(w(full, { unit: 'lb' }).lines[2]).toBe('Weight -1.4 lb over the last 2 weeks (now 179.5 lb)');
   });
   it('says so when there is no earlier weigh-in to compare, and omits weight entirely when there is none', () => {
     expect(w(row({ latest_weight_kg: 80, weight_change_kg_14d: null })).lines.some(l => l.includes('no earlier weigh-in'))).toBe(true);
@@ -249,7 +249,7 @@ describe('weightPlan — actual rate against the planned pace', () => {
     expect(weightPlan(null)).toBeNull();
   });
   it('describes the rate against the plan in plain words', () => {
-    expect(describeWeightPlan({ rate: -0.04, planned: -0.5 })).toBe('−0.04 kg/week against a plan of −0.5');
+    expect(describeWeightPlan({ rate: -0.04, planned: -0.5 })).toBe('-0.04 kg/week against a plan of -0.5');
     expect(describeWeightPlan({ rate: 0.3, planned: 0.25 })).toBe('+0.3 kg/week against a plan of +0.25');
   });
 });
@@ -260,7 +260,7 @@ describe('attentionFlags — new flags', () => {
 
   it('flags weight that is not moving, with the plan in the label', () => {
     const [f] = attentionFlags(lose({ weight_rate_kg_week: -0.03 }), TODAY);
-    expect(f).toEqual({ id: 'weight-stalled', severity: 'medium', label: 'Weight not moving: −0.03 kg/week against a plan of −0.5' });
+    expect(f).toEqual({ id: 'weight-stalled', severity: 'medium', label: 'Weight not moving: -0.03 kg/week against a plan of -0.5' });
   });
   it('flags a wrong-way move from the rate, and a maintenance client who is drifting', () => {
     expect(ids(lose({ weight_rate_kg_week: 0.3 }))).toEqual(['weight-wrong-way']);
@@ -305,7 +305,7 @@ describe('weeklySummary with the shared definition', () => {
     expect(lines[1]).toBe('Within 10% of calorie target on 3 of 6 judged days; protein target (90%+) met on 3 (a day is judged once 3+ meals are logged)');
   });
   it('shows the weight trend against the plan when there is a rate', () => {
-    expect(weeklySummary(full2, { today: TODAY }).lines[2]).toBe('Weight trend −0.3 kg/week against a plan of −0.5 (now 81.4 kg)');
-    expect(weeklySummary(full2, { today: TODAY, unit: 'lb' }).lines[2]).toBe('Weight trend −0.7 lb/week against a plan of −1.1 (now 179.5 lb)');
+    expect(weeklySummary(full2, { today: TODAY }).lines[2]).toBe('Weight trend -0.3 kg/week against a plan of -0.5 (now 81.4 kg)');
+    expect(weeklySummary(full2, { today: TODAY, unit: 'lb' }).lines[2]).toBe('Weight trend -0.7 lb/week against a plan of -1.1 (now 179.5 lb)');
   });
 });

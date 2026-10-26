@@ -86,7 +86,7 @@ function ItemCard({ ingredient, scaled, onGramsChange, onRemove, canRemove }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 12, padding: '6px 6px 6px 12px', borderRadius: 14, background: 'var(--chip-bg)' }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>Portion</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button type="button" aria-label={`Decrease ${ingredient.name}`} onClick={() => step(-10)} className="hit-slop" style={stepBtn}>−</button>
+          <button type="button" aria-label={`Decrease ${ingredient.name}`} onClick={() => step(-10)} className="hit-slop" style={stepBtn}>-</button>
           <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 2 }}>
             <input
               type="number" min="0" inputMode="decimal" value={ingredient.grams}
@@ -185,7 +185,7 @@ export default function PhotoResult({
           <div style={{ position: 'absolute', top: 10, left: 10, right: 10, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
             {shown.map((ing, i) => (
               <span key={i} style={{ maxWidth: '88%', padding: '4px 10px', borderRadius: 99, background: 'rgba(20,14,10,0.72)', color: '#f6f2fa', fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
-                {ing.name} • {ing.cal} kcal
+                {ing.name} · {ing.cal} kcal
               </span>
             ))}
             {scaledIngredients.length > shown.length && (

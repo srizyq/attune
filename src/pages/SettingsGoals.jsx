@@ -26,12 +26,12 @@ import { Card, SectionLabel, FieldRow, Select, Segmented, Toggle } from '../comp
 import PageHeader from '../components/PageHeader';
 
 const LB_PER_KG = 2.20462;
-// "−0.4 kg/week" / "+0.3 lb/week", or "holding steady" near zero.
+// "-0.4 kg/week" / "+0.3 lb/week", or "holding steady" near zero.
 function formatRate(kgPerWeek, unit) {
   const v = unit === 'imperial' ? kgPerWeek * LB_PER_KG : kgPerWeek;
   const rounded = Math.round(v * 10) / 10;
   if (rounded === 0) return 'holding steady';
-  return `${rounded > 0 ? '+' : '−'}${Math.abs(rounded)} ${unit === 'imperial' ? 'lb' : 'kg'}/week`;
+  return `${rounded > 0 ? '+' : '-'}${Math.abs(rounded)} ${unit === 'imperial' ? 'lb' : 'kg'}/week`;
 }
 
 // Shows the adaptive-target estimate, or an honest explanation of what's
@@ -473,7 +473,7 @@ export default function SettingsGoals() {
               value={form.goal}
               onChange={applyGoalSplit}
               options={[
-                { value: 'lose',     icon: 'ti-trending-down', label: 'Lose weight',  desc: `−${Math.abs(calcGoalAdjustment('lose', paceFor('lose'))).toLocaleString()} kcal/day` },
+                { value: 'lose',     icon: 'ti-trending-down', label: 'Lose weight',  desc: `-${Math.abs(calcGoalAdjustment('lose', paceFor('lose'))).toLocaleString()} kcal/day` },
                 { value: 'maintain', icon: 'ti-scale',         label: 'Maintain',     desc: 'At maintenance' },
                 { value: 'build',    icon: 'ti-barbell',       label: 'Build muscle', desc: `+${Math.abs(calcGoalAdjustment('build', paceFor('build'))).toLocaleString()} kcal/day` },
               ]}

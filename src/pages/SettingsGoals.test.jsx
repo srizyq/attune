@@ -74,12 +74,12 @@ describe('Settings → Goals: weekly rate', () => {
     setup();
     expect(kcal()).toBe(calcCalories({ ...stats, goal: 'lose', paceKgPerWeek: 0.5 }));
     expect(screen.getByTestId('goal-rate-value')).toHaveTextContent('0.5 kg/week');
-    expect(screen.getByText(/−550 kcal\/day from your maintenance/)).toBeInTheDocument();
+    expect(screen.getByText(/-550 kcal\/day from your maintenance/)).toBeInTheDocument();
   });
 
   it('goal tiles show the offset for the chosen rate', () => {
     setup();
-    expect(screen.getByText('−550 kcal/day')).toBeInTheDocument();
+    expect(screen.getByText('-550 kcal/day')).toBeInTheDocument();
   });
 
   it('projects a finish date from target weight and rate', () => {
@@ -226,7 +226,7 @@ describe('Settings → Goals: adaptive mode applies the chosen rate', () => {
   it('offsets estimated maintenance by the rate, and compares trend to goal', async () => {
     state.compute.mockResolvedValue({ ready: true, target: 0, estimate: estimate() });
     setup({ calorie_mode: 'adaptive' });
-    expect(await screen.findByTestId('adaptive-rate')).toHaveTextContent(/−0\.3 kg\/week — you're aiming for −0\.5 kg\/week/);
+    expect(await screen.findByTestId('adaptive-rate')).toHaveTextContent(/-0\.3 kg\/week — you're aiming for -0\.5 kg\/week/);
     expect(kcal()).toBe(2600 - 550);
     rate(0.25);
     expect(kcal()).toBe(2600 - 275);

@@ -45,7 +45,7 @@ test('Recalculate lets you correct the numbers in kJ, updates the log and saves 
 
   await page.getByRole('button', { name: 'kJ', exact: true }).click();
   await page.getByLabel('Energy', { exact: true }).fill('1046');
-  await expect(page.getByText('≈ 250 kcal')).toBeVisible();
+  await expect(page.getByText('~ 250 kcal')).toBeVisible();
   await page.getByLabel('Protein (g)').fill('20');
   await page.getByRole('button', { name: 'Save changes' }).click();
 

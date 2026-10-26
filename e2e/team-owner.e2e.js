@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { openApp, settle, assertLayout } from './harness.js';
-import { COACH_BACKEND, TEAM_OWNER_BACKEND, TEAM } from './coachFixtures.js';
+import { COACH_BACKEND, TEAM_OWNER_BACKEND, TEAM, clientCard } from './coachFixtures.js';
 
 // The owner of a coach team can read their teammates' clients (never edit, never
 // messages or private notes), and a client is told when this applies to them.
@@ -13,41 +13,46 @@ async function openTeamClients(page) {
 test('an owner gets a Team clients list, with each client\'s coach on it', async ({ page, context }, testInfo) => {
   const ctx = await openApp({ page, context }, testInfo, TEAM_OWNER_BACKEND);
   await openTeamClients(page);
-  await expect(page.getByRole('button', { name: /Kai Teamclient/ })).toBeVisible();
+  await expect(clientCard(page, 'Kai Teamclient')).toBeVisible();
   await expect(page.getByText('Coach: Mia Mate')).toBeVisible();
   // Their own clients are not in this list, and there is no message filter (messages stay private).
-  await expect(page.getByRole('button', { name: /Amogh Joshi/ })).toHaveCount(0);
+  await expect(clientCard(page, 'Amogh Joshi')).toHaveCount(0);
   await expect(page.getByText(/^Unread/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Message / })).toHaveCount(0); // messages stay between a coach and their client
   await assertLayout(page, testInfo, 'x-team-clients', ctx);
   await page.getByRole('button', { name: 'My clients' }).click();
-  await expect(page.getByRole('button', { name: /Amogh Joshi/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Kai Teamclient/ })).toHaveCount(0);
+  await expect(clientCard(page, 'Amogh Joshi')).toBeVisible();
+  await expect(clientCard(page, 'Kai Teamclient')).toHaveCount(0);
 });
 
 test('a teammate\'s client opens read-only: the data, no editing, no messages, no plan', async ({ page, context }, testInfo) => {
   const ctx = await openApp({ page, context }, testInfo, TEAM_OWNER_BACKEND);
   await openTeamClients(page);
-  await page.getByRole('button', { name: /Kai Teamclient/ }).click();
-  await expect(page.getByText('Coach: Mia Mate · View only')).toBeVisible();
-  for (const tab of ['Overview', 'Diary', 'Progress', 'Reports']) await expect(page.getByRole('tab', { name: tab })).toBeVisible();
-  for (const tab of ['Messages', 'Plan']) await expect(page.getByRole('tab', { name: tab })).toHaveCount(0);
-  // Nothing on the Overview invites an edit.
+  await clientCard(page, 'Kai Teamclient').click();
+  await expect(page.getByText('View only · Coach: Mia Mate')).toBeVisible();
+  for (const tab of ['Snapshot', 'Diary', 'Progress']) await expect(page.getByRole('tab', { name: tab })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Plan' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Messages' })).toHaveCount(0);
+  // Nothing on the Snapshot invites an edit, and the menu offers no way to change the link.
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Set group' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Disconnect client' })).toHaveCount(0);
-  await expect(page.getByText('Calorie target', { exact: true }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'More actions' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Export a report' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Set group' })).toHaveCount(0);
+  await expect(page.getByRole('menuitem', { name: 'Disconnect client' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByText('Calories', { exact: true }).first()).toBeVisible();
   await assertLayout(page, testInfo, 'x-team-client-overview', ctx);
   await page.getByRole('tab', { name: 'Diary' }).click();
   await expect(page.getByTestId('day-summary')).toBeVisible();
   await page.getByRole('button', { name: /All team clients/ }).click();
-  await expect(page.getByRole('button', { name: /Kai Teamclient/ })).toBeVisible();
+  await expect(clientCard(page, 'Kai Teamclient')).toBeVisible();
 });
 
 test('a team member who is not the owner has no Team clients tab', async ({ page, context }, testInfo) => {
   await openApp({ page, context }, testInfo, { ...TEAM_OWNER_BACKEND, rpc: { ...TEAM_OWNER_BACKEND.rpc, get_my_team: TEAM(false) } });
   await page.goto('/coach');
   await settle(page);
-  await expect(page.getByRole('button', { name: 'My clients' })).toBeVisible();
+  await expect(clientCard(page, 'Amogh Joshi')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Team clients' })).toHaveCount(0);
 });
 

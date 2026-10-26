@@ -64,7 +64,7 @@ export default function DragSheet({ title, onClose, closing, children, headerRig
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 20px 14px', borderBottom: '1px solid var(--border-default)' }}>
           <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{title}</span>
           {headerRight || (
-            <button className="hit-slop" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
+            <button className="hit-slop" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}><span className="x-mark" aria-hidden="true" /></button>
           )}
         </div>
       </div>

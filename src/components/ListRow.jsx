@@ -33,7 +33,7 @@ export default function ListRow({ avatar, title, subtitleParts = [], trailing, o
         </div>
         {subtitleParts.length > 0 && (
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {subtitleParts.filter(Boolean).join(' • ')}
+            {subtitleParts.filter(Boolean).join(' · ')}
           </div>
         )}
       </div>

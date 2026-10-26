@@ -43,7 +43,7 @@ function RankedCard({ pick, rank, checked, mealLabel, onToggle, onOpen, onLog, b
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, minWidth: 0 }}>
           <Chip color="var(--accent-secondary)" icon={top ? 'ti-circle-check' : undefined}>
-            {top ? 'Top goal fit' : label || 'Good fit'}{Number.isFinite(pick.match) ? ` • ${pick.match}% match` : ''}
+            {top ? 'Top goal fit' : label || 'Good fit'}{Number.isFinite(pick.match) ? ` · ${pick.match}% match` : ''}
           </Chip>
           <Chip>#{rank + 1}{top ? ' recommended' : ' ranked'}</Chip>
         </div>

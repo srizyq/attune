@@ -110,7 +110,7 @@ export default function ResetPassword() {
                   cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
-                Continue to Attune →
+                Continue to Attune
               </button>
             </>
           ) : (
@@ -164,7 +164,7 @@ export default function ResetPassword() {
                   fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
                 }}
               >
-                {loading ? 'Updating…' : 'Update password →'}
+                {loading ? 'Updating…' : 'Update password'}
               </button>
             </form>
           )}

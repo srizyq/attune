@@ -36,7 +36,7 @@ test('the sign-up step has no skip button, but a Back button that keeps your ans
   // Still there for the details page to show, and for the sign-up step to use again.
   expect(await page.evaluate(() => sessionStorage.getItem('attune_onboarding'))).toContain('"goal":"lose"');
   const writesBefore = profileWrites.length;
-  await page.getByRole('button', { name: /Next|Continue|→/ }).last().click();
+  await page.getByRole('button', { name: /Let's go/ }).last().click();
   await expect(page).toHaveURL(/\/onboarding\/step4$/);
   await settle(page);
   // Coming back re-applies the answers to the guest profile (edits made on the way take effect).

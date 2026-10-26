@@ -177,7 +177,7 @@ export default function CoachInvitePanel({ hasClients }) {
               <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 700, letterSpacing: '0.14em', color: 'var(--accent)', marginBottom: 10 }}>{invite.code}</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button onClick={() => copyLink(invite)} className="btn-press" style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}>
-                  {copiedId === invite.id ? 'Copied ✓' : 'Copy link'}
+                  {copiedId === invite.id ? 'Copied' : 'Copy link'}
                 </button>
                 <button onClick={() => share(invite)} className="btn-press" style={{ ...btn(false), padding: '6px 12px', fontSize: 12 }}>Share</button>
                 <button onClick={() => handleRevoke(invite)} className="btn-press" style={{ padding: '6px 12px', fontSize: 12, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Revoke</button>

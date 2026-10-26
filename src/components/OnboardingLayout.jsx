@@ -68,7 +68,7 @@ export default function OnboardingLayout({ children, step, totalSteps = 4, showS
               onMouseEnter={e => e.target.style.color = 'var(--accent)'}
               onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}
             >
-              skip for now →
+              skip for now
             </button>
           )}
         </div>

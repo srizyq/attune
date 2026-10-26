@@ -46,7 +46,7 @@ test('menu result page: restaurant, advice, ranked cards with match, price and t
   await expect(r.getByText('Lumière Bistro').first()).toBeVisible();
   await expect(r.getByText('Smart dining advice')).toBeVisible();
   await expect(r.getByText(/Order the scallops/)).toBeVisible();
-  await expect(r.getByText('Top goal fit • 98% match')).toBeVisible();
+  await expect(r.getByText('Top goal fit · 98% match')).toBeVisible();
   await expect(r.getByText('$34')).toBeVisible();
   await expect(r.getByText(/Ask for dressing on the side/)).toBeVisible();
   await expect(r.getByText('Curated & ranked')).toBeVisible();

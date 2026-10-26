@@ -1,4 +1,4 @@
-// Amount stepper — −/+ buttons flanking the amount input. Pair it with
+// Amount stepper — -/+ buttons flanking the amount input. Pair it with
 // `ServingStepper.Multipliers` on its own full-width row (see AddControls
 // in FoodSearch.jsx) for the common case of scaling a single, well-defined
 // serving up or down — kept as a separate piece rather than built in here,
@@ -13,7 +13,7 @@ export default function ServingStepper({ amount, setAmount, step = 1, min = 0 })
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 8, padding: 3, width: 'fit-content', flexShrink: 0 }}>
-      <button type="button" onClick={dec} aria-label="Decrease amount" className="hit-slop" style={stepBtn}>−</button>
+      <button type="button" onClick={dec} aria-label="Decrease amount" className="hit-slop" style={stepBtn}>-</button>
       <input
         type="number" min={min} step="any" value={amount}
         onChange={e => setAmount(e.target.value)}

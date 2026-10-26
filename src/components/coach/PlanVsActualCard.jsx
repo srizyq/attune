@@ -6,10 +6,10 @@ import { planHasItems } from '../../lib/mealPlan';
 import { Card, SectionLabel } from './shared';
 
 const STATUS = {
-  plan: { symbol: '✓', color: 'var(--accent)', label: 'logged from the plan' },
-  other: { symbol: '≈', color: 'var(--gold)', label: 'ate something else' },
-  none: { symbol: '✕', color: 'var(--danger)', label: 'nothing logged' },
-  pending: { symbol: '·', color: 'var(--text-hint)', label: 'not yet' },
+  plan: { symbol: 'Plan', color: 'var(--accent)', label: 'logged from the plan' },
+  other: { symbol: 'Other', color: 'var(--gold)', label: 'ate something else' },
+  none: { symbol: 'Missed', color: 'var(--danger)', label: 'nothing logged' },
+  pending: { symbol: 'Later', color: 'var(--text-hint)', label: 'not yet' },
 };
 
 // What the client did with the meal plan over the last week. Only shown once a

@@ -83,7 +83,7 @@ export default async function handler(req, res) {
     ? !!profile?.stripe_pro_subscription_id && grantsAccess(profile?.pro_status)
     : !!profile?.stripe_subscription_id && grantsAccess(profile?.coach_pass_status);
   if (alreadySubscribed) {
-    res.status(409).json({ error: "You're already subscribed to this plan. Manage it from Profile → Manage billing." });
+    res.status(409).json({ error: "You're already subscribed to this plan. Manage it from Profile, then Manage billing." });
     return;
   }
 

@@ -80,7 +80,7 @@ function RecipeCard({ recipe, isExpanded, onToggle, onAddIngredient, onSaveEdit,
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 14px', gap: 10, flexShrink: 0 }}>
               <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{editing ? 'Edit recipe' : recipe.name}</div>
-              <button onClick={editing ? () => setEditing(false) : onToggle} aria-label={editing ? 'Cancel editing' : 'Close'} className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}>✕</button>
+              <button onClick={editing ? () => setEditing(false) : onToggle} aria-label={editing ? 'Cancel editing' : 'Close'} className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}><span className="x-mark" aria-hidden="true" /></button>
             </div>
 
             {editing ? (
@@ -121,7 +121,7 @@ function RecipeCard({ recipe, isExpanded, onToggle, onAddIngredient, onSaveEdit,
                     style={{ ...inputStyle, width: 70 }}
                   />
                   <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>serving{Number(servingsToLog) === 1 ? '' : 's'}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>≈ {Math.round(scaledForLog.cal)} kcal</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>~ {Math.round(scaledForLog.cal)} kcal</span>
                 </div>
                 {logByTime ? (
                   <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />

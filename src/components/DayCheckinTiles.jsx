@@ -40,7 +40,6 @@ function MoodPanel({ checkin, save }) {
           <button key={m.id} type="button" className="btn-press" aria-pressed={active} aria-label={m.label} title={m.label}
             onClick={() => save({ mood: active ? null : m.id })}
             style={{ ...optionBtn(active), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, padding: '6px 2px' }}>
-            <span style={{ fontSize: 22, lineHeight: 1 }}>{m.emoji}</span>
             <span style={{ fontSize: 10, fontWeight: 600 }}>{m.label}</span>
           </button>
         );
@@ -102,7 +101,7 @@ function SleepPanel({ checkin, save, onError }) {
       <div style={fieldLabel}>Hours slept</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <button type="button" className="btn-press" aria-label="Half an hour less" onClick={() => setHours(stepSleepHours(hours, -0.5))} disabled={hours != null && hours <= MIN_SLEEP_HOURS}
-          style={{ ...optionBtn(false), flex: '0 0 44px', fontSize: 20, lineHeight: 1 }}>−</button>
+          style={{ ...optionBtn(false), flex: '0 0 44px', fontSize: 20, lineHeight: 1 }}>-</button>
         <div style={{ flex: 1, textAlign: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 700, color: hours == null ? 'var(--text-hint)' : 'var(--text-primary)' }} aria-live="polite">
           {formatSleep(hours) || '—'}
         </div>

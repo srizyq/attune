@@ -46,7 +46,7 @@ export default function CoachNote({ note, onDismiss, onClick, style }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>Coach {note.trainer?.name || ''}</span>
           <span style={{ fontSize: 11, color: 'var(--text-hint)' }}>· {relativeLabel(note.created_at)}</span>
-          {onClick && <span style={{ fontSize: 11, color: 'var(--text-hint)', marginLeft: 'auto', marginRight: onDismiss ? 8 : 0 }}>Reply →</span>}
+          {onClick && <span style={{ fontSize: 11, color: 'var(--text-hint)', marginLeft: 'auto', marginRight: onDismiss ? 8 : 0 }}>Reply</span>}
         </div>
         <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: 'var(--text-secondary)' }}>{note.body}</p>
       </div>

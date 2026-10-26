@@ -35,7 +35,7 @@ export default function NutritionFields({ values, onChange, idPrefix = 'nf' }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 10 }}>
       <Labeled
         id={`${idPrefix}-energy`} label="Energy" style={{ gridColumn: '1 / -1' }}
-        hint={unit === 'kJ' && values.cal !== '' ? `≈ ${kcal} kcal` : undefined}
+        hint={unit === 'kJ' && values.cal !== '' ? `~ ${kcal} kcal` : undefined}
       >
         <div style={{ display: 'flex', gap: 6, minWidth: 0 }}>
           <input id={`${idPrefix}-energy`} type="number" inputMode="decimal" min="0" placeholder={unit === 'kJ' ? 'Energy (kJ)' : 'Calories (kcal)'} value={values.cal} onChange={(e) => onChange('cal', e.target.value)} style={{ ...inputStyle, flex: 1, width: 'auto' }} />

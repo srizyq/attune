@@ -80,7 +80,7 @@ describe('MenuScanModal pick details', () => {
     await openConfirm();
     expect(screen.getByText(/Pick #1/)).toBeInTheDocument();
     expect(screen.getByText(/Salmon bowl/)).toBeInTheDocument();
-    expect(screen.getByText('Includes Fish, Soy • High sodium (1,180mg)')).toBeInTheDocument();
+    expect(screen.getByText('Includes Fish, Soy · High sodium (1,180mg)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Inspect crop' })).toBeInTheDocument();
   });
 

@@ -88,7 +88,7 @@ export default function CoachInbox() {
                         <span style={{ fontSize: 11, color: 'var(--text-hint)', fontWeight: 700, marginLeft: 'auto' }}>{relativeLabel(m.created_at)}</span>
                       </span>
                       <span style={{ display: 'block', fontSize: 13, lineHeight: 1.5, color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>{m.body}</span>
-                      {kind.target === 'chat' && <span style={{ display: 'block', marginTop: 6, fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--accent-secondary)' }}>Reply →</span>}
+                      {kind.target === 'chat' && <span style={{ display: 'block', marginTop: 6, fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--accent-secondary)' }}>Reply</span>}
                     </span>
                   </button>
                 );

@@ -235,7 +235,7 @@ ${kv('Average protein / carbs / fat', `${summary.avgProtein} / ${summary.avgCarb
 ${kv(`Days within ${tolerancePct()}% of calorie target`, summary.daysOnTarget == null ? '—' : `${summary.daysOnTarget} of ${summary.daysEvaluatedForTarget} complete days`)}
 ${kv('Data sources (by calories)', summary.sources.length ? describeBreakdown(summary.sources) : '—')}
 ${kv('Average energy (check-ins)', summary.avgEnergy == null ? '—' : `${summary.avgEnergy} / 10`)}
-${w ? kv('Weight', `${w.first} → ${w.last} ${w.unit} (${w.change > 0 ? '+' : ''}${w.change} ${w.unit})`) : kv('Weight', 'No entries')}
+${w ? kv('Weight', `${w.first} to ${w.last} ${w.unit} (${w.change > 0 ? '+' : ''}${w.change} ${w.unit})`) : kv('Weight', 'No entries')}
 ${kv('Workouts', summary.workouts.sessions ? `${summary.workouts.sessions} sessions · ${summary.workouts.minutes} min · ${summary.workouts.calories.toLocaleString()} kcal` : 'None logged')}
 
 ${micros ? `<h2>Average daily micronutrients</h2>${table(['Nutrient', 'Average'], micros.map((n) => [n.extended ? `${n.label} †` : n.label, `${n.avg} ${n.unit}`]))}` : ''}

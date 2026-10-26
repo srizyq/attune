@@ -28,7 +28,7 @@ export default function TodayPlanStrip({ date, style }) {
         <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{plan.name}: {total.calories} kcal planned</span>
         <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{names.join(' · ')}</span>
       </span>
-      <span style={{ fontSize: 12, color: 'var(--accent)', flexShrink: 0 }}>Open plan →</span>
+      <span style={{ fontSize: 12, color: 'var(--accent)', flexShrink: 0 }}>Open plan</span>
     </button>
   );
 }

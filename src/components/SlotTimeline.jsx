@@ -146,7 +146,7 @@ function MoveToSlotSheet({ slots, count, onPick, onClose }) {
         <div onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Move to slot" className="modal-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '16px 16px 0 0', padding: 20, width: '100%', maxWidth: 480, maxHeight: '80vh', overflowY: 'auto', paddingBottom: 'calc(20px + var(--safe-bottom, 0px))' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Move {count} {count === 1 ? 'food' : 'foods'} to…</div>
-            <button type="button" onClick={onClose} aria-label="Close" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>✕</button>
+            <button type="button" onClick={onClose} aria-label="Close" className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}><span className="x-mark" aria-hidden="true" /></button>
           </div>
           {[...slots.map((sl) => ({ id: sl.id, label: sl.label, sub: formatSlotTime(sl.slotTime) })), { id: null, label: 'Uncategorised', sub: 'No slot' }].map((o) => (
             <button key={o.id ?? 'none'} type="button" onClick={() => onPick(o.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%', minHeight: 48, padding: '10px 14px', marginBottom: 8, background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 12, color: 'var(--text-primary)', fontFamily: 'inherit', fontSize: 14, cursor: 'pointer', textAlign: 'left' }}>
@@ -202,7 +202,7 @@ function SelectBar({ count, onMove, onGroup, onCancel }) {
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', padding: '0 6px', whiteSpace: 'nowrap' }}>{count} selected</span>
         <button type="button" onClick={onMove} disabled={count === 0} style={btn(false)}>Move to slot</button>
         <button type="button" onClick={onGroup} disabled={count === 0} style={btn(true)}>New slot</button>
-        <button type="button" onClick={onCancel} aria-label="Cancel selecting" style={{ ...btn(false), flex: '0 0 44px', padding: 0 }}>✕</button>
+        <button type="button" onClick={onCancel} aria-label="Cancel selecting" style={{ ...btn(false), flex: '0 0 44px', padding: 0 }}><span className="x-mark" aria-hidden="true" /></button>
       </div>
     </ModalPortal>
   );
@@ -429,7 +429,7 @@ function UnsortedEntry({ segment, isLast, isOpen, onToggle, expandedItemId, onTo
       <div data-drop-slot={NONE} style={{ flex: 1, minWidth: 0, background: 'var(--bg-subtle)', border: dropActive ? '2px solid var(--accent)' : '1px dashed var(--border-default)', borderRadius: 10, overflow: 'hidden' }}>
         <button onClick={onToggle} style={{ width: '100%', background: 'none', border: 'none', padding: '10px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}>
           <span style={{ color: 'var(--text-hint)', fontSize: 12 }}>Uncategorised · {t.cal} kcal</span>
-          <span style={{ color: 'var(--text-hint)', fontSize: 11, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+          <span style={{ color: 'var(--text-hint)', fontSize: 11, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><span className="chev" aria-hidden="true" /></span>
         </button>
         {isOpen && (
           <div style={{ borderTop: '1px solid var(--border-default)' }}>

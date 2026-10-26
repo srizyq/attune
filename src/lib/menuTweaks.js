@@ -43,7 +43,7 @@ export function includesLine(allergens = [], sodiumMg = null) {
   const parts = [];
   if (allergens.length) parts.push(`Includes ${allergens.join(', ')}`);
   if (sodiumMg != null && sodiumMg >= HIGH_SODIUM_MG) parts.push(`High sodium (${Math.round(sodiumMg).toLocaleString()}mg)`);
-  return parts.length ? parts.join(' • ') : null;
+  return parts.length ? parts.join(' · ') : null;
 }
 
 /** Name to log: the dish, plus whichever tweaks were switched on ("… (no cheese, sauce on side)"). */

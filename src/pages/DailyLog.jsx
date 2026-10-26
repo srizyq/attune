@@ -242,7 +242,7 @@ export default function DailyLog() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{mealTotal} kcal</span>
-                        <span style={{ color: 'var(--text-hint)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                        <span style={{ color: 'var(--text-hint)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><span className="chev" aria-hidden="true" /></span>
                       </div>
                     </button>
                     {items.length === 0 && yesterdayByMeal[mealKey].length > 0 && (

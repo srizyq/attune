@@ -33,7 +33,7 @@ export default function Toast({ message, error, onDone, action, duration = 2200 
         color: error ? 'var(--danger)' : 'var(--accent)',
       }}
     >
-      {error ? '✕' : '✓'} {message}
+      {message}
       {action && (
         <button onClick={action.onClick} style={{ background: 'none', border: 'none', color: 'inherit', fontWeight: 700, fontSize: 14, marginLeft: 14, padding: 0, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>{action.label}</button>
       )}

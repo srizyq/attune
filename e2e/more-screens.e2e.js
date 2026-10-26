@@ -19,11 +19,11 @@ const CASES = [
   { name: 'client-with-coach', path: '/coach', wait: 'Notes from your coach', backend: { rpc: { get_my_coach_links: [LINK] }, tables: { trainer_comments: COMMENTS } } },
   { name: 'client-no-coach', path: '/coach', backend: { profile: { coach_pass: false, is_premium: false } } },
   { name: 'trainer-no-clients', path: '/coach', backend: { profile: COACH_BACKEND.profile } },
-  { name: 'trainer-my-coach', path: '/coach', backend: COACH_BACKEND, act: (p) => p.getByRole('button', { name: 'My coach' }).click() },
+  { name: 'trainer-my-coach', path: '/coach', backend: COACH_BACKEND, act: (p) => p.getByRole('button', { name: /Your own coach/ }).click() },
   {
     name: 'trainer-client-messages', path: '/coach',
     backend: { ...COACH_BACKEND, tables: { ...COACH_BACKEND.tables, trainer_comments: COMMENTS.map((c) => ({ ...c, client_id: 'c2', trainer_id: USER_ID })) } },
-    act: async (p) => { await p.getByRole('button', { name: /Tarun/ }).click(); await p.getByRole('tab', { name: 'Messages' }).click(); await p.getByText('Great week — keep the protein up.').waitFor(); },
+    act: async (p) => { await p.getByRole('button', { name: 'Message Tarun' }).click(); await p.getByText('Great week — keep the protein up.').waitFor(); },
   },
   { name: 'pricing-free', path: '/pricing', backend: { profile: { is_premium: false, coach_pass: false } } },
   { name: 'pricing-pro', path: '/pricing' },

@@ -171,7 +171,7 @@ export default function BarcodeResult({
           ))}
         </PillRow>
         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 10, overflowWrap: 'anywhere' }}>
-          {unit !== servingUnit && `≈${gramsEquivalent}${servingUnit} · `}Label serving: {result.serving}
+          {unit !== servingUnit && `~${gramsEquivalent}${servingUnit} · `}Label serving: {result.serving}
         </div>
       </ScanCard>
 

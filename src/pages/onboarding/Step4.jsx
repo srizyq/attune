@@ -238,12 +238,6 @@ export default function Step4() {
     <OnboardingLayout step={4} showSkip={false}>
       <div style={{ width: '100%', maxWidth: '480px', textAlign: 'center' }}>
 
-        <div style={{
-          width: '64px', height: '64px', borderRadius: '16px', background: 'var(--accent-bg)',
-          border: '1px solid var(--accent-border)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: '28px', margin: '0 auto 24px',
-        }}>🌿</div>
-
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>
           you're all set
         </p>
@@ -340,7 +334,7 @@ export default function Step4() {
             marginBottom: '14px',
           }}
         >
-          {loading ? 'Creating account…' : 'Create account & continue →'}
+          {loading ? 'Creating account…' : 'Create account & continue'}
         </button>
 
         <button
@@ -348,7 +342,7 @@ export default function Step4() {
           onClick={() => navigate('/onboarding/step3')}
           style={{ width: '100%', minHeight: 48, padding: '14px', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: '10px', color: 'var(--text-secondary)', fontSize: '15px', fontFamily: "'Plus Jakarta Sans', sans-serif", cursor: 'pointer', marginBottom: '14px' }}
         >
-          ← Back to your details
+          Back to your details
         </button>
 
         <p style={{ color: 'var(--text-hint)', fontSize: '12px', lineHeight: 1.6 }}>

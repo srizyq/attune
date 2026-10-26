@@ -63,6 +63,6 @@ describe('tileSummary', () => {
     expect(tileSummary(null)).toEqual({ mood: null, energy: null, sleep: null });
   });
   it('summarises what was answered', () => {
-    expect(tileSummary({ mood: 'great', energy: 8, sleep_hours: '7.5', sleep_quality: 4 })).toEqual({ mood: '😄 Great', energy: '4/5', sleep: '7h 30m' });
+    expect(tileSummary({ mood: 'great', energy: 8, sleep_hours: '7.5', sleep_quality: 4 })).toEqual({ mood: 'Great', energy: '4/5', sleep: '7h 30m' });
   });
 });

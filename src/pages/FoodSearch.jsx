@@ -174,7 +174,7 @@ function fatSecretServings(food) {
 // any serving described in cups/ml/count ("1 cup", "1 medium") silently
 // defaulted to 100 regardless of its real weight — confirmed live against
 // FatSecret's barcode API: Silk almond milk's "1 cup" serving is actually
-// 240ml, but the old logic reported "≈100g" next to that serving's real
+// 240ml, but the old logic reported "~100g" next to that serving's real
 // (240ml) nutrition values, and would have scaled grams-based logging by
 // the wrong ratio (240/100 = 2.4x).
 //
@@ -1295,7 +1295,7 @@ function ModalShell({ title, onClose, children, maxWidth = 460 }) {
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border-default)", borderRadius: 16, width: "100%", maxWidth, maxHeight: "calc(var(--vvh, 100vh) * 0.85)", overflowY: "auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border-default)", position: "sticky", top: 0, background: "var(--bg-subtle)", zIndex: 10 }}>
           <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>{title}</span>
-          <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
+          <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: 0 }}><span className="x-mark" aria-hidden="true" /></button>
         </div>
         <div style={{ padding: 20 }}>{children}</div>
       </div>
@@ -1469,7 +1469,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
                     <span style={{ color: "var(--accent)" }}>{Math.round(it.cal)} kcal</span>
                   </div>
                 </div>
-                <button className="hit-slop" aria-label="Close" onClick={() => onRemove(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
+                <button className="hit-slop" aria-label="Close" onClick={() => onRemove(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: 0 }}><span className="x-mark" aria-hidden="true" /></button>
               </div>
             ))}
           </div>
@@ -1488,7 +1488,7 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
               value={servings} onChange={e => setServings(e.target.value)}
             />
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              ≈ {perServingCal} kcal per serving
+              ~ {perServingCal} kcal per serving
             </span>
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-secondary)", marginBottom: logNow ? 12 : 16, cursor: "pointer" }}>
@@ -1653,7 +1653,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
             <i className={isFavourite ? "ti ti-star-filled" : "ti ti-star"} />
           </button>
         )}
-        <span style={{ fontSize: 13, color: "var(--text-hint)", width: 26, textAlign: "center", flexShrink: 0 }}>{isExpanded ? "▲" : "▼"}</span>
+        <span style={{ fontSize: 13, color: "var(--text-hint)", width: 26, textAlign: "center", flexShrink: 0 }}><span className="chev" aria-hidden="true" style={{ transform: isExpanded ? "rotate(180deg)" : "none" }} /></span>
       </div>
       {isExpanded && (
         <div style={{ borderTop: "1px solid var(--border-default)", padding: "14px", background: "var(--bg-subtle)" }}>
@@ -1672,7 +1672,7 @@ function FoodCard({ food, isExpanded, onToggle, defaultMeal, defaultTime, select
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sodium <span style={{ color: "var(--text-secondary)" }}>{scaled.sodium}mg</span></div>
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Sugar <span style={{ color: "var(--text-secondary)" }}>{scaled.sugar}g</span></div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" }}>
-              <span style={{ color: "var(--accent)", fontWeight: 600 }}>{scaled.cal}</span> kcal{unit !== servingUnit && ` · ≈${gramsEquivalent}${servingUnit}`}
+              <span style={{ color: "var(--accent)", fontWeight: 600 }}>{scaled.cal}</span> kcal{unit !== servingUnit && ` · ~${gramsEquivalent}${servingUnit}`}
             </div>
           </div>
           <SeeDetails food={scaled} style={{ margin: "-6px 0 6px", padding: 0 }} />
@@ -2349,7 +2349,7 @@ export default function FoodSearch() {
             ) : (
               <div style={{ position: "relative" }}>
                 <button onClick={() => setMealDropdownOpen(o => !o)} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 22, padding: "0 16px", minHeight: 42, boxSizing: "border-box", fontSize: 12, color: "var(--accent)", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
-                  Adding to: {activeMeal} ▾
+                  Adding to: {activeMeal}
                 </button>
                 {mealDropdownOpen && (
                   <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 8, overflow: "hidden", zIndex: 50, minWidth: 140 }}>
@@ -2387,7 +2387,7 @@ export default function FoodSearch() {
               </button>
             )}
             {liveLoading && !transcribing && <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid var(--text-hint)", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />}
-            {query && !liveLoading && !transcribing && <button className="hit-slop" aria-label="Close" onClick={() => { setQuery(""); setGenericResults([]); setPackagedLive([]); setLiveError(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>✕</button>}
+            {query && !liveLoading && !transcribing && <button className="hit-slop" aria-label="Close" onClick={() => { setQuery(""); setGenericResults([]); setPackagedLive([]); setLiveError(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}><span className="x-mark" aria-hidden="true" /></button>}
           </div>
           {voiceError && <div style={{ color: "var(--danger)", fontSize: 12, marginTop: -4, marginBottom: 10 }}>{voiceError}</div>}
 
@@ -2428,7 +2428,7 @@ export default function FoodSearch() {
                 }}
               >
                 <i className="ti ti-sparkles" style={{ fontSize: 14, flexShrink: 0 }} />
-                {aiEstimating ? "Estimating…" : `No close match for "${query.trim()}" — estimate with AI →`}
+                {aiEstimating ? "Estimating…" : `No close match for "${query.trim()}" — estimate with AI`}
               </button>
             ) : (
               <button
@@ -2436,7 +2436,7 @@ export default function FoodSearch() {
                 disabled={aiEstimating}
                 style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "0 0 14px", color: "var(--text-muted)", fontSize: 12.5, cursor: aiEstimating ? "default" : "pointer", fontFamily: "inherit" }}
               >
-                Can't find "{query.trim()}"? <span style={{ color: "var(--accent)", fontWeight: 600 }}>{aiEstimating ? "Estimating…" : "Estimate with AI →"}</span>
+                Can't find "{query.trim()}"? <span style={{ color: "var(--accent)", fontWeight: 600 }}>{aiEstimating ? "Estimating…" : "Estimate with AI"}</span>
               </button>
             )
           )}
@@ -2651,7 +2651,6 @@ export default function FoodSearch() {
                   not brands) */}
               {foodsResults.length === 0 && !liveLoading && packagedResults.length === 0 && !liveError && !matchedChains.length ? (
                 <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-hint)", fontSize: 14 }}>
-                  <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
                   No foods found for "{query}"
                   <br />
                   <span style={{ fontSize: 12, color: "var(--text-hint)", marginTop: 8, display: "block" }}>Try a different search term, use the scan button, or create it yourself</span>
@@ -2694,7 +2693,7 @@ export default function FoodSearch() {
                 <div style={{ marginTop: foodsResults.length > 0 ? 20 : 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <span style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>Packaged products</span>
-                    <span style={{ background: "#0a1520", border: "1px solid #2a4a6a", borderRadius: 6, padding: "2px 8px", fontSize: 10, color: "var(--water-blue)" }}>🌐 Live search</span>
+                    <span style={{ background: "#0a1520", border: "1px solid #2a4a6a", borderRadius: 6, padding: "2px 8px", fontSize: 10, color: "var(--water-blue)" }}>Live search</span>
                   </div>
                   {liveLoading ? (
                     <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "8px 0" }}>Searching…</div>

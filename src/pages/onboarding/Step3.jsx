@@ -225,7 +225,6 @@ export default function Step3() {
           marginBottom: '32px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '20px' }}>💧</span>
             <div>
               <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>Water target</div>
               <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Based on your body weight</div>
@@ -252,7 +251,7 @@ export default function Step3() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
-            ←
+            Back
           </button>
           <button
             onClick={handleNext}
@@ -270,7 +269,7 @@ export default function Step3() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
             }}
           >
-            Let's go →
+            Let's go
           </button>
         </div>
       </div>
