@@ -29,7 +29,7 @@ export default function Step5() {
       const { data: { user } } = await supabase.auth.getUser();
       if (cancelled) return;
       if (!user) { navigate('/onboarding/step1', { replace: true }); return; }
-      if (!email) setEmail(user.email || null);
+      if (!email) setEmail(user.new_email || user.email || null);
       if (!user.is_anonymous) {
         // Already confirmed — either they clicked the link in this same
         // tab, or they landed/refreshed here after already confirming
@@ -64,12 +64,6 @@ export default function Step5() {
   return (
     <OnboardingLayout step={4} showSkip={false} showLogin={false}>
       <div style={{ width: '100%', maxWidth: '480px', textAlign: 'center' }}>
-        <div style={{
-          width: '64px', height: '64px', borderRadius: '16px', background: 'var(--accent-bg)',
-          border: '1px solid var(--accent-border)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: '28px', margin: '0 auto 24px',
-        }}>✉️</div>
-
         <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
           Verify your email
         </h1>

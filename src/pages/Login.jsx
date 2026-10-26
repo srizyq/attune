@@ -64,12 +64,12 @@ function ForgotPasswordForm({ email, setEmail, inputStyle, status, errorMessage,
           fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
         }}
       >
-        {status === 'sending' ? 'Sending…' : secondsLeft > 0 ? `Resend in ${secondsLeft}s` : 'Send reset link →'}
+        {status === 'sending' ? 'Sending…' : secondsLeft > 0 ? `Resend in ${secondsLeft}s` : 'Send reset link'}
       </button>
 
       <p style={{ color: 'var(--text-hint)', fontSize: '13px', textAlign: 'center', marginTop: '20px' }}>
         <button type="button" onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: 'pointer', padding: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          ← Back to login
+          Back to login
         </button>
       </p>
     </div>
@@ -105,7 +105,7 @@ export default function Login() {
   // which is exactly what reads as "my password isn't working": the
   // password is correct, the account just was never finished setting up.
   const [unconfirmedEmail, setUnconfirmedEmail] = useState(null);
-  const { status: resendStatus, errorMessage: resendError, secondsLeft: resendSecondsLeft, canResend, resend } = useResendConfirmation(unconfirmedEmail);
+  const { status: resendStatus, errorMessage: resendError, secondsLeft: resendSecondsLeft, canResend, resend } = useResendConfirmation(unconfirmedEmail, 'signup');
 
   // A real, already-confirmed account landing on a "log in / create an
   // account" screen doesn't make sense — most likely a stale bookmark or
@@ -309,7 +309,7 @@ export default function Login() {
               fontFamily: "'Plus Jakarta Sans', sans-serif", transition: 'all 0.2s',
             }}
           >
-            {loading ? 'Logging in…' : 'Log in →'}
+            {loading ? 'Logging in…' : 'Log in'}
           </button>
 
           <p style={{ color: 'var(--text-hint)', fontSize: '13px', textAlign: 'center', marginTop: '20px' }}>

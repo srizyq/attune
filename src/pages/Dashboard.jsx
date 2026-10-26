@@ -2,7 +2,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, emailRedirectTo } from '../lib/supabase';
+import { useResendConfirmation } from '../hooks/useResendConfirmation';
 import { useProfile } from '../hooks/useProfile';
 import { hasProAccess } from '../lib/proAccess';
 import { useFoodLogs } from '../hooks/useFoodLogs';
@@ -155,7 +155,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
       <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 340, padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Log weight</span>
-          <button className="hit-slop" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}>×</button>
+          <button className="hit-slop" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}><span className="x-mark" aria-hidden="true" /></button>
         </div>
 
         {recent.length >= 2 && (
@@ -198,7 +198,7 @@ function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend
           onClick={onViewTrend}
           style={{ width: '100%', minHeight: 24, background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '6px 0', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          View trend →
+          View trend
         </button>
       </div>
     </div>
@@ -701,7 +701,7 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{total} kcal</span>
-                <span style={{ color: 'var(--text-hint)', fontSize: '12px', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                <span style={{ color: 'var(--text-hint)', fontSize: '12px', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><span className="chev" aria-hidden="true" /></span>
               </div>
             </button>
             {items.length === 0 && yesterdayByMeal?.[key]?.length > 0 && (
@@ -750,16 +750,10 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
 function ConfirmEmailBanner({ email }) {
   const { checkEmailConfirmed } = useAuth();
   const [visible, setVisible] = useState(true);
-  const [resendState, setResendState] = useState(null); // null | 'sending' | 'sent' | error string
+  const { status: resendStatus, errorMessage: resendError, secondsLeft, canResend, resend } = useResendConfirmation(email);
   const [checking, setChecking] = useState(false);
   const [checkMessage, setCheckMessage] = useState(null);
   if (!visible) return null;
-
-  async function resend() {
-    setResendState('sending');
-    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
-    setResendState(error ? (error.message || 'Could not resend — try again.') : 'sent');
-  }
 
   // Confirming the link elsewhere (a different tab, the mail app) doesn't
   // reach this already-open session by itself — AuthProvider re-checks
@@ -777,28 +771,24 @@ function ConfirmEmailBanner({ email }) {
   return (
     <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-        <span style={{ color: 'var(--accent)', fontSize: '14px', flexShrink: 0 }}>✉️</span>
         <span style={{ color: 'var(--text-secondary)', fontSize: '13px', minWidth: 0, overflowWrap: 'anywhere' }}>
           Almost there — check <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{email}</span> to confirm your account.
           <button onClick={checkConfirmed} disabled={checking} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: checking ? 'default' : 'pointer', marginLeft: '4px', padding: '6px 2px', textDecoration: 'underline' }}>
             {checking ? 'Checking…' : "I've confirmed"}
           </button>
-          {resendState === 'sent' ? (
-            <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>Sent!</span>
-          ) : (
-            <button onClick={resend} disabled={resendState === 'sending'} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: resendState === 'sending' ? 'default' : 'pointer', marginLeft: '4px', padding: '6px 2px', textDecoration: 'underline' }}>
-              {resendState === 'sending' ? 'Sending…' : 'Resend email'}
-            </button>
-          )}
+          <button onClick={resend} disabled={!canResend} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '13px', cursor: canResend ? 'pointer' : 'default', marginLeft: '4px', padding: '6px 2px', textDecoration: 'underline', opacity: canResend ? 1 : 0.7 }}>
+            {resendStatus === 'sending' ? 'Sending…' : secondsLeft > 0 ? `Resend in ${secondsLeft}s` : 'Resend email'}
+          </button>
+          {resendStatus === 'sent' && <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>Sent!</span>}
           {checkMessage && (
             <span style={{ color: 'var(--text-hint)', display: 'block', marginTop: 4 }}>{checkMessage}</span>
           )}
-          {resendState && resendState !== 'sending' && resendState !== 'sent' && (
-            <span style={{ color: 'var(--danger)', display: 'block', marginTop: 4 }}>{resendState}</span>
+          {resendStatus === 'error' && (
+            <span style={{ color: 'var(--danger)', display: 'block', marginTop: 4 }}>{resendError}</span>
           )}
         </span>
       </div>
-      <button onClick={() => setVisible(false)} className="hit-slop" aria-label="Dismiss" style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>×</button>
+      <button onClick={() => setVisible(false)} className="hit-slop" aria-label="Dismiss" style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}><span className="x-mark" aria-hidden="true" /></button>
     </div>
   );
 }
@@ -1150,7 +1140,7 @@ export default function Dashboard() {
               </div>
               {!isViewingToday && (
                 <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '13px', fontWeight: 800, cursor: 'pointer', padding: '6px 0', minHeight: 28, fontFamily: 'inherit' }}>
-                  ← Back to today
+                  Back to today
                 </button>
               )}
             </div>

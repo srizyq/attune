@@ -21,7 +21,7 @@ describe('useResendConfirmation', () => {
     const { result } = renderHook(() => useResendConfirmation('a@b.com'));
 
     await act(async () => { await result.current.resend(); });
-    expect(auth.resend).toHaveBeenCalledWith({ type: 'signup', email: 'a@b.com', options: { emailRedirectTo: 'https://attune.test/dashboard' } });
+    expect(auth.resend).toHaveBeenCalledWith({ type: 'email_change', email: 'a@b.com', options: { emailRedirectTo: 'https://attune.test/dashboard' } });
     expect(result.current.status).toBe('sent');
     expect(result.current.canResend).toBe(false); // cooling down, not stuck
     expect(result.current.secondsLeft).toBeGreaterThan(0);
@@ -56,5 +56,14 @@ describe('useResendConfirmation', () => {
     expect(auth.resend).toHaveBeenCalledTimes(1);
 
     await act(async () => { resolveResend({ error: null }); });
+  });
+});
+
+describe('useResendConfirmation type', () => {
+  it('can be told to resend a true signup confirmation (Login\'s "Email not confirmed" case)', async () => {
+    auth.resend.mockResolvedValue({ error: null });
+    const { result } = renderHook(() => useResendConfirmation('a@b.com', 'signup'));
+    await act(async () => { await result.current.resend(); });
+    expect(auth.resend).toHaveBeenCalledWith(expect.objectContaining({ type: 'signup' }));
   });
 });

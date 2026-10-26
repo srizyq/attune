@@ -15,7 +15,15 @@ const RATE_LIMIT_SECONDS = /after (\d+) seconds/i;
 // the user was stuck with no way to ever trigger another attempt short of
 // reloading the page. This hook keeps the button live behind a cooldown
 // instead of retiring it permanently.
-export function useResendConfirmation(email) {
+//
+// `type` matters: signup here is "upgrade an anonymous user" (Step4's
+// updateUser({ email, password })), which Supabase models as a pending
+// *email change* — user.email stays empty and the address lives in
+// new_email. resend({ type: 'signup' }) looks the user up by confirmed-
+// less user.email, finds nobody, and answers success without sending
+// anything — the button "worked" but no mail ever left. Only Login's
+// "Email not confirmed" case is a true signup-type user.
+export function useResendConfirmation(email, type = 'email_change') {
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [errorMessage, setErrorMessage] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -38,7 +46,7 @@ export function useResendConfirmation(email) {
     if (!email || status === 'sending' || secondsLeft > 0) return;
     setStatus('sending');
     setErrorMessage(null);
-    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
+    const { error } = await supabase.auth.resend({ type, email, options: { emailRedirectTo } });
     if (error) {
       setStatus('error');
       setErrorMessage(error.message || 'Could not resend — try again.');
