@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getProfile, upsertProfile } from '../lib/db';
 import { withCompGrants } from '../lib/compGrants';
 import { withTrial } from '../lib/trial';
+import { rememberCoachNav } from '../lib/coachNav';
 
 export function useProfile() {
   const { user } = useAuth();
@@ -18,7 +19,9 @@ export function useProfile() {
     // since so much of the app gates rendering on profile/loading.
     try {
       const data = await getProfile(user.id);
-      setProfile(withCompGrants(withTrial(data), user.email));
+      const loaded = withCompGrants(withTrial(data), user.email);
+      rememberCoachNav(loaded);
+      setProfile(loaded);
     } catch (err) {
       console.error('Failed to load profile:', err);
       setProfile(null);
@@ -33,6 +36,7 @@ export function useProfile() {
     if (!user) return;
     const updated = await upsertProfile(user.id, fields);
     const withOverride = withCompGrants(withTrial(updated), user.email);
+    rememberCoachNav(withOverride);
     setProfile(withOverride);
     return withOverride;
   }, [user]);
