@@ -1,7 +1,7 @@
 // src/pages/Coach.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useProfile } from '../hooks/useProfile';
-import { useMyClients, useClientSummaries, useClientMessages, useTeamClients } from '../hooks/useCoach';
+import { useMyClients, useClientSummaries, useClientMessages, useTeamClients, useMyTrainers } from '../hooks/useCoach';
 import { useTeam } from '../hooks/useTeam';
 import AppNav from '../components/AppNav';
 import PageHeader from '../components/PageHeader';
@@ -11,6 +11,7 @@ import ClientList from '../components/coach/ClientList';
 import TeamCard from '../components/coach/TeamCard';
 import ClientDetail from '../components/coach/ClientDetail';
 import ClientMessagesInbox from '../components/coach/ClientMessagesInbox';
+import CollapsibleSection from '../components/coach/CollapsibleSection';
 import { needsAttention } from '../lib/clientInsights';
 import { todayLocalDate } from '../lib/patterns';
 import FriendsTabs from '../components/friends/FriendsTabs';
@@ -42,13 +43,17 @@ export default function Coach() {
   const { unread, total: unreadTotal, markSeen } = useClientMessages({ enabled: !!profile?.coach_pass });
   const [selectedClient, setSelectedClient] = useState(null);
   // Opening a client from the message list lands on their messages, not Overview.
-  const [initialTab, setInitialTab] = useState('overview');
-  const openClient = (client, tab = 'overview') => { setInitialTab(tab); setSelectedClient(client); };
+  const [initialTab, setInitialTab] = useState('snapshot');
+  const openClient = (client, tab = 'snapshot') => { setInitialTab(tab); setSelectedClient(client); };
   // A trainer can *also* be someone else's client (a coach with their own
   // nutritionist, say) — this tab is how they reach that relationship's
   // notes/chat/targets without it being hidden behind their own trainer
   // dashboard, which is what the Coach tab otherwise shows exclusively.
   const [trainerTab, setTrainerTab] = useState('clients'); // 'clients' | 'team' | 'my-coach'
+  // Reaching your own coach is a link at the bottom (with a count if one is waiting
+  // for an answer), not a switch above everything — most coaches have none.
+  const { pending: pendingCoachLinks } = useMyTrainers();
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   // The owner of a team can read (not edit) their teammates' clients.
   const { team } = useTeam();
@@ -87,6 +92,10 @@ export default function Coach() {
   useEffect(() => { scrollRef.current?.scrollTo?.({ top: 0 }); }, [selectedId, selectedTeamId, trainerTab]);
 
   const hasClients = clients.length > 0;
+  const showInvite = () => {
+    setInviteOpen(true);
+    setTimeout(() => document.getElementById('invite-section')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 50);
+  };
   const invitePanel = <CoachInvitePanel hasClients={hasClients} />;
   const clientList = (
     <ClientList
@@ -96,6 +105,7 @@ export default function Coach() {
       summariesSupported={summariesSupported}
       today={today}
       onSelect={(c) => openClient(c)}
+      onMessage={(c) => openClient(c, 'messages')}
       onStatus={reportStatus}
       loggedTodayCount={loggedTodayCount}
       resolvedCount={resolvedStatuses.length}
@@ -125,90 +135,116 @@ export default function Coach() {
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <AppNav active="coach" initials={initials} />
       <div ref={scrollRef} className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        {/* A client opens in a page of its own: it draws its own slim header (back,
+            name, score, Messages, ⋯), so none of this page's header stacks above it. */}
+        {isTrainer && trainerTab === 'clients' && selectedClient ? (
+          <ClientDetail
+            client={selectedClient}
+            summary={selectedSummary}
+            row={selectedRow}
+            onSetGroup={setGroup}
+            onRevoke={async (id) => { await revoke(id); setSelectedClient(null); }}
+            initialTab={initialTab}
+            onMessagesViewed={markSeen}
+            onBack={() => setSelectedClient(null)}
+            unreadCount={unread.get(selectedClient.id)?.unread || 0}
+          />
+        ) : isTrainer && trainerTab === 'team' && selectedTeamClient ? (
+          <ClientDetail
+            key={selectedTeamClient.id}
+            client={selectedTeamClient}
+            summary={teamClients.summaries.find(s => s.client_id === selectedTeamClient.id)}
+            readOnly
+            coachName={selectedTeamCoach}
+            onBack={() => setSelectedTeamClient(null)}
+            backLabel="All team clients"
+          />
+        ) : (
+          <>
         {/* A title like the Friends tab has, then Friends | Coach. */}
-        <PageHeader title="Coach" />
+        <PageHeader
+          title="Coach"
+          right={isTrainer && trainerTab === 'clients' && hasClients ? (
+            <button type="button" className="app-icon-btn" onClick={showInvite} aria-label="Add a client"><i className="ti ti-user-plus" aria-hidden="true" /></button>
+          ) : undefined}
+        />
         <div className="page-pad">
           <FriendsTabs active="coach" />
-          {isTrainer && trainerTab === 'clients' && selectedClient ? (
-            <button
-              onClick={() => setSelectedClient(null)}
-              className="btn-press"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 16px', margin: '0 0 14px', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              <i className="ti ti-arrow-left" aria-hidden="true" /> All clients
-            </button>
-          ) : isTrainer && trainerTab === 'team' && selectedTeamClient ? (
-            <button
-              onClick={() => setSelectedTeamClient(null)}
-              className="btn-press"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 16px', margin: '0 0 14px', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              <i className="ti ti-arrow-left" aria-hidden="true" /> All team clients
-            </button>
-          ) : isTrainer ? (
+          {isTrainer ? (
             <div style={{ marginBottom: 16 }}>
               {trainerTab === 'clients' && (
                 <p style={{ margin: '0 2px 8px', fontSize: 13, lineHeight: 1.4, color: 'var(--text-muted)' }}>{greetingLine}</p>
               )}
-              <SegmentedControl
-                value={trainerTab}
-                onChange={setTrainerTab}
-                options={[
-                  { id: 'clients', label: 'My clients' },
-                  ...(isTeamOwner ? [{ id: 'team', label: 'Team clients' }] : []),
-                  { id: 'my-coach', label: 'My coach' },
-                ]}
-              />
+              {isTeamOwner && trainerTab !== 'my-coach' && (
+                <SegmentedControl
+                  value={trainerTab}
+                  onChange={setTrainerTab}
+                  options={[
+                    { id: 'clients', label: 'My clients' },
+                    { id: 'team', label: 'Team clients' },
+                  ]}
+                />
+              )}
             </div>
           ) : null}
           {!isTrainer ? (
             <ClientCoachHub />
           ) : trainerTab === 'my-coach' ? (
-            <ClientCoachHub showUpsell={false} />
+            <>
+              <button
+                type="button"
+                onClick={() => setTrainerTab('clients')}
+                className="btn-press"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 16px', margin: '0 0 14px', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                <i className="ti ti-arrow-left" aria-hidden="true" /> My clients
+              </button>
+              <ClientCoachHub showUpsell={false} />
+            </>
           ) : trainerTab === 'team' ? (
-            selectedTeamClient ? (
-              <ClientDetail
-                key={selectedTeamClient.id}
-                client={selectedTeamClient}
-                summary={teamClients.summaries.find(s => s.client_id === selectedTeamClient.id)}
-                readOnly
-                coachName={selectedTeamCoach}
-              />
-            ) : (
-              <ClientList
-                title="Team clients" showCoach hideUnread
-                emptyText="Your teammates have no active clients yet."
-                clients={teamClients.clients}
-                loading={teamClients.loading}
-                summaries={teamClients.summaries}
-                summariesSupported={teamClients.supported}
-                today={today}
-                onSelect={setSelectedTeamClient}
-              />
-            )
-          ) : !selectedClient ? (
+            <ClientList
+              title="Team clients" showCoach hideUnread
+              emptyText="Your teammates have no active clients yet."
+              clients={teamClients.clients}
+              loading={teamClients.loading}
+              summaries={teamClients.summaries}
+              summariesSupported={teamClients.supported}
+              today={today}
+              onSelect={setSelectedTeamClient}
+            />
+          ) : (
             <>
             <ClientMessagesInbox unread={unread} clients={clients} onOpen={(c) => openClient(c, 'messages')} />
             {/* The list is what a coach opens this page for, so on a phone (one
                 column) it comes before the invite card once there are clients;
                 with none yet, inviting is the job and comes first. */}
             <div className="grid-2" style={{ alignItems: 'start' }}>
-              {hasClients ? <>{clientList}{invitePanel}</> : <>{invitePanel}{clientList}</>}
+              {hasClients ? (
+                <>
+                  {clientList}
+                  <CollapsibleSection id="invite-section" title="Invite a client" icon="ti-user-plus" open={inviteOpen} onToggle={() => setInviteOpen(o => !o)}>{invitePanel}</CollapsibleSection>
+                </>
+              ) : <>{invitePanel}{clientList}</>}
             </div>
             <div style={{ marginTop: 20 }}><TeamCard /></div>
+            <button
+              type="button"
+              onClick={() => setTrainerTab('my-coach')}
+              className="btn-press"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: 52, padding: '0 20px', marginTop: 20, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 16, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <i className="ti ti-user-heart" aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
+                Your own coach
+                {pendingCoachLinks.length > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent-secondary)' }}>{pendingCoachLinks.length} waiting</span>}
+              </span>
+              <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
+            </button>
             </>
-          ) : (
-            <ClientDetail
-              client={selectedClient}
-              summary={selectedSummary}
-              row={selectedRow}
-              onSetGroup={setGroup}
-              onRevoke={async (id) => { await revoke(id); setSelectedClient(null); }}
-              initialTab={initialTab}
-              onMessagesViewed={markSeen}
-            />
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

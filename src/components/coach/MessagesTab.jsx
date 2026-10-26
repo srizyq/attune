@@ -7,6 +7,7 @@ import PrivateNotesCard from './PrivateNotesCard';
 import FormRow from '../FormRow';
 import SegmentedControl from '../SegmentedControl';
 import VoiceMicButton from '../VoiceMicButton';
+import { QUICK_MESSAGES } from '../../lib/coachNudges';
 
 const VIEWS = [
   { id: 'thread', label: 'Messages to client', icon: 'ti-message-circle' },
@@ -16,9 +17,11 @@ const VIEWS = [
 // Two clearly separate places to write: what the client will see, and what
 // only the coach will. Keeping them on separate sub-tabs (with the lock icon
 // on the private one) is what stops a private note being posted as a message.
-export default function MessagesTab({ client, clientData, d, onViewed }) {
+export default function MessagesTab({ client, clientData, d, onViewed, initialDraft = '' }) {
   const [view, setView] = useState('thread');
-  const [commentBody, setCommentBody] = useState('');
+  // A draft can arrive from a "Message about this" button; it sits in the box
+  // for the coach to read and change, and is never sent on its own.
+  const [commentBody, setCommentBody] = useState(initialDraft);
   const [commentCategory, setCommentCategory] = useState('general');
   const { comments, addComment, removeComment } = useTrainerComments(client.id);
   // Having the thread open (and loaded) is what "read" means — a message that
@@ -75,6 +78,19 @@ export default function MessagesTab({ client, clientData, d, onViewed }) {
                   </button>
                 );
               })}
+            </div>
+            <div role="group" aria-label="Quick messages" style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 10, paddingBottom: 2, scrollbarWidth: 'none' }}>
+              {QUICK_MESSAGES.map(q => (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => setCommentBody(prev => (prev.trim() ? `${prev.trim()} ${q.text(clientData.name)}` : q.text(clientData.name)))}
+                  className="btn-press"
+                  style={{ flexShrink: 0, minHeight: 36, padding: '0 12px', borderRadius: 99, background: 'var(--chip-bg)', border: 'none', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: 'nowrap' }}
+                >
+                  {q.label}
+                </button>
+              ))}
             </div>
             <div style={{ marginBottom: 16 }}>
               <FormRow>

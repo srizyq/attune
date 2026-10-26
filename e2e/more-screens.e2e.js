@@ -23,7 +23,7 @@ const CASES = [
   {
     name: 'trainer-client-messages', path: '/coach',
     backend: { ...COACH_BACKEND, tables: { ...COACH_BACKEND.tables, trainer_comments: COMMENTS.map((c) => ({ ...c, client_id: 'c2', trainer_id: USER_ID })) } },
-    act: async (p) => { await p.getByRole('button', { name: 'Message Tarun' }).click(); await p.getByText('Great week — keep the protein up.').waitFor(); },
+    act: async (p) => { await p.getByRole('button', { name: 'Message Tarun', exact: true }).click(); await p.getByText('Great week — keep the protein up.').waitFor(); },
   },
   { name: 'pricing-free', path: '/pricing', backend: { profile: { is_premium: false, coach_pass: false } } },
   { name: 'pricing-pro', path: '/pricing' },

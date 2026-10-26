@@ -38,12 +38,12 @@ export function avg(nums) {
   return nums.length ? nums.reduce((s, n) => s + n, 0) / nums.length : 0;
 }
 
-// The client view's tabs, in order.
+// The client view's tabs, in order. Four, so they all fit on a phone without
+// scrolling sideways. Messages is a button in the header (it opens a sheet) and
+// the report builder lives at the bottom of Progress — neither is a daily tab.
 export const TABS = [
-  { id: 'overview', label: 'Overview', icon: 'ti-layout-dashboard' },
+  { id: 'snapshot', label: 'Snapshot', icon: 'ti-layout-dashboard' },
   { id: 'diary', label: 'Diary', icon: 'ti-clipboard-list' },
   { id: 'progress', label: 'Progress', icon: 'ti-chart-line' },
-  { id: 'messages', label: 'Messages', icon: 'ti-message-circle' },
   { id: 'plan', label: 'Plan', icon: 'ti-tools-kitchen-2' },
-  { id: 'reports', label: 'Reports', icon: 'ti-file-analytics' },
 ];

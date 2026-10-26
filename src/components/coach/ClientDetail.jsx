@@ -3,25 +3,35 @@ import { setClientTargets, setClientMicroTargets, setClientDayTargets } from '..
 import { useAuth } from '../../hooks/useAuth';
 import { adherenceScore, adherenceTone } from '../../lib/clientInsights';
 import { useClientDashboard } from './useClientDashboard';
-import { ClientAvatar, RowActions } from './shared';
+import PageHeader from '../PageHeader';
 import { GOAL_LABELS, TABS } from './constants';
-import OverviewTab from './OverviewTab';
+import SnapshotTab from './SnapshotTab';
 import DiaryTab from './DiaryTab';
 import ProgressTab from './ProgressTab';
-import MessagesTab from './MessagesTab';
 import PlanTab from './PlanTab';
-import ReportsTab from './ReportsTab';
+import MessagesSheet from './MessagesSheet';
+import ClientActionsMenu from './ClientActionsMenu';
 
-const TONE_COLOR = { good: 'var(--accent)', fair: 'var(--gold)', low: 'var(--danger)', none: 'var(--text-hint)' };
+const TONE_COLOR = { good: 'var(--accent-secondary)', fair: 'var(--gold)', low: 'var(--danger)', none: 'var(--text-hint)' };
+const ADHERENCE_HELP = 'Logging consistency and target hits over the last 7 days';
 
-// One client, split into six tabs so each stays short: the long single page
-// this replaced mixed reading (charts, diary), writing (messages, notes) and
-// output (reports) in one scroll.
 // `readOnly` is the team owner's view of a teammate's client: the same data, no
 // editing, and no messages (those stay between the coach and their client).
-const READ_ONLY_TABS = ['overview', 'diary', 'progress', 'reports'];
+const READ_ONLY_TABS = ['snapshot', 'diary', 'progress'];
 
-export default function ClientDetail({ client, summary, row, onSetGroup, onRevoke, initialTab = 'overview', onMessagesViewed, readOnly = false, coachName = null }) {
+// The ids older links and callers used: Overview became Snapshot, and Messages
+// and Reports are no longer tabs (a sheet, and a section of Progress).
+const tabFor = (id, readOnly) => {
+  const known = { overview: 'snapshot', messages: 'snapshot', reports: 'progress' }[id] || id;
+  const allowed = readOnly ? READ_ONLY_TABS : TABS.map(t => t.id);
+  return allowed.includes(known) ? known : 'snapshot';
+};
+
+// One client. The header is a single slim row (back, name, score, Messages, ⋯)
+// so the data starts at the top of the screen; below it are four tabs that all
+// fit on a phone. It renders its own page header, so the page around it must
+// not render one.
+export default function ClientDetail({ client, summary, row, onSetGroup, onRevoke, initialTab = 'snapshot', onMessagesViewed, readOnly = false, coachName = null, onBack, backLabel = 'All clients', unreadCount = 0 }) {
   const tabs = readOnly ? TABS.filter(t => READ_ONLY_TABS.includes(t.id)) : TABS;
   const { user } = useAuth();
   // A mutable local copy of the client's goal/target fields — resyncs from the
@@ -29,17 +39,23 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
   // the trainer just saved so the page reflects it without refetching the list.
   const [clientData, setClientData] = useState(client);
   const [editingTargets, setEditingTargets] = useState(false);
-  const [tab, setTab] = useState(initialTab);
+  const [tab, setTab] = useState(tabFor(initialTab, readOnly));
+  const [messagesOpen, setMessagesOpen] = useState(!readOnly && initialTab === 'messages');
+  const [messageDraft, setMessageDraft] = useState('');
+  const [reportsOpen, setReportsOpen] = useState(initialTab === 'reports');
   const tabRefs = useRef({});
   useEffect(() => { setClientData(client); setEditingTargets(false); }, [client]);
-  // Back to Overview only for a *different* client — a refetch that hands us a
+  // Back to the start only for a *different* client — a refetch that hands us a
   // fresh object for the same one must not throw the coach out of the tab
   // they're working in.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setTab(initialTab); }, [client.id]);
+  useEffect(() => {
+    setTab(tabFor(initialTab, readOnly));
+    setMessagesOpen(!readOnly && initialTab === 'messages');
+    setMessageDraft('');
+    setReportsOpen(initialTab === 'reports');
+  }, [client.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // On a phone the six tabs overflow and scroll sideways; keep the selected
-  // one in view (optional-called: jsdom, and old browsers, lack scrollIntoView).
+  // Keep the selected tab in view (optional-called: jsdom, and old browsers, lack scrollIntoView).
   useEffect(() => {
     tabRefs.current[tab]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
   }, [tab]);
@@ -62,10 +78,12 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
     setClientData(prev => ({ ...prev, micro_targets: targets }));
   };
 
+  const openMessages = (draft = '') => { setMessageDraft(draft); setMessagesOpen(true); };
+  const exportReport = () => { setTab('progress'); setReportsOpen(true); setTimeout(() => document.getElementById('client-report-builder')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 50); };
+
   const d = useClientDashboard(client, clientData);
   const score = adherenceScore(summary);
   const tone = adherenceTone(score);
-  const todayPct = summary?.calorie_target && summary.today_cal ? Number(summary.today_cal) / summary.calorie_target : 0;
 
   // WAI-ARIA tabs: arrows move between tabs, Home/End jump to the ends.
   const onKeyDown = (e) => {
@@ -77,77 +95,74 @@ export default function ClientDetail({ client, summary, row, onSetGroup, onRevok
     tabRefs.current[tabs[next].id]?.focus();
   };
 
+  const subtitle = [GOAL_LABELS[clientData.goal], summary?.group_label, readOnly ? `View only${coachName ? ` · Coach: ${coachName}` : ''}` : null].filter(Boolean).join(' · ') || 'No goal set';
+
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 18 }}>
-        <ClientAvatar name={clientData.name} pct={todayPct} size={48} />
-        <div style={{ flex: 1, minWidth: 160 }}>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{clientData.name || 'Client'}</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-            {[GOAL_LABELS[clientData.goal], summary?.group_label].filter(Boolean).join(' · ') || 'No goal set'}
-          </div>
-        </div>
-        {score != null && (
-          <div title="Logging consistency and target hits over the last 7 days" style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: TONE_COLOR[tone], lineHeight: 1 }}>{score}%</div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>7-day adherence</div>
-          </div>
+    <>
+      <PageHeader
+        title={clientData.name || 'Client'}
+        subtitle={subtitle}
+        onBack={onBack}
+        backLabel={backLabel}
+        right={(
+          <>
+            {score != null && (
+              <span role="img" title={ADHERENCE_HELP} aria-label={`7-day adherence ${score} percent`} style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 18, fontWeight: 800, color: TONE_COLOR[tone] }}>{score}%</span>
+            )}
+            {!readOnly && (
+              <button type="button" className="app-icon-btn" onClick={() => openMessages()} aria-label={unreadCount > 0 ? `Messages, ${unreadCount} new` : 'Messages'} style={{ position: 'relative' }}>
+                <i className="ti ti-message-circle" aria-hidden="true" />
+                {unreadCount > 0 && <span data-testid="messages-unread-dot" aria-hidden="true" style={{ position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: '50%', background: 'var(--accent-secondary)', border: '2px solid var(--bg-card)', boxSizing: 'content-box' }} />}
+              </button>
+            )}
+            <ClientActionsMenu row={row} onSetGroup={onSetGroup} onRevoke={onRevoke} onExport={exportReport} readOnly={readOnly} />
+          </>
         )}
-      </div>
-      {readOnly && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 32, padding: '0 12px', borderRadius: 99, background: 'var(--chip-bg)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, overflowWrap: 'anywhere' }}>
-            <i className="ti ti-eye" aria-hidden="true" />{coachName ? `Coach: ${coachName} · ` : ''}View only
-          </span>
+      />
+      <div className="page-pad">
+        <div
+          role="tablist"
+          aria-label="Client sections"
+          onKeyDown={onKeyDown}
+          style={{ display: 'flex', gap: 4, overflowX: 'auto', overflowY: 'hidden', borderBottom: '1px solid var(--border-default)', marginBottom: 20, scrollbarWidth: 'none' }}
+        >
+          {tabs.map(t => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                ref={el => { tabRefs.current[t.id] = el; }}
+                role="tab"
+                id={`client-tab-${t.id}`}
+                aria-selected={active}
+                aria-controls={`client-panel-${t.id}`}
+                tabIndex={active ? 0 : -1}
+                onClick={() => setTab(t.id)}
+                style={{
+                  flex: '1 1 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 8px', background: 'none', border: 'none', minWidth: 0,
+                  borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, marginBottom: -1, minHeight: 44,
+                  color: active ? 'var(--accent)' : 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}
+              >
+                <i className={`ti ${t.icon}`} style={{ fontSize: 15 }} aria-hidden="true" />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
-      )}
-      {!readOnly && row && onSetGroup && onRevoke && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
-          <RowActions row={row} onSetGroup={onSetGroup} onRevoke={onRevoke} />
+
+        <div role="tabpanel" id={`client-panel-${tab}`} aria-labelledby={`client-tab-${tab}`}>
+          {tab === 'snapshot' && (
+            <SnapshotTab readOnly={readOnly} clientData={clientData} d={d} summary={summary} editingTargets={editingTargets} setEditingTargets={setEditingTargets} onSaveTargets={handleSaveTargets} onSaveMicroTargets={handleSaveMicroTargets} onMessage={openMessages} />
+          )}
+          {tab === 'diary' && <DiaryTab d={d} />}
+          {tab === 'progress' && <ProgressTab client={client} clientData={clientData} d={d} reportsOpen={reportsOpen} onReportsOpenChange={setReportsOpen} />}
+          {tab === 'plan' && <PlanTab client={client} clientData={clientData} />}
         </div>
+      </div>
+      {messagesOpen && !readOnly && (
+        <MessagesSheet client={client} clientData={clientData} d={d} draft={messageDraft} onClose={() => setMessagesOpen(false)} onViewed={onMessagesViewed} />
       )}
-
-      <div
-        role="tablist"
-        aria-label="Client sections"
-        onKeyDown={onKeyDown}
-        style={{ display: 'flex', gap: 4, overflowX: 'auto', overflowY: 'hidden', borderBottom: '1px solid var(--border-default)', marginBottom: 20, scrollbarWidth: 'none' }}
-      >
-        {tabs.map(t => {
-          const active = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              ref={el => { tabRefs.current[t.id] = el; }}
-              role="tab"
-              id={`client-tab-${t.id}`}
-              aria-selected={active}
-              aria-controls={`client-panel-${t.id}`}
-              tabIndex={active ? 0 : -1}
-              onClick={() => setTab(t.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', background: 'none', border: 'none', flexShrink: 0,
-                borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, marginBottom: -1, minHeight: 44,
-                color: active ? 'var(--accent)' : 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              <i className={`ti ${t.icon}`} style={{ fontSize: 15 }} />
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div role="tabpanel" id={`client-panel-${tab}`} aria-labelledby={`client-tab-${tab}`}>
-        {tab === 'overview' && (
-          <OverviewTab readOnly={readOnly} clientData={clientData} d={d} summary={summary} editingTargets={editingTargets} setEditingTargets={setEditingTargets} onSaveTargets={handleSaveTargets} onSaveMicroTargets={handleSaveMicroTargets} />
-        )}
-        {tab === 'diary' && <DiaryTab d={d} />}
-        {tab === 'progress' && <ProgressTab client={client} d={d} />}
-        {tab === 'messages' && <MessagesTab client={client} clientData={clientData} d={d} onViewed={onMessagesViewed} />}
-        {tab === 'plan' && <PlanTab client={client} clientData={clientData} />}
-        {tab === 'reports' && <ReportsTab client={client} clientData={clientData} />}
-      </div>
-    </div>
+    </>
   );
 }

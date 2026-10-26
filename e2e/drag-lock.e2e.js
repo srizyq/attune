@@ -38,7 +38,7 @@ test('no element can be dragged on the wrong axis, on any screen', async ({ page
   expect(offenders).toEqual([]);
 });
 
-test('the coach tab strip scrolls sideways but does not move up or down under a finger', async ({ page, context }, testInfo) => {
+test('the coach client tab strip does not move up or down — or slide the page sideways — under a finger', async ({ page, context }, testInfo) => {
   test.skip(testInfo.project.name !== 'phone', 'touch gestures on the phone project');
   await openApp({ page, context }, testInfo, COACH_BACKEND);
   await page.goto('/coach');
@@ -57,7 +57,9 @@ test('the coach tab strip scrolls sideways but does not move up or down under a 
   };
   await swipe(0, -30);
   expect(await strip.evaluate((e) => e.scrollTop), 'vertical drag moved the tab labels').toBe(0);
+  // The four tabs fit on a phone, so there is nothing to scroll sideways — a sideways drag
+  // must leave both the strip and the page where they are.
   await swipe(-200, 0);
-  expect(await strip.evaluate((e) => e.scrollLeft), 'sideways drag should still scroll the tabs').toBeGreaterThan(0);
+  expect(await strip.evaluate((e) => e.scrollLeft), 'the tabs fit, so a sideways drag has nothing to scroll').toBe(0);
   expect(await page.evaluate(() => document.querySelector('.app-content-pad').scrollLeft), 'the page itself slid sideways').toBe(0);
 });

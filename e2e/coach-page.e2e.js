@@ -44,7 +44,7 @@ test('each client is a card; one reason is a tag inside it and never touches ano
   // Every tag sits fully inside its card.
   const tagsInside = await page.evaluate(() => [...document.querySelectorAll('[role="button"].btn-press')].every((card) => {
     const cr = card.getBoundingClientRect();
-    return [...card.querySelectorAll('span')].every((t) => { const r = t.getBoundingClientRect(); return r.bottom <= cr.bottom + 0.5 && r.top >= cr.top - 0.5 && r.right <= cr.right + 0.5; });
+    return [...card.querySelectorAll('span')].every((t) => { const r = t.getBoundingClientRect(); if (r.width === 0 && r.height === 0) return true; /* hidden at this width */ return r.bottom <= cr.bottom + 0.5 && r.top >= cr.top - 0.5 && r.right <= cr.right + 0.5; });
   }));
   expect(tagsInside).toBe(true);
 });
@@ -141,7 +141,7 @@ test('"Message" on a card opens that client straight to their messages', async (
   await openApp({ page, context }, testInfo, COACH_BACKEND);
   await page.goto('/coach');
   await settle(page);
-  await page.getByRole('button', { name: 'Message Tarun' }).click();
+  await page.getByRole('button', { name: 'Message Tarun', exact: true }).click();
   await expect(page.getByRole('group', { name: 'Quick messages' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Snapshot' })).toHaveAttribute('aria-selected', 'true'); // the page underneath is the Snapshot
 });

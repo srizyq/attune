@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import DaySelector from '../DaySelector';
 import LogItemRow from '../LogItemRow';
-import MicroCard from '../MicroCard';
 import DaySummary from '../DaySummary';
 import { Card, SectionLabel, StatRow } from './shared';
 import WorkoutsCard from './WorkoutsCard';
 import ProvenanceBadge from './ProvenanceBadge';
 import { PROVENANCE, provenanceBreakdown } from '../../lib/provenance';
-import { MEAL_LABELS, MICRO_GROUPS } from './constants';
-import { MICRO_NUTRIENTS, extendedNote, formatMicro } from '../../lib/microNutrients';
+import { MEAL_LABELS } from './constants';
+import NutrientBreakdown from './NutrientBreakdown';
 import { round1 } from '../../lib/format';
 
 // One day at a time: what they ate (with the full micronutrient breakdown),
@@ -63,6 +62,15 @@ export default function DiaryTab({ d }) {
                 const mealCarbs = round1(items.reduce((s, i) => s + i.carbs, 0));
                 const mealFat = round1(items.reduce((s, i) => s + i.fat, 0));
                 const isOpen = open[mealKey];
+                // A meal with nothing in it is one quiet line, not a card of its own.
+                if (items.length === 0) {
+                  return (
+                    <div key={mealKey} data-testid={`empty-meal-${mealKey}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 36, padding: '0 6px', fontSize: 13, color: 'var(--text-hint)' }}>
+                      <span style={{ fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 11 }}>{MEAL_LABELS[mealKey]}</span>
+                      <span>Nothing logged</span>
+                    </div>
+                  );
+                }
                 return (
                   <div key={mealKey} style={{ background: 'var(--bg-primary)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)', borderRadius: 12, overflow: 'hidden' }}>
                     <button onClick={() => setOpen(o => ({ ...o, [mealKey]: !o[mealKey] }))} className="btn-press" style={{ width: '100%', background: 'none', border: 'none', padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -72,7 +80,7 @@ export default function DiaryTab({ d }) {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{mealTotal} kcal</span>
-                        <span style={{ color: 'var(--text-hint)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                        <span style={{ color: 'var(--text-hint)', fontSize: 12, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><span className="chev" aria-hidden="true" /></span>
                       </div>
                     </button>
                     {isOpen && (
@@ -119,39 +127,7 @@ export default function DiaryTab({ d }) {
         </div>
       </div>
 
-      <Card style={{ marginBottom: 0 }}>
-        <SectionLabel icon="ti-apple">Micronutrients — {date}</SectionLabel>
-        {foodLoading ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
-        ) : !hasAnyFood ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Nothing logged this day.</p>
-        ) : (
-          MICRO_GROUPS.map((group, gi) => (
-            <div key={group.label} style={{ marginBottom: gi < MICRO_GROUPS.length - 1 ? 20 : 0 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: group.extended ? 4 : 10 }}>{group.label}</div>
-              {group.extended && extendedNote(extendedInfo) && <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 0 10px', lineHeight: 1.5 }}>{extendedNote(extendedInfo)}</p>}
-              <div className="grid-3">
-                {group.keys.map(key => {
-                  const n = MICRO_NUTRIENTS.find(m => m.key === key);
-                  return (
-                    <MicroCard
-                      key={key}
-                      icon={n.icon}
-                      label={n.label}
-                      value={formatMicro(n, microTotals[key])}
-                      unit={n.unit}
-                      guideline={n.guideline}
-                      target={microTargets[key]}
-                      defaultTarget={n.defaultTarget}
-                      color={n.color}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ))
-        )}
-      </Card>
+      <NutrientBreakdown date={date} foodLoading={foodLoading} hasAnyFood={hasAnyFood} microTotals={microTotals} microTargets={microTargets} extendedInfo={extendedInfo} />
     </div>
   );
 }
