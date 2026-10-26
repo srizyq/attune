@@ -10,6 +10,7 @@ import { upsertProfile, getProfile } from '../lib/db';
 import OAuthButtons from '../components/OAuthButtons';
 import { signInWithProvider, readOAuthError } from '../lib/oauth';
 import { getCaptchaToken, captchaOptions } from '../lib/captcha';
+import Wordmark from '../components/Wordmark';
 
 // Never reveals whether the email is actually registered — the "sent"
 // state shows regardless (see usePasswordResetRequest's own comment),
@@ -193,10 +194,7 @@ export default function Login() {
       flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/" style={{
-          fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: '20px',
-          color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none',
-        }}>attune</Link>
+        <Link to="/" aria-label="attune" style={{ display: 'flex', textDecoration: 'none' }}><Wordmark height={26} /></Link>
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
 

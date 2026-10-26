@@ -2,6 +2,7 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { usePreAuthTheme } from '../../hooks/usePreAuthTheme';
 import PreAuthThemeToggle from '../../components/PreAuthThemeToggle';
+import Wordmark from '../../components/Wordmark';
 
 // The very first screen — deliberately bare (no progress bar, no step
 // counter, no skip link) since it isn't part of the numbered flow yet.
@@ -26,16 +27,7 @@ export default function Welcome() {
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
 
-      <span style={{
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
-        fontWeight: 700,
-        fontSize: 'clamp(40px, 12vw, 64px)',
-        color: 'var(--text-primary)',
-        letterSpacing: '-1px',
-        marginBottom: '48px',
-      }}>
-        attune
-      </span>
+      <Wordmark style={{ width: 'min(72vw, 340px)', height: 'auto', marginBottom: '48px' }} />
 
       <button
         onClick={() => navigate('/onboarding/step1')}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import PreAuthThemeToggle from '../components/PreAuthThemeToggle';
+import Wordmark from '../components/Wordmark';
 
 // Landed on from the link in the "reset your password" email. Supabase
 // exchanges that link's token for a temporary recovery session via the URL
@@ -64,10 +65,7 @@ export default function ResetPassword() {
       flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/" style={{
-          fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: '20px',
-          color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none',
-        }}>attune</Link>
+        <Link to="/" aria-label="attune" style={{ display: 'flex', textDecoration: 'none' }}><Wordmark height={26} /></Link>
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
 

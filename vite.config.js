@@ -48,7 +48,7 @@ export default defineConfig({
         short_name: 'Attune',
         description: 'Track food. Feel the pattern. Attune connects what you eat to how you feel.',
         theme_color: '#0f0f0f',
-        background_color: '#0f0f0f',
+        background_color: '#1c1612',
         display: 'standalone',
         start_url: '/',
         icons: [

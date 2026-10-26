@@ -1,17 +1,14 @@
-export default function LogoMark({ size = 28 }) {
+// The compact logo: the "a" and the purple square from the attune wordmark. For narrow spots
+// (the desktop sidebar). The full wordmark is Wordmark.jsx.
+const PURPLE = '#9867c5';
+const W = 267;
+const H = 236;
+
+export default function LogoMark({ size = 28, style }) {
   return (
-    <div style={{
-      width: size, height: size,
-      background: 'transparent',
-      border: `${Math.max(1.5, size * 0.045)}px solid var(--accent)`,
-      borderRadius: size * 0.21,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0, boxSizing: 'border-box',
-    }}>
-      <span style={{
-        fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800,
-        fontSize: size * 0.53, color: 'var(--accent)', lineHeight: 1,
-      }}>a</span>
-    </div>
+    <svg role="img" aria-label="attune" viewBox={`0 0 ${W} ${H}`} height={size} width={(size * W) / H} style={{ display: 'block', flexShrink: 0, color: 'var(--text-primary)', ...style }}>
+      <path fill="currentColor" fillRule="evenodd" d="M 56.56 42.16 C 36.56 45.98, 20.39 62.60, 14.41 85.50 C 11.63 96.12, 11.84 115.97, 14.83 126.45 C 22.16 152.12, 39.70 167.64, 63.69 169.67 C 77.82 170.87, 90.40 166.46, 100.18 156.90 L 106 151.20 106 159.60 L 106 168 125 168 L 144 168 144 105.50 L 144 43 125 43 L 106 43 106 51.42 L 106 59.84 100.25 54.10 C 89.20 43.08, 73.80 38.87, 56.56 42.16 M 68 77.07 C 60.07 80.66, 54.27 87.70, 52.50 95.93 C 51.27 101.64, 51.78 112.29, 53.55 117.54 C 59.67 135.76, 81.53 142.08, 95.60 129.70 C 109.41 117.54, 109.02 92.73, 94.82 80.58 C 87.85 74.61, 76.67 73.15, 68 77.07" />
+      <rect x="177" y="145" width="78" height="79" fill={PURPLE} />
+    </svg>
   );
 }

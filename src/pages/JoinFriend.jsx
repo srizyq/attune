@@ -6,6 +6,7 @@ import PreAuthThemeToggle from '../components/PreAuthThemeToggle';
 import RequireAuth from '../components/RequireAuth';
 import Avatar from '../components/Avatar';
 import { normalizeFriendCode, stashPendingFriend, previewInvite, addFriend, friendlyFriendsError } from '../lib/friends';
+import Wordmark from '../components/Wordmark';
 
 const shell = { minHeight: 'var(--app-h)', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' };
 const button = (primary) => ({
@@ -108,7 +109,7 @@ export default function JoinFriend() {
   return (
     <div data-theme={theme} style={shell}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/" style={{ fontWeight: 700, fontSize: 20, color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none' }}>attune</Link>
+        <Link to="/" aria-label="attune" style={{ display: 'flex', textDecoration: 'none' }}><Wordmark height={26} /></Link>
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>

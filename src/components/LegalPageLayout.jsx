@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import PreAuthThemeToggle from './PreAuthThemeToggle';
+import Wordmark from './Wordmark';
 
 // Shared shell for /terms and /privacy — public routes (not behind
 // RequireAuth) since prospective users need to read these before ever
@@ -37,7 +38,7 @@ export default function LegalPageLayout({ title, updated, children }) {
         <button onClick={goBack} className="app-icon-btn" aria-label="Back">
           <i className="ti ti-arrow-left" />
         </button>
-        <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 18, color: 'var(--accent)', letterSpacing: '-0.5px' }}>attune</span>
+        <Wordmark height={24} />
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
 

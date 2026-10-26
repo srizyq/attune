@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import PreAuthThemeToggle from './PreAuthThemeToggle';
+import Wordmark from './Wordmark';
 
 export default function OnboardingLayout({ children, step, totalSteps = 4, showSkip = true, showLogin = true }) {
   const navigate = useNavigate();
@@ -26,13 +27,7 @@ export default function OnboardingLayout({ children, step, totalSteps = 4, showS
         gap: '16px',
       }}>
         {/* Logo */}
-        <span style={{
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-          fontWeight: 700,
-          fontSize: '20px',
-          color: 'var(--accent)',
-          letterSpacing: '-0.5px',
-        }}>attune</span>
+        <Wordmark height={26} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {/* Step counter */}

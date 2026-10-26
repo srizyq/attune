@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usePreAuthTheme } from '../hooks/usePreAuthTheme';
 import PreAuthThemeToggle from '../components/PreAuthThemeToggle';
 import { normalizeInviteCode, stashPendingInvite } from '../lib/coachInvite';
+import Wordmark from '../components/Wordmark';
 
 // Landing page for a coach's invite link (/join/CODE). The code is stashed
 // in localStorage first — before the person has an account it has to survive
@@ -45,7 +46,7 @@ export default function JoinCoach() {
   return (
     <div data-theme={theme} style={{ minHeight: 'var(--app-h)', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 20, color: 'var(--accent)', letterSpacing: '-0.5px', textDecoration: 'none' }}>attune</Link>
+        <Link to="/" aria-label="attune" style={{ display: 'flex', textDecoration: 'none' }}><Wordmark height={26} /></Link>
         <PreAuthThemeToggle theme={theme} onToggle={toggleTheme} />
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
