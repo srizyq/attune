@@ -4,6 +4,7 @@ import { useProfile } from './useProfile';
 import { savePushSubscription, deletePushSubscriptionByEndpoint } from '../lib/db';
 import { pushSupported, requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '../lib/pushNotifications';
 import { stillNeedsPush } from '../lib/pushPrefs';
+import { localNotificationsAvailable, getLocalPrefs, setLocalPref, DEFAULT_DAILY_TIME } from '../lib/localNotifications';
 
 // Ties together the profile's reminder settings (enabled/time/timezone)
 // with the actual browser push subscription — enabling reminders means
@@ -15,12 +16,21 @@ export function useReminders() {
   const { profile, save } = useProfile();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  // Inside the iPhone app the daily reminder is a notification the phone fires
+  // itself (lib/localNotifications.js), kept on the device — not a server push.
+  const native = localNotificationsAvailable();
+  const [localDaily, setLocalDaily] = useState(() => getLocalPrefs().daily);
 
   const enable = useCallback(async (time) => {
     if (!user) return;
     setBusy(true);
     setError(null);
     try {
+      if (native) {
+        await setLocalPref('daily', { on: true, time });
+        setLocalDaily({ on: true, time });
+        return;
+      }
       if (!pushSupported()) throw new Error('Push notifications are not supported in this browser.');
       const permission = await requestNotificationPermission();
       if (permission !== 'granted') throw new Error('Notification permission was not granted.');
@@ -35,12 +45,17 @@ export function useReminders() {
     } finally {
       setBusy(false);
     }
-  }, [user, save]);
+  }, [user, save, native]);
 
   const disable = useCallback(async () => {
     setBusy(true);
     setError(null);
     try {
+      if (native) {
+        await setLocalPref('daily', { on: false });
+        setLocalDaily((d) => ({ ...d, on: false }));
+        return;
+      }
       // Trainer notifications (below) share this same device's one push
       // subscription — only tear it down once nothing else on this profile
       // still needs it, or disabling reminders alone would silently kill
@@ -57,16 +72,21 @@ export function useReminders() {
     } finally {
       setBusy(false);
     }
-  }, [save, profile]);
+  }, [save, profile, native]);
 
   const setTime = useCallback(async (time) => {
+    if (native) {
+      await setLocalPref('daily', { time });
+      setLocalDaily((d) => ({ ...d, time }));
+      return;
+    }
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     await save({ reminder_time: time, reminder_timezone: timezone });
-  }, [save]);
+  }, [save, native]);
 
   return {
-    enabled: !!profile?.reminder_enabled,
-    time: profile?.reminder_time || '19:00',
+    enabled: native ? localDaily.on : !!profile?.reminder_enabled,
+    time: native ? localDaily.time : profile?.reminder_time || DEFAULT_DAILY_TIME,
     busy,
     error,
     enable,

@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { installGlobalErrorReporting } from './lib/reportError'
 import { installRecentErrorCapture } from './lib/recentErrors'
 import { initNativeKeyboard } from './lib/nativeKeyboard'
+import { initLocalNotifications } from './lib/localNotifications'
 
 // The bare `<script>` vite-plugin-pwa injects automatically only calls
 // navigator.serviceWorker.register() — it has no idea a new version ever
@@ -19,6 +20,7 @@ registerSW({ immediate: true })
 installGlobalErrorReporting()
 installRecentErrorCapture()
 initNativeKeyboard()
+initLocalNotifications()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
