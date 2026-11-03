@@ -149,7 +149,7 @@ describe('save as recipe card', () => {
   });
 
   it('also creates a one-ingredient recipe, with the photo when one was chosen', async () => {
-    global.URL.createObjectURL = vi.fn(() => 'blob:x'); global.URL.revokeObjectURL = vi.fn();
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:x'); globalThis.URL.revokeObjectURL = vi.fn();
     const recipeCard = card();
     const { onSave } = setup({ recipeCard });
     await type('Food title *', 'Chia pudding');
