@@ -46,6 +46,7 @@ import { targetsForDate } from '../lib/dayTargets';
 import { fetchWithTimeout } from '../lib/http';
 import { SCAN_PATHS, legacyScanKind, withoutLegacyScanFlags } from '../lib/scanRoutes';
 import RecipeMetaFields from '../components/recipes/RecipeMetaFields';
+import CreateFood from '../components/CreateFood';
 import { uploadRecipePhoto, removeRecipePhoto } from '../lib/recipePhoto';
 import { allTags as allRecipeTags, parsePrepMinutes } from '../lib/recipeTags';
 import { rankFoods, foodMatchRank } from '../lib/foodRank';
@@ -1309,98 +1310,7 @@ function ModalShell({ title, onClose, children, maxWidth = 460 }) {
 const fieldStyle = { width: "100%", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 7, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
 const labelStyle = { fontSize: 11, color: "var(--text-muted)", marginBottom: 5, display: "block" };
 
-// ─── Create a custom food ───────────────────────────────────────────────────
-
-function CreateFoodModal({ onClose, onCreate, initialName, initialFood }) {
-  // initialFood (a photo/menu scan result, post-correction if any) takes
-  // priority over initialName — pre-filling every field means saving what
-  // you already corrected the AI to get right, not just the name.
-  const [name, setName] = useState(initialFood?.name || initialName || "");
-  const [brand, setBrand] = useState("");
-  const [servingLabel, setServingLabel] = useState(initialFood?.portion || "1 serving");
-  const [servingGrams, setServingGrams] = useState("");
-  const [cal, setCal] = useState(initialFood?.cal ?? "");
-  const [protein, setProtein] = useState(initialFood?.protein ?? "");
-  const [carbs, setCarbs] = useState(initialFood?.carbs ?? "");
-  const [fat, setFat] = useState(initialFood?.fat ?? "");
-  const [fibre, setFibre] = useState("");
-  const [sodium, setSodium] = useState("");
-  const [sugar, setSugar] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-
-  const valid = name.trim() && Number(cal) >= 0 && cal !== "";
-
-  async function submit() {
-    if (!valid || saving) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await onCreate({
-        name: name.trim(),
-        brand: brand.trim() || null,
-        servingLabel: servingLabel.trim() || "1 serving",
-        servingGrams: servingGrams ? Number(servingGrams) : null,
-        cal: Number(cal) || 0,
-        protein: Number(protein) || 0,
-        carbs: Number(carbs) || 0,
-        fat: Number(fat) || 0,
-        fibre: Number(fibre) || 0,
-        sodium: Number(sodium) || 0,
-        sugar: Number(sugar) || 0,
-      });
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setError("Couldn't save this food. Try again.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <ModalShell title="Create a custom food" onClose={onClose}>
-      <div style={{ display: "grid", gap: 12 }}>
-        <div>
-          <label style={labelStyle}>Food name *</label>
-          <input style={fieldStyle} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Mum's lasagna" />
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div>
-            <label style={labelStyle}>Brand (optional)</label>
-            <input style={fieldStyle} value={brand} onChange={e => setBrand(e.target.value)} />
-          </div>
-          <div>
-            <label style={labelStyle}>Serving size</label>
-            <input style={fieldStyle} value={servingLabel} onChange={e => setServingLabel(e.target.value)} placeholder="1 serving" />
-          </div>
-        </div>
-        <div>
-          <label style={labelStyle}>Serving weight in grams (optional, for unit conversion)</label>
-          <input style={fieldStyle} type="number" min="0" value={servingGrams} onChange={e => setServingGrams(e.target.value)} placeholder="e.g. 250" />
-        </div>
-        <div>
-          <label style={labelStyle}>Calories *</label>
-          <input style={fieldStyle} type="number" min="0" value={cal} onChange={e => setCal(e.target.value)} />
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-          <div><label style={labelStyle}>Protein (g)</label><input style={fieldStyle} type="number" min="0" value={protein} onChange={e => setProtein(e.target.value)} /></div>
-          <div><label style={labelStyle}>Carbs (g)</label><input style={fieldStyle} type="number" min="0" value={carbs} onChange={e => setCarbs(e.target.value)} /></div>
-          <div><label style={labelStyle}>Fat (g)</label><input style={fieldStyle} type="number" min="0" value={fat} onChange={e => setFat(e.target.value)} /></div>
-          <div><label style={labelStyle}>Fibre (g)</label><input style={fieldStyle} type="number" min="0" value={fibre} onChange={e => setFibre(e.target.value)} /></div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div><label style={labelStyle}>Sodium (mg)</label><input style={fieldStyle} type="number" min="0" value={sodium} onChange={e => setSodium(e.target.value)} /></div>
-          <div><label style={labelStyle}>Sugar (g)</label><input style={fieldStyle} type="number" min="0" value={sugar} onChange={e => setSugar(e.target.value)} /></div>
-        </div>
-        {error && <div style={{ background: "#1a0f0f", border: "1px solid #c0707040", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--danger)" }}>{error}</div>}
-        <button onClick={submit} disabled={!valid || saving} style={{ background: !valid || saving ? "var(--border-default)" : "var(--accent)", border: "none", borderRadius: 8, padding: "11px", fontSize: 14, fontWeight: 600, color: !valid || saving ? "var(--text-muted)" : "var(--accent-contrast)", cursor: !valid || saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          {saving ? "Saving…" : "Save custom food"}
-        </button>
-      </div>
-    </ModalShell>
-  );
-}
+// The create-a-custom-food form is its own page now: src/components/CreateFood.jsx.
 
 // ─── Recipes ────────────────────────────────────────────────────────────────
 // Browsing/logging/editing a recipe lives on its own page (src/pages/
@@ -2780,13 +2690,26 @@ export default function FoodSearch() {
 
       {/* Create a custom food */}
       {createFoodOpen && (
-        <CreateFoodModal
+        <CreateFood
           onClose={() => { setCreateFoodOpen(false); setCreateFoodPrefill(null); }}
           initialName={query}
           initialFood={createFoodPrefill}
-          onCreate={async (food) => {
-            await customFoods.create(food);
+          defaultMeal={activeMeal}
+          slotTime={showSlots ? formatTime12h(activeTime) : null}
+          onSave={async (food) => {
+            const row = await customFoods.create(food);
             showToast(`"${withBrand(food.name, food.brand)}" saved as a custom food`);
+            return row;
+          }}
+          onLog={builderMode ? undefined : async (food, meal) => {
+            const base = { ...food, source: 'custom', servingGrams: food.servingGrams || 100 };
+            await logFood(base, showSlots ? null : meal, showSlots ? timeStringToDate(activeTime, new Date(selectedDate + "T00:00:00")) : null);
+          }}
+          recipeCard={builderMode ? null : {
+            atLimit: !isPremium && savedMeals.rows.length >= FREE_SAVED_MEALS_LIMIT,
+            photosSupported: savedMeals.extrasSupported,
+            create: savedMeals.create,
+            uploadPhoto: (file) => uploadRecipePhoto(user.id, file),
           }}
         />
       )}
