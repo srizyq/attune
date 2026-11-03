@@ -117,11 +117,12 @@ test.describe('as an admin', () => {
     await page.goto('/admin/reports');
     await settle(page);
     const card = page.locator('div').filter({ hasText: 'Typo on the pricing page' }).last();
-    await card.getByLabel('Status').selectOption('wont_fix');
-    await expect.poll(() => patches.some((p) => p.status === 'wont_fix')).toBe(true);
+    // Note first: once the status moves a report to Closed it leaves this tab.
     await card.getByLabel('Note').fill('Not a bug');
     await card.getByLabel('Note').blur();
     await expect.poll(() => patches.some((p) => p.admin_note === 'Not a bug')).toBe(true);
+    await card.getByLabel('Status').selectOption('wont_fix');
+    await expect.poll(() => patches.some((p) => p.status === 'wont_fix')).toBe(true);
   });
 
   test('Ask Claude to fix tells the server, and the button goes away', async ({ page, context }, testInfo) => {
