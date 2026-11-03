@@ -8,9 +8,13 @@ import Toast from '../components/Toast';
 import Avatar from '../components/Avatar';
 import LogItemRow from '../components/LogItemRow';
 import DaySummary from '../components/DaySummary';
+import { ScanCard, Eyebrow, Chip, IconTile } from '../components/scan/ScanKit';
+import { MacroLine } from '../components/recipes/RecipeCard';
+import { useRecipePhotoUrls } from '../hooks/useRecipePhotoUrls';
+import { prepLabel } from '../lib/recipeTags';
 import { MEAL_LABELS } from '../components/coach/constants';
 import { getFriendDay, getFriendRecipes, removeFriend, friendlyFriendsError } from '../lib/friends';
-import { sumFoodItems, scaleFood, formatAmountUnit } from '../lib/foodMath';
+import { formatAmountUnit } from '../lib/foodMath';
 import { round1 } from '../lib/format';
 import { todayLocalDate } from '../lib/patterns';
 
@@ -18,18 +22,26 @@ const MEALS = ['breakfast', 'lunch', 'dinner', 'snacks'];
 const card = { background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)' };
 const sectionLabel = { fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '22px 2px 10px' };
 
-function SharedRecipe({ recipe, onSave, saving }) {
+function SharedRecipe({ recipe, photoUrl, onSave, saving }) {
   const [open, setOpen] = useState(false);
   const servings = Number(recipe.servings) || 1;
-  const perServing = useMemo(() => scaleFood(sumFoodItems(recipe.items), 1 / servings), [recipe.items, servings]);
+  const prep = prepLabel(recipe.prepMinutes);
+  const tags = recipe.tags || [];
   return (
-    <div style={{ ...card, marginBottom: 10, overflow: 'hidden' }}>
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '14px 16px', cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }}>
+    <ScanCard style={{ padding: 0, overflow: 'hidden' }}>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 12, cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }}>
+        {photoUrl
+          ? <img src={photoUrl} alt="" style={{ width: 56, height: 56, flexShrink: 0, borderRadius: 14, objectFit: 'cover', background: 'var(--bg-subtle)' }} />
+          : <IconTile icon="ti-tools-kitchen-2" size={56} style={{ borderRadius: 16 }} />}
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontWeight: 700, fontSize: 15, overflowWrap: 'anywhere' }}>{recipe.name}</span>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-            {Math.round(perServing.cal)} kcal · P {round1(perServing.protein)}g · C {round1(perServing.carbs)}g · F {round1(perServing.fat)}g per serving
-          </span>
+          {(tags.length > 0 || prep) && (
+            <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 4 }}>
+              {tags.slice(0, 2).map((t) => <Chip key={t} color="var(--accent-secondary)">{t}</Chip>)}
+              {prep && <Chip icon="ti-clock">{prep}</Chip>}
+            </span>
+          )}
+          <span style={{ display: 'block', fontWeight: 800, fontSize: 15, overflowWrap: 'anywhere' }}>{recipe.name}</span>
+          <MacroLine recipe={recipe} style={{ marginTop: 2 }} />
         </span>
         <i className={`ti ti-chevron-${open ? 'up' : 'down'}`} aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
       </button>
@@ -44,12 +56,12 @@ function SharedRecipe({ recipe, onSave, saving }) {
               <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>{Math.round(it.cal || 0)} kcal</span>
             </div>
           ))}
-          <button type="button" onClick={() => onSave(recipe)} disabled={saving} style={{ marginTop: 12, width: '100%', minHeight: 44, background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          <button type="button" onClick={() => onSave(recipe)} disabled={saving} style={{ marginTop: 12, width: '100%', minHeight: 44, background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
             {saving ? 'Saving…' : 'Save to my recipes'}
           </button>
         </div>
       )}
-    </div>
+    </ScanCard>
   );
 }
 
@@ -92,7 +104,10 @@ export default function FriendDay() {
     for (const item of day?.items || []) (by[item.meal] || by.snacks).push(item);
     return by;
   }, [day]);
+  const photoUrls = useRecipePhotoUrls(recipes.map((r) => r.photoPath));
   const totals = useMemo(() => {
+    // At "totals only" there are no foods to add up: use the day's numbers as the server summed them.
+    if (day?.level === 'totals' && day.totals) return day.totals;
     const all = day?.items || [];
     return { calories: all.reduce((s, i) => s + i.cal, 0), protein: all.reduce((s, i) => s + i.protein, 0), carbs: all.reduce((s, i) => s + i.carbs, 0), fat: all.reduce((s, i) => s + i.fat, 0) };
   }, [day]);
@@ -100,7 +115,7 @@ export default function FriendDay() {
   async function saveRecipe(recipe) {
     setSavingId(recipe.id);
     try {
-      await savedMeals.create(recipe.name, recipe.items, recipe.servings);
+      await savedMeals.create(recipe.name, recipe.items, recipe.servings, { tags: recipe.tags, prepMinutes: recipe.prepMinutes });
       showToast(`${recipe.name} saved to your recipes`);
     } catch (err) {
       console.error('Failed to save recipe:', err);
@@ -134,7 +149,7 @@ export default function FriendDay() {
   } else {
     body = (
       <>
-        <div style={{ ...card, padding: '18px 18px 16px' }}>
+        <ScanCard style={{ padding: '18px 18px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
             <Avatar name={name} size={44} />
             <div style={{ minWidth: 0 }}>
@@ -147,9 +162,14 @@ export default function FriendDay() {
           ) : (
             <DaySummary totals={totals} targets={day.targets} />
           )}
-        </div>
+          {day.level === 'totals' && !day.hidden && (
+            <p data-testid="friend-totals-only" style={{ margin: '12px 0 0', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              <i className="ti ti-eye-off" aria-hidden="true" /> {name} shares their totals only, so what they ate stays private.
+            </p>
+          )}
+        </ScanCard>
 
-        {!day.hidden && (
+        {!day.hidden && day.level !== 'totals' && (
           <>
             <div data-testid="friend-log-label" style={sectionLabel}>Daily log</div>
             {day.items.length === 0 ? (
@@ -182,11 +202,11 @@ export default function FriendDay() {
           </>
         )}
 
-        <div style={sectionLabel}>Recipes {name} shared</div>
+        <Eyebrow style={sectionLabel}>Recipes {name} shared</Eyebrow>
         {recipes.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '0 2px' }}>{name} hasn't shared any recipes yet.</p>
         ) : (
-          recipes.map((r) => <SharedRecipe key={r.id} recipe={r} saving={savingId === r.id} onSave={saveRecipe} />)
+          recipes.map((r) => <SharedRecipe key={r.id} recipe={r} photoUrl={r.photoPath ? photoUrls[r.photoPath] : null} saving={savingId === r.id} onSave={saveRecipe} />)
         )}
 
         <div style={{ marginTop: 28, textAlign: 'center' }}>

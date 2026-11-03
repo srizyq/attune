@@ -4577,7 +4577,9 @@ $$;
 revoke all on function public.friends_day_visible(uuid, date) from public, anon, authenticated;
 
 -- Your invite code and sharing switch, created on first use.
-create or replace function public.friends_me()
+-- (Dropped first: a later update adds a column to the result, and a function's result can't be changed in place.)
+drop function if exists public.friends_me();
+create function public.friends_me()
 returns table (invite_code text, share_day boolean)
 language plpgsql security definer set search_path = public
 as $$
@@ -4689,7 +4691,8 @@ grant execute on function public.friends_remove(uuid) to authenticated;
 
 -- Your friends with their totals for one day. hidden = true means they are not
 -- showing that day (totals are then null); items counts what they logged.
-create or replace function public.friends_list(p_day date)
+drop function if exists public.friends_list(date);
+create function public.friends_list(p_day date)
 returns table (
   friend_id uuid, name text, hidden boolean, items bigint,
   calories numeric, protein_g numeric, carbs_g numeric, fat_g numeric,
@@ -5590,3 +5593,178 @@ end;
 $$;
 revoke all on function public.friends_recipes(uuid) from public, anon;
 grant execute on function public.friends_recipes(uuid) to authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Friends sharing levels (schema update — run against an existing DB; safe to re-run).
+-- Tests: supabase/tests/friends-levels.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+-- The on/off "share my day" switch becomes three choices:
+--   full     friends see your calories, macros and what you ate (as before)
+--   totals   friends see only the day's calories and macros — never the foods
+--   private  friends see nothing of your day
+-- Hiding a single day still hides it completely, whatever the level. Recipes you
+-- mark as shared are separate and are not affected by this setting.
+-- share_day is kept in step (it is false only for private) so the older app
+-- code, which only knows on/off, keeps working until it is refreshed.
+alter table public.friend_settings add column if not exists share_level text not null default 'full';
+alter table public.friend_settings drop constraint if exists friend_settings_share_level_valid;
+alter table public.friend_settings add constraint friend_settings_share_level_valid check (share_level in ('full', 'totals', 'private'));
+update public.friend_settings set share_level = 'private' where share_day = false and share_level = 'full';
+
+-- What friends may see of this person's day: 'none', 'totals' or 'full'.
+create or replace function public.friends_day_level(p_owner uuid, p_day date)
+returns text
+language sql stable security definer set search_path = public
+as $$
+  select case
+    when exists (select 1 from public.friend_hidden_days where user_id = p_owner and day = p_day) then 'none'
+    else coalesce((select case when share_level = 'private' then 'none' else share_level end from public.friend_settings where user_id = p_owner), 'full')
+  end;
+$$;
+revoke all on function public.friends_day_level(uuid, date) from public, anon, authenticated;
+
+create or replace function public.friends_day_visible(p_owner uuid, p_day date)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select public.friends_day_level(p_owner, p_day) <> 'none';
+$$;
+revoke all on function public.friends_day_visible(uuid, date) from public, anon, authenticated;
+
+drop function if exists public.friends_me();
+create function public.friends_me()
+returns table (invite_code text, share_day boolean, share_level text)
+language plpgsql security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  insert into public.friend_settings (user_id) values (uid) on conflict (user_id) do nothing;
+  return query select s.invite_code, s.share_level <> 'private', s.share_level from public.friend_settings s where s.user_id = uid;
+end;
+$$;
+revoke all on function public.friends_me() from public, anon;
+grant execute on function public.friends_me() to authenticated;
+
+create or replace function public.friends_set_share_level(p_level text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if p_level is null or p_level not in ('full', 'totals', 'private') then raise exception 'friends_invalid_level'; end if;
+  insert into public.friend_settings (user_id, share_day, share_level) values (uid, p_level <> 'private', p_level)
+    on conflict (user_id) do update set share_level = excluded.share_level, share_day = excluded.share_day;
+end;
+$$;
+revoke all on function public.friends_set_share_level(text) from public, anon;
+grant execute on function public.friends_set_share_level(text) to authenticated;
+
+-- The older on/off switch: off is private, on goes back to what you had (or full).
+create or replace function public.friends_set_sharing(p_share boolean)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  insert into public.friend_settings (user_id, share_day, share_level) values (uid, coalesce(p_share, true), case when coalesce(p_share, true) then 'full' else 'private' end)
+    on conflict (user_id) do update set
+      share_day = excluded.share_day,
+      share_level = case when excluded.share_day then (case when friend_settings.share_level = 'private' then 'full' else friend_settings.share_level end) else 'private' end;
+end;
+$$;
+revoke all on function public.friends_set_sharing(boolean) from public, anon;
+grant execute on function public.friends_set_sharing(boolean) to authenticated;
+
+-- Your friends with the day's totals. level says how much you may see:
+-- 'none' (hidden: totals are null), 'totals' or 'full'. The list only ever
+-- carries totals and a count — food names come from friends_day, at 'full' only.
+drop function if exists public.friends_list(date);
+create function public.friends_list(p_day date)
+returns table (
+  friend_id uuid, name text, hidden boolean, items bigint,
+  calories numeric, protein_g numeric, carbs_g numeric, fat_g numeric,
+  calorie_target numeric, protein_target numeric, carbs_target numeric, fat_target numeric,
+  level text
+)
+language plpgsql stable security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  return query
+    select f.friend, coalesce(nullif(trim(p.name), ''), 'Friend'), vis.level = 'none',
+      case when vis.level <> 'none' then t.items else 0 end,
+      case when vis.level <> 'none' then t.calories end,
+      case when vis.level <> 'none' then t.protein end,
+      case when vis.level <> 'none' then t.carbs end,
+      case when vis.level <> 'none' then t.fat end,
+      p.calorie_target::numeric, p.protein_g::numeric, p.carbs_g::numeric, p.fat_g::numeric,
+      vis.level
+    from (
+      select case when user_a = uid then user_b else user_a end as friend
+      from public.friendships where user_a = uid or user_b = uid
+    ) f
+    left join public.profiles p on p.id = f.friend
+    cross join lateral (select public.friends_day_level(f.friend, p_day) as level) vis
+    cross join lateral (
+      select count(*) as items, coalesce(sum(l.calories), 0) as calories, coalesce(sum(l.protein_g), 0) as protein,
+             coalesce(sum(l.carbs_g), 0) as carbs, coalesce(sum(l.fat_g), 0) as fat
+      from public.food_logs l where l.user_id = f.friend and l.logged_date = p_day
+    ) t
+    order by lower(coalesce(nullif(trim(p.name), ''), 'Friend'));
+end;
+$$;
+revoke all on function public.friends_list(date) from public, anon;
+grant execute on function public.friends_list(date) to authenticated;
+
+-- One friend's day. Foods (logs) come back only at 'full'; at 'totals' the
+-- totals object carries the day's numbers instead; at 'none' neither does.
+create or replace function public.friends_day(p_friend uuid, p_day date)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  prof public.profiles%rowtype;
+  lvl text;
+  logs jsonb := '[]'::jsonb;
+  totals jsonb := null;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if not public.friends_are(uid, p_friend) then raise exception 'friends_not_friends'; end if;
+  select * into prof from public.profiles where id = p_friend;
+  lvl := public.friends_day_level(p_friend, p_day);
+  if lvl = 'full' then
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id', l.id, 'meal', l.meal, 'food_name', l.food_name, 'brand', l.brand,
+      'calories', l.calories, 'protein_g', l.protein_g, 'carbs_g', l.carbs_g, 'fat_g', l.fat_g,
+      'serving_grams', l.serving_grams, 'logged_amount', l.logged_amount, 'logged_unit', l.logged_unit,
+      'serving_label', l.serving_label, 'logged_at', l.logged_at, 'created_at', l.created_at,
+      'ingredients', l.ingredients
+    ) order by l.logged_at nulls last, l.created_at), '[]'::jsonb)
+    into logs
+    from public.food_logs l where l.user_id = p_friend and l.logged_date = p_day;
+  end if;
+  if lvl <> 'none' then
+    select jsonb_build_object(
+      'items', count(*), 'calories', coalesce(sum(l.calories), 0), 'protein_g', coalesce(sum(l.protein_g), 0),
+      'carbs_g', coalesce(sum(l.carbs_g), 0), 'fat_g', coalesce(sum(l.fat_g), 0))
+    into totals
+    from public.food_logs l where l.user_id = p_friend and l.logged_date = p_day;
+  end if;
+  return jsonb_build_object(
+    'friend_id', p_friend,
+    'name', coalesce(nullif(trim(prof.name), ''), 'Friend'),
+    'hidden', lvl = 'none',
+    'level', lvl,
+    'totals', totals,
+    'targets', jsonb_build_object('calories', prof.calorie_target, 'protein_g', prof.protein_g, 'carbs_g', prof.carbs_g, 'fat_g', prof.fat_g),
+    'logs', logs
+  );
+end;
+$$;
+revoke all on function public.friends_day(uuid, date) from public, anon;
+grant execute on function public.friends_day(uuid, date) to authenticated;

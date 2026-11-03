@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useFriends } from '../hooks/useFriends';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -9,30 +9,35 @@ import PullIndicator from '../components/PullIndicator';
 import Toast from '../components/Toast';
 import Avatar from '../components/Avatar';
 import FriendsTabs from '../components/friends/FriendsTabs';
-import Switch from '../components/friends/Switch';
+import ShareCard from '../components/friends/ShareCard';
+import FriendCircles from '../components/friends/FriendCircles';
+import FriendRecipes from '../components/friends/FriendRecipes';
 import DaySummary from '../components/DaySummary';
+import { ScanCard, Eyebrow, Chip, PrimaryButton } from '../components/scan/ScanKit';
 import { friendLink, friendlyFriendsError } from '../lib/friends';
 import { todayLocalDate } from '../lib/patterns';
 import { shareOrigin } from '../lib/siteUrl';
 
-const card = { background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)' };
-const primaryBtn = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, background: 'var(--accent)', color: 'var(--accent-contrast)', border: 'none', borderRadius: 14, padding: '11px 18px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' };
-
 function FriendCard({ friend, onOpen }) {
-  const { name, hidden, items, totals, targets } = friend;
+  const { name, hidden, items, totals, targets, level } = friend;
+  const body = !hidden && items > 0;
   return (
-    <button type="button" onClick={onOpen} aria-label={`${name}'s day`} style={{ ...card, display: 'block', width: '100%', textAlign: 'left', padding: '14px 16px', marginBottom: 10, cursor: 'pointer', fontFamily: 'inherit', color: 'inherit' }}>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: hidden || items === 0 ? 0 : 12 }}>
-        <Avatar name={name} size={40} />
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontWeight: 700, fontSize: 16, overflowWrap: 'anywhere' }}>{name}</span>
-          {hidden && <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>Not sharing today</span>}
-          {!hidden && items === 0 && <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>Nothing logged yet today</span>}
+    <ScanCard style={{ padding: 0, overflow: 'hidden' }}>
+      <button type="button" onClick={onOpen} aria-label={`${name}'s day`} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '14px 16px', cursor: 'pointer', fontFamily: 'inherit', color: 'inherit', background: 'none', border: 'none' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: body ? 12 : 0 }}>
+          <Avatar name={name} size={40} />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontWeight: 800, fontSize: 16, overflowWrap: 'anywhere' }}>{name}</span>
+            {hidden && <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>Not sharing today</span>}
+            {!hidden && items === 0 && <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>Nothing logged yet today</span>}
+            {body && <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{items} item{items === 1 ? '' : 's'} logged</span>}
+          </span>
+          {level === 'totals' && !hidden && <Chip icon="ti-eye-off">Totals only</Chip>}
+          <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
         </span>
-        <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
-      </span>
-      {!hidden && items > 0 && <DaySummary compact totals={totals} targets={targets} />}
-    </button>
+        {body && <DaySummary compact totals={totals} targets={targets} />}
+      </button>
+    </ScanCard>
   );
 }
 
@@ -41,6 +46,8 @@ export default function Friends() {
   const { profile } = useProfile();
   const today = useMemo(() => todayLocalDate(), []);
   const f = useFriends(today);
+  const [params] = useSearchParams();
+  const tab = params.get('tab') === 'recipes' ? 'recipes' : 'friends';
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
   const showToast = (message, isError = false) => { setToast(message); setToastError(isError); };
@@ -73,27 +80,29 @@ export default function Friends() {
       </div>
     );
   } else {
-    content = (
+    content = tab === 'recipes' ? (
+      <FriendRecipes friends={f.friends} onToast={showToast} />
+    ) : (
       <>
         {f.friends.length === 0 ? (
-          <div style={{ ...card, padding: '22px 18px', marginBottom: 16, textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 18 }}>No friends yet</div>
+          <ScanCard style={{ padding: '22px 18px', textAlign: 'center' }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 18 }}>No friends yet</div>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.55, margin: '6px 0 16px' }}>Send your link to a friend to see each other's day here.</p>
-            <button type="button" onClick={invite} style={primaryBtn}><i className="ti ti-share-3" aria-hidden="true" />Invite a friend</button>
-          </div>
+            <PrimaryButton onClick={invite}><i className="ti ti-share-3" aria-hidden="true" />Invite a friend</PrimaryButton>
+          </ScanCard>
         ) : (
           <>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', margin: '0 2px 10px' }}>Today</div>
+            <FriendCircles friends={f.friends} onOpen={(fr) => navigate(`/friends/${fr.id}`)} />
+            <Eyebrow style={{ margin: '0 2px 10px' }}>Today</Eyebrow>
             {f.friends.map((fr) => <FriendCard key={fr.id} friend={fr} onOpen={() => navigate(`/friends/${fr.id}`)} />)}
           </>
         )}
 
-        <div style={{ ...card, padding: '6px 16px', marginTop: 6 }}>
-          <Switch id="share-day" title="Share my day with friends" checked={f.shareDay} onChange={guard(f.changeSharing)} />
-          <div style={{ borderTop: '1px solid var(--border-default)' }}>
-            <Switch id="hide-today" title="Hide today" disabled={!f.shareDay} checked={f.shareDay && f.dayHidden} onChange={guard(f.changeDayHidden)} />
-          </div>
-        </div>
+        <ShareCard
+          level={f.shareLevel} levelsSupported={f.levelsSupported} dayHidden={f.dayHidden}
+          onLevel={guard(f.changeLevel)} onHideToday={guard(f.changeDayHidden)}
+          onInvite={invite} canInvite={f.friends.length > 0 && !!f.code}
+        />
       </>
     );
   }
@@ -108,7 +117,7 @@ export default function Friends() {
           right={f.code ? <button type="button" className="app-icon-btn" aria-label="Invite a friend" title="Invite a friend" onClick={invite}><i className="ti ti-user-plus" /></button> : undefined}
         />
         <div className="page-pad" style={{ maxWidth: 700 }}>
-          <FriendsTabs active="friends" />
+          <FriendsTabs active={tab} />
           {content}
         </div>
       </div>

@@ -63,14 +63,26 @@ async function rpc(name, args) {
   return data;
 }
 
-/** Your invite code and whether friends can see your day. */
+// How much of your day friends see: everything you ate, only the day's numbers,
+// or nothing. The older database only knew on/off, so `levelsSupported` is false
+// until its update has been run and the page offers just Full and Private.
+export const SHARE_LEVELS = [
+  { id: 'full', label: 'Full meals', hint: 'Friends see your calories, macros and what you ate.' },
+  { id: 'totals', label: 'Totals only', hint: 'Friends see your calories and macros, never what you ate.' },
+  { id: 'private', label: 'Private', hint: 'Friends see nothing of your day.' },
+];
+
+/** Your invite code and how much of your day friends see. */
 export async function getMyFriendInfo() {
   const rows = await rpc('friends_me');
   const row = Array.isArray(rows) ? rows[0] : rows;
-  return { code: row?.invite_code ?? null, shareDay: row?.share_day !== false };
+  const levelsSupported = typeof row?.share_level === 'string';
+  const shareLevel = levelsSupported ? row.share_level : row?.share_day === false ? 'private' : 'full';
+  return { code: row?.invite_code ?? null, shareDay: shareLevel !== 'private', shareLevel, levelsSupported };
 }
 
 export const setSharing = (share) => rpc('friends_set_sharing', { p_share: !!share });
+export const setShareLevel = (level) => rpc('friends_set_share_level', { p_level: level });
 export const setDayHidden = (day, hidden) => rpc('friends_set_day_hidden', { p_day: day, p_hidden: !!hidden });
 export async function getHiddenDays(from, to) {
   return (await rpc('friends_hidden_days', { p_from: from, p_to: to })) || [];
@@ -95,6 +107,8 @@ export async function listFriends(day) {
     id: r.friend_id,
     name: r.name,
     hidden: !!r.hidden,
+    // 'full' | 'totals' | 'none' — an older database has no level, so it is worked out from hidden.
+    level: r.level || (r.hidden ? 'none' : 'full'),
     items: Number(r.items) || 0,
     totals: r.hidden ? null : { calories: num(r.calories) ?? 0, protein: num(r.protein_g) ?? 0, carbs: num(r.carbs_g) ?? 0, fat: num(r.fat_g) ?? 0 },
     targets: { calories: num(r.calorie_target), protein: num(r.protein_target), carbs: num(r.carbs_target), fat: num(r.fat_target) },
@@ -105,10 +119,15 @@ export async function listFriends(day) {
 export async function getFriendDay(friendId, day) {
   const d = await rpc('friends_day', { p_friend: friendId, p_day: day });
   const t = d?.targets || {};
+  const hidden = !!d?.hidden;
+  const tot = d?.totals;
   return {
     id: friendId,
     name: d?.name || 'Friend',
-    hidden: !!d?.hidden,
+    hidden,
+    level: d?.level || (hidden ? 'none' : 'full'),
+    // The day's numbers as the server added them up (what a "totals only" friend sees).
+    totals: tot ? { calories: num(tot.calories) ?? 0, protein: num(tot.protein_g) ?? 0, carbs: num(tot.carbs_g) ?? 0, fat: num(tot.fat_g) ?? 0, items: Number(tot.items) || 0 } : null,
     targets: { calories: num(t.calories), protein: num(t.protein_g), carbs: num(t.carbs_g), fat: num(t.fat_g) },
     items: (d?.logs || []).map(mapRow),
   };
@@ -117,5 +136,16 @@ export async function getFriendDay(friendId, day) {
 /** The recipes a friend has shared. */
 export async function getFriendRecipes(friendId) {
   const rows = (await rpc('friends_recipes', { p_friend: friendId })) || [];
-  return rows.map((r) => ({ id: r.id, name: r.name, items: Array.isArray(r.items) ? r.items : [], servings: Number(r.servings) || 1 }));
+  return rows.map((r) => ({
+    id: r.id, name: r.name, items: Array.isArray(r.items) ? r.items : [], servings: Number(r.servings) || 1,
+    createdAt: r.created_at || null, photoPath: r.photo_path || null, prepMinutes: r.prep_minutes ?? null, tags: Array.isArray(r.tags) ? r.tags : [],
+  }));
+}
+
+/** Every recipe your friends have shared, newest first, each with who shared it. A friend whose list fails to load is skipped. */
+export async function getAllFriendRecipes(friends) {
+  const lists = await Promise.all((friends || []).map(async (f) => {
+    try { return (await getFriendRecipes(f.id)).map((r) => ({ ...r, friendId: f.id, friendName: f.name })); } catch { return []; }
+  }));
+  return lists.flat().sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 }

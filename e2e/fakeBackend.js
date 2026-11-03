@@ -18,8 +18,8 @@ const DEFAULT_RPC = {
   start_free_trial: null,
   barcode_correct: null, is_app_admin: false, submit_app_report: 'report-1',
   // Friends: an account with an invite code and nobody added yet.
-  friends_me: [{ invite_code: 'ABCDE12345', share_day: true }], friends_list: [], friends_hidden_days: [], friends_preview: [],
-  friends_add: null, friends_remove: null, friends_set_sharing: null, friends_set_day_hidden: null, friends_recipes: [],
+  friends_me: [{ invite_code: 'ABCDE12345', share_day: true, share_level: 'full' }], friends_list: [], friends_hidden_days: [], friends_preview: [],
+  friends_add: null, friends_remove: null, friends_set_sharing: null, friends_set_share_level: null, friends_set_day_hidden: null, friends_recipes: [],
 };
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
