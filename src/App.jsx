@@ -23,6 +23,7 @@ import { onAppToast } from './lib/appToast';
 // Secondary screens load on demand so the first paint ships less JS. The
 // bottom-nav tabs (Dashboard, Food, Log) stay eager to keep tab switches instant.
 const Recipes = lazy(() => import('./pages/Recipes'));
+const RecipeDetail = lazy(() => import('./pages/RecipeDetail'));
 const Settings = lazy(() => import('./pages/Settings'));
 const SettingsGoals = lazy(() => import('./pages/SettingsGoals'));
 const Profile = lazy(() => import('./pages/Profile')); // "Personal details" under Settings
@@ -100,6 +101,7 @@ function AnimatedRoutes() {
         <Route path="/scan/photo" element={<RequireAuth><Scan kind="photo" /></RequireAuth>} />
         <Route path="/scan/menu" element={<RequireAuth><Scan kind="menu" /></RequireAuth>} />
         <Route path="/recipes" element={<RequireAuth><Recipes /></RequireAuth>} />
+        <Route path="/recipes/:id" element={<RequireAuth><RecipeDetail /></RequireAuth>} />
         <Route path="/progress" element={<Navigate to="/expenditure" replace />} />
         <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
         <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />

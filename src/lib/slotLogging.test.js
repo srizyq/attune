@@ -25,7 +25,7 @@ describe('every place that logs food accounts for Slots mode', () => {
 
   it('finds the places that log food (so this test cannot pass by looking at nothing)', () => {
     const names = callers.map((f) => f.replace(/\\/g, '/'));
-    for (const expected of ['src/pages/FoodSearch.jsx', 'src/pages/Scan.jsx', 'src/pages/Recipes.jsx', 'src/pages/DailyLog.jsx']) expect(names).toContain(expected);
+    for (const expected of ['src/pages/FoodSearch.jsx', 'src/pages/Scan.jsx', 'src/hooks/useRecipeLogging.js', 'src/pages/DailyLog.jsx']) expect(names).toContain(expected);
   });
 
   for (const file of callers) {

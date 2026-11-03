@@ -4763,8 +4763,10 @@ $$;
 revoke all on function public.friends_day(uuid, date) from public, anon;
 grant execute on function public.friends_day(uuid, date) to authenticated;
 
--- The recipes a friend has chosen to share.
-create or replace function public.friends_recipes(p_friend uuid)
+-- The recipes a friend has chosen to share. (Dropped first: a later update adds columns to the
+-- result, and a function's result can't be changed in place.)
+drop function if exists public.friends_recipes(uuid);
+create function public.friends_recipes(p_friend uuid)
 returns table (id uuid, name text, items jsonb, servings numeric, created_at timestamptz)
 language plpgsql stable security definer set search_path = public
 as $$
@@ -5502,3 +5504,89 @@ end;
 $$;
 drop trigger if exists client_link_activated on public.trainer_clients;
 create trigger client_link_activated after insert or update of status on public.trainer_clients for each row execute function public.client_link_activated();
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Recipe photos, tags and prep time (schema update — run against an existing
+-- DB; safe to re-run). Tests: supabase/tests/recipe-extras.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- A recipe can have a photo, a prep time, a heart, and tags the person types in
+-- themselves (several per recipe). All optional: a recipe with none of them
+-- looks and works exactly as before.
+alter table public.saved_meals add column if not exists photo_path text;
+alter table public.saved_meals add column if not exists prep_minutes int;
+alter table public.saved_meals add column if not exists favourite boolean not null default false;
+alter table public.saved_meals add column if not exists tags text[] not null default '{}';
+
+-- Tag rules in one place so the table and the app agree (src/lib/recipeTags.js
+-- mirrors this; its tests are the drift guard): at most 8 tags, each 1–24 characters.
+create or replace function public.valid_recipe_tags(t text[])
+returns boolean
+language sql
+immutable
+as $$
+  select t is not null
+    and coalesce(cardinality(t), 0) <= 8
+    and not exists (select 1 from unnest(t) as x where x is null or char_length(btrim(x)) not between 1 and 24)
+$$;
+
+alter table public.saved_meals drop constraint if exists saved_meals_tags_valid;
+alter table public.saved_meals add constraint saved_meals_tags_valid check (public.valid_recipe_tags(tags));
+alter table public.saved_meals drop constraint if exists saved_meals_prep_minutes_valid;
+alter table public.saved_meals add constraint saved_meals_prep_minutes_valid check (prep_minutes is null or (prep_minutes >= 0 and prep_minutes <= 1440));
+-- A recipe can only point at a file in its owner's own folder of the bucket.
+alter table public.saved_meals drop constraint if exists saved_meals_photo_path_own;
+alter table public.saved_meals add constraint saved_meals_photo_path_own check (photo_path is null or split_part(photo_path, '/', 1) = user_id::text);
+
+-- Private bucket, like progress-photos: the app only shows a photo through a
+-- short-lived signed URL, which Supabase issues only to someone the policies
+-- below let read the object. Capped at 4 MB, images only.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('recipe-photos', 'recipe-photos', false, 4194304, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 4194304, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
+
+drop policy if exists "recipe-photos: owner can upload" on storage.objects;
+create policy "recipe-photos: owner can upload" on storage.objects
+  for insert with check (bucket_id = 'recipe-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "recipe-photos: owner can read" on storage.objects;
+create policy "recipe-photos: owner can read" on storage.objects
+  for select using (bucket_id = 'recipe-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "recipe-photos: owner can delete" on storage.objects;
+create policy "recipe-photos: owner can delete" on storage.objects
+  for delete using (bucket_id = 'recipe-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+-- A friend can open the photo of a recipe that was shared with them, and only
+-- that: the recipe must be marked shared and the two people must be friends.
+create or replace function public.can_view_recipe_photo(p_name text)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select auth.uid() is not null and exists (
+    select 1 from public.saved_meals m
+    where m.photo_path = p_name and m.shared_with_friends and public.friends_are(auth.uid(), m.user_id)
+  )
+$$;
+revoke all on function public.can_view_recipe_photo(text) from public, anon;
+grant execute on function public.can_view_recipe_photo(text) to authenticated;
+drop policy if exists "recipe-photos: friends can read shared" on storage.objects;
+create policy "recipe-photos: friends can read shared" on storage.objects
+  for select using (bucket_id = 'recipe-photos' and public.can_view_recipe_photo(name));
+
+-- A friend's shared recipes now carry the photo, prep time and tags too. The
+-- result's columns changed, so the old function is replaced.
+drop function if exists public.friends_recipes(uuid);
+create function public.friends_recipes(p_friend uuid)
+returns table (id uuid, name text, items jsonb, servings numeric, created_at timestamptz, photo_path text, prep_minutes int, tags text[])
+language plpgsql stable security definer set search_path = public
+as $$
+begin
+  if auth.uid() is null then raise exception 'Not signed in'; end if;
+  if not public.friends_are(auth.uid(), p_friend) then raise exception 'friends_not_friends'; end if;
+  return query
+    select m.id, m.name, m.items, m.servings, m.created_at, m.photo_path, m.prep_minutes, m.tags
+    from public.saved_meals m where m.user_id = p_friend and m.shared_with_friends
+    order by m.created_at desc;
+end;
+$$;
+revoke all on function public.friends_recipes(uuid) from public, anon;
+grant execute on function public.friends_recipes(uuid) to authenticated;

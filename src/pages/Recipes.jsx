@@ -1,244 +1,69 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
-import { hasProAccess } from '../lib/proAccess';
 import { useSavedMeals } from '../hooks/useSavedMeals';
-import { useFoodLogs } from '../hooks/useFoodLogs';
-import { scaleFood, sumFoodItems, formatAmountUnit } from '../lib/foodMath';
-import { todayLocalDate } from '../lib/patterns';
-import { mealFromDate, currentTimeHHMM, timeStringToDate, formatTimeFromDate } from '../lib/mealTime';
-import { slotFor } from '../lib/daySlots';
+import { useRecipeLogging } from '../hooks/useRecipeLogging';
+import { useRecipePhotoUrls } from '../hooks/useRecipePhotoUrls';
+import { allTags, filterRecipes, sortRecipes, visibleBuiltIns, featuredRecipe, SORTS } from '../lib/recipeTags';
 import AppNav from '../components/AppNav';
 import Toast from '../components/Toast';
-import { Card, SectionLabel } from '../components/settings/primitives';
-import ModalPortal from '../components/ModalPortal';
-import RecipeEditor from '../components/RecipeEditor';
 import PageHeader from '../components/PageHeader';
-import FormRow from '../components/FormRow';
-import ListRow from '../components/ListRow';
-
-// Mirrors FoodSearch.jsx's own local MEALS list — not shared/exported
-// from there, and small enough that duplicating it here is simpler than
-// pulling it into its own module for one extra caller.
-const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
-
-const inputStyle = {
-  background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 7,
-  padding: '8px 10px', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none',
-};
-
-// One recipe row — collapsed shows the headline numbers, expanded reveals
-// the real ingredient list (with quantities, not just macros) plus the
-// actual "log N servings" control, matching the amount+unit interaction
-// every other food in the app already uses (see FoodSearch's AddControls)
-// rather than inventing a new one.
-function RecipeCard({ recipe, isExpanded, onToggle, onAddIngredient, onSaveEdit, onDelete, onLog, onToggleShared, logByTime, defaultMeal, defaultTime }) {
-  const items = useMemo(() => recipe.items || [], [recipe.items]);
-  const servings = Number(recipe.servings) || 1;
-  const totals = useMemo(() => sumFoodItems(items), [items]);
-  const perServing = useMemo(() => scaleFood(totals, 1 / servings), [totals, servings]);
-
-  const [servingsToLog, setServingsToLog] = useState('1');
-  const [meal, setMeal] = useState(defaultMeal);
-  const [time, setTime] = useState(defaultTime);
-  const [logging, setLogging] = useState(false);
-  // Edit mode swaps the sheet's body for RecipeEditor.
-  const [editing, setEditing] = useState(false);
-
-  const scaledForLog = scaleFood(perServing, Number(servingsToLog) || 0);
-
-  async function handleLog() {
-    const n = Number(servingsToLog);
-    if (!n || n <= 0 || logging) return;
-    setLogging(true);
-    try {
-      await onLog(recipe, n, meal, time);
-    } finally {
-      setLogging(false);
-    }
-  }
-
-  return (
-    <>
-      <ListRow
-        avatar={<ListRow.SquareAvatar icon="ti-tools-kitchen-2" />}
-        title={recipe.name}
-        subtitleParts={[`${items.length} ingredient${items.length !== 1 ? 's' : ''}`, `makes ${servings} serving${servings !== 1 ? 's' : ''}`, `${Math.round(perServing.cal)} kcal/serving`]}
-        trailing={<ListRow.Chevron />}
-        onClick={onToggle}
-      />
-      {isExpanded && (
-        <ModalPortal>
-        <div onClick={editing ? undefined : onToggle} className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 300 }}>
-          <div
-            onClick={e => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label={recipe.name}
-            className="modal-panel"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 480, maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 14px', gap: 10, flexShrink: 0 }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{editing ? 'Edit recipe' : recipe.name}</div>
-              <button onClick={editing ? () => setEditing(false) : onToggle} aria-label={editing ? 'Cancel editing' : 'Close'} className="hit-slop" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, flexShrink: 0 }}><span className="x-mark" aria-hidden="true" /></button>
-            </div>
-
-            {editing ? (
-              <RecipeEditor
-                recipe={recipe}
-                onCancel={() => setEditing(false)}
-                onAddIngredient={(draft) => onAddIngredient(recipe, draft)}
-                onSave={async (changes) => { await onSaveEdit(recipe, changes); setEditing(false); }}
-              />
-            ) : (
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px calc(20px + var(--safe-bottom, 0px))' }}>
-
-            <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: 14, marginBottom: 14 }}>
-              {items.map((it, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '6px 0', fontSize: 13 }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>
-                    {it.loggedAmount != null && it.loggedUnit ? `${formatAmountUnit(it.loggedAmount, it.loggedUnit)} ` : ''}
-                    {it.name}
-                  </span>
-                  <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>{Math.round(it.cal)} kcal</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{Math.round(perServing.cal)}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>kcal</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{perServing.protein}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Protein</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--macro-carbs)' }}>{perServing.carbs}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Carbs</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 600, color: 'var(--macro-fat)' }}>{perServing.fat}g</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Fat</div></div>
-            </div>
-            <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '-10px 0 14px', textAlign: 'center' }}>per serving — {Math.round(totals.cal)} kcal total for the whole recipe</p>
-
-            <div style={{ marginBottom: 12 }}>
-              <FormRow>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="number" min="0" step="0.5" value={servingsToLog} onChange={e => setServingsToLog(e.target.value)}
-                    style={{ ...inputStyle, width: 70 }}
-                  />
-                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>serving{Number(servingsToLog) === 1 ? '' : 's'}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>~ {Math.round(scaledForLog.cal)} kcal</span>
-                </div>
-                {logByTime ? (
-                  <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-                ) : (
-                  <select value={meal} onChange={e => setMeal(e.target.value)} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', cursor: 'pointer' }}>
-                    {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                )}
-                <FormRow.Button icon="ti-check" primary onClick={handleLog} disabled={logging || !Number(servingsToLog)}>
-                  {logging ? 'Adding…' : 'Log'}
-                </FormRow.Button>
-              </FormRow>
-            </div>
-
-            <FormRow>
-              <FormRow.Button icon="ti-edit" onClick={() => setEditing(true)}>Edit recipe</FormRow.Button>
-              <FormRow.Button icon={recipe.shared_with_friends ? 'ti-users-group' : 'ti-share-3'} onClick={() => onToggleShared(recipe)}>{recipe.shared_with_friends ? 'Shared with friends' : 'Share with friends'}</FormRow.Button>
-              <FormRow.Button icon="ti-trash" danger onClick={() => onDelete(recipe)}>Delete</FormRow.Button>
-            </FormRow>
-            </div>
-            )}
-          </div>
-        </div>
-        </ModalPortal>
-      )}
-    </>
-  );
-}
+import RecipeCard, { FeaturedRecipe } from '../components/recipes/RecipeCard';
+import { ScanCard, Eyebrow, PillButton, PillRow, Chip } from '../components/scan/ScanKit';
 
 export default function Recipes() {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const savedMeals = useSavedMeals();
-  const today = todayLocalDate();
-  const { addFood, daySlots, refetch: refetchLogs } = useFoodLogs(today);
-
-  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
-  const dailyLogView = profile?.daily_log_view || 'meals';
-  const logByTime = isPremium && dailyLogView === 'slots';
-  const defaultMeal = useMemo(() => {
-    const m = mealFromDate(new Date());
-    return m.charAt(0).toUpperCase() + m.slice(1);
-  }, []);
+  const { log } = useRecipeLogging();
+  const extras = savedMeals.extrasSupported;
 
   const [query, setQuery] = useState('');
-  const [expandedId, setExpandedId] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [sortId, setSortId] = useState('recent');
+  const [loggingId, setLoggingId] = useState(null);
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
+  const showToast = (message, isError = false) => { setToast(message); setToastError(isError); };
 
-  function showToast(message, isError = false) {
-    setToast(message);
-    setToastError(isError);
-  }
+  const rows = savedMeals.rows;
+  const photoUrls = useRecipePhotoUrls(rows.map((r) => r.photo_path));
+  const tags = useMemo(() => (extras ? allTags(rows) : []), [rows, extras]);
+  const builtIns = useMemo(() => visibleBuiltIns(extras ? rows : rows.map((r) => ({ ...r, favourite: false, prep_minutes: null }))), [rows, extras]);
+  // A filter whose recipes are all gone (a deleted tag, an un-hearted last favourite) falls back to All.
+  const activeFilter = filter === 'all' || builtIns.some((f) => f.id === filter) || tags.some((t) => t.toLowerCase() === filter.toLowerCase()) ? filter : 'all';
 
-  async function handleToggleShared(recipe) {
-    const next = !recipe.shared_with_friends;
+  const shown = useMemo(() => sortRecipes(filterRecipes(rows, { query, filter: activeFilter }), sortId), [rows, query, activeFilter, sortId]);
+  const featured = useMemo(() => (extras && !query.trim() && activeFilter === 'all' ? featuredRecipe(rows, savedMeals.recentLogs) : null), [rows, savedMeals.recentLogs, query, activeFilter, extras]);
+  const listed = featured ? shown.filter((r) => r.id !== featured.id) : shown;
+
+  async function quickLog(recipe) {
+    if (loggingId) return;
+    setLoggingId(recipe.id);
     try {
-      await savedMeals.setShared(recipe.id, next);
-      showToast(next ? `${recipe.name} is now shared with your friends` : `${recipe.name} is no longer shared`);
-    } catch (err) {
-      console.error('Failed to change sharing:', err);
-      showToast('Couldn\'t change sharing. Try again.', true);
-    }
-  }
-
-  function goBack() {
-    if (window.history.length > 1) navigate(-1);
-    else navigate('/dashboard');
-  }
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return savedMeals.rows;
-    return savedMeals.rows.filter(r => r.name.toLowerCase().includes(q));
-  }, [savedMeals.rows, query]);
-
-  async function handleLog(recipe, servingsToLog, meal, time) {
-    try {
-      const totals = sumFoodItems(recipe.items || []);
-      const perServing = scaleFood(totals, 1 / (Number(recipe.servings) || 1));
-      const scaled = scaleFood(perServing, servingsToLog);
-      const loggedAt = logByTime ? timeStringToDate(time, new Date(today + 'T00:00:00')) : null;
-      await addFood(
-        { ...scaled, name: recipe.name, servingLabel: `${servingsToLog} serving${servingsToLog === 1 ? '' : 's'}`, source: 'recipe' },
-        logByTime ? null : meal,
-        loggedAt,
-        logByTime ? slotFor(daySlots, { at: loggedAt }) : null
-      );
-      refetchLogs();
-      showToast(`${recipe.name} added${logByTime ? ` at ${formatTimeFromDate(loggedAt)}` : ` to ${meal}`}`);
+      showToast(await log(recipe, 1));
     } catch (err) {
       console.error('Failed to log recipe:', err);
       showToast(`Couldn't add ${recipe.name} — try again`, true);
+    } finally {
+      setLoggingId(null);
     }
   }
 
-  async function handleSaveEdit(recipe, changes) {
+  async function toggleFavourite(recipe) {
     try {
-      await savedMeals.update(recipe.id, changes);
-      showToast(`${changes.name} updated`);
+      await savedMeals.setFavourite(recipe.id, !recipe.favourite);
     } catch (err) {
-      console.error('Failed to update recipe:', err);
-      showToast(`Couldn't update ${recipe.name} — try again`, true);
-      throw err;
+      console.error('Failed to change favourite:', err);
+      showToast('Couldn\'t change that. Try again.', true);
     }
   }
 
-  async function handleDelete(recipe) {
-    try {
-      await savedMeals.remove(recipe.id);
-      showToast(`${recipe.name} deleted`);
-    } catch (err) {
-      console.error('Failed to delete recipe:', err);
-      showToast(`Couldn't delete ${recipe.name} — try again`, true);
-    }
-  }
+  const open = (recipe) => navigate(`/recipes/${recipe.id}`);
+  const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/dashboard'));
+  const newRecipe = () => navigate('/food', { state: { openMealBuilder: true } });
+  const sortLabel = SORTS.find((s) => s.id === sortId)?.label || 'Recent';
 
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
@@ -249,55 +74,80 @@ export default function Recipes() {
           title="Recipes"
           onBack={goBack}
           backLabel="Back"
-          right={
+          right={(
             <button
-            onClick={() => navigate('/food', { state: { openMealBuilder: true } })}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, color: 'var(--accent-contrast)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            <i className="ti ti-plus" /> New recipe
-          </button>
-          }
+              onClick={newRecipe}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 40, background: 'var(--accent)', border: 'none', borderRadius: 99, padding: '0 16px', fontSize: 13, fontWeight: 800, color: 'var(--accent-contrast)', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <i className="ti ti-plus" aria-hidden="true" /> New recipe
+            </button>
+          )}
         />
 
         <div className="page-pad" style={{ maxWidth: 700 }}>
-          {savedMeals.rows.length > 0 && (
-            <div style={{ position: 'relative', marginBottom: 16 }}>
-              <i className="ti ti-search" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-hint)', fontSize: 16 }} />
-              <input
-                value={query} onChange={e => setQuery(e.target.value)} placeholder="Search recipes…"
-                style={{ width: '100%', boxSizing: 'border-box', padding: '11px 14px 11px 38px', background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 10, color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}
-              />
-            </div>
+          {rows.length > 0 && (
+            <>
+              <div style={{ position: 'relative', marginBottom: 14 }}>
+                <i className="ti ti-search" aria-hidden="true" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-hint)', fontSize: 17 }} />
+                <input
+                  value={query} onChange={e => setQuery(e.target.value)} placeholder="Search recipes…" aria-label="Search recipes"
+                  style={{ width: '100%', boxSizing: 'border-box', minHeight: 48, padding: '0 16px 0 42px', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, margin: '0 2px 10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Eyebrow>Saved recipes</Eyebrow>
+                  <Chip>{rows.length}</Chip>
+                </div>
+                <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 20, background: 'var(--chip-bg)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, minHeight: 32, boxSizing: 'border-box' }}>
+                  <i className="ti ti-arrows-sort" aria-hidden="true" style={{ fontSize: 14 }} />
+                  <span>Sort: {sortLabel}</span>
+                  <select value={sortId} onChange={(e) => setSortId(e.target.value)} aria-label="Sort recipes" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', border: 'none', fontSize: 16 }}>
+                    {SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+                  </select>
+                </label>
+              </div>
+
+              <PillRow label="Filter recipes" style={{ marginBottom: 14 }}>
+                <PillButton active={activeFilter === 'all'} onClick={() => setFilter('all')}>All ({rows.length})</PillButton>
+                {builtIns.map((f) => <PillButton key={f.id} active={activeFilter === f.id} onClick={() => setFilter(f.id)}>{f.label}</PillButton>)}
+                {tags.map((t) => <PillButton key={t} active={activeFilter.toLowerCase() === t.toLowerCase()} onClick={() => setFilter(t)}>{t}</PillButton>)}
+              </PillRow>
+            </>
           )}
 
-          {savedMeals.loading ? null : savedMeals.rows.length === 0 ? (
-            <Card style={{ textAlign: 'center', padding: 32 }}>
-              <i className="ti ti-tools-kitchen-2" style={{ fontSize: 28, color: 'var(--text-hint)' }} />
+          {savedMeals.loading ? null : rows.length === 0 ? (
+            <ScanCard style={{ textAlign: 'center', padding: 32 }}>
+              <i className="ti ti-tools-kitchen-2" aria-hidden="true" style={{ fontSize: 28, color: 'var(--text-hint)' }} />
               <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>
                 No recipes yet. Build one from foods you cook often and log it in one tap.
               </p>
-            </Card>
-          ) : filtered.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No recipes match "{query}"</p>
+            </ScanCard>
+          ) : shown.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
+              {query.trim() ? `No recipes match "${query.trim()}"` : 'No recipes in this group yet.'}
+            </p>
           ) : (
             <>
-              <SectionLabel>{filtered.length} recipe{filtered.length !== 1 ? 's' : ''}</SectionLabel>
-              {filtered.map(recipe => (
+              {featured && (
+                <FeaturedRecipe
+                  recipe={featured} photoUrl={photoUrls[featured.photo_path]} showFavourite={extras}
+                  onOpen={() => open(featured)} onToggleFavourite={() => toggleFavourite(featured)}
+                />
+              )}
+              {listed.map((recipe) => (
                 <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  isExpanded={expandedId === recipe.id}
-                  onToggle={() => setExpandedId(prev => (prev === recipe.id ? null : recipe.id))}
-                  onAddIngredient={(r, draft) => navigate('/food', { state: { editMealBuilder: r.id, editDraft: draft } })}
-                  onSaveEdit={handleSaveEdit}
-                  onDelete={handleDelete}
-                  onLog={handleLog}
-                  onToggleShared={handleToggleShared}
-                  logByTime={logByTime}
-                  defaultMeal={defaultMeal}
-                  defaultTime={currentTimeHHMM()}
+                  key={recipe.id} recipe={recipe} photoUrl={photoUrls[recipe.photo_path]} showFavourite={extras}
+                  logging={loggingId === recipe.id}
+                  onOpen={() => open(recipe)} onLog={() => quickLog(recipe)} onToggleFavourite={() => toggleFavourite(recipe)}
                 />
               ))}
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '14px 0 8px' }}>
+                <button onClick={newRecipe} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 48, padding: '0 22px', borderRadius: 99, border: '1px solid var(--border-strong)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <i className="ti ti-circle-plus" aria-hidden="true" style={{ color: 'var(--accent-secondary)', fontSize: 18 }} /> New recipe
+                </button>
+              </div>
             </>
           )}
         </div>

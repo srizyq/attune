@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { editUnitsFor } from '../lib/foodMath';
 import { ingredientEditState, evaluateRecipeDraft, snapshotIngredient } from '../lib/recipeEdit';
 import FormRow from './FormRow';
+import RecipeMetaFields from './recipes/RecipeMetaFields';
+import { parsePrepMinutes } from '../lib/recipeTags';
 
 // Edit a saved recipe inside its own sheet: rename it, change how many
 // servings it makes, set each ingredient's amount and unit (everything else
@@ -15,12 +17,21 @@ const field = {
 };
 const label = { display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.04em' };
 
-export default function RecipeEditor({ recipe, initialDraft = null, onCancel, onSave, onAddIngredient }) {
+// `extras` switches on photo / prep time / tags: { allTags, photoUrl } (leave it out
+// until the database has those columns). With a function as children, the body and
+// the pinned Save / Cancel bar are handed to it to place on a page; without one they
+// render as a sheet's two flex children, as before.
+export default function RecipeEditor({ recipe, initialDraft = null, onCancel, onSave, onAddIngredient, extras = null, children }) {
   const [name, setName] = useState(initialDraft?.name ?? recipe.name);
   const [servings, setServings] = useState(String(initialDraft?.servings ?? recipe.servings ?? 1));
   const [rows, setRows] = useState(() => (initialDraft?.items ?? recipe.items ?? []).map((item) => ({ item, ...ingredientEditState(item) })));
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [tags, setTags] = useState(initialDraft?.tags ?? recipe.tags ?? []);
+  const [prep, setPrep] = useState(String(initialDraft?.prepMinutes ?? recipe.prep_minutes ?? ''));
+  // A newly chosen photo waits here until Save; removing the current one is also decided at Save.
+  const [photoFile, setPhotoFile] = useState(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
 
   const evaluated = useMemo(() => evaluateRecipeDraft({ name, servings, rows }), [name, servings, rows]);
   const { items, totals, perServing, error } = evaluated;
@@ -33,7 +44,10 @@ export default function RecipeEditor({ recipe, initialDraft = null, onCancel, on
     setSaving(true);
     setSaveError(null);
     try {
-      await onSave({ name: name.trim(), servings: Number(servings), items: items.map(snapshotIngredient) });
+      await onSave({
+        name: name.trim(), servings: Number(servings), items: items.map(snapshotIngredient),
+        ...(extras ? { tags, prepMinutes: parsePrepMinutes(prep), photoFile, removePhoto: removePhoto && !photoFile } : {}),
+      });
     } catch (err) {
       console.error('Failed to save recipe edits:', err);
       setSaveError("Couldn't save — try again.");
@@ -42,11 +56,10 @@ export default function RecipeEditor({ recipe, initialDraft = null, onCancel, on
     }
   }
 
-  const currentDraft = () => ({ name: name.trim() || recipe.name, servings: Number(servings) > 0 ? Number(servings) : 1, items });
+  const currentDraft = () => ({ name: name.trim() || recipe.name, servings: Number(servings) > 0 ? Number(servings) : 1, items, ...(extras ? { tags, prepMinutes: parsePrepMinutes(prep) } : {}) });
 
-  return (
+  const body = (
     <>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px 8px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 90px', gap: 10, marginBottom: 16 }}>
           <div>
             <label htmlFor="recipe-name" style={label}>Name</label>
@@ -57,6 +70,17 @@ export default function RecipeEditor({ recipe, initialDraft = null, onCancel, on
             <input id="recipe-servings" style={{ ...field, width: '100%' }} type="number" inputMode="decimal" min="0" step="0.5" value={servings} onChange={(e) => setServings(e.target.value)} />
           </div>
         </div>
+
+        {extras && (
+          <div style={{ marginBottom: 18 }}>
+            <RecipeMetaFields
+              photoUrl={removePhoto ? null : extras.photoUrl}
+              onPickPhoto={(f) => { setPhotoFile(f); setRemovePhoto(false); }}
+              onRemovePhoto={() => { setPhotoFile(null); setRemovePhoto(true); }}
+              prep={prep} onPrep={setPrep} tags={tags} onTags={setTags} allTags={extras.allTags}
+            />
+          </div>
+        )}
 
         <div style={{ ...label, marginBottom: 8 }}>INGREDIENTS</div>
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -105,8 +129,10 @@ export default function RecipeEditor({ recipe, initialDraft = null, onCancel, on
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 2 }}>{Math.round(totals.cal)} kcal for the whole recipe</div>
         </div>
-      </div>
+    </>
+  );
 
+  const footer = (
       <div style={{ flexShrink: 0, padding: '12px 20px calc(12px + var(--safe-bottom, 0px))', borderTop: '1px solid var(--border-default)', background: 'var(--bg-card)' }}>
         {(error || saveError) && <p role="alert" style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--danger)' }}>{saveError || error}</p>}
         <div style={{ display: 'flex', gap: 8 }}>
@@ -118,6 +144,14 @@ export default function RecipeEditor({ recipe, initialDraft = null, onCancel, on
           </div>
         </div>
       </div>
+  );
+
+  if (typeof children === 'function') return children({ body, footer });
+
+  return (
+    <>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px 8px' }}>{body}</div>
+      {footer}
     </>
   );
 }

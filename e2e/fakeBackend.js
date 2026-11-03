@@ -98,7 +98,16 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     // Private storage (uploads, signed links, deletes). `storageLog` records
     // uploads and deletes for tests that want to look.
     if (url.pathname.startsWith('/storage/v1/object/sign/')) {
-      if (req.method() === 'POST') return json({ signedURL: `${url.pathname.replace('/storage/v1', '')}?token=t` });
+      if (req.method() === 'POST') {
+        // createSignedUrls: one entry per requested path; a single createSignedUrl: one link.
+        let body = {};
+        try { body = JSON.parse(req.postData() || '{}'); } catch { /* ignore */ }
+        if (Array.isArray(body.paths)) {
+          const bucketPath = url.pathname.replace('/storage/v1/object/sign/', '');
+          return json(body.paths.map((p) => ({ path: p, signedURL: `/object/sign/${bucketPath}/${p}?token=t`, error: null })));
+        }
+        return json({ signedURL: `${url.pathname.replace('/storage/v1', '')}?token=t` });
+      }
       return route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64') });
     }
     if (url.pathname.startsWith('/storage/v1/object/list/')) return json([]);
@@ -143,6 +152,18 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
       // Writes: echo back so the UI proceeds; nothing is persisted.
       let body = {};
       try { body = JSON.parse(req.postData() || '{}'); } catch { /* ignore */ }
+      // An update merges into the row the filters point at (`id=eq.x`), like the real thing.
+      if (req.method() === 'PATCH') {
+        let target = rows;
+        for (const [key, spec] of url.searchParams) {
+          if (['select', 'order', 'limit', 'offset', 'columns', 'on_conflict', 'or', 'and'].includes(key)) continue;
+          target = target.filter((row) => (spec.startsWith('not.') ? !matches(row, key, spec.slice(4)) : matches(row, key, spec)));
+        }
+        if (target.length) {
+          const merged = target.map((row) => ({ ...row, ...body }));
+          return (req.headers().accept || '').includes('vnd.pgrst.object+json') ? json(merged[0], 200) : json(merged, 200);
+        }
+      }
       const echoed = (Array.isArray(body) ? body : [body]).map((row, i) => ({ ...(rows[0] || {}), id: `new-${Date.now()}-${i}`, created_at: new Date().toISOString(), ...row }));
       if ((req.headers().accept || '').includes('vnd.pgrst.object+json')) return json(echoed[0], 201);
       return json(echoed, req.method() === 'POST' ? 201 : 200);

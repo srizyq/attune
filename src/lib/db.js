@@ -652,25 +652,63 @@ export async function getSavedMeals(userId) {
   return data;
 }
 
-export async function addSavedMeal(userId, name, items, servings = 1) {
-  const { data, error } = await supabase
-    .from('saved_meals')
-    .insert({ user_id: userId, name, items, servings })
-    .select()
-    .single();
+// The optional recipe fields from the "Recipe photos, tags and prep time" SQL
+// update. Only the ones that were given are written, so a recipe saved without
+// them (or before the update is run) is untouched.
+function recipeExtras({ photoPath, prepMinutes, tags, favourite } = {}) {
+  const out = {};
+  if (photoPath !== undefined) out.photo_path = photoPath;
+  if (prepMinutes !== undefined) out.prep_minutes = prepMinutes;
+  if (tags !== undefined) out.tags = tags;
+  if (favourite !== undefined) out.favourite = !!favourite;
+  return out;
+}
+
+export async function addSavedMeal(userId, name, items, servings = 1, extras = {}) {
+  const extended = recipeExtras(extras);
+  const base = { user_id: userId, name, items, servings };
+  const insert = (row) => supabase.from('saved_meals').insert(row).select().single();
+  let { data, error } = await insert({ ...base, ...extended });
+  // The SQL update isn't run yet: save the recipe itself and leave the extras out.
+  if (error && Object.keys(extended).length > 0 && isMissingColumnError(error)) ({ data, error } = await insert(base));
   if (error) throw error;
   return data;
 }
 
-export async function updateSavedMeal(id, { name, items, servings }) {
-  const { data, error } = await supabase
-    .from('saved_meals')
-    .update({ name, items, servings })
-    .eq('id', id)
-    .select()
-    .single();
+export async function updateSavedMeal(id, { name, items, servings, ...extras }) {
+  const extended = recipeExtras(extras);
+  const update = (patch) => supabase.from('saved_meals').update(patch).eq('id', id).select().single();
+  let { data, error } = await update({ name, items, servings, ...extended });
+  if (error && Object.keys(extended).length > 0 && isMissingColumnError(error)) ({ data, error } = await update({ name, items, servings }));
   if (error) throw error;
   return data;
+}
+
+export async function setSavedMealFavourite(id, favourite) {
+  const { data, error } = await supabase.from('saved_meals').update({ favourite: !!favourite }).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+// Whether the database has the recipe photo / tag / prep-time columns yet.
+export async function recipeExtrasSupported() {
+  const { error } = await supabase.from('saved_meals').select('tags').limit(1);
+  if (error && isMissingColumnError(error)) return false;
+  return true;
+}
+
+// The recipes logged most recently, newest first, as { food_name, created_at } —
+// logged recipes keep the recipe's name, which is how "Featured" finds its recipe.
+export async function getRecentRecipeLogs(userId, limit = 30) {
+  const { data, error } = await supabase
+    .from('food_logs')
+    .select('food_name, created_at')
+    .eq('user_id', userId)
+    .eq('source', 'recipe')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data || [];
 }
 
 // Show (or stop showing) a recipe to your friends.

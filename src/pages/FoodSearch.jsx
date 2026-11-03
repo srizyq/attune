@@ -45,6 +45,9 @@ import ServingStepper from '../components/ServingStepper';
 import { targetsForDate } from '../lib/dayTargets';
 import { fetchWithTimeout } from '../lib/http';
 import { SCAN_PATHS, legacyScanKind, withoutLegacyScanFlags } from '../lib/scanRoutes';
+import RecipeMetaFields from '../components/recipes/RecipeMetaFields';
+import { uploadRecipePhoto, removeRecipePhoto } from '../lib/recipePhoto';
+import { allTags as allRecipeTags, parsePrepMinutes } from '../lib/recipeTags';
 import { rankFoods, foodMatchRank } from '../lib/foodRank';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -1410,7 +1413,7 @@ function CreateFoodModal({ onClose, onCreate, initialName, initialFood }) {
 
 const FREE_SAVED_MEALS_LIMIT = 10;
 
-function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, defaultTime, selectedDate, isPremium, showSlots, savedMealsCount, onUpgrade, isEditing, initialName, initialServings }) {
+function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, defaultTime, selectedDate, isPremium, showSlots, savedMealsCount, onUpgrade, isEditing, initialName, initialServings, metaEnabled = false, allTags = [] }) {
   const [name, setName] = useState(initialName || "");
   const [servings, setServings] = useState(String(initialServings || 1));
   const [logNow, setLogNow] = useState(!isEditing);
@@ -1418,6 +1421,10 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
   const [time, setTime] = useState(defaultTime);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  // Optional extras for a brand-new recipe (editing keeps its own in the recipe editor).
+  const [tags, setTags] = useState([]);
+  const [prep, setPrep] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
   // Editing an existing recipe isn't "creating" a new one against the
   // free-tier count — only a brand-new save should ever hit this gate.
   const atLimit = !isEditing && !isPremium && savedMealsCount >= FREE_SAVED_MEALS_LIMIT;
@@ -1431,7 +1438,10 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
     setSaving(true);
     setError(null);
     try {
-      await onSave(name.trim(), items, servingsNum, logNow && !showSlots ? meal : null, logNow && showSlots ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null);
+      await onSave(
+        name.trim(), items, servingsNum, logNow && !showSlots ? meal : null, logNow && showSlots ? timeStringToDate(time, new Date(selectedDate + "T00:00:00")) : null,
+        metaEnabled && !isEditing ? { tags, prepMinutes: parsePrepMinutes(prep), photoFile } : {},
+      );
       onClose();
     } catch (err) {
       console.error(err);
@@ -1491,6 +1501,14 @@ function BuilderReviewModal({ items, onClose, onRemove, onSave, defaultMeal, def
               ~ {perServingCal} kcal per serving
             </span>
           </div>
+          {metaEnabled && !isEditing && (
+            <div style={{ marginBottom: 16 }}>
+              <RecipeMetaFields
+                photoUrl={null} onPickPhoto={setPhotoFile} onRemovePhoto={() => setPhotoFile(null)}
+                prep={prep} onPrep={setPrep} tags={tags} onTags={setTags} allTags={allTags}
+              />
+            </div>
+          )}
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-secondary)", marginBottom: logNow ? 12 : 16, cursor: "pointer" }}>
             <input type="checkbox" checked={logNow} onChange={e => setLogNow(e.target.checked)} />
             Also log 1 serving to today
@@ -1730,6 +1748,7 @@ function AddControls({ amount, setAmount, unit, setUnit, units = UNITS, meal, se
 export default function FoodSearch() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { profile } = useProfile();
   const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
@@ -1886,7 +1905,7 @@ export default function FoodSearch() {
     const draft = location.state?.editDraft;
     setBuilderMode(true);
     setBuilderItems(draft?.items || recipe.items || []);
-    setEditDraftMeta(draft ? { name: draft.name, servings: draft.servings } : null);
+    setEditDraftMeta(draft ? { name: draft.name, servings: draft.servings, tags: draft.tags, prepMinutes: draft.prepMinutes } : null);
     setEditingRecipeId(recipe.id);
     setBuilderFromRecipes(true);
     // Straight to the review for a plain edit; for "Add ingredient" land on the
@@ -2259,8 +2278,10 @@ export default function FoodSearch() {
     });
   }
 
-  function cancelBuilder() {
+  function cancelBuilder(returnTo) {
     const returnToRecipes = builderFromRecipes;
+    // Back to the recipe that was being edited, or the list when it was a new one.
+    const target = typeof returnTo === 'string' ? returnTo : (editingRecipeId ? `/recipes/${editingRecipeId}` : '/recipes');
     setBuilderMode(false);
     setBuilderItems([]);
     setBuilderReviewOpen(false);
@@ -2268,10 +2289,11 @@ export default function FoodSearch() {
     setEditDraftMeta(null);
     setBuilderFromRecipes(false);
     editAppliedRef.current = false;
-    if (returnToRecipes) navigate('/recipes');
+    if (returnToRecipes) navigate(target);
   }
 
-  async function handleSaveBuilderMeal(name, items, servings, mealToLog, timeToLog) {
+  async function handleSaveBuilderMeal(name, items, servings, mealToLog, timeToLog, extras = {}) {
+    let newPhotoPath = null;
     try {
       // Keeps each ingredient's real quantity (servingGrams/loggedAmount/
       // loggedUnit), not just its macros — dropping these used to mean a
@@ -2285,9 +2307,21 @@ export default function FoodSearch() {
         loggedUnit: it.loggedUnit ?? null,
         ...sumFoodItems([it]),
       }));
+      // New recipe: the extras typed in the review (photo uploads first). Editing: whatever
+      // the recipe editor carried over, so a trip to add an ingredient loses nothing.
+      let meta = {};
+      if (editingRecipeId) {
+        if (editDraftMeta?.tags !== undefined) meta.tags = editDraftMeta.tags;
+        if (editDraftMeta?.prepMinutes !== undefined) meta.prepMinutes = editDraftMeta.prepMinutes;
+      } else {
+        if (extras.photoFile && user) newPhotoPath = await uploadRecipePhoto(user.id, extras.photoFile);
+        if (extras.tags?.length) meta.tags = extras.tags;
+        if (extras.prepMinutes != null) meta.prepMinutes = extras.prepMinutes;
+        if (newPhotoPath) meta.photoPath = newPhotoPath;
+      }
       const saved = editingRecipeId
-        ? await savedMeals.update(editingRecipeId, { name, items: snapshot, servings })
-        : await savedMeals.create(name, snapshot, servings);
+        ? await savedMeals.update(editingRecipeId, { name, items: snapshot, servings, ...meta })
+        : await savedMeals.create(name, snapshot, servings, meta);
       const logging = mealToLog || timeToLog;
       if (logging) {
         // One combined row for "1 serving of this recipe", scaled down
@@ -2304,6 +2338,7 @@ export default function FoodSearch() {
       return saved;
     } catch (err) {
       console.error("Failed to save recipe:", err);
+      if (newPhotoPath) removeRecipePhoto(newPhotoPath);   // don't leave an orphaned photo behind
       showToast(`Couldn't save "${name}" — try again`, true);
       throw err;
     }
@@ -2770,6 +2805,8 @@ export default function FoodSearch() {
           onClose={() => setBuilderReviewOpen(false)}
           onRemove={(i) => setBuilderItems(prev => prev.filter((_, idx) => idx !== i))}
           onSave={handleSaveBuilderMeal}
+          metaEnabled={savedMeals.extrasSupported}
+          allTags={allRecipeTags(savedMeals.rows)}
           isEditing={!!editingRecipeId}
           initialName={editingRecipeId ? (editDraftMeta?.name ?? savedMeals.rows.find(r => r.id === editingRecipeId)?.name) : ""}
           initialServings={editingRecipeId ? (editDraftMeta?.servings ?? savedMeals.rows.find(r => r.id === editingRecipeId)?.servings) : 1}
