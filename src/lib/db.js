@@ -450,7 +450,7 @@ export async function getRunningFast(userId) {
   return data;
 }
 
-export async function getFinishedFasts(userId, limit = 10) {
+export async function getFinishedFasts(userId, limit = 60) {
   const { data, error } = await supabase
     .from('fasts')
     .select('*')
@@ -478,6 +478,21 @@ export async function endFast(id) {
   const { data, error } = await supabase
     .from('fasts')
     .update({ ended_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('ended_at', null)
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// Changes the goal of a fast that is still running. Clearing end_notified_at
+// means the "your fast has ended" push (sent from the new goal, not the old one)
+// fires at the new end time even if the old one had already passed.
+export async function updateFastTarget(id, targetHours) {
+  const { data, error } = await supabase
+    .from('fasts')
+    .update({ target_hours: targetHours, end_notified_at: null })
     .eq('id', id)
     .is('ended_at', null)
     .select()

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTargetHours, fastEndsAt, fastProgress, formatClock, formatDuration, formatHours, hitGoal } from './fasting';
+import { parseTargetHours, fastEndsAt, fastProgress, formatClock, formatDuration, formatHours, hitGoal, fastStage, FAST_STAGES, extendedTarget, fastStreak, weekSummary } from './fasting';
 
 const fast = (over = {}) => ({ started_at: '2026-10-05T20:00:00Z', target_hours: 16, ended_at: null, ...over });
 const at = (iso) => new Date(iso).getTime();
@@ -82,5 +82,76 @@ describe('hitGoal', () => {
     expect(hitGoal(fast({ ended_at: '2026-10-06T12:00:00Z' }))).toBe(true);
     expect(hitGoal(fast({ ended_at: '2026-10-06T11:59:00Z' }))).toBe(false);
     expect(hitGoal(fast({ ended_at: '2026-10-06T20:00:00Z' }))).toBe(true);
+  });
+});
+
+describe('fastStage', () => {
+  const h = (n) => n * 3600000;
+  it('starts at digesting and moves on by the hour', () => {
+    expect(fastStage(0).key).toBe('fed');
+    expect(fastStage(h(3.9)).key).toBe('fed');
+    expect(fastStage(h(4)).key).toBe('settling');
+    expect(fastStage(h(12)).key).toBe('extended');
+    expect(fastStage(h(40)).key).toBe('long');
+  });
+  it('says what is next and how long until it', () => {
+    const s = fastStage(h(3));
+    expect(s.next.key).toBe('settling');
+    expect(s.untilNextMs).toBe(h(1));
+    expect(fastStage(h(40)).next).toBeNull();
+  });
+  it('never makes a fat-burning claim', () => {
+    for (const s of FAST_STAGES) expect(`${s.title} ${s.note}`).not.toMatch(/fat[- ]?burn|ketosis|ketone|autophagy/i);
+  });
+});
+
+describe('extendedTarget', () => {
+  it('adds two hours by default and stops at the maximum', () => {
+    expect(extendedTarget(16)).toBe(18);
+    expect(extendedTarget('14.5')).toBe(16.5);
+    expect(extendedTarget(71)).toBe(72);
+    expect(extendedTarget(72)).toBe(72);
+  });
+});
+
+describe('fastStreak and weekSummary', () => {
+  // local noon so no timezone edge case moves a fast to another day
+  const noon = (y, m, d) => new Date(y, m - 1, d, 12, 0, 0);
+  const done = (end, hours = 16, ran = hours) => {
+    const e = new Date(end);
+    return { started_at: new Date(e.getTime() - ran * 3600000).toISOString(), ended_at: e.toISOString(), target_hours: hours };
+  };
+  const now = noon(2026, 10, 10).getTime();
+
+  it('counts consecutive days that hit the goal, ending today or yesterday', () => {
+    const fasts = [done(noon(2026, 10, 10)), done(noon(2026, 10, 9)), done(noon(2026, 10, 8))];
+    expect(fastStreak(fasts, now)).toBe(3);
+    expect(fastStreak(fasts.slice(1), now)).toBe(2); // today not done yet: yesterday still counts
+  });
+  it('is broken by a missed day, and by a fast that ended early', () => {
+    expect(fastStreak([done(noon(2026, 10, 10)), done(noon(2026, 10, 8))], now)).toBe(1);
+    expect(fastStreak([done(noon(2026, 10, 10), 16, 10), done(noon(2026, 10, 9))], now)).toBe(1);
+    expect(fastStreak([done(noon(2026, 10, 7))], now)).toBe(0);
+    expect(fastStreak([], now)).toBe(0);
+  });
+  it('summarises the last seven days', () => {
+    const fasts = [done(noon(2026, 10, 10), 16, 18), done(noon(2026, 10, 9), 16, 10), done(noon(2026, 10, 5)), done(noon(2026, 9, 1))];
+    const w = weekSummary(fasts, now);
+    expect(w.days).toHaveLength(7);
+    expect(w.days[6]).toMatchObject({ isToday: true, fasted: true, hit: true });
+    expect(w.days[5]).toMatchObject({ fasted: true, hit: false });
+    expect(w.days[1]).toMatchObject({ fasted: true, hit: true }); // 5 Oct
+    expect(w.days[0].fasted).toBe(false); // 4 Oct
+    expect(w.hitCount).toBe(2);
+    expect(w.avgMs).toBeCloseTo(((18 + 10 + 16) / 3) * 3600000);
+  });
+  it('is empty and finite with no history', () => {
+    const w = weekSummary([], now);
+    expect(w.hitCount).toBe(0);
+    expect(w.avgMs).toBe(0);
+  });
+  it('ignores a fast that is still running', () => {
+    const w = weekSummary([{ started_at: new Date(now - 3600000).toISOString(), ended_at: null, target_hours: 16 }], now);
+    expect(w.days.every((d) => !d.fasted)).toBe(true);
   });
 });

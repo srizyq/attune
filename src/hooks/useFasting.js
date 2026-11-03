@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
-import { getRunningFast, getFinishedFasts, startFast, endFast, deleteFast } from '../lib/db';
+import { getRunningFast, getFinishedFasts, startFast, endFast, deleteFast, updateFastTarget } from '../lib/db';
 import { isMissingTableError } from '../lib/dbErrors';
 
 // The running fast (if any) plus recent finished ones. `unavailable` means the
@@ -53,5 +53,7 @@ export function useFasting() {
   const end = useCallback(() => act(() => endFast(running.id), "Couldn't end your fast — try again."), [act, running]);
   const discard = useCallback(() => act(() => deleteFast(running.id), "Couldn't discard that fast — try again."), [act, running]);
 
-  return { running, history, loading, busy, error, unavailable, start, end, discard };
+  const setTarget = useCallback((hours) => act(() => updateFastTarget(running.id, hours), "Couldn't change your goal — try again."), [act, running]);
+
+  return { running, history, loading, busy, error, unavailable, start, end, discard, setTarget };
 }

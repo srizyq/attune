@@ -60,7 +60,7 @@ function matches(row, key, spec) {
  * Anything the app asks for that has no fixture is recorded in `unmocked`
  * so a new endpoint can't silently go untested.
  */
-export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true, storageLog = [], authProviders = [] } = {}) {
+export async function installFakeBackend(context, { profile = {}, tables = {}, rpc = {}, session = {}, signedIn = true, storageLog = [], authProviders = [], persist = [] } = {}) {
   const data = {
     profiles: [buildProfile(profile)],
     food_logs: buildFoodLogs(),
@@ -160,6 +160,8 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
           target = target.filter((row) => (spec.startsWith('not.') ? !matches(row, key, spec.slice(4)) : matches(row, key, spec)));
         }
         if (target.length) {
+          // Opt-in per table: let an update stick, so a test can watch the page re-read it.
+          if (persist.includes(table)) for (const row of target) Object.assign(row, body);
           const merged = target.map((row) => ({ ...row, ...body }));
           return (req.headers().accept || '').includes('vnd.pgrst.object+json') ? json(merged[0], 200) : json(merged, 200);
         }

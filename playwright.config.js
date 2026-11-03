@@ -5,7 +5,7 @@ import { defineConfig } from '@playwright/test';
 // project) and fails on overflow, clipped or spilling text, covered controls,
 // and console errors. Run with `npm run test:e2e`. Screenshots land in
 // e2e/screens/ (git-ignored) for eyeballing.
-const PORT = 5199;
+const PORT = Number(process.env.E2E_PORT) || 5199; // E2E_PORT lets a second run go alongside the first
 
 export default defineConfig({
   testDir: 'e2e',
