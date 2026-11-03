@@ -258,6 +258,50 @@ input[type='radio'] {
   cursor: pointer;
 }
 
+/* The on/off switch (friends/Switch.jsx): the checkbox itself, drawn as a
+   track and a knob, so it stays focusable and announced as a switch. */
+input[type='checkbox'].switch-input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-strong);
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+input[type='checkbox'].switch-input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-hint);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+input[type='checkbox'].switch-input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+input[type='checkbox'].switch-input:checked::after {
+  transform: translateX(20px);
+  background: #fff;
+}
+input[type='checkbox'].switch-input:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+input[type='checkbox'].switch-input:disabled {
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  input[type='checkbox'].switch-input,
+  input[type='checkbox'].switch-input::after { transition: none; }
+}
+
 /* Nothing should drag in a direction it isn't meant to scroll.
    A strip that scrolls sideways (overflow-x: auto) silently becomes
    scrollable UP/DOWN too — CSS turns the other axis from `visible` into
