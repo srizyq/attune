@@ -12,6 +12,7 @@ export const EXPORT_TABLES = [
   { key: 'progressPhotos', label: 'Progress photos (names and dates only)', table: 'progress_photos', col: 'user_id', order: ['taken_date', 'id'] },
   { key: 'customFoods', label: 'Your own foods', table: 'custom_foods', col: 'user_id', order: ['created_at', 'id'] },
   { key: 'favouriteFoods', label: 'Favourite foods', table: 'favourite_foods', col: 'user_id', order: ['id'] },
+  { key: 'supplements', label: 'Supplements', table: 'supplements', col: 'user_id', order: ['created_at', 'id'] },
   { key: 'savedMeals', label: 'Saved meals and recipes', table: 'saved_meals', col: 'user_id', order: ['created_at', 'id'] },
   { key: 'daySlots', label: 'Custom day slots', table: 'day_slots', col: 'user_id', order: ['id'] },
   { key: 'fasts', label: 'Fasts', table: 'fasts', col: 'user_id', order: ['id'] },

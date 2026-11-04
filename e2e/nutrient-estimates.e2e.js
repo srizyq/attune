@@ -98,3 +98,29 @@ test('averages over 7 days and the By goal view lay out cleanly, and a nutrient 
   await expect(list.getByTestId('nutrient-info')).toContainText('Builds and maintains bones');
   await assertLayout(page, testInfo, 'x-nutrient-foods-average', ctx);
 });
+
+test('a saved supplement is taken in one tap and counts in the day', async ({ page, context }, testInfo) => {
+  const ctx = await openApp({ page, context }, testInfo, {
+    profile: { sex: 'female', date_of_birth: '1995-05-05', life_stage: 'none' },
+    tables: {
+      food_logs: [],
+      supplements: [{ id: 's1', user_id: USER_ID, name: 'Vitamin D3', serving_label: '1 capsule', nutrients: { vitaminD: 25 }, created_at: new Date().toISOString() }],
+    },
+  });
+  await page.goto('/nutrients');
+  await settle(page);
+  const card = page.getByTestId('supplements-card');
+  await expect(card.getByText('Vitamin D3')).toBeVisible();
+  await expect(card.getByText(/Vitamin D 25mcg/)).toBeVisible();
+  await card.getByRole('button', { name: /Take Vitamin D3/ }).click();
+  await expect(card.getByText('✓ 1×')).toBeVisible();
+  await assertLayout(page, testInfo, 'x-nutrients-supplements', ctx);
+  // The add form opens, needs a name and an amount, and lays out within the screen.
+  await card.getByRole('button', { name: /Add/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add a supplement' });
+  await expect(dialog.getByRole('button', { name: 'Save supplement' })).toBeDisabled();
+  await dialog.getByLabel('Name').fill('Fish oil');
+  await dialog.getByLabel(/Omega-3/).fill('300');
+  await expect(dialog.getByRole('button', { name: 'Save supplement' })).toBeEnabled();
+  await assertLayout(page, testInfo, 'x-supplement-form', ctx);
+});

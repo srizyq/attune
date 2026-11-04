@@ -1670,3 +1670,25 @@ export async function getClientCoaches(clientId) {
   return { supported: true, coaches: (data || []).map((r) => ({ id: r.trainer_id, name: r.trainer_name, status: r.status })) };
 }
 
+
+// ─── supplements ────────────────────────────────────────────────────────────
+// A person's own supplements and what one serving contains ({ nutrient key:
+// amount }). Taking one logs a 0 kcal food entry — see lib/supplements.js.
+export async function getSupplements(userId) {
+  const { data, error } = await supabase.from('supplements').select('*').eq('user_id', userId).order('created_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function addSupplement(userId, { name, servingLabel, nutrients }) {
+  const { data, error } = await supabase.from('supplements')
+    .insert({ user_id: userId, name, serving_label: servingLabel || '1 serving', nutrients })
+    .select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteSupplement(id) {
+  const { error } = await supabase.from('supplements').delete().eq('id', id);
+  if (error) throw error;
+}

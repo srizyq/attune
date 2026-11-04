@@ -72,7 +72,7 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
     saved_meals: SAVED_MEALS,
     trainer_clients: [], trainer_comments: [], trainer_notes: [], coach_invites: [], push_subscriptions: [],
     barcode_products: [], common_dishes: [], afcd_foods: [], ausnut_foods: [], meal_plans: [], body_measurements: [], progress_photos: [],
-    day_slots: [], fasts: [],
+    day_slots: [], fasts: [], supplements: [],
     restaurant_chains: [], restaurant_items: [], app_reports: [], app_admins: [],
     ...tables,
   };

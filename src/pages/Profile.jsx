@@ -19,6 +19,18 @@ const THEME_OPTIONS = [
   { id: 'light', label: 'Light', icon: 'ti-sun' },
 ];
 
+const SEX_OPTIONS = [
+  { id: 'male', label: 'Male' },
+  { id: 'female', label: 'Female' },
+  { id: 'unspecified', label: 'Other' },
+];
+
+const LIFE_STAGE_OPTIONS = [
+  { id: 'none', label: 'No' },
+  { id: 'pregnant', label: 'Pregnant' },
+  { id: 'breastfeeding', label: 'Breastfeeding' },
+];
+
 const UNIT_OPTIONS = [
   { id: 'metric', label: 'Metric (kg/cm)' },
   { id: 'imperial', label: 'Imperial (lb/in)' },
@@ -233,6 +245,16 @@ export default function Profile() {
   // not whatever was captured when the component first mounted. Updated in
   // an effect (runs after render, every render) rather than during render
   // itself, since refs aren't meant to be written while rendering.
+  // Single settings that save the moment they're tapped (no typing, so no debounce).
+  async function saveField(fields) {
+    try {
+      await saveProfile(fields);
+      setToast({ message: 'Saved' });
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+      setToast({ message: "Couldn't save — try again.", error: true });
+    }
+  }
   const flushNowRef = useRef(() => {});
   useEffect(() => {
     flushNowRef.current = () => {
@@ -421,6 +443,16 @@ export default function Profile() {
               <FieldRow label="Units">
                 <SegmentedControl options={UNIT_OPTIONS} value={form.unit} onChange={v => set('unit', v)} fill={false} />
               </FieldRow>
+              {profile && 'sex' in profile && (
+                <FieldRow label="Sex" hint="Used for your nutrient targets">
+                  <SegmentedControl options={SEX_OPTIONS} value={profile.sex || 'unspecified'} onChange={v => saveField({ sex: v, ...(v !== 'female' && 'life_stage' in profile ? { life_stage: 'none' } : {}) })} fill={false} />
+                </FieldRow>
+              )}
+              {profile?.sex === 'female' && 'life_stage' in profile && (
+                <FieldRow label="Pregnant or breastfeeding?" hint="Raises targets like iron, folate and iodine">
+                  <SegmentedControl options={LIFE_STAGE_OPTIONS} value={profile.life_stage || 'none'} onChange={v => saveField({ life_stage: v })} fill={false} />
+                </FieldRow>
+              )}
             </Card>
 
             <Card style={{ marginBottom: 0 }}>

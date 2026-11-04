@@ -17,6 +17,9 @@ import Card from '../components/Card';
 import StatBadge from '../components/StatBadge';
 import { carbsToShow, carbsLabel } from '../lib/dietStyles';
 import SegToggle from '../components/SegToggle';
+import SupplementsCard from '../components/SupplementsCard';
+import { slotFor } from '../lib/daySlots';
+import { useSupplements } from '../hooks/useSupplements';
 import { useFoodLogsRange } from '../hooks/useFoodLogsRange';
 import { targetsFor, targetFor, targetNote } from '../lib/nutrientTargets';
 import { HEALTH_GOALS, LIMIT_KEYS } from '../lib/nutrientInfo';
@@ -86,7 +89,8 @@ export default function Nutrients() {
     setSelectedDate(next);
   }
 
-  const { logs, meals, loading } = useFoodLogs(selectedDate);
+  const { logs, meals, loading, addFood, daySlots } = useFoodLogs(selectedDate);
+  const supplementsApi = useSupplements();
   // The extended nutrients (B vitamins, selenium, ...) are only carried by some
   // food databases: sum just the foods that have them, and say how many did.
   const items = useMemo(() => Object.values(meals).flat(), [meals]);
@@ -228,6 +232,18 @@ export default function Nutrients() {
                 <MacroRow label="Fat" value={round1(isRange ? macroAvg.fat : totals.fat)} unit="g" target={dayTargets.fat_g} color="var(--macro-fat)" />
               </Card>
 
+              {!isRange && supplementsApi.supported && (
+                <SupplementsCard
+                  supplements={supplementsApi.supplements} items={items} dayLabel={isToday ? 'today' : selectedDate}
+                  onTake={(food) => {
+                    // In Slots mode it goes into the slot that matches the time, like any other food.
+                    const at = isToday ? new Date() : null;
+                    const slotId = isPremium && (profile?.daily_log_view || 'meals') === 'slots' ? slotFor(daySlots, { at }) : null;
+                    return addFood(food, undefined, at, slotId);
+                  }}
+                  onCreate={supplementsApi.create} onRemove={supplementsApi.remove}
+                />
+              )}
               {!generic && (<>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Other nutrients</div>
               <div className="grid-3" style={{ marginBottom: 20 }}>

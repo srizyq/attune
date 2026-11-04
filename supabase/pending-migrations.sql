@@ -41,6 +41,7 @@
 --   31. Friends sharing levels
 --   32. USDA reference foods
 --   33. More nutrients: vitamin K, choline, copper, manganese
+--   34. Supplements and life stage
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block), and
@@ -4860,3 +4861,43 @@ as $$
     'vitaminK', 'choline', 'copper', 'manganese'
   ]::text[];
 $$;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Supplements and life stage (schema update — run against an existing DB; safe
+-- to re-run). Tests: supabase/tests/supplements.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 'pregnant' / 'breastfeeding' raise several daily nutrient targets (iron,
+-- folate, iodine, ...). Only read for women; 'none' is the default.
+alter table public.profiles add column if not exists life_stage text not null default 'none';
+alter table public.profiles drop constraint if exists profiles_life_stage_check;
+alter table public.profiles add constraint profiles_life_stage_check check (life_stage in ('none', 'pregnant', 'breastfeeding'));
+
+-- A person's own supplements (a multivitamin, vitamin D, fish oil ...) with what
+-- one serving contains, as { nutrient key: amount } using the app's nutrient keys
+-- and units. Taking one logs a 0 kcal food entry carrying those amounts, so it
+-- counts in every total.
+create table if not exists public.supplements (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  name text not null check (char_length(name) between 1 and 80),
+  serving_label text not null default '1 serving' check (char_length(serving_label) <= 40),
+  nutrients jsonb not null default '{}'::jsonb check (jsonb_typeof(nutrients) = 'object'),
+  created_at timestamptz default now()
+);
+
+alter table public.supplements enable row level security;
+
+drop policy if exists "supplements: select own" on public.supplements;
+create policy "supplements: select own" on public.supplements
+  for select using (auth.uid() = user_id);
+drop policy if exists "supplements: insert own" on public.supplements;
+create policy "supplements: insert own" on public.supplements
+  for insert with check (auth.uid() = user_id);
+drop policy if exists "supplements: update own" on public.supplements;
+create policy "supplements: update own" on public.supplements
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "supplements: delete own" on public.supplements;
+create policy "supplements: delete own" on public.supplements
+  for delete using (auth.uid() = user_id);

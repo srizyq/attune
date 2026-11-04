@@ -7,6 +7,7 @@ const h = vi.hoisted(() => ({}));
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn(), useLocation: () => ({ state: null }) }));
 vi.mock('../hooks/useProfile', () => ({ useProfile: () => h.profile }));
 vi.mock('../hooks/useFoodLogs', () => ({ useFoodLogs: () => h.logs }));
+vi.mock('../hooks/useSupplements', () => ({ useSupplements: () => ({ supplements: [], supported: true, create: vi.fn(), remove: vi.fn() }) }));
 vi.mock('../hooks/useFoodLogsRange', () => ({ useFoodLogsRange: (end, days, enabled) => (enabled ? h.range : { items: [], dates: [], loading: false }) }));
 vi.mock('../components/AppNav', () => ({ default: () => <nav /> }));
 import Nutrients from './Nutrients';

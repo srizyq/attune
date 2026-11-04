@@ -24,7 +24,8 @@ export function contributorsFor(key, items, estimates) {
   let total = 0;
   for (const item of items || []) {
     const entry = { id: item.id, name: item.name, brand: item.brand || null, meal: item.meal || null, item };
-    if (ALWAYS_PRESENT.has(key) || hasData(item, key)) {
+    // A supplement lists everything it contains, so what it doesn't list is none, not unknown.
+    if (ALWAYS_PRESENT.has(key) || item.source === 'supplement' || hasData(item, key)) {
       const amount = Number(item[key]) || 0;
       if (amount > 0) { rows.push({ ...entry, amount, kind: 'measured', via: null }); total += amount; } else none.push(entry);
       continue;
