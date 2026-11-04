@@ -14,6 +14,7 @@ import { withCompGrants } from '../src/lib/compGrants.js';
 import { withTrial } from '../src/lib/trial.js';
 import { withCoachProAccess } from '../src/lib/proAccess.js';
 import { rateLimit, AI_REQUESTS_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
+import { cleanItems, buildMicrosPrompt, parseMicros } from './_aiMicros.js';
 
 // Constructed lazily, after the config check below, rather than at module
 // load — the SDK throws immediately if ANTHROPIC_API_KEY is missing, which
@@ -99,6 +100,39 @@ export default async function handler(req, res) {
   Object.assign(profile, withTrial(profile));
   Object.assign(profile, withCompGrants(profile, userData.user.email));
   Object.assign(profile, withCoachProAccess(profile));
+
+  // Vitamin/mineral estimates for logged foods no reference table matched. Pro
+  // only, and not counted against the free-scan cap (which is for typed dishes).
+  if (req.body?.mode === 'micros') {
+    if (!profile.is_premium) {
+      res.status(403).json({ error: 'AI nutrient estimates are a Pro feature.' });
+      return;
+    }
+    const items = cleanItems(req.body.items);
+    if (!items) {
+      res.status(400).json({ error: 'Missing foods' });
+      return;
+    }
+    try {
+      const response = await getClient().messages.create({
+        model: 'claude-sonnet-5',
+        max_tokens: 2500,
+        thinking: { type: 'disabled' },
+        messages: [{ role: 'user', content: buildMicrosPrompt(items) }],
+      });
+      const textBlock = response.content.find((b) => b.type === 'text');
+      if (!textBlock) {
+        console.error('Micro estimate returned no text block:', { stop_reason: response.stop_reason, usage: response.usage });
+        res.status(502).json({ error: "Couldn't read a response. Try again." });
+        return;
+      }
+      res.status(200).json({ items: parseMicros(textBlock.text, items.length) });
+    } catch (err) {
+      console.error('Micro estimate error:', err);
+      res.status(502).json({ error: 'AI estimation is temporarily unavailable.' });
+    }
+    return;
+  }
 
   const { description } = req.body || {};
   if (!description || typeof description !== 'string' || !description.trim()) {

@@ -5768,3 +5768,80 @@ end;
 $$;
 revoke all on function public.friends_day(uuid, date) from public, anon;
 grant execute on function public.friends_day(uuid, date) to authenticated;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- USDA reference foods (schema update — run against an existing DB; safe to
+-- re-run). Tests: supabase/tests/usda-foods.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- The USDA FoodData Central "SR Legacy" table (~7,800 generic foods, per 100 g,
+-- with vitamins and minerals measured for nearly all of them). Not searched by
+-- people — the app borrows from it, after AUSNUT, to estimate the nutrients a
+-- logged food came without (see src/lib/microEstimate.js). Same columns as
+-- ausnut_foods so one code path reads both. Load the data from the three
+-- supabase/usda_foods_partNof3.sql files after running this block.
+create table if not exists public.usda_foods (
+  id text primary key,
+  name text not null,
+  derivation text,
+  calories numeric not null default 0,
+  protein_g numeric default 0,
+  carbs_g numeric default 0,
+  fat_g numeric default 0,
+  fibre_g numeric default 0,
+  sodium_mg numeric default 0,
+  sugar_g numeric default 0,
+  saturated_fat_g numeric default 0,
+  trans_fat_g numeric default 0,
+  cholesterol_mg numeric default 0,
+  potassium_mg numeric default 0,
+  added_sugar_g numeric default 0,
+  vitamin_d_mcg numeric default 0,
+  calcium_mg numeric default 0,
+  iron_mg numeric default 0,
+  vitamin_a_mcg numeric default 0,
+  vitamin_c_mg numeric default 0,
+  vitamin_b12_mcg numeric default 0,
+  folate_mcg numeric default 0,
+  magnesium_mg numeric default 0,
+  zinc_mg numeric default 0,
+  polyunsaturated_fat_g numeric default 0,
+  monounsaturated_fat_g numeric default 0,
+  thiamin_mg numeric,
+  riboflavin_mg numeric,
+  niacin_mg numeric,
+  vitamin_b6_mg numeric,
+  vitamin_e_mg numeric,
+  phosphorus_mg numeric,
+  selenium_mcg numeric,
+  iodine_mcg numeric,
+  omega3_mg numeric,
+  omega6_g numeric,
+  ala_g numeric,
+  caffeine_mg numeric,
+  alcohol_g numeric,
+  created_at timestamptz default now()
+);
+
+alter table public.usda_foods enable row level security;
+
+drop policy if exists "usda_foods: select any signed-in user" on public.usda_foods;
+create policy "usda_foods: select any signed-in user" on public.usda_foods
+  for select using (auth.uid() is not null);
+
+-- Same shape as search_ausnut_foods_ranked: every word must start a word in the
+-- name, shortest names first (so "Chicken, breast, raw" beats a composite dish).
+create or replace function public.search_usda_foods_ranked(patterns text[], match_limit int default 20)
+returns setof public.usda_foods
+language sql
+stable
+as $$
+  select *
+  from public.usda_foods
+  where name ~* all(patterns)
+  order by length(name) asc
+  limit match_limit;
+$$;
+
+grant execute on function public.search_usda_foods_ranked(text[], int) to authenticated;

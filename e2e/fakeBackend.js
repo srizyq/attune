@@ -13,7 +13,7 @@ const DEFAULT_RPC = {
   get_my_team: null,
   get_my_coach_links: [], get_pending_clients: [], get_client_summaries: [], get_client_coaches: [],
   client_last_log_dates: [],
-  search_ausnut_foods_fuzzy: [], search_ausnut_foods_ranked: [], search_common_dishes_fuzzy: [],
+  search_ausnut_foods_fuzzy: [], search_ausnut_foods_ranked: [], search_usda_foods_ranked: [], search_common_dishes_fuzzy: [],
   search_restaurant_items_ranked: [], search_restaurant_items_fuzzy: [],
   start_free_trial: null,
   barcode_correct: null, is_app_admin: false, submit_app_report: 'report-1',

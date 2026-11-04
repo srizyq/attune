@@ -1,34 +1,58 @@
 import { useState } from 'react';
 import { ScanPage, ScanCard, Eyebrow, MacroTile } from './scan/ScanKit';
 import { MICRO_NUTRIENTS } from '../lib/microNutrients';
-import { nutrientReading } from '../lib/foodDetails';
-import { MICRO_GROUPS } from './coach/constants';
+import { DETAIL_GROUPS, nutrientDetail, detailCoverage } from '../lib/foodDetails';
+import { hasProAccess } from '../lib/proAccess';
+import { useProfile } from '../hooks/useProfile';
 import { useFoodEstimate } from '../hooks/useMicroEstimates';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { round1 } from '../lib/format';
 
 const BY_KEY = Object.fromEntries(MICRO_NUTRIENTS.map((n) => [n.key, n]));
 
-function Row({ label, reading, last }) {
+// One nutrient: its name and figure, and — where it has a usual daily target —
+// how much of that this portion covers. An estimate is drawn fainter and marked
+// ~; a nutrient the food has no figure for says so instead of showing 0.
+function Row({ nutrient, detail, last }) {
+  const none = detail.kind === 'none';
+  const barPct = detail.pct != null ? Math.min(100, detail.pct) : null;
   return (
-    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: last ? 'none' : '1px solid var(--border-default)' }}>
-      <span style={{ fontSize: 14, color: 'var(--text-primary)', minWidth: 0, overflowWrap: 'anywhere' }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: reading.kind === 'none' ? 500 : 700, color: reading.kind === 'none' ? 'var(--text-hint)' : reading.kind === 'estimated' ? 'var(--text-secondary)' : 'var(--text-primary)', flexShrink: 0 }}>{reading.text}</span>
+    <div style={{ padding: '9px 0', borderBottom: last ? 'none' : '1px solid var(--border-default)' }} data-kind={detail.kind}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+        <span style={{ fontSize: 14, color: 'var(--text-primary)', minWidth: 0, overflowWrap: 'anywhere' }}>{nutrient.label}</span>
+        <span style={{ fontSize: 14, fontWeight: none ? 500 : 700, color: none ? 'var(--text-hint)' : detail.kind === 'estimated' ? 'var(--text-secondary)' : 'var(--text-primary)', flexShrink: 0 }}>
+          {none ? 'Not reported' : detail.text}
+        </span>
+      </div>
+      {!none && barPct != null && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+          <div style={{ flex: 1, height: 4, background: 'var(--border-default)', borderRadius: 99 }}>
+            <div style={{ height: '100%', width: `${Math.max(barPct > 0 ? 2 : 0, barPct)}%`, background: nutrient.color, borderRadius: 99, opacity: detail.kind === 'estimated' ? 0.55 : 1 }} />
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 34, textAlign: 'right' }}>{detail.pct < 1 && detail.pct > 0 ? '<1' : Math.round(detail.pct)}%</span>
+        </div>
+      )}
+      {detail.kind === 'estimated' && <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 3 }}>{detail.via === 'ai' ? 'AI estimate' : 'Estimated from a similar food'}</div>}
     </div>
   );
 }
 
 /**
- * Every macro and micronutrient of a food, for the amount it is shown at.
- * `food` has the app's usual shape (cal, protein, carbs, fat, plus the micro
- * keys). Vitamins and minerals a food has no figure for read "No data", or an
- * estimate from the closest similar food (marked ~).
+ * Every macro and micronutrient of a food, for the amount it is shown at, in
+ * label order (carbohydrates, fats, vitamins, minerals). `food` has the app's
+ * usual shape (cal, protein, carbs, fat, plus the micro keys). A nutrient the
+ * food has no figure for reads "Not reported", or an estimate (marked ~) from
+ * the closest similar food — and, with Pro, an AI estimate where none exists.
+ * Percentages are of the usual daily target.
  */
-export function FoodDetailsPage({ food, onClose, closing }) {
-  const estimate = useFoodEstimate(food);
+export function FoodDetailsPage({ food, onClose, closing, pro }) {
+  const { profile } = useProfile();
+  const isPro = pro ?? hasProAccess(profile);
+  const estimate = useFoodEstimate(food, { pro: isPro });
   const portion = food.servingLabel || (food.loggedAmount != null && food.loggedUnit ? `${food.loggedAmount} ${food.loggedUnit}` : null);
-  const readings = MICRO_GROUPS.map((g) => ({ ...g, rows: g.keys.map((key) => ({ key, reading: nutrientReading(food, key, estimate) })) }));
-  const anyEstimated = readings.some((g) => g.rows.some((r) => r.reading.kind === 'estimated'));
+  const groups = DETAIL_GROUPS.map((g) => ({ ...g, rows: g.keys.map((key) => ({ key, detail: nutrientDetail(food, key, estimate) })) }));
+  const coverage = detailCoverage(food, estimate);
+  const total = coverage.measured + coverage.estimated + coverage.none;
   return (
     <ScanPage title="Food details" onBack={onClose} closing={closing} zIndex={400} testId="food-details">
       <ScanCard>
@@ -43,14 +67,20 @@ export function FoodDetailsPage({ food, onClose, closing }) {
           <MacroTile kind="carbs" label="Carbs" value={round1(food.carbs || 0)} />
           <MacroTile kind="fat" label="Fat" value={round1(food.fat || 0)} />
         </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12, lineHeight: 1.4 }} data-testid="food-details-coverage">
+          {coverage.measured} of {total} nutrients measured{coverage.estimated > 0 ? ` · ${coverage.estimated} estimated` : ''}{coverage.none > 0 ? ` · ${coverage.none} not reported` : ''}
+        </div>
       </ScanCard>
-      {readings.map((g) => (
+      {groups.map((g) => (
         <ScanCard key={g.label}>
           <Eyebrow style={{ marginBottom: 4 }}>{g.label}</Eyebrow>
-          {g.rows.map((r, i) => <Row key={r.key} label={BY_KEY[r.key].label} reading={r.reading} last={i === g.rows.length - 1} />)}
+          {g.rows.map((r, i) => <Row key={r.key} nutrient={BY_KEY[r.key]} detail={r.detail} last={i === g.rows.length - 1} />)}
         </ScanCard>
       ))}
-      {anyEstimated && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 4px 12px' }}>~ estimated from a similar food</p>}
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 4px 12px', lineHeight: 1.45 }}>
+        {coverage.estimated > 0 ? '~ estimated. ' : ''}% is of the usual daily target.
+        {!isPro && coverage.none > 0 ? ' Pro fills in nutrients a food doesn\u2019t report with AI estimates.' : ''}
+      </p>
     </ScanPage>
   );
 }

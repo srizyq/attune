@@ -15,17 +15,22 @@ import StatBadge from './StatBadge';
 // two whose guideline isn't a number at all — "as low as possible",
 // "favour over saturated fat") show text instead of a bar.
 //
+// `onOpen` makes the whole card a button that opens the nutrient's own page
+// (which foods supplied it); without it, or when `locked`, tapping does what it
+// always did.
+//
 // `noData` (none of the logged foods carried this nutrient) shows a dash
 // instead of a misleading 0; `approx` puts a "~" on a total that includes
 // estimates; `note` is the small line saying how much of it was measured.
-export default function MicroCard({ icon, label, value, unit, guideline, target, defaultTarget, color, locked, onUpgrade, note, noData = false, approx = false }) {
+export default function MicroCard({ icon, label, value, unit, guideline, target, defaultTarget, color, locked, onUpgrade, onOpen, note, noData = false, approx = false }) {
   const effectiveTarget = target || defaultTarget;
   const pct = effectiveTarget && !noData ? (value / effectiveTarget) * 100 : null;
   const barPct = pct !== null ? Math.min(pct, 100) : null;
   return (
     <Card
-      onClick={locked ? onUpgrade : undefined}
-      style={{ border: '1px solid var(--border-default)', borderRadius: 12, padding: '16px 14px', marginBottom: 0, position: 'relative', cursor: locked ? 'pointer' : 'default' }}
+      onClick={onOpen || (locked ? onUpgrade : undefined)}
+      {...(onOpen ? { role: 'button', tabIndex: 0, 'aria-label': `${label}: which foods supplied it`, onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } } : {})}
+      style={{ border: '1px solid var(--border-default)', borderRadius: 12, padding: '16px 14px', marginBottom: 0, position: 'relative', cursor: onOpen || locked ? 'pointer' : 'default' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -35,9 +40,12 @@ export default function MicroCard({ icon, label, value, unit, guideline, target,
           {/* The name wraps instead of being cut to "Sodi…" in a half-width card. */}
           <span style={{ fontSize: 13, color: 'var(--text-secondary)', minWidth: 0, lineHeight: 1.25, overflowWrap: 'anywhere' }}>{label}</span>
         </div>
-        {pct !== null && !locked && (
-          <StatBadge color={color} style={{ padding: '2px 6px', fontSize: 11 }}>{Math.round(pct)}%</StatBadge>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          {pct !== null && !locked && (
+            <StatBadge color={color} style={{ padding: '2px 6px', fontSize: 11 }}>{Math.round(pct)}%</StatBadge>
+          )}
+          {onOpen && !locked && <i className="ti ti-chevron-right" aria-hidden="true" style={{ fontSize: 14, color: 'var(--text-hint)' }} />}
+        </div>
       </div>
       <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', filter: locked ? 'blur(6px)' : 'none', userSelect: locked ? 'none' : 'auto' }}>
         {noData ? '—' : <>{approx ? '~' : ''}{value}</>}

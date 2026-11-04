@@ -19,7 +19,7 @@ const STATES = [
   {
     name: 'free-tier',
     backend: { profile: { is_premium: false, pro_status: null, stripe_pro_subscription_id: null, stripe_customer_id: null, daily_log_view: null } },
-    screens: ['dashboard', 'daily-log', 'food-search', 'settings', 'profile', 'nutrients'],
+    screens: ['dashboard', 'daily-log', 'food-search', 'settings', 'profile', 'nutrients', 'nutrient-foods'],
   },
   {
     name: 'trial-ending',
@@ -44,7 +44,7 @@ const STATES = [
         food_logs: buildFoodLogs().map((r, i) => (i % 3 === 0 ? { ...r, food_name: LONG_UNBROKEN } : i % 3 === 1 ? { ...r, food_name: `${r.food_name} — ${r.food_name} with extra sauce, sides and a very long description of how it was cooked` } : r)),
       },
     },
-    screens: ['dashboard', 'daily-log', 'food-search', 'settings', 'profile', 'nutrients'],
+    screens: ['dashboard', 'daily-log', 'food-search', 'settings', 'profile', 'nutrients', 'nutrient-foods'],
   },
   {
     name: 'coach',

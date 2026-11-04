@@ -46,3 +46,29 @@ test('a day where every food has its data shows no notes', async ({ page, contex
   await expect(page.getByText(/Data for \d+ of/)).toHaveCount(0);
   await expect(page.getByText('Estimated from similar foods')).toHaveCount(0);
 });
+
+test('tapping a nutrient lists the foods that supplied it, biggest first, with estimates marked', async ({ page, context }, testInfo) => {
+  const ctx = await openApp({ page, context }, testInfo, {
+    rpc: { search_ausnut_foods_ranked: (req) => (/yoghurt/i.test(req.postData() || '') ? [YOGHURT] : []) },
+    tables: { food_logs: [
+      log('l1', { food_name: 'Greek yoghurt', source: 'photo' }),                 // calcium estimated: 120
+      log('l3', { food_name: 'Cheese slice', source: 'off', calcium_mg: 200, serving_grams: 20 }), // measured: 200
+    ] },
+  });
+  await page.goto('/nutrients');
+  await settle(page);
+  await expect(page.getByText('Data for 1 of 2 foods · estimates for 1 more')).toBeVisible({ timeout: 20000 });
+  await page.getByRole('button', { name: /Calcium: which foods supplied it/ }).click();
+  const list = page.getByTestId('nutrient-foods');
+  await expect(list.getByText('Foods that supplied it')).toBeVisible();
+  const names = await list.getByRole('button', { name: /see all nutrients/ }).allInnerTexts();
+  expect(names[0]).toContain('Cheese slice');
+  expect(names[1]).toContain('Greek yoghurt');
+  await expect(list.getByText('Estimated from a similar food').first()).toBeVisible();
+  await expect(list.getByText('63%')).toBeVisible(); // 200 of 320
+  await assertLayout(page, testInfo, 'x-nutrient-foods', ctx);
+  // A row opens that food's full details.
+  await list.getByRole('button', { name: /Cheese slice: see all nutrients/ }).click();
+  await expect(page.getByTestId('food-details')).toBeVisible();
+  await expect(page.getByText(/nutrients measured/)).toBeVisible();
+});

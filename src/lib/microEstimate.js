@@ -106,7 +106,16 @@ async function matchFor(name, brand, search) {
   return null;
 }
 
-async function estimateOne({ name, brand, grams, cal }, search) {
+// A figure worth using: older nutrients are stored as 0 when a source lacked
+// them, so only >0 counts there; the extended set uses null for unknown.
+const usable = (key, v) => v != null && (EXTENDED.has(key) ? Number.isFinite(Number(v)) : Number(v) > 0);
+
+// How much each way of estimating can be trusted, lowest first. An estimate that
+// mixes ways is labelled by the least certain one it used.
+const VIA_ORDER = ['ausnut', 'usda', 'ai'];
+
+/** One food (or ingredient), scaled to its portion, from the closest row of one reference table. */
+async function estimateFromTable({ name, brand, grams, cal }, search) {
   const row = await matchFor(name, brand, search);
   if (!row) return null;
   const factor = portionFactor({ grams, cal }, row);
@@ -122,12 +131,46 @@ async function estimateOne({ name, brand, grams, cal }, search) {
 }
 
 /**
+ * One food from AUSNUT first, then — for whatever AUSNUT's closest match
+ * doesn't carry — the closest USDA food. Lookup errors on the USDA table are
+ * ignored (it only exists once its SQL has been run), AUSNUT's are not.
+ */
+async function estimateOne(part, { search, searchUsda }, missing) {
+  const micros = {};
+  const from = [];
+  const via = [];
+  for (const [kind, lookup] of [['ausnut', search], ['usda', searchUsda]]) {
+    if (!lookup) continue;
+    let found;
+    try {
+      found = await estimateFromTable(part, lookup);
+    } catch (err) {
+      if (kind === 'ausnut') throw err;
+      continue;
+    }
+    if (!found) continue;
+    let used = false;
+    for (const [key, v] of Object.entries(found.micros)) {
+      if (missing.has(key) && !usable(key, micros[key]) && usable(key, v)) { micros[key] = v; used = true; }
+    }
+    if (used) { from.push(found.from); via.push(kind); }
+  }
+  return from.length ? { micros, from, via } : null;
+}
+
+/**
  * Estimates the nutrients a logged item has no figure for. A scanned meal that
  * kept its ingredients is estimated ingredient by ingredient. Resolves to
- * { micros, from } — micros only for nutrients the item was missing — or null
- * when nothing similar was found.
+ * { micros, from, via } — micros only for nutrients the item was missing, via
+ * the least certain source used ('ausnut' | 'usda' | 'ai') — or null when
+ * nothing similar was found.
+ *
+ * `search` looks up AUSNUT; the optional `searchUsda` looks up USDA for what
+ * AUSNUT lacks, and `askAi(parts)` — given the parts neither table matched —
+ * resolves to one { key: value } per part (or null), already scaled to the
+ * portion. Both extras are left out when they don't apply (no Pro, no network).
  */
-export async function estimateItem(item, search) {
+export async function estimateItem(item, search, { searchUsda, askAi } = {}) {
   const missing = new Set(missingKeys(item));
   if (missing.size === 0 || !(Number(item.cal) > 0)) return null;
 
@@ -137,17 +180,29 @@ export async function estimateItem(item, search) {
 
   const total = {};
   const from = [];
+  const via = new Set();
+  const add = (micros) => {
+    for (const [key, v] of Object.entries(micros || {})) if (missing.has(key) && usable(key, v)) total[key] = (total[key] || 0) + Number(v);
+  };
+  const unmatched = [];
   for (const part of parts) {
-    const found = await estimateOne(part, search);
-    if (!found) continue;
-    from.push(found.from);
-    for (const [key, v] of Object.entries(found.micros)) {
-      if (missing.has(key)) total[key] = (total[key] || 0) + v;
+    const found = await estimateOne(part, { search, searchUsda }, missing);
+    if (!found) { unmatched.push(part); continue; }
+    from.push(...found.from);
+    found.via.forEach((v) => via.add(v));
+    add(found.micros);
+  }
+  if (unmatched.length && askAi) {
+    try {
+      const answers = await askAi(unmatched);
+      (answers || []).forEach((micros) => { if (micros && Object.keys(micros).length) { add(micros); via.add('ai'); } });
+    } catch (err) {
+      console.error('AI micronutrient estimate failed', err);
     }
   }
-  if (from.length === 0) return null;
+  if (via.size === 0) return null;
   const micros = Object.fromEntries(Object.entries(total).map(([key, v]) => [key, round(v, EXTENDED.has(key) ? 3 : 2)]));
-  return { micros, from };
+  return { micros, from, via: VIA_ORDER.filter((v) => via.has(v)).pop() };
 }
 
 /** Wraps a search so the same words are only looked up once. */
@@ -161,7 +216,7 @@ export function cachedSearch(search) {
 }
 
 /** Estimates for every item that needs it: Map(item id → { micros, from }). A failed lookup just leaves that item without one. */
-export async function estimateItems(items, search, { concurrency = 4 } = {}) {
+export async function estimateItems(items, search, { concurrency = 4, searchUsda, askAi } = {}) {
   const result = new Map();
   const queue = (items || []).filter((item) => item?.id != null && missingKeys(item).length > 0 && Number(item.cal) > 0);
   let next = 0;
@@ -169,7 +224,7 @@ export async function estimateItems(items, search, { concurrency = 4 } = {}) {
     while (next < queue.length) {
       const item = queue[next++];
       try {
-        const est = await estimateItem(item, search);
+        const est = await estimateItem(item, search, { searchUsda, askAi });
         if (est) result.set(item.id, est);
       } catch (err) {
         console.error('Could not estimate micronutrients for', item.name, err);

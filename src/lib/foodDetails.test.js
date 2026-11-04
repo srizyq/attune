@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { nutrientReading } from './foodDetails';
+import { nutrientReading, nutrientDetail, detailCoverage, DETAIL_GROUPS } from './foodDetails';
+import { MICRO_KEYS } from './microNutrients';
 
 describe('nutrientReading', () => {
   const food = { calcium: 120, iron: 0, thiamin: 0.25, selenium: null, fibre: 0, sodium: 340 };
@@ -25,5 +26,24 @@ describe('nutrientReading', () => {
   it('says no data when the estimate has nothing for it either', () => {
     expect(nutrientReading(food, 'zinc', { micros: { zinc: 0 } }).kind).toBe('none');
     expect(nutrientReading(food, 'zinc', null).kind).toBe('none');
+  });
+});
+
+describe('the details page layout', () => {
+  it('lists every tracked nutrient exactly once', () => {
+    const listed = DETAIL_GROUPS.flatMap((g) => g.keys);
+    expect([...listed].sort()).toEqual([...MICRO_KEYS].sort());
+  });
+  it('gives each reading a value and its share of the daily target', () => {
+    const food = { calcium: 500, iron: 0, thiamin: null };
+    expect(nutrientDetail(food, 'calcium')).toMatchObject({ kind: 'measured', value: 500, pct: 50, via: null });
+    expect(nutrientDetail(food, 'iron')).toMatchObject({ kind: 'none', value: null, pct: null });
+    expect(nutrientDetail(food, 'thiamin', { micros: { thiamin: 0.575 }, via: 'ai' })).toMatchObject({ kind: 'estimated', value: 0.575, pct: 50, via: 'ai' });
+    expect(nutrientDetail({ transFat: 1 }, 'transFat').pct).toBeNull(); // no target for it
+  });
+  it('counts what is measured, estimated and missing', () => {
+    const c = detailCoverage({ calcium: 500, iron: 0 }, { micros: { iron: 3 } });
+    expect(c.estimated).toBe(1);
+    expect(c.measured + c.estimated + c.none).toBe(MICRO_KEYS.length);
   });
 });

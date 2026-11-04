@@ -76,7 +76,8 @@ export default function Nutrients() {
   // Foods that came without vitamins and minerals (photo and menu scans, AI
   // estimates, many branded products) borrow them from the closest similar food;
   // the cards say so, and what was measured stays separate.
-  const estimates = useMicroEstimates(items);
+  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
+  const estimates = useMicroEstimates(items, { pro: isPremium });
   const summary = useMemo(() => estimateSummary(items, estimates), [items, estimates]);
   const itemsFilled = useMemo(() => items.map((item) => {
     const est = estimates.get(item.id)?.micros;
@@ -128,8 +129,9 @@ export default function Nutrients() {
 
   // The selected day's targets — a rest day can have its own (see lib/dayTargets.js).
   const dayTargets = targetsForDate(profile, selectedDate);
-  const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const goUpgrade = () => navigate('/pricing');
+  // Each card opens its nutrient's own page: which foods supplied it today (Pro).
+  const open = (key) => () => navigate(`/nutrients/${key}?date=${selectedDate}`);
   // Pro-only custom targets (Settings → Goals & Targets) — a nutrient
   // missing here just means "use the default guideline", handled inside
   // MicroCard itself.
@@ -162,25 +164,25 @@ export default function Nutrients() {
 
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Other nutrients</div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
-                <MicroCard icon="ti-leaf" label="Fibre" value={round1(totals.fibre)} unit="g" guideline="Guideline: 25–30g/day" target={microTargets.fibre} defaultTarget={DEFAULT_TARGETS.fibre} color="var(--accent)" />
-                <MicroCard icon="ti-droplet" label="Sodium" value={Math.round(totals.sodium)} unit="mg" guideline="Guideline: under 2,300mg/day" target={microTargets.sodium} defaultTarget={DEFAULT_TARGETS.sodium} color="var(--water-blue)" />
-                <MicroCard icon="ti-candy" label="Sugar" value={round1(totals.sugar)} unit="g" guideline="Guideline: under 50g/day" target={microTargets.sugar} defaultTarget={DEFAULT_TARGETS.sugar} color="var(--gold)" />
+                <MicroCard onOpen={open('fibre')} icon="ti-leaf" label="Fibre" value={round1(totals.fibre)} unit="g" guideline="Guideline: 25–30g/day" target={microTargets.fibre} defaultTarget={DEFAULT_TARGETS.fibre} color="var(--accent)" />
+                <MicroCard onOpen={open('sodium')} icon="ti-droplet" label="Sodium" value={Math.round(totals.sodium)} unit="mg" guideline="Guideline: under 2,300mg/day" target={microTargets.sodium} defaultTarget={DEFAULT_TARGETS.sodium} color="var(--water-blue)" />
+                <MicroCard onOpen={open('sugar')} icon="ti-candy" label="Sugar" value={round1(totals.sugar)} unit="g" guideline="Guideline: under 50g/day" target={microTargets.sugar} defaultTarget={DEFAULT_TARGETS.sugar} color="var(--gold)" />
               </div>
 
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Fat breakdown</div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
-                <MicroCard {...est('saturatedFat')} icon="ti-droplet-filled" label="Saturated fat" value={round1(tot('saturatedFat'))} unit="g" guideline="Guideline: under 20g/day" target={microTargets.saturatedFat} defaultTarget={DEFAULT_TARGETS.saturatedFat} color="var(--gold)" />
-                <MicroCard {...est('transFat')} icon="ti-alert-triangle" label="Trans fat" value={round1(tot('transFat'))} unit="g" guideline="Guideline: as low as possible" target={microTargets.transFat} color="var(--ai-purple)" />
-                <MicroCard {...est('cholesterol')} icon="ti-egg" label="Cholesterol" value={Math.round(tot('cholesterol'))} unit="mg" guideline="Guideline: under 300mg/day" target={microTargets.cholesterol} defaultTarget={DEFAULT_TARGETS.cholesterol} color="var(--water-blue)" />
+                <MicroCard {...est('saturatedFat')} onOpen={open('saturatedFat')} icon="ti-droplet-filled" label="Saturated fat" value={round1(tot('saturatedFat'))} unit="g" guideline="Guideline: under 20g/day" target={microTargets.saturatedFat} defaultTarget={DEFAULT_TARGETS.saturatedFat} color="var(--gold)" />
+                <MicroCard {...est('transFat')} onOpen={open('transFat')} icon="ti-alert-triangle" label="Trans fat" value={round1(tot('transFat'))} unit="g" guideline="Guideline: as low as possible" target={microTargets.transFat} color="var(--ai-purple)" />
+                <MicroCard {...est('cholesterol')} onOpen={open('cholesterol')} icon="ti-egg" label="Cholesterol" value={Math.round(tot('cholesterol'))} unit="mg" guideline="Guideline: under 300mg/day" target={microTargets.cholesterol} defaultTarget={DEFAULT_TARGETS.cholesterol} color="var(--water-blue)" />
               </div>
 
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Vitamins &amp; minerals</div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
-                <MicroCard {...est('addedSugar')} icon="ti-candy" label="Added sugar" value={round1(tot('addedSugar'))} unit="g" guideline="Guideline: under 25g/day" target={microTargets.addedSugar} defaultTarget={DEFAULT_TARGETS.addedSugar} color="var(--gold)" />
-                <MicroCard {...est('potassium')} icon="ti-bolt" label="Potassium" value={Math.round(tot('potassium'))} unit="mg" guideline="Guideline: 2,600–3,400mg/day" target={microTargets.potassium} defaultTarget={DEFAULT_TARGETS.potassium} color="var(--accent)" />
-                <MicroCard {...est('vitaminD')} icon="ti-sun" label="Vitamin D" value={round1(tot('vitaminD'))} unit="mcg" guideline="Guideline: 15mcg/day" target={microTargets.vitaminD} defaultTarget={DEFAULT_TARGETS.vitaminD} color="var(--gold)" />
-                <MicroCard {...est('calcium')} icon="ti-bone" label="Calcium" value={Math.round(tot('calcium'))} unit="mg" guideline="Guideline: 1,000mg/day" target={microTargets.calcium} defaultTarget={DEFAULT_TARGETS.calcium} color="var(--water-blue)" />
-                <MicroCard {...est('iron')} icon="ti-droplet" label="Iron" value={round1(tot('iron'))} unit="mg" guideline="Guideline: 8–18mg/day" target={microTargets.iron} defaultTarget={DEFAULT_TARGETS.iron} color="var(--ai-purple)" />
+                <MicroCard {...est('addedSugar')} onOpen={open('addedSugar')} icon="ti-candy" label="Added sugar" value={round1(tot('addedSugar'))} unit="g" guideline="Guideline: under 25g/day" target={microTargets.addedSugar} defaultTarget={DEFAULT_TARGETS.addedSugar} color="var(--gold)" />
+                <MicroCard {...est('potassium')} onOpen={open('potassium')} icon="ti-bolt" label="Potassium" value={Math.round(tot('potassium'))} unit="mg" guideline="Guideline: 2,600–3,400mg/day" target={microTargets.potassium} defaultTarget={DEFAULT_TARGETS.potassium} color="var(--accent)" />
+                <MicroCard {...est('vitaminD')} onOpen={open('vitaminD')} icon="ti-sun" label="Vitamin D" value={round1(tot('vitaminD'))} unit="mcg" guideline="Guideline: 15mcg/day" target={microTargets.vitaminD} defaultTarget={DEFAULT_TARGETS.vitaminD} color="var(--gold)" />
+                <MicroCard {...est('calcium')} onOpen={open('calcium')} icon="ti-bone" label="Calcium" value={Math.round(tot('calcium'))} unit="mg" guideline="Guideline: 1,000mg/day" target={microTargets.calcium} defaultTarget={DEFAULT_TARGETS.calcium} color="var(--water-blue)" />
+                <MicroCard {...est('iron')} onOpen={open('iron')} icon="ti-droplet" label="Iron" value={round1(tot('iron'))} unit="mg" guideline="Guideline: 8–18mg/day" target={microTargets.iron} defaultTarget={DEFAULT_TARGETS.iron} color="var(--ai-purple)" />
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -190,14 +192,14 @@ export default function Nutrients() {
                 )}
               </div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
-                <MicroCard {...est('vitaminA')} locked={!isPremium} onUpgrade={goUpgrade} icon="ti-apple" label="Vitamin A" value={Math.round(tot('vitaminA'))} unit="mcg" guideline="Guideline: 700–900mcg/day" target={microTargets.vitaminA} defaultTarget={DEFAULT_TARGETS.vitaminA} color="var(--gold)" />
-                <MicroCard {...est('vitaminC')} locked={!isPremium} onUpgrade={goUpgrade} icon="ti-lemon2" label="Vitamin C" value={round1(tot('vitaminC'))} unit="mg" guideline="Guideline: 45mg/day" target={microTargets.vitaminC} defaultTarget={DEFAULT_TARGETS.vitaminC} color="var(--accent)" />
-                <MicroCard {...est('vitaminB12')} locked={!isPremium} onUpgrade={goUpgrade} icon="ti-pill" label="Vitamin B12" value={round1(tot('vitaminB12'))} unit="mcg" guideline="Guideline: 2.4mcg/day" target={microTargets.vitaminB12} defaultTarget={DEFAULT_TARGETS.vitaminB12} color="var(--ai-purple)" />
-                <MicroCard {...est('folate')} locked={!isPremium} onUpgrade={goUpgrade} icon="ti-seeding" label="Folate" value={Math.round(tot('folate'))} unit="mcg" guideline="Guideline: 400mcg/day" target={microTargets.folate} defaultTarget={DEFAULT_TARGETS.folate} color="var(--water-blue)" />
-                <MicroCard {...est('magnesium')} locked={!isPremium} onUpgrade={goUpgrade} icon="ti-battery" label="Magnesium" value={round1(tot('magnesium'))} unit="mg" guideline="Guideline: 310–420mg/day" target={microTargets.magnesium} defaultTarget={DEFAULT_TARGETS.magnesium} color="var(--accent)" />
-                <MicroCard {...est('zinc')} locked={!isPremium} onUpgrade={goUpgrade} icon="ti-shield" label="Zinc" value={round1(tot('zinc'))} unit="mg" guideline="Guideline: 8–11mg/day" target={microTargets.zinc} defaultTarget={DEFAULT_TARGETS.zinc} color="var(--gold)" />
-                <MicroCard {...est('polyunsaturatedFat')} locked={!isPremium} onUpgrade={goUpgrade} icon="ti-fish" label="Polyunsaturated fat" value={round1(tot('polyunsaturatedFat'))} unit="g" guideline="A source of essential fatty acids" target={microTargets.polyunsaturatedFat} color="var(--water-blue)" />
-                <MicroCard {...est('monounsaturatedFat')} locked={!isPremium} onUpgrade={goUpgrade} icon="ti-droplet-half-2" label="Monounsaturated fat" value={round1(tot('monounsaturatedFat'))} unit="g" guideline="Guideline: favour over saturated fat" target={microTargets.monounsaturatedFat} color="var(--ai-purple)" />
+                <MicroCard {...est('vitaminA')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminA')} icon="ti-apple" label="Vitamin A" value={Math.round(tot('vitaminA'))} unit="mcg" guideline="Guideline: 700–900mcg/day" target={microTargets.vitaminA} defaultTarget={DEFAULT_TARGETS.vitaminA} color="var(--gold)" />
+                <MicroCard {...est('vitaminC')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminC')} icon="ti-lemon2" label="Vitamin C" value={round1(tot('vitaminC'))} unit="mg" guideline="Guideline: 45mg/day" target={microTargets.vitaminC} defaultTarget={DEFAULT_TARGETS.vitaminC} color="var(--accent)" />
+                <MicroCard {...est('vitaminB12')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminB12')} icon="ti-pill" label="Vitamin B12" value={round1(tot('vitaminB12'))} unit="mcg" guideline="Guideline: 2.4mcg/day" target={microTargets.vitaminB12} defaultTarget={DEFAULT_TARGETS.vitaminB12} color="var(--ai-purple)" />
+                <MicroCard {...est('folate')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('folate')} icon="ti-seeding" label="Folate" value={Math.round(tot('folate'))} unit="mcg" guideline="Guideline: 400mcg/day" target={microTargets.folate} defaultTarget={DEFAULT_TARGETS.folate} color="var(--water-blue)" />
+                <MicroCard {...est('magnesium')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('magnesium')} icon="ti-battery" label="Magnesium" value={round1(tot('magnesium'))} unit="mg" guideline="Guideline: 310–420mg/day" target={microTargets.magnesium} defaultTarget={DEFAULT_TARGETS.magnesium} color="var(--accent)" />
+                <MicroCard {...est('zinc')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('zinc')} icon="ti-shield" label="Zinc" value={round1(tot('zinc'))} unit="mg" guideline="Guideline: 8–11mg/day" target={microTargets.zinc} defaultTarget={DEFAULT_TARGETS.zinc} color="var(--gold)" />
+                <MicroCard {...est('polyunsaturatedFat')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('polyunsaturatedFat')} icon="ti-fish" label="Polyunsaturated fat" value={round1(tot('polyunsaturatedFat'))} unit="g" guideline="A source of essential fatty acids" target={microTargets.polyunsaturatedFat} color="var(--water-blue)" />
+                <MicroCard {...est('monounsaturatedFat')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('monounsaturatedFat')} icon="ti-droplet-half-2" label="Monounsaturated fat" value={round1(tot('monounsaturatedFat'))} unit="g" guideline="Guideline: favour over saturated fat" target={microTargets.monounsaturatedFat} color="var(--ai-purple)" />
               </div>
 
               {MICRO_GROUPS.filter(g => g.extended).map(group => (
@@ -213,7 +215,7 @@ export default function Nutrients() {
                     {group.keys.map(key => {
                       const n = MICRO_NUTRIENTS.find(m => m.key === key);
                       return (
-                        <MicroCard key={key} {...est(key, false)} locked={!isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, extended[key].total)} unit={n.unit} guideline={n.guideline} target={microTargets[key]} defaultTarget={n.defaultTarget} color={n.color} />
+                        <MicroCard key={key} onOpen={open(key)} {...est(key, false)} locked={!isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, extended[key].total)} unit={n.unit} guideline={n.guideline} target={microTargets[key]} defaultTarget={n.defaultTarget} color={n.color} />
                       );
                     })}
                   </div>

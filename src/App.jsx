@@ -30,6 +30,7 @@ const Profile = lazy(() => import('./pages/Profile')); // "Personal details" und
 const MyProfile = lazy(() => import('./pages/MyProfile'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const Nutrients = lazy(() => import('./pages/Nutrients'));
+const NutrientFoods = lazy(() => import('./pages/NutrientFoods'));
 const Expenditure = lazy(() => import('./pages/Expenditure'));
 const Fasting = lazy(() => import('./pages/Fasting'));
 const Coach = lazy(() => import('./pages/Coach'));
@@ -104,6 +105,7 @@ function AnimatedRoutes() {
         <Route path="/recipes/:id" element={<RequireAuth><RecipeDetail /></RequireAuth>} />
         <Route path="/progress" element={<Navigate to="/expenditure" replace />} />
         <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
+        <Route path="/nutrients/:key" element={<RequireAuth><NutrientFoods /></RequireAuth>} />
         <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />
         <Route path="/fasting" element={<RequireAuth><Fasting /></RequireAuth>} />
         <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />

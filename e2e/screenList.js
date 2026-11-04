@@ -8,6 +8,7 @@ export const SCREENS = [
   { name: 'food-search', path: '/food' },
   { name: 'recipes', path: '/recipes' },
   { name: 'nutrients', path: '/nutrients' },
+  { name: 'nutrient-foods', path: '/nutrients/calcium', wait: 'Foods that supplied it' },
   { name: 'expenditure', path: '/expenditure' },
   { name: 'fasting', path: '/fasting', wait: 'Start a fast' },
   { name: 'settings', path: '/settings' },

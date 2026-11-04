@@ -55,7 +55,9 @@ export function buildBundle(schema) {
     ...blocks.map((b, i) => `--   ${String(i + 1).padStart(2)}. ${b.title}`),
     '--',
     '-- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files',
-    '-- (they fill in the food database for the "Extended micronutrients" block).',
+    '-- (they fill in the food database for the "Extended micronutrients" block), and',
+    '-- the three supabase/usda_foods_partNof3.sql files (they load the "USDA reference',
+    '-- foods" block).',
     '-- ════════════════════════════════════════════════════════════════════════',
     '',
   ].join('\n');

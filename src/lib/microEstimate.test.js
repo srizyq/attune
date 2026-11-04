@@ -135,3 +135,52 @@ describe('what the cards say', () => {
     expect(microNote(estimateSummary([], new Map()), 'calcium').noData).toBe(false); // a day with nothing logged
   });
 });
+
+describe('USDA and AI fallbacks', () => {
+  const usdaRows = { 'greek yoghurt': [{ id: 'u1', name: 'Yogurt, Greek, plain', calories: 100, calcium_mg: 110, vitamin_c_mg: 0.5, vitamin_d_mcg: 0, magnesium_mg: 99, zinc_mg: 9, vitamin_b12_mcg: 0.5, thiamin_mg: 0.04, selenium_mcg: 9 }] };
+  const searchUsda = vi.fn(async (q) => usdaRows[q] || []);
+  const item = { id: 'i1', name: 'Greek yoghurt', cal: 100, servingGrams: 100 };
+
+  it('AUSNUT wins where it has a figure; USDA fills only what AUSNUT lacks', async () => {
+    const est = await estimateItem(item, search, { searchUsda: async () => [{ ...usdaRows['greek yoghurt'][0], selenium_mcg: 9, zinc_mg: 9, vitamin_c_mg: 0.7 }] });
+    expect(est.micros.zinc).toBe(0.5);        // AUSNUT's figure, not USDA's 9
+    expect(est.micros.vitaminC).toBe(1);      // AUSNUT had it
+    expect(est.micros.selenium).toBe(9);      // only USDA had it
+    expect(est.via).toBe('usda');
+  });
+
+  it('uses USDA when AUSNUT has no match, and says so', async () => {
+    const est = await estimateItem(item, async () => [], { searchUsda });
+    expect(est.from).toEqual(['Yogurt, Greek, plain']);
+    expect(est.micros.calcium).toBe(110);
+    expect(est.via).toBe('usda');
+  });
+
+  it('ignores a USDA table that is not there yet', async () => {
+    const est = await estimateItem(item, search, { searchUsda: async () => { throw new Error('relation does not exist'); } });
+    expect(est.via).toBe('ausnut');
+    expect(est.micros.magnesium).toBe(11);
+  });
+
+  it('asks the AI only for parts no table matched, and labels the result an AI estimate', async () => {
+    const askAi = vi.fn(async (parts) => parts.map(() => ({ magnesium: 40, thiamin: 0.2 })));
+    const meal = { id: 'm', name: 'Stew', cal: 400, servingGrams: 300, ingredients: [{ name: 'Grilled chicken breast', grams: 100, cal: 165 }, { name: 'Mystery curry', grams: 200, cal: 235 }] };
+    const est = await estimateItem(meal, search, { searchUsda: async () => [], askAi });
+    expect(askAi).toHaveBeenCalledWith([{ name: 'Mystery curry', grams: 200, cal: 235 }]);
+    expect(est.micros.magnesium).toBe(68); // 28 from the chicken + 40 from the AI
+    expect(est.via).toBe('ai');
+  });
+
+  it('keeps the table estimate when the AI call fails, and does not call it when everything matched', async () => {
+    const meal = { id: 'm', name: 'Stew', cal: 400, servingGrams: 300, ingredients: [{ name: 'Grilled chicken breast', grams: 100, cal: 165 }, { name: 'Mystery curry', grams: 200, cal: 235 }] };
+    const est = await estimateItem(meal, search, { askAi: async () => { throw new Error('offline'); } });
+    expect(est.via).toBe('ausnut');
+    const askAi = vi.fn();
+    await estimateItem(item, search, { askAi });
+    expect(askAi).not.toHaveBeenCalled();
+  });
+
+  it('returns null when neither table nor AI has anything', async () => {
+    expect(await estimateItem({ id: 'x', name: 'Mystery curry', cal: 300, servingGrams: 100 }, search, { searchUsda: async () => [], askAi: async () => [null] })).toBeNull();
+  });
+});

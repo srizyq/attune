@@ -6,7 +6,7 @@ const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0
 
 // "See details" on a food shows every macro and micronutrient, wherever the food
 // is: a logged item, a search result and a scanned product. A nutrient with no
-// figure reads "No data" (not 0), and one estimated from a similar food is marked ~.
+// figure reads "Not reported" (not 0), and one estimated from a similar food is marked ~.
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }, permissions: ['camera'] });
 
 const AUSNUT_POTATO = { id: 3, name: 'Potato, peeled, raw', derivation: 'x', calories: 80, protein_g: 2, carbs_g: 17, fat_g: 0.1, fibre_g: 2, sodium_mg: 5, sugar_g: 1, calcium_mg: 10, iron_mg: 0.5, potassium_mg: 400, vitamin_c_mg: 20 };
@@ -34,7 +34,7 @@ test('a logged food opens its full details', async ({ page, context }, testInfo)
   await page.getByRole('button', { name: 'See details' }).click();
   const details = await expectDetails(page, /./);
   // Something this food has no figure for says so instead of 0.
-  await expect(details.getByText('No data').first()).toBeVisible();
+  await expect(details.getByText('Not reported').first()).toBeVisible();
   await assertLayout(page, testInfo, 'x-food-details', ctx);
   await details.getByRole('button', { name: 'Close' }).click();
   await expect(page.getByTestId('food-details')).toHaveCount(0);

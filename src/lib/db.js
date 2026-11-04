@@ -905,6 +905,17 @@ export async function searchAusnutStrict(query, limit = 40) {
   return data || [];
 }
 
+// Same strict word match against the USDA reference table, which the app only
+// borrows nutrients from (it is never shown in food search). The table exists
+// once its SQL has been run, so a failure here is left to the caller to ignore.
+export async function searchUsdaStrict(query, limit = 40) {
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const { data, error } = await supabase.rpc('search_usda_foods_ranked', { patterns: words.map(wordBoundaryPattern), match_limit: limit });
+  if (error) throw error;
+  return data || [];
+}
+
 export async function searchAusnutFoods(query, limit = 15) {
   const words = query.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return [];
