@@ -28,14 +28,14 @@ describe('DiaryTab nutrients', () => {
     render(<DiaryTab d={dash({ microTotals: { ...onTarget, fibre: 7, calcium: 320 } })} />);
     const summary = screen.getByTestId('nutrient-summary');
     expect(summary).toHaveTextContent('Low: Fibre 25% · Calcium 32%');
-    expect(screen.queryByText('B vitamins & vitamin E')).toBeNull();
+    expect(screen.queryByText('B vitamins, vitamin E & K')).toBeNull();
     expect(screen.getByRole('button', { name: `Show all ${MICRO_NUTRIENTS.length}` })).toBeInTheDocument();
   });
 
   it('shows everything on request, grouped, keeping the small ones\' precision', async () => {
     render(<DiaryTab d={dash()} />);
     await openAll();
-    expect(screen.getByText('B vitamins & vitamin E')).toBeInTheDocument();
+    expect(screen.getByText('B vitamins, vitamin E & K')).toBeInTheDocument();
     expect(screen.getByText('More minerals')).toBeInTheDocument();
     expect(screen.getByText('Omega fats, caffeine & alcohol')).toBeInTheDocument();
     expect(within(screen.getByTestId('nutrient-thiamin')).getByText(/0\.14/)).toBeInTheDocument(); // not 0.1

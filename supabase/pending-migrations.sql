@@ -40,6 +40,7 @@
 --   30. Recipe photos, tags and prep time
 --   31. Friends sharing levels
 --   32. USDA reference foods
+--   33. More nutrients: vitamin K, choline, copper, manganese
 --
 -- Then run the three supabase/ausnut_micronutrients_backfill_partNof3.sql files
 -- (they fill in the food database for the "Extended micronutrients" block), and
@@ -4813,3 +4814,49 @@ as $$
 $$;
 
 grant execute on function public.search_usda_foods_ranked(text[], int) to authenticated;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- More nutrients: vitamin K, choline, copper, manganese (schema update — run
+-- against an existing DB; safe to re-run). Tests: supabase/tests/micronutrients.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Four more extended nutrients (NULL = unknown, never 0 — see "Extended
+-- micronutrients"). USDA carries all four; most other sources carry none, so the
+-- app shows them with "based on N of M foods" like the others. After running
+-- this, re-run the three supabase/usda_foods_partNof3.sql files to fill them in.
+alter table public.food_logs add column if not exists vitamin_k_mcg numeric;
+alter table public.food_logs add column if not exists choline_mg numeric;
+alter table public.food_logs add column if not exists copper_mg numeric;
+alter table public.food_logs add column if not exists manganese_mg numeric;
+
+alter table public.favourite_foods add column if not exists vitamin_k_mcg numeric;
+alter table public.favourite_foods add column if not exists choline_mg numeric;
+alter table public.favourite_foods add column if not exists copper_mg numeric;
+alter table public.favourite_foods add column if not exists manganese_mg numeric;
+
+alter table public.ausnut_foods add column if not exists vitamin_k_mcg numeric;
+alter table public.ausnut_foods add column if not exists choline_mg numeric;
+alter table public.ausnut_foods add column if not exists copper_mg numeric;
+alter table public.ausnut_foods add column if not exists manganese_mg numeric;
+
+alter table public.usda_foods add column if not exists vitamin_k_mcg numeric;
+alter table public.usda_foods add column if not exists choline_mg numeric;
+alter table public.usda_foods add column if not exists copper_mg numeric;
+alter table public.usda_foods add column if not exists manganese_mg numeric;
+
+-- A trainer (or the person) can set a target for the new ones too.
+create or replace function public.micro_nutrient_keys()
+returns text[]
+language sql
+immutable
+as $$
+  select array[
+    'fibre', 'sodium', 'sugar', 'saturatedFat', 'transFat', 'cholesterol', 'addedSugar', 'potassium',
+    'vitaminD', 'calcium', 'iron', 'vitaminA', 'vitaminC', 'vitaminB12', 'folate', 'magnesium', 'zinc',
+    'polyunsaturatedFat', 'monounsaturatedFat',
+    'thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'vitaminE', 'phosphorus', 'selenium', 'iodine',
+    'omega3', 'omega6', 'alphaLinolenicAcid', 'caffeine', 'alcohol',
+    'vitaminK', 'choline', 'copper', 'manganese'
+  ]::text[];
+$$;

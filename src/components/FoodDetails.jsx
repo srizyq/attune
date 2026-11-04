@@ -4,6 +4,7 @@ import { MICRO_NUTRIENTS } from '../lib/microNutrients';
 import { DETAIL_GROUPS, nutrientDetail, detailCoverage } from '../lib/foodDetails';
 import { hasProAccess } from '../lib/proAccess';
 import { useProfile } from '../hooks/useProfile';
+import { targetsFor } from '../lib/nutrientTargets';
 import { useFoodEstimate } from '../hooks/useMicroEstimates';
 import { useClosingTransition } from '../hooks/useClosingTransition';
 import { round1 } from '../lib/format';
@@ -49,8 +50,9 @@ export function FoodDetailsPage({ food, onClose, closing, pro }) {
   const { profile } = useProfile();
   const isPro = pro ?? hasProAccess(profile);
   const estimate = useFoodEstimate(food, { pro: isPro });
+  const targets = targetsFor(profile);
   const portion = food.servingLabel || (food.loggedAmount != null && food.loggedUnit ? `${food.loggedAmount} ${food.loggedUnit}` : null);
-  const groups = DETAIL_GROUPS.map((g) => ({ ...g, rows: g.keys.map((key) => ({ key, detail: nutrientDetail(food, key, estimate) })) }));
+  const groups = DETAIL_GROUPS.map((g) => ({ ...g, rows: g.keys.map((key) => ({ key, detail: nutrientDetail(food, key, estimate, targets) })) }));
   const coverage = detailCoverage(food, estimate);
   const total = coverage.measured + coverage.estimated + coverage.none;
   return (
@@ -78,7 +80,7 @@ export function FoodDetailsPage({ food, onClose, closing, pro }) {
         </ScanCard>
       ))}
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 4px 12px', lineHeight: 1.45 }}>
-        {coverage.estimated > 0 ? '~ estimated. ' : ''}% is of the usual daily target.
+        {coverage.estimated > 0 ? '~ estimated. ' : ''}% is of your daily target.
         {!isPro && coverage.none > 0 ? ' Pro fills in nutrients a food doesn\u2019t report with AI estimates.' : ''}
       </p>
     </ScanPage>

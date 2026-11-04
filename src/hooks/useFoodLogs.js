@@ -11,6 +11,7 @@ export function mapRow(row) {
     name: row.food_name,
     brand: row.brand || null,
     meal: row.meal,
+    loggedDate: row.logged_date || null,
     cal: Number(row.calories) || 0,
     protein: Number(row.protein_g) || 0,
     carbs: Number(row.carbs_g) || 0,

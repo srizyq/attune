@@ -16,8 +16,15 @@ import DateStepper from '../components/DateStepper';
 import Card from '../components/Card';
 import StatBadge from '../components/StatBadge';
 import { carbsToShow, carbsLabel } from '../lib/dietStyles';
+import SegToggle from '../components/SegToggle';
+import { useFoodLogsRange } from '../hooks/useFoodLogsRange';
+import { targetsFor, targetFor, targetNote } from '../lib/nutrientTargets';
+import { HEALTH_GOALS, LIMIT_KEYS } from '../lib/nutrientInfo';
+import { contributorsFor } from '../lib/nutrientContributors';
+import { averages, macroAverages, loggedDayCount, rangeDates } from '../lib/nutrientRange';
 
-const DEFAULT_TARGETS = Object.fromEntries(MICRO_NUTRIENTS.map(m => [m.key, m.defaultTarget]));
+const BY_KEY = Object.fromEntries(MICRO_NUTRIENTS.map((m) => [m.key, m]));
+const RANGES = [{ value: 'day', label: 'Day', days: 1 }, { value: '7', label: '7-day avg', days: 7 }, { value: '30', label: '30-day avg', days: 30 }];
 
 function MacroRow({ label, value, unit, target, color }) {
   const pct = target ? (value / target) * 100 : null;
@@ -47,6 +54,16 @@ export default function Nutrients() {
   const location = useLocation();
   const { profile } = useProfile();
   const today = todayLocalDate();
+  const [range, setRange] = useState('day');
+  const [view, setView] = useState('type');
+  // Each nutrient's target: the person's own, else the recommendation for their age and sex.
+  const DEFAULT_TARGETS = useMemo(() => targetsFor(profile), [profile]);
+  const guide = (key, fallback) => {
+    const t = targetFor(key, profile);
+    const n = BY_KEY[key];
+    if (t.source !== 'personal') return fallback;
+    return LIMIT_KEYS.has(key) ? `Aim for under ${t.value}${n.unit}/day` : `${targetNote('personal')}: ${t.value}${n.unit}/day`;
+  };
 
   // Dashboard's chart card / macro grid link here with the day currently
   // being viewed (which may be a past day), so this always matches
@@ -78,6 +95,12 @@ export default function Nutrients() {
   // the cards say so, and what was measured stays separate.
   const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   const estimates = useMicroEstimates(items, { pro: isPremium });
+  // 7- and 30-day averages: the days ending on the selected one, counting only days with something logged.
+  const rangeDays = RANGES.find((r) => r.value === range).days;
+  const isRange = range !== 'day';
+  const rangeData = useFoodLogsRange(selectedDate, rangeDays, isRange);
+  const rangeEstimates = useMicroEstimates(rangeData.items, { pro: isPremium, ai: false });
+  const generic = isRange || view === 'goal';
   const summary = useMemo(() => estimateSummary(items, estimates), [items, estimates]);
   const itemsFilled = useMemo(() => items.map((item) => {
     const est = estimates.get(item.id)?.micros;
@@ -139,6 +162,40 @@ export default function Nutrients() {
 
   const round1 = n => Math.round(n * 10) / 10;
 
+  // The figures behind the By-goal view and the averages: one entry per nutrient.
+  const gItems = useMemo(() => (isRange ? rangeData.items : items.map((i) => ({ ...i, loggedDate: selectedDate }))), [isRange, rangeData.items, items, selectedDate]);
+  const gEstimates = isRange ? rangeEstimates : estimates;
+  const gDates = useMemo(() => (isRange ? rangeData.dates : rangeDates(selectedDate, 1)), [isRange, rangeData.dates, selectedDate]);
+  const stat = useMemo(() => {
+    if (!generic) return {};
+    const avg = averages(MICRO_NUTRIENTS.map((m) => m.key), gItems, gEstimates, gDates);
+    return Object.fromEntries(MICRO_NUTRIENTS.map((m) => {
+      const c = contributorsFor(m.key, gItems, gEstimates);
+      return [m.key, { avg: avg[m.key], noData: c.rows.length === 0 && c.unknown.length > 0, approx: c.estimatedTotal > 0 }];
+    }));
+  }, [generic, gItems, gEstimates, gDates]);
+  const loggedDays = loggedDayCount(gItems);
+  const macroAvg = useMemo(() => macroAverages(gItems, gDates), [gItems, gDates]);
+  const rangeCarbs = loggedDays ? gItems.reduce((sum, i) => sum + carbsToShow(i.carbs, i.fibre, profile?.net_carbs), 0) / loggedDays : 0;
+  const rangeLoading = isRange && rangeData.loading;
+  const openKey = (key) => () => navigate(`/nutrients/${key}?date=${selectedDate}${isRange ? `&range=${range}` : ''}`);
+
+  function card(key) {
+    const n = BY_KEY[key];
+    const st = stat[key] || { avg: 0, noData: false, approx: false };
+    const note = isRange && loggedDays > 0 ? `Average of ${loggedDays} logged ${loggedDays === 1 ? 'day' : 'days'}${st.approx ? ' · includes estimates' : ''}` : st.approx ? 'Includes estimates' : null;
+    return (
+      <MicroCard key={key} onOpen={openKey(key)} locked={n.pro && !isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, st.avg)} unit={n.unit} guideline={guide(key, n.guideline)} target={microTargets[key]} defaultTarget={DEFAULT_TARGETS[key]} color={n.color} noData={st.noData} approx={st.approx} note={note} />
+    );
+  }
+  // "3 of 5 at 70%+ of target" for a goal's nutrients that have a target to reach.
+  function goalSummary(keys) {
+    const reach = keys.filter((k) => !LIMIT_KEYS.has(k) && (microTargets[k] || DEFAULT_TARGETS[k]) && !(BY_KEY[k].pro && !isPremium));
+    if (!reach.length || (loggedDays === 0)) return null;
+    const ok = reach.filter((k) => (stat[k]?.avg || 0) / (microTargets[k] || DEFAULT_TARGETS[k]) >= 0.7).length;
+    return `${ok} of ${reach.length} at 70%+ of target`;
+  }
+
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
       <AppNav active="dashboard" initials={initials} />
@@ -151,38 +208,48 @@ export default function Nutrients() {
         <div className="page-pad" style={{ maxWidth: 700 }}>
           {loading ? null : (
             <>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                <SegToggle label="Period" value={range} onChange={setRange} options={RANGES.map(({ value, label }) => ({ value, label }))} />
+                <SegToggle label="Group by" value={view} onChange={setView} options={[{ value: 'type', label: 'By type' }, { value: 'goal', label: 'By goal' }]} />
+              </div>
+              {isRange && (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
+                  {rangeLoading ? 'Loading your logs…' : loggedDays === 0 ? `Nothing logged in these ${rangeDays} days.` : `Daily average over the ${loggedDays} of ${rangeDays} days you logged. Foods without data are estimated from similar foods; AI estimates aren't included.`}
+                </p>
+              )}
               <Card style={{ padding: 24, marginBottom: 20 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 6 }}>{isToday ? "Today's calories" : 'Calories'}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 6 }}>{isRange ? 'Daily average calories' : isToday ? "Today's calories" : 'Calories'}</div>
                 <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 20 }}>
-                  {Math.round(totals.cal).toLocaleString()}
+                  {Math.round(isRange ? macroAvg.cal : totals.cal).toLocaleString()}
                   {dayTargets.calories ? <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 500 }}> / {dayTargets.calories.toLocaleString()} kcal</span> : ' kcal'}
                 </div>
-                <MacroRow label="Protein" value={round1(totals.protein)} unit="g" target={dayTargets.protein_g} color="var(--macro-protein)" />
-                <MacroRow label={carbsLabel(profile?.net_carbs)} value={round1(logs.reduce((sum, r) => sum + carbsToShow(r.carbs_g, r.fibre_g, profile?.net_carbs), 0))} unit="g" target={dayTargets.carbs_g} color="var(--macro-carbs)" />
-                <MacroRow label="Fat" value={round1(totals.fat)} unit="g" target={dayTargets.fat_g} color="var(--macro-fat)" />
+                <MacroRow label="Protein" value={round1(isRange ? macroAvg.protein : totals.protein)} unit="g" target={dayTargets.protein_g} color="var(--macro-protein)" />
+                <MacroRow label={carbsLabel(profile?.net_carbs)} value={round1(isRange ? rangeCarbs : logs.reduce((sum, r) => sum + carbsToShow(r.carbs_g, r.fibre_g, profile?.net_carbs), 0))} unit="g" target={dayTargets.carbs_g} color="var(--macro-carbs)" />
+                <MacroRow label="Fat" value={round1(isRange ? macroAvg.fat : totals.fat)} unit="g" target={dayTargets.fat_g} color="var(--macro-fat)" />
               </Card>
 
+              {!generic && (<>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Other nutrients</div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
-                <MicroCard onOpen={open('fibre')} icon="ti-leaf" label="Fibre" value={round1(totals.fibre)} unit="g" guideline="Guideline: 25–30g/day" target={microTargets.fibre} defaultTarget={DEFAULT_TARGETS.fibre} color="var(--accent)" />
-                <MicroCard onOpen={open('sodium')} icon="ti-droplet" label="Sodium" value={Math.round(totals.sodium)} unit="mg" guideline="Guideline: under 2,300mg/day" target={microTargets.sodium} defaultTarget={DEFAULT_TARGETS.sodium} color="var(--water-blue)" />
-                <MicroCard onOpen={open('sugar')} icon="ti-candy" label="Sugar" value={round1(totals.sugar)} unit="g" guideline="Guideline: under 50g/day" target={microTargets.sugar} defaultTarget={DEFAULT_TARGETS.sugar} color="var(--gold)" />
+                <MicroCard onOpen={open('fibre')} icon="ti-leaf" label="Fibre" value={round1(totals.fibre)} unit="g" guideline={guide('fibre', "Guideline: 25–30g/day")} target={microTargets.fibre} defaultTarget={DEFAULT_TARGETS.fibre} color="var(--accent)" />
+                <MicroCard onOpen={open('sodium')} icon="ti-droplet" label="Sodium" value={Math.round(totals.sodium)} unit="mg" guideline={guide('sodium', "Guideline: under 2,300mg/day")} target={microTargets.sodium} defaultTarget={DEFAULT_TARGETS.sodium} color="var(--water-blue)" />
+                <MicroCard onOpen={open('sugar')} icon="ti-candy" label="Sugar" value={round1(totals.sugar)} unit="g" guideline={guide('sugar', "Guideline: under 50g/day")} target={microTargets.sugar} defaultTarget={DEFAULT_TARGETS.sugar} color="var(--gold)" />
               </div>
 
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Fat breakdown</div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
-                <MicroCard {...est('saturatedFat')} onOpen={open('saturatedFat')} icon="ti-droplet-filled" label="Saturated fat" value={round1(tot('saturatedFat'))} unit="g" guideline="Guideline: under 20g/day" target={microTargets.saturatedFat} defaultTarget={DEFAULT_TARGETS.saturatedFat} color="var(--gold)" />
-                <MicroCard {...est('transFat')} onOpen={open('transFat')} icon="ti-alert-triangle" label="Trans fat" value={round1(tot('transFat'))} unit="g" guideline="Guideline: as low as possible" target={microTargets.transFat} color="var(--ai-purple)" />
-                <MicroCard {...est('cholesterol')} onOpen={open('cholesterol')} icon="ti-egg" label="Cholesterol" value={Math.round(tot('cholesterol'))} unit="mg" guideline="Guideline: under 300mg/day" target={microTargets.cholesterol} defaultTarget={DEFAULT_TARGETS.cholesterol} color="var(--water-blue)" />
+                <MicroCard {...est('saturatedFat')} onOpen={open('saturatedFat')} icon="ti-droplet-filled" label="Saturated fat" value={round1(tot('saturatedFat'))} unit="g" guideline={guide('saturatedFat', "Guideline: under 20g/day")} target={microTargets.saturatedFat} defaultTarget={DEFAULT_TARGETS.saturatedFat} color="var(--gold)" />
+                <MicroCard {...est('transFat')} onOpen={open('transFat')} icon="ti-alert-triangle" label="Trans fat" value={round1(tot('transFat'))} unit="g" guideline={guide('transFat', "Guideline: as low as possible")} target={microTargets.transFat} color="var(--ai-purple)" />
+                <MicroCard {...est('cholesterol')} onOpen={open('cholesterol')} icon="ti-egg" label="Cholesterol" value={Math.round(tot('cholesterol'))} unit="mg" guideline={guide('cholesterol', "Guideline: under 300mg/day")} target={microTargets.cholesterol} defaultTarget={DEFAULT_TARGETS.cholesterol} color="var(--water-blue)" />
               </div>
 
               <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Vitamins &amp; minerals</div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
-                <MicroCard {...est('addedSugar')} onOpen={open('addedSugar')} icon="ti-candy" label="Added sugar" value={round1(tot('addedSugar'))} unit="g" guideline="Guideline: under 25g/day" target={microTargets.addedSugar} defaultTarget={DEFAULT_TARGETS.addedSugar} color="var(--gold)" />
-                <MicroCard {...est('potassium')} onOpen={open('potassium')} icon="ti-bolt" label="Potassium" value={Math.round(tot('potassium'))} unit="mg" guideline="Guideline: 2,600–3,400mg/day" target={microTargets.potassium} defaultTarget={DEFAULT_TARGETS.potassium} color="var(--accent)" />
-                <MicroCard {...est('vitaminD')} onOpen={open('vitaminD')} icon="ti-sun" label="Vitamin D" value={round1(tot('vitaminD'))} unit="mcg" guideline="Guideline: 15mcg/day" target={microTargets.vitaminD} defaultTarget={DEFAULT_TARGETS.vitaminD} color="var(--gold)" />
-                <MicroCard {...est('calcium')} onOpen={open('calcium')} icon="ti-bone" label="Calcium" value={Math.round(tot('calcium'))} unit="mg" guideline="Guideline: 1,000mg/day" target={microTargets.calcium} defaultTarget={DEFAULT_TARGETS.calcium} color="var(--water-blue)" />
-                <MicroCard {...est('iron')} onOpen={open('iron')} icon="ti-droplet" label="Iron" value={round1(tot('iron'))} unit="mg" guideline="Guideline: 8–18mg/day" target={microTargets.iron} defaultTarget={DEFAULT_TARGETS.iron} color="var(--ai-purple)" />
+                <MicroCard {...est('addedSugar')} onOpen={open('addedSugar')} icon="ti-candy" label="Added sugar" value={round1(tot('addedSugar'))} unit="g" guideline={guide('addedSugar', "Guideline: under 25g/day")} target={microTargets.addedSugar} defaultTarget={DEFAULT_TARGETS.addedSugar} color="var(--gold)" />
+                <MicroCard {...est('potassium')} onOpen={open('potassium')} icon="ti-bolt" label="Potassium" value={Math.round(tot('potassium'))} unit="mg" guideline={guide('potassium', "Guideline: 2,600–3,400mg/day")} target={microTargets.potassium} defaultTarget={DEFAULT_TARGETS.potassium} color="var(--accent)" />
+                <MicroCard {...est('vitaminD')} onOpen={open('vitaminD')} icon="ti-sun" label="Vitamin D" value={round1(tot('vitaminD'))} unit="mcg" guideline={guide('vitaminD', "Guideline: 15mcg/day")} target={microTargets.vitaminD} defaultTarget={DEFAULT_TARGETS.vitaminD} color="var(--gold)" />
+                <MicroCard {...est('calcium')} onOpen={open('calcium')} icon="ti-bone" label="Calcium" value={Math.round(tot('calcium'))} unit="mg" guideline={guide('calcium', "Guideline: 1,000mg/day")} target={microTargets.calcium} defaultTarget={DEFAULT_TARGETS.calcium} color="var(--water-blue)" />
+                <MicroCard {...est('iron')} onOpen={open('iron')} icon="ti-droplet" label="Iron" value={round1(tot('iron'))} unit="mg" guideline={guide('iron', "Guideline: 8–18mg/day")} target={microTargets.iron} defaultTarget={DEFAULT_TARGETS.iron} color="var(--ai-purple)" />
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -192,14 +259,14 @@ export default function Nutrients() {
                 )}
               </div>
               <div className="grid-3" style={{ marginBottom: 20 }}>
-                <MicroCard {...est('vitaminA')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminA')} icon="ti-apple" label="Vitamin A" value={Math.round(tot('vitaminA'))} unit="mcg" guideline="Guideline: 700–900mcg/day" target={microTargets.vitaminA} defaultTarget={DEFAULT_TARGETS.vitaminA} color="var(--gold)" />
-                <MicroCard {...est('vitaminC')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminC')} icon="ti-lemon2" label="Vitamin C" value={round1(tot('vitaminC'))} unit="mg" guideline="Guideline: 45mg/day" target={microTargets.vitaminC} defaultTarget={DEFAULT_TARGETS.vitaminC} color="var(--accent)" />
-                <MicroCard {...est('vitaminB12')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminB12')} icon="ti-pill" label="Vitamin B12" value={round1(tot('vitaminB12'))} unit="mcg" guideline="Guideline: 2.4mcg/day" target={microTargets.vitaminB12} defaultTarget={DEFAULT_TARGETS.vitaminB12} color="var(--ai-purple)" />
-                <MicroCard {...est('folate')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('folate')} icon="ti-seeding" label="Folate" value={Math.round(tot('folate'))} unit="mcg" guideline="Guideline: 400mcg/day" target={microTargets.folate} defaultTarget={DEFAULT_TARGETS.folate} color="var(--water-blue)" />
-                <MicroCard {...est('magnesium')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('magnesium')} icon="ti-battery" label="Magnesium" value={round1(tot('magnesium'))} unit="mg" guideline="Guideline: 310–420mg/day" target={microTargets.magnesium} defaultTarget={DEFAULT_TARGETS.magnesium} color="var(--accent)" />
-                <MicroCard {...est('zinc')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('zinc')} icon="ti-shield" label="Zinc" value={round1(tot('zinc'))} unit="mg" guideline="Guideline: 8–11mg/day" target={microTargets.zinc} defaultTarget={DEFAULT_TARGETS.zinc} color="var(--gold)" />
-                <MicroCard {...est('polyunsaturatedFat')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('polyunsaturatedFat')} icon="ti-fish" label="Polyunsaturated fat" value={round1(tot('polyunsaturatedFat'))} unit="g" guideline="A source of essential fatty acids" target={microTargets.polyunsaturatedFat} color="var(--water-blue)" />
-                <MicroCard {...est('monounsaturatedFat')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('monounsaturatedFat')} icon="ti-droplet-half-2" label="Monounsaturated fat" value={round1(tot('monounsaturatedFat'))} unit="g" guideline="Guideline: favour over saturated fat" target={microTargets.monounsaturatedFat} color="var(--ai-purple)" />
+                <MicroCard {...est('vitaminA')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminA')} icon="ti-apple" label="Vitamin A" value={Math.round(tot('vitaminA'))} unit="mcg" guideline={guide('vitaminA', "Guideline: 700–900mcg/day")} target={microTargets.vitaminA} defaultTarget={DEFAULT_TARGETS.vitaminA} color="var(--gold)" />
+                <MicroCard {...est('vitaminC')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminC')} icon="ti-lemon2" label="Vitamin C" value={round1(tot('vitaminC'))} unit="mg" guideline={guide('vitaminC', "Guideline: 45mg/day")} target={microTargets.vitaminC} defaultTarget={DEFAULT_TARGETS.vitaminC} color="var(--accent)" />
+                <MicroCard {...est('vitaminB12')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('vitaminB12')} icon="ti-pill" label="Vitamin B12" value={round1(tot('vitaminB12'))} unit="mcg" guideline={guide('vitaminB12', "Guideline: 2.4mcg/day")} target={microTargets.vitaminB12} defaultTarget={DEFAULT_TARGETS.vitaminB12} color="var(--ai-purple)" />
+                <MicroCard {...est('folate')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('folate')} icon="ti-seeding" label="Folate" value={Math.round(tot('folate'))} unit="mcg" guideline={guide('folate', "Guideline: 400mcg/day")} target={microTargets.folate} defaultTarget={DEFAULT_TARGETS.folate} color="var(--water-blue)" />
+                <MicroCard {...est('magnesium')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('magnesium')} icon="ti-battery" label="Magnesium" value={round1(tot('magnesium'))} unit="mg" guideline={guide('magnesium', "Guideline: 310–420mg/day")} target={microTargets.magnesium} defaultTarget={DEFAULT_TARGETS.magnesium} color="var(--accent)" />
+                <MicroCard {...est('zinc')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('zinc')} icon="ti-shield" label="Zinc" value={round1(tot('zinc'))} unit="mg" guideline={guide('zinc', "Guideline: 8–11mg/day")} target={microTargets.zinc} defaultTarget={DEFAULT_TARGETS.zinc} color="var(--gold)" />
+                <MicroCard {...est('polyunsaturatedFat')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('polyunsaturatedFat')} icon="ti-fish" label="Polyunsaturated fat" value={round1(tot('polyunsaturatedFat'))} unit="g" guideline={guide('polyunsaturatedFat', "A source of essential fatty acids")} target={microTargets.polyunsaturatedFat} color="var(--water-blue)" />
+                <MicroCard {...est('monounsaturatedFat')} locked={!isPremium} onUpgrade={goUpgrade} onOpen={open('monounsaturatedFat')} icon="ti-droplet-half-2" label="Monounsaturated fat" value={round1(tot('monounsaturatedFat'))} unit="g" guideline={guide('monounsaturatedFat', "Guideline: favour over saturated fat")} target={microTargets.monounsaturatedFat} color="var(--ai-purple)" />
               </div>
 
               {MICRO_GROUPS.filter(g => g.extended).map(group => (
@@ -215,16 +282,35 @@ export default function Nutrients() {
                     {group.keys.map(key => {
                       const n = MICRO_NUTRIENTS.find(m => m.key === key);
                       return (
-                        <MicroCard key={key} onOpen={open(key)} {...est(key, false)} locked={!isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, extended[key].total)} unit={n.unit} guideline={n.guideline} target={microTargets[key]} defaultTarget={n.defaultTarget} color={n.color} />
+                        <MicroCard key={key} onOpen={open(key)} {...est(key, false)} locked={!isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, extended[key].total)} unit={n.unit} guideline={guide(key, n.guideline)} target={microTargets[key]} defaultTarget={DEFAULT_TARGETS[key]} color={n.color} />
                       );
                     })}
                   </div>
                 </div>
               ))}
 
-              {logs.length === 0 && (
+              </>)}
+
+              {generic && !rangeLoading && view === 'type' && MICRO_GROUPS.map((g) => (
+                <div key={g.label} style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{g.label}</div>
+                  <div className="grid-3">{g.keys.map(card)}</div>
+                </div>
+              ))}
+              {generic && !rangeLoading && view === 'goal' && HEALTH_GOALS.map((g) => (
+                <div key={g.id} style={{ marginBottom: 20 }} data-testid={`goal-${g.id}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <i className={`ti ${g.icon}`} aria-hidden="true" style={{ fontSize: 16, color: 'var(--accent)' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{g.label}</span>
+                  </div>
+                  {goalSummary(g.keys) && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{goalSummary(g.keys)}</div>}
+                  <div className="grid-3" style={{ marginTop: goalSummary(g.keys) ? 0 : 10 }}>{g.keys.map(card)}</div>
+                </div>
+              ))}
+
+              {(isRange ? (!rangeLoading && loggedDays === 0) : logs.length === 0) && (
                 <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)', fontSize: 13, background: 'var(--bg-subtle)', border: '1px dashed var(--border-strong)', borderRadius: 10 }}>
-                  {isToday ? 'Nothing logged today yet — log some food to see your full nutrient breakdown here.' : 'Nothing logged on this day.'}
+                  {isRange ? 'Nothing logged in this period.' : isToday ? 'Nothing logged today yet — log some food to see your full nutrient breakdown here.' : 'Nothing logged on this day.'}
                 </div>
               )}
             </>

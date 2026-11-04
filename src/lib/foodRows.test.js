@@ -29,7 +29,7 @@ describe('foodNutrientsFromRow', () => {
     const got = foodNutrientsFromRow(fullRow());
     for (const key of MICRO_KEYS) expect(key in got, key).toBe(true);
     expect(Object.keys(got).sort()).toEqual(['cal', 'carbs', 'fat', 'protein', ...MICRO_KEYS].sort());
-    expect(MICRO_NUTRIENTS).toHaveLength(32);
+    expect(MICRO_NUTRIENTS).toHaveLength(36);
   });
 
   it('keeps unknown extended nutrients null rather than turning them into zero', () => {

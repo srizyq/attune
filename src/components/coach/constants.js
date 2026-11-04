@@ -18,8 +18,8 @@ export const MICRO_GROUPS = [
   { label: 'Vitamins & minerals', keys: ['addedSugar', 'potassium', 'vitaminD', 'calcium', 'iron'] },
   { label: 'More micronutrients', keys: ['vitaminA', 'vitaminC', 'vitaminB12', 'folate', 'magnesium', 'zinc', 'polyunsaturatedFat', 'monounsaturatedFat'] },
   // The extended set — only some food databases carry these (see microNutrients.js).
-  { label: 'B vitamins & vitamin E', extended: true, keys: ['thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'vitaminE'] },
-  { label: 'More minerals', extended: true, keys: ['phosphorus', 'selenium', 'iodine'] },
+  { label: 'B vitamins, vitamin E & K', extended: true, keys: ['thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'vitaminE', 'vitaminK', 'choline'] },
+  { label: 'More minerals', extended: true, keys: ['phosphorus', 'selenium', 'iodine', 'copper', 'manganese'] },
   { label: 'Omega fats, caffeine & alcohol', extended: true, keys: ['omega3', 'omega6', 'alphaLinolenicAcid', 'caffeine', 'alcohol'] },
 ];
 // Where each category routes to on the client's own app — shown as the

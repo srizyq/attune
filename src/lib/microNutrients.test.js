@@ -7,10 +7,10 @@ import {
 import { MICRO_GROUPS } from '../components/coach/constants';
 
 describe('the registry', () => {
-  it('has 32 nutrients, unique keys and unique columns', () => {
-    expect(MICRO_NUTRIENTS).toHaveLength(32);
-    expect(new Set(MICRO_KEYS).size).toBe(32);
-    expect(new Set(Object.values(MICRO_COLUMNS)).size).toBe(32);
+  it('has 36 nutrients, unique keys and unique columns', () => {
+    expect(MICRO_NUTRIENTS).toHaveLength(36);
+    expect(new Set(MICRO_KEYS).size).toBe(36);
+    expect(new Set(Object.values(MICRO_COLUMNS)).size).toBe(36);
   });
 
   it('gives every nutrient a column, unit, label, icon and colour', () => {
@@ -26,8 +26,8 @@ describe('the registry', () => {
     for (const n of MICRO_NUTRIENTS) expect(n.column.endsWith(`_${n.unit}`), `${n.key}: ${n.column} vs ${n.unit}`).toBe(true);
   });
 
-  it('marks exactly the 13 newer nutrients as extended', () => {
-    expect(EXTENDED_KEYS).toEqual(['thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'vitaminE', 'phosphorus', 'selenium', 'iodine', 'omega3', 'omega6', 'alphaLinolenicAcid', 'caffeine', 'alcohol']);
+  it('marks exactly the 17 newer nutrients as extended', () => {
+    expect(EXTENDED_KEYS).toEqual(['thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'vitaminE', 'phosphorus', 'selenium', 'iodine', 'vitaminK', 'choline', 'copper', 'manganese', 'omega3', 'omega6', 'alphaLinolenicAcid', 'caffeine', 'alcohol']);
     expect(MICRO_NUTRIENTS.filter((n) => n.extended)).toEqual(EXTENDED_NUTRIENTS);
   });
 

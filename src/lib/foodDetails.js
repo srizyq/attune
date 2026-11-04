@@ -26,21 +26,23 @@ export function nutrientReading(food, key, estimate) {
 export const DETAIL_GROUPS = [
   { label: 'Carbohydrates', keys: ['fibre', 'sugar', 'addedSugar'] },
   { label: 'Fats', keys: ['saturatedFat', 'transFat', 'monounsaturatedFat', 'polyunsaturatedFat', 'cholesterol', 'omega3', 'omega6', 'alphaLinolenicAcid'] },
-  { label: 'Vitamins', keys: ['vitaminA', 'thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'folate', 'vitaminB12', 'vitaminC', 'vitaminD', 'vitaminE'] },
-  { label: 'Minerals', keys: ['calcium', 'iron', 'magnesium', 'phosphorus', 'potassium', 'sodium', 'zinc', 'selenium', 'iodine'] },
+  { label: 'Vitamins', keys: ['vitaminA', 'thiamin', 'riboflavin', 'niacin', 'vitaminB6', 'folate', 'vitaminB12', 'vitaminC', 'vitaminD', 'vitaminE', 'vitaminK', 'choline'] },
+  { label: 'Minerals', keys: ['calcium', 'iron', 'magnesium', 'phosphorus', 'potassium', 'sodium', 'zinc', 'selenium', 'iodine', 'copper', 'manganese'] },
   { label: 'Other', keys: ['caffeine', 'alcohol'] },
 ];
 
 /**
  * nutrientReading plus what the details row draws: the number itself and its
- * share of the usual daily target (null where a nutrient has no target).
+ * share of their daily target (`targets` = { key: amount }, else the general
+ * figure; null where a nutrient has no target).
  * `via` says how an estimate was found ('ausnut' | 'usda' | 'ai').
  */
-export function nutrientDetail(food, key, estimate) {
+export function nutrientDetail(food, key, estimate, targets) {
   const reading = nutrientReading(food, key, estimate);
   const n = BY_KEY[key];
   const value = reading.kind === 'measured' ? Number(food[key]) || 0 : reading.kind === 'estimated' ? Number(estimate.micros[key]) : null;
-  const pct = value != null && n.defaultTarget ? (value / n.defaultTarget) * 100 : null;
+  const target = targets?.[key] ?? n.defaultTarget; // the person's own, else the general figure
+  const pct = value != null && target ? (value / target) * 100 : null;
   return { ...reading, value, pct, via: reading.kind === 'estimated' ? estimate.via || 'ausnut' : null };
 }
 

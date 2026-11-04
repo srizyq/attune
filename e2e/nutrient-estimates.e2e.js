@@ -72,3 +72,29 @@ test('tapping a nutrient lists the foods that supplied it, biggest first, with e
   await expect(page.getByTestId('food-details')).toBeVisible();
   await expect(page.getByText(/nutrients measured/)).toBeVisible();
 });
+
+test('averages over 7 days and the By goal view lay out cleanly, and a nutrient page shows what it does', async ({ page, context }, testInfo) => {
+  const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return ymd(d); };
+  const ctx = await openApp({ page, context }, testInfo, {
+    profile: { sex: 'female', date_of_birth: '1995-05-05' },
+    tables: { food_logs: [
+      log('a1', { food_name: 'Cheese slice', source: 'off', calcium_mg: 200, serving_grams: 20, logged_date: daysAgo(0) }),
+      log('a2', { food_name: 'Milk', source: 'off', calcium_mg: 400, serving_grams: 250, logged_date: daysAgo(2) }),
+    ] },
+  });
+  await page.goto('/nutrients');
+  await settle(page);
+  await page.getByRole('button', { name: '7-day avg' }).click();
+  await expect(page.getByText(/Daily average over the 2 of 7 days you logged/)).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText('Average of 2 logged days').first()).toBeVisible();
+  await assertLayout(page, testInfo, 'x-nutrients-average', ctx);
+  await page.getByRole('button', { name: 'By goal' }).click();
+  await expect(page.getByTestId('goal-bones')).toBeVisible();
+  await assertLayout(page, testInfo, 'x-nutrients-goals', ctx);
+  await page.getByRole('button', { name: /Calcium: which foods supplied it/ }).first().click();
+  const list = page.getByTestId('nutrient-foods');
+  await expect(list.getByText('Daily average · 2 of 7 days logged')).toBeVisible();
+  await expect(list.getByTestId('nutrient-daily-bars')).toBeVisible();
+  await expect(list.getByTestId('nutrient-info')).toContainText('Builds and maintains bones');
+  await assertLayout(page, testInfo, 'x-nutrient-foods-average', ctx);
+});

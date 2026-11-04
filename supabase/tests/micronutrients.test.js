@@ -5,7 +5,7 @@ import { MICRO_NUTRIENTS, EXTENDED_NUTRIENTS } from '../../src/lib/microNutrient
 
 const foods = JSON.parse(readFileSync(new URL('../../scripts/import-ausnut/ausnut-foods.json', import.meta.url), 'utf8'));
 const parts = [1, 2, 3].map((n) => readFileSync(new URL(`../ausnut_micronutrients_backfill_part${n}of3.sql`, import.meta.url), 'utf8'));
-const NEW_COLUMNS = ['saturated_fat_g', 'trans_fat_g', 'cholesterol_mg', 'potassium_mg', 'added_sugar_g', 'vitamin_d_mcg', 'calcium_mg', 'iron_mg', ...EXTENDED_NUTRIENTS.map((m) => m.column)];
+const NEW_COLUMNS = ['saturated_fat_g', 'trans_fat_g', 'cholesterol_mg', 'potassium_mg', 'added_sugar_g', 'vitamin_d_mcg', 'calcium_mg', 'iron_mg', ...EXTENDED_NUTRIENTS.map((m) => m.column).filter((c) => c in foods[0])]; // AUSNUT carries no vitamin K, choline, copper or manganese
 // What ausnut_foods held before this update: everything in the JSON except the new columns.
 const baseOnly = (f) => Object.fromEntries(Object.entries(f).filter(([k]) => !NEW_COLUMNS.includes(k)));
 

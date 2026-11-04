@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, within } from '@testing-library/react';
+import { render, screen, cleanup, within, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
 const h = vi.hoisted(() => ({}));
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn(), useLocation: () => ({ state: null }) }));
 vi.mock('../hooks/useProfile', () => ({ useProfile: () => h.profile }));
 vi.mock('../hooks/useFoodLogs', () => ({ useFoodLogs: () => h.logs }));
+vi.mock('../hooks/useFoodLogsRange', () => ({ useFoodLogsRange: (end, days, enabled) => (enabled ? h.range : { items: [], dates: [], loading: false }) }));
 vi.mock('../components/AppNav', () => ({ default: () => <nav /> }));
 import Nutrients from './Nutrients';
 
@@ -41,7 +42,7 @@ describe('Nutrients — extended sections', () => {
 
   it('shows the PRO badge (and locks the cards) for free users', () => {
     setup({ premium: false, meals: { ...empty, lunch: [{ name: 'Toast' }] }, logs: [row()] });
-    expect(screen.getByText('B vitamins & vitamin E').parentElement).toHaveTextContent('PRO');
+    expect(screen.getByText('B vitamins, vitamin E & K').parentElement).toHaveTextContent('PRO');
   });
 
   it('adds no extended note on an empty day', () => {
@@ -75,5 +76,44 @@ describe('Nutrients — rest-day targets', () => {
   it('is unchanged for someone not using rest-day targets', () => {
     setup({ meals: empty, logs: [], profile: { calorie_target: 2500 } });
     expect(screen.getByText(/\/ 2,500 kcal/)).toBeInTheDocument();
+  });
+});
+
+describe('Nutrients — averages, goals and personal targets', () => {
+  beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 8, 23, 12, 0, 0)); });
+  afterEach(() => vi.useRealTimers());
+  const item = (loggedDate, over) => ({ id: `${loggedDate}-${over.name}`, loggedDate, cal: 500, protein: 30, carbs: 50, fat: 10, calcium: 0, ...over });
+
+  it('averages over the days that have something logged, not all seven', async () => {
+    h.range = {
+      loading: false,
+      dates: ['2026-09-17', '2026-09-18', '2026-09-19', '2026-09-20', '2026-09-21', '2026-09-22', '2026-09-23'],
+      items: [item('2026-09-22', { name: 'Yoghurt', calcium: 300 }), item('2026-09-23', { name: 'Cheese', calcium: 500 })],
+    };
+    setup({ meals: empty, logs: [], profile: { sex: 'male', date_of_birth: '1990-01-01' } });
+    fireEvent.click(screen.getByRole('button', { name: '7-day avg' }));
+    expect(await screen.findByText(/Daily average over the 2 of 7 days you logged/)).toBeInTheDocument();
+    const card = screen.getByText('Calcium').closest('div').parentElement.parentElement;
+    expect(within(card).getByText('400')).toBeInTheDocument(); // (300 + 500) / 2 days
+    expect(within(card).getByText(/Average of 2 logged days/)).toBeInTheDocument();
+    expect(screen.getByText('Daily average calories')).toBeInTheDocument();
+  });
+
+  it('groups by health goal with a one-line summary', () => {
+    setup({ meals: { ...empty, lunch: [{ id: 'a', name: 'Milk', loggedDate: '2026-09-23', cal: 100, calcium: 900 }] }, logs: [row()], profile: { sex: 'male', date_of_birth: '1990-01-01' } });
+    fireEvent.click(screen.getByRole('button', { name: 'By goal' }));
+    const bones = screen.getByTestId('goal-bones');
+    expect(within(bones).getByText('Bone health')).toBeInTheDocument();
+    expect(within(bones).getByText(/of \d+ at 70%\+ of target/)).toBeInTheDocument();
+    expect(within(bones).getByText('Calcium')).toBeInTheDocument();
+    expect(screen.getByTestId('goal-heart')).toBeInTheDocument();
+  });
+
+  it('uses the recommendation for the person\'s age and sex rather than one general figure', () => {
+    setup({ meals: empty, logs: [], profile: { sex: 'female', date_of_birth: '1995-05-05' } });
+    expect(screen.getByText('Recommended for you: 18mg/day')).toBeInTheDocument(); // iron, women 19-50
+    cleanup();
+    setup({ meals: empty, logs: [], profile: { sex: 'male', date_of_birth: '1995-05-05' } });
+    expect(screen.getByText('Recommended for you: 8mg/day')).toBeInTheDocument(); // iron, men
   });
 });

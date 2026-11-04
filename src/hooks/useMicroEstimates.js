@@ -10,17 +10,18 @@ const searchUsda = cachedSearch(searchUsdaStrict);
 
 // AUSNUT first, then USDA for what it lacks, then (Pro only) an AI estimate for
 // foods neither table has anything like.
-const sourcesFor = (pro) => (pro ? { searchUsda, askAi: askAiMicros } : { searchUsda });
+// `ai` is off for a month of logs: one AI call per unmatched food would add up.
+const sourcesFor = (pro, ai) => (pro && ai ? { searchUsda, askAi: askAiMicros } : { searchUsda });
 
 /**
  * Estimated vitamins and minerals for the logged items that came without any:
  * Map(item id → { micros, from }). Empty until the lookups finish, and empty
  * if they fail — the page then just shows what was measured.
  */
-export function useMicroEstimates(items, { pro = false } = {}) {
-  const extras = sourcesFor(pro);
+export function useMicroEstimates(items, { pro = false, ai = true } = {}) {
+  const extras = sourcesFor(pro, ai);
   const needing = useMemo(() => (items || []).filter((i) => Number(i.cal) > 0 && missingKeys(i).length > 0), [items]);
-  const key = needing.length ? `${pro ? 'pro' : 'free'}~${needing.map((i) => `${i.id}|${i.name}|${i.servingGrams}|${i.cal}|${i.ingredients?.length || 0}`).join('~')}` : '';
+  const key = needing.length ? `${pro && ai ? 'pro' : 'free'}~${needing.map((i) => `${i.id}|${i.name}|${i.servingGrams}|${i.cal}|${i.ingredients?.length || 0}`).join('~')}` : '';
   const [state, setState] = useState({ key: '', estimates: EMPTY });
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function useMicroEstimates(items, { pro = false } = {}) {
  * item): { micros, from } once found, or null while looking / when nothing similar exists.
  */
 export function useFoodEstimate(food, { pro = false } = {}) {
-  const extras = sourcesFor(pro);
+  const extras = sourcesFor(pro, true);
   const needs = !!food && Number(food.cal) > 0 && missingKeys(food).length > 0;
   const key = needs ? `${pro ? 'pro' : 'free'}|${food.name}|${food.brand || ''}|${food.servingGrams}|${food.cal}|${food.ingredients?.length || 0}` : '';
   const [state, setState] = useState({ key: '', estimate: null });
