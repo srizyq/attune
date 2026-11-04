@@ -258,6 +258,60 @@ input[type='radio'] {
   cursor: pointer;
 }
 
+/* Checkboxes are drawn in the app's own surface and accent instead of the
+   browser's plain white box. (Switches have their own look below.) */
+input[type='checkbox']:not(.switch-input) {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 7px;
+  background-color: var(--bg-subtle);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  border: 1.5px solid var(--border-strong);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+input[type='checkbox']:not(.switch-input):checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E");
+}
+input[type='checkbox']:not(.switch-input):focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+input[type='checkbox']:not(.switch-input):disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The "Choose file" button: a pill like the app's other secondary buttons. */
+input[type='file'] {
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14px;
+}
+input[type='file']::file-selector-button {
+  margin-right: 12px;
+  padding: 9px 16px;
+  min-height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+input[type='file']::file-selector-button:hover {
+  border-color: var(--accent);
+}
+input[type='file']:disabled::file-selector-button {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* The on/off switch (friends/Switch.jsx): the checkbox itself, drawn as a
    track and a knob, so it stays focusable and announced as a switch. */
 input[type='checkbox'].switch-input {
@@ -298,6 +352,7 @@ input[type='checkbox'].switch-input:disabled {
   cursor: default;
 }
 @media (prefers-reduced-motion: reduce) {
+  input[type='checkbox']:not(.switch-input),
   input[type='checkbox'].switch-input,
   input[type='checkbox'].switch-input::after { transition: none; }
 }
