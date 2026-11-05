@@ -4,6 +4,8 @@ import { addFoodLog, deleteFoodLog, updateFoodLog, moveFoodLogsToSlot, getFoodLo
 import { mealFromDate } from '../lib/mealTime';
 import { mapSlotRow, buildSlotTimeline } from '../lib/daySlots';
 import { extendedFromRow, EXTENDED_KEYS } from '../lib/microNutrients';
+import { buildFoodLogRow, buildFoodLogPatch } from '../lib/foodLogRows';
+import { showAppToast } from '../lib/appToast';
 
 export function mapRow(row) {
   return {
@@ -54,15 +56,80 @@ function extendedOf(food) {
   return Object.fromEntries(EXTENDED_KEYS.map((key) => [key, food[key] ?? null]));
 }
 
+// ─── Shared, cached days ─────────────────────────────────────────────────────
+// Every screen that shows a day's food (Dashboard, Log, Food search, the scan
+// pages) calls useFoodLogs(date) with its own instance. Each used to fetch from
+// scratch on mount and wait for the server before showing anything, so every
+// page change meant a spinner, and a food you had just logged was missing from
+// the next page until it re-fetched. Now the days live in one store, keyed by
+// user and date: an instance shows what the store already holds at once, then
+// quietly refreshes it, and a change made in one instance reaches every other.
+const MAX_CACHED_DAYS = 40;
+const days = new Map(); // `${userId}:${date}` -> { logs: raw rows, slots: raw rows, version, loaded }
+const listeners = new Set();
+
+const dayKey = (userId, date) => `${userId}:${date}`;
+const emptyDay = () => ({ logs: [], slots: [], version: 0, loaded: false });
+
+function writeDay(key, patch, { mutation = false } = {}) {
+  const prev = days.get(key) || emptyDay();
+  days.delete(key); // re-insert so the Map stays ordered oldest-first by use
+  days.set(key, { ...prev, ...patch, version: prev.version + (mutation ? 1 : 0) });
+  while (days.size > MAX_CACHED_DAYS) days.delete(days.keys().next().value);
+  listeners.forEach((fn) => fn(key));
+}
+
+const mutateLogs = (key, fn) => writeDay(key, { logs: fn((days.get(key) || emptyDay()).logs) }, { mutation: true });
+const mutateSlots = (key, fn) => writeDay(key, { slots: fn((days.get(key) || emptyDay()).slots) }, { mutation: true });
+
+// Test hook: forget every cached day.
+export function clearFoodLogCache() {
+  days.clear();
+  pendingSaves.clear();
+  cancelled.clear();
+}
+
+// Foods logged but not yet confirmed by the server. They show on screen under a
+// temporary id; this remembers them so a refresh that lands mid-save can't
+// make them vanish, and lets an edit or delete made in that moment wait for the
+// real id.
+let tempSeq = 0;
+const pendingSaves = new Map(); // tempId -> { key, row, promise } (promise resolves to the real id, or null on failure)
+const cancelled = new Set(); // temp ids deleted before their save finished
+
+const isTempId = (id) => typeof id === 'string' && id.startsWith('tmp-');
+const pendingRowsFor = (key) => [...pendingSaves.values()].filter((p) => p.key === key).map((p) => p.row);
+
 export function useFoodLogs(date) {
   const { user } = useAuth();
-  const [logs, setLogs] = useState([]);
-  const [slotRows, setSlotRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const key = user && date ? dayKey(user.id, date) : null;
+  const cached = key ? days.get(key) : null;
+  const [logs, setLogs] = useState(cached?.logs ?? []);
+  const [slotRows, setSlotRows] = useState(cached?.slots ?? []);
+  const [loading, setLoading] = useState(!cached?.loaded);
+
+  // Follow the store: any instance's change to this day shows up here too.
+  useEffect(() => {
+    if (!key) return undefined;
+    const sync = (changed) => {
+      if (changed !== key) return;
+      const day = days.get(key);
+      if (!day) return;
+      setLogs(day.logs);
+      setSlotRows(day.slots);
+    };
+    listeners.add(sync);
+    return () => { listeners.delete(sync); };
+  }, [key]);
 
   const refetch = useCallback(async () => {
-    if (!user || !date) { setLogs([]); setSlotRows([]); setLoading(false); return; }
-    setLoading(true);
+    if (!key) { setLogs([]); setSlotRows([]); setLoading(false); return; }
+    // Something already known about this day shows straight away; only a day
+    // never seen before waits on a spinner.
+    const known = days.get(key);
+    if (known) { setLogs(known.logs); setSlotRows(known.slots); }
+    setLoading(!known?.loaded);
+    const versionAtStart = known?.version ?? 0;
     // Unhandled before — a network blip here left loading stuck true
     // forever, since setLoading(false) below never ran (see useCustomFoods
     // for the same fix applied consistently across the data hooks).
@@ -75,16 +142,19 @@ export function useFoodLogs(date) {
         getFoodLogsForDate(user.id, date),
         getDaySlots(user.id, date),
       ]);
-      setLogs(logData);
-      setSlotRows(slotData);
+      const now = days.get(key);
+      // Logged, edited or deleted while this was in flight: what's on screen is
+      // newer than what the server just answered, so keep it.
+      if (now?.loaded && now.version !== versionAtStart) return;
+      const pending = pendingRowsFor(key).filter((row) => !logData.some((r) => r.id === row.id));
+      writeDay(key, { logs: [...logData, ...pending], slots: slotData, loaded: true });
     } catch (err) {
       console.error('Failed to load food logs:', err);
-      setLogs([]);
-      setSlotRows([]);
+      if (!days.get(key)?.loaded) { setLogs([]); setSlotRows([]); } // nothing known and nothing fetched; an old copy stays rather than blanking
     } finally {
       setLoading(false);
     }
-  }, [user, date]);
+  }, [key, user, date]);
 
   useEffect(() => { refetch(); }, [refetch]);
 
@@ -94,8 +164,8 @@ export function useFoodLogs(date) {
   const meals = useMemo(() => {
     const grouped = { breakfast: [], lunch: [], dinner: [], snacks: [] };
     for (const item of items) {
-      const key = item.meal in grouped ? item.meal : 'snacks';
-      grouped[key].push(item);
+      const mealKey = item.meal in grouped ? item.meal : 'snacks';
+      grouped[mealKey].push(item);
     }
     return grouped;
   }, [items]);
@@ -104,15 +174,24 @@ export function useFoodLogs(date) {
   // of the fixed meal enum (see src/lib/daySlots.js).
   const slotTimeline = useMemo(() => buildSlotTimeline(daySlots, items), [daySlots, items]);
 
+  // The edit/delete/move helpers below all work the same way: change the screen
+  // first, send the change to the server in the background, and put the screen
+  // back (with a message) only if the server refuses. The call returns at once,
+  // so a sheet closes and a toast shows without waiting on the network.
+  const realId = useCallback(async (id) => {
+    const pending = pendingSaves.get(id);
+    return pending ? pending.promise : id;
+  }, []);
+
   // mealName is optional — when omitted (Pro/time-based logging), the meal
   // category is derived from loggedAt purely so the food_logs row (which
   // still requires a meal value) has something sensible; the Pro UI never
   // shows this value to the user. slotId is Slots mode's own analogue of
   // mealName/loggedAt — which slot (if any) this item belongs to.
-  const addFood = useCallback(async (food, mealName, loggedAt, slotId) => {
-    if (!user || !date) return;
+  const addFood = useCallback((food, mealName, loggedAt, slotId) => {
+    if (!user || !date) return Promise.resolve();
     const meal = mealName ? mealName.toLowerCase() : mealFromDate(loggedAt || new Date());
-    const created = await addFoodLog(user.id, {
+    const entry = {
       loggedDate: date,
       meal,
       loggedAt: loggedAt || null,
@@ -149,43 +228,105 @@ export function useFoodLogs(date) {
       loggedUnit: food.loggedUnit ?? null,
       servingLabel: food.servingLabel ?? null,
       ingredients: food.ingredients ?? null,
+    };
+    const tempId = `tmp-${++tempSeq}`;
+    const { row, extended } = buildFoodLogRow(user.id, entry);
+    const tempRow = { ...row, ...extended, id: tempId, created_at: new Date().toISOString() };
+    const dayAtLog = key;
+    mutateLogs(dayAtLog, (rows) => [...rows, tempRow]);
+
+    const promise = addFoodLog(user.id, entry).then((created) => {
+      pendingSaves.delete(tempId);
+      if (cancelled.delete(tempId)) {
+        // Deleted while it was still saving: now there is a real row to remove.
+        mutateLogs(dayAtLog, (rows) => rows.filter((r) => r.id !== tempId && r.id !== created.id));
+        deleteFoodLog(created.id).catch((err) => console.error('Failed to remove a food deleted mid-save:', err));
+        return null;
+      }
+      mutateLogs(dayAtLog, (rows) => {
+        const others = rows.filter((r) => r.id !== created.id);
+        const at = others.findIndex((r) => r.id === tempId);
+        if (at === -1) return [...others, created];
+        return others.map((r, i) => (i === at ? created : r));
+      });
+      return created.id;
+    }).catch((err) => {
+      console.error('Failed to save food:', err);
+      pendingSaves.delete(tempId);
+      cancelled.delete(tempId);
+      mutateLogs(dayAtLog, (rows) => rows.filter((r) => r.id !== tempId));
+      showAppToast(`Couldn't save ${food.name} — it wasn't added, try again`, true);
+      return null;
     });
-    setLogs(prev => [...prev, created]);
-    return created;
-  }, [user, date]);
+    pendingSaves.set(tempId, { key: dayAtLog, row: tempRow, promise });
+    return Promise.resolve(tempRow);
+  }, [user, date, key]);
 
-  const deleteFood = useCallback(async (id) => {
-    await deleteFoodLog(id);
-    setLogs(prev => prev.filter(l => l.id !== id));
-  }, []);
+  const deleteFood = useCallback((id) => {
+    const removed = (days.get(key)?.logs || []).find((r) => r.id === id);
+    mutateLogs(key, (rows) => rows.filter((r) => r.id !== id));
+    if (isTempId(id) && pendingSaves.has(id)) {
+      cancelled.add(id); // the save's own handler removes the real row once it exists
+      return Promise.resolve();
+    }
+    deleteFoodLog(id).catch((err) => {
+      console.error('Failed to delete food:', err);
+      if (removed) mutateLogs(key, (rows) => (rows.some((r) => r.id === id) ? rows : [...rows, removed]));
+      showAppToast("Couldn't delete — it's back, try again", true);
+    });
+    return Promise.resolve();
+  }, [key]);
 
-  const updateFood = useCallback(async (id, food) => {
-    const updated = await updateFoodLog(id, food);
-    setLogs(prev => prev.map(l => (l.id === id ? updated : l)));
-    return updated;
-  }, []);
+  const updateFood = useCallback((id, food) => {
+    const before = (days.get(key)?.logs || []).find((r) => r.id === id);
+    const { patch, extended } = buildFoodLogPatch(food);
+    // Show the edit now, using the same columns the server is about to be sent.
+    mutateLogs(key, (rows) => rows.map((r) => (r.id === id ? { ...r, ...patch, ...extended } : r)));
+    realId(id).then((real) => {
+      if (!real) return null; // its save failed or it was deleted; nothing to update
+      return updateFoodLog(real, food);
+    }).then((updated) => {
+      if (!updated) return;
+      mutateLogs(key, (rows) => rows.map((r) => (r.id === updated.id ? updated : r)));
+    }).catch((err) => {
+      console.error('Failed to update food:', err);
+      if (before) mutateLogs(key, (rows) => rows.map((r) => (r.id === id ? before : r)));
+      showAppToast("Couldn't save that change — it's been undone, try again", true);
+    });
+    return Promise.resolve(before ? { ...before, ...patch, ...extended } : undefined);
+  }, [key, realId]);
 
   // Moves foods into a slot (null = Uncategorised); the local rows follow at once.
-  const moveToSlot = useCallback(async (ids, slotId) => {
-    await moveFoodLogsToSlot(ids, slotId);
+  const moveToSlot = useCallback((ids, slotId) => {
     const moved = new Set(ids);
-    setLogs(prev => prev.map(l => (moved.has(l.id) ? { ...l, slot_id: slotId ?? null } : l)));
-  }, []);
+    const before = new Map((days.get(key)?.logs || []).filter((r) => moved.has(r.id)).map((r) => [r.id, r.slot_id ?? null]));
+    mutateLogs(key, (rows) => rows.map((r) => (moved.has(r.id) ? { ...r, slot_id: slotId ?? null } : r)));
+    Promise.all(ids.map(realId)).then((real) => {
+      const settled = real.filter(Boolean);
+      if (settled.length) return moveFoodLogsToSlot(settled, slotId);
+      return null;
+    }).catch((err) => {
+      console.error('Failed to move food:', err);
+      mutateLogs(key, (rows) => rows.map((r) => (before.has(r.id) ? { ...r, slot_id: before.get(r.id) } : r)));
+      showAppToast("Couldn't move that — it's back where it was, try again", true);
+    });
+    return Promise.resolve();
+  }, [key, realId]);
 
   // Slot CRUD — same shape as the food-log actions above (call the db.js
   // function, patch local state from its result rather than re-fetching).
   const addSlot = useCallback(async (fields) => {
     if (!user || !date) return;
     const created = await createDaySlot(user.id, date, fields);
-    setSlotRows(prev => [...prev, created]);
+    mutateSlots(key, (rows) => [...rows, created]);
     return created;
-  }, [user, date]);
+  }, [user, date, key]);
 
   const editSlot = useCallback(async (id, fields) => {
     const updated = await updateDaySlot(id, fields);
-    setSlotRows(prev => prev.map(s => (s.id === id ? updated : s)));
+    mutateSlots(key, (rows) => rows.map((s) => (s.id === id ? updated : s)));
     return updated;
-  }, []);
+  }, [key]);
 
   // Doesn't touch `logs` locally — the affected items' slot_id going null
   // server-side (on delete set null) means the next refetch is what moves
@@ -193,8 +334,8 @@ export function useFoodLogs(date) {
   // needing that reflected instantly, and refetch() is one tap away.
   const removeSlot = useCallback(async (id) => {
     await deleteDaySlot(id);
-    setSlotRows(prev => prev.filter(s => s.id !== id));
-  }, []);
+    mutateSlots(key, (rows) => rows.filter((s) => s.id !== id));
+  }, [key]);
 
   return { logs, meals, daySlots, slotTimeline, loading, addFood, deleteFood, updateFood, moveToSlot, addSlot, editSlot, removeSlot, refetch };
 }

@@ -1,7 +1,8 @@
 // src/App.jsx
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, startTransition, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
 import { AuthProvider } from './context/AuthProvider'
+import { ProfileProvider } from './context/ProfileProvider'
 import { useAuth } from './hooks/useAuth'
 import RequireAuth from './components/RequireAuth'
 import Welcome from './pages/onboarding/Welcome'
@@ -19,32 +20,60 @@ import { locationChanged, isPageTransition } from './lib/routeTransition';
 import { rememberScreen } from './lib/lastScreen';
 import Toast from './components/Toast';
 import { onAppToast } from './lib/appToast';
+import { preloadPages } from './lib/preloadPages';
 
 // Secondary screens load on demand so the first paint ships less JS. The
 // bottom-nav tabs (Dashboard, Food, Log) stay eager to keep tab switches instant.
-const Recipes = lazy(() => import('./pages/Recipes'));
-const RecipeDetail = lazy(() => import('./pages/RecipeDetail'));
-const Settings = lazy(() => import('./pages/Settings'));
-const SettingsGoals = lazy(() => import('./pages/SettingsGoals'));
-const Profile = lazy(() => import('./pages/Profile')); // "Personal details" under Settings
-const MyProfile = lazy(() => import('./pages/MyProfile'));
-const Pricing = lazy(() => import('./pages/Pricing'));
-const Nutrients = lazy(() => import('./pages/Nutrients'));
-const NutrientFoods = lazy(() => import('./pages/NutrientFoods'));
-const Expenditure = lazy(() => import('./pages/Expenditure'));
-const Fasting = lazy(() => import('./pages/Fasting'));
-const Coach = lazy(() => import('./pages/Coach'));
-const Friends = lazy(() => import('./pages/Friends'));
-const Scan = lazy(() => import('./pages/Scan'));
-const FriendDay = lazy(() => import('./pages/FriendDay'));
-const ReportProblem = lazy(() => import('./pages/ReportProblem'));
-const AdminReports = lazy(() => import('./pages/AdminReports'));
-const JoinFriend = lazy(() => import('./pages/JoinFriend'));
-const JoinCoach = lazy(() => import('./pages/JoinCoach'));
-const DashboardRedesignHarness = lazy(() => import('./prototypes/dashboard-redesign/Harness'));
-const SettingsRedesignHarness = lazy(() => import('./prototypes/settings-redesign/Harness'));
-const Terms = lazy(() => import('./pages/Terms'));
-const Privacy = lazy(() => import('./pages/Privacy'));
+const loadRecipes = () => import('./pages/Recipes');
+const Recipes = lazy(loadRecipes);
+const loadRecipeDetail = () => import('./pages/RecipeDetail');
+const RecipeDetail = lazy(loadRecipeDetail);
+const loadSettings = () => import('./pages/Settings');
+const Settings = lazy(loadSettings);
+const loadSettingsGoals = () => import('./pages/SettingsGoals');
+const SettingsGoals = lazy(loadSettingsGoals);
+const loadProfile = () => import('./pages/Profile');
+const Profile = lazy(loadProfile);
+const loadMyProfile = () => import('./pages/MyProfile');
+const MyProfile = lazy(loadMyProfile);
+const loadPricing = () => import('./pages/Pricing');
+const Pricing = lazy(loadPricing);
+const loadNutrients = () => import('./pages/Nutrients');
+const Nutrients = lazy(loadNutrients);
+const loadNutrientFoods = () => import('./pages/NutrientFoods');
+const NutrientFoods = lazy(loadNutrientFoods);
+const loadExpenditure = () => import('./pages/Expenditure');
+const Expenditure = lazy(loadExpenditure);
+const loadFasting = () => import('./pages/Fasting');
+const Fasting = lazy(loadFasting);
+const loadCoach = () => import('./pages/Coach');
+const Coach = lazy(loadCoach);
+const loadFriends = () => import('./pages/Friends');
+const Friends = lazy(loadFriends);
+const loadScan = () => import('./pages/Scan');
+const Scan = lazy(loadScan);
+const loadFriendDay = () => import('./pages/FriendDay');
+const FriendDay = lazy(loadFriendDay);
+const loadReportProblem = () => import('./pages/ReportProblem');
+const ReportProblem = lazy(loadReportProblem);
+const loadAdminReports = () => import('./pages/AdminReports');
+const AdminReports = lazy(loadAdminReports);
+const loadJoinFriend = () => import('./pages/JoinFriend');
+const JoinFriend = lazy(loadJoinFriend);
+const loadJoinCoach = () => import('./pages/JoinCoach');
+const JoinCoach = lazy(loadJoinCoach);
+const loadDashboardRedesignHarness = () => import('./prototypes/dashboard-redesign/Harness');
+const DashboardRedesignHarness = lazy(loadDashboardRedesignHarness);
+const loadSettingsRedesignHarness = () => import('./prototypes/settings-redesign/Harness');
+const SettingsRedesignHarness = lazy(loadSettingsRedesignHarness);
+const loadTerms = () => import('./pages/Terms');
+const Terms = lazy(loadTerms);
+const loadPrivacy = () => import('./pages/Privacy');
+const Privacy = lazy(loadPrivacy);
+
+// Downloaded quietly once someone is signed in and the first screen is up, so
+// opening any of them later is instant (see lib/preloadPages.js).
+const PRELOAD = [loadSettings, loadSettingsGoals, loadProfile, loadExpenditure, loadNutrients, loadRecipes, loadRecipeDetail, loadFasting, loadScan, loadFriends, loadCoach, loadMyProfile];
 
 // Bottom-nav destinations switch between each other like iOS tabs (a soft
 // cross-dissolve + slight rise); everything else is reached by drilling in
@@ -65,6 +94,10 @@ function AnimatedRoutes() {
 
   useEffect(() => { rememberScreen(location.pathname); }, [location.pathname]);
 
+  const { user } = useAuth();
+  const signedIn = !!user;
+  useEffect(() => (signedIn ? preloadPages(PRELOAD) : undefined), [signedIn]);
+
   useEffect(() => {
     if (!locationChanged(location, renderedLocation)) return;
     if (!isPageTransition(location, renderedLocation)) {
@@ -76,8 +109,12 @@ function AnimatedRoutes() {
     }
     const base = routeAnimClass(location.pathname);
     const direction = navType === 'POP' && base === 'route-anim-push' ? 'route-anim-pop' : base;
-    setRenderedLocation(location);
-    setAnimClass(direction);
+    // As a transition: if the new page's code hasn't downloaded yet, React keeps
+    // showing the current page until it has, instead of flashing an empty screen.
+    startTransition(() => {
+      setRenderedLocation(location);
+      setAnimClass(direction);
+    });
   }, [location, renderedLocation, navType]);
 
   return (
@@ -178,10 +215,12 @@ export default function App() {
   useVisualViewportHeight();
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AnimatedRoutes />
-        <AppToastHost />
-      </BrowserRouter>
+      <ProfileProvider>
+        <BrowserRouter>
+          <AnimatedRoutes />
+          <AppToastHost />
+        </BrowserRouter>
+      </ProfileProvider>
     </AuthProvider>
   )
 }
