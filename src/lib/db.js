@@ -30,13 +30,20 @@ export async function upsertProfile(userId, fields) {
 
 // ─── food_logs ─────────────────────────────────────────────────────────────
 
-export async function getFoodLogsForDate(userId, date) {
-  const { data, error } = await supabase
+// A supplement the person took is stored as a 0 kcal entry so it counts in their
+// nutrient totals (source 'supplement'). Everything that lists a day's food or
+// counts logged days leaves those out unless asked: `{ supplements: true }` is for
+// nutrient totals only.
+const NOT_SUPPLEMENT = 'source.is.null,source.neq.supplement';
+
+export async function getFoodLogsForDate(userId, date, { supplements = false } = {}) {
+  let query = supabase
     .from('food_logs')
     .select('*')
     .eq('user_id', userId)
-    .eq('logged_date', date)
-    .order('created_at', { ascending: true });
+    .eq('logged_date', date);
+  if (!supplements) query = query.or(NOT_SUPPLEMENT);
+  const { data, error } = await query.order('created_at', { ascending: true });
   if (error) throw error;
   return data;
 }
@@ -45,10 +52,8 @@ export async function getFoodLogsForDate(userId, date) {
 // logger over 90+ days exceeds — the newest days would silently go missing
 // from every chart and average built on this. The extra ordering columns make
 // page boundaries deterministic.
-export async function getFoodLogsForRange(userId, startDate, endDate) {
-  return selectAll(() => supabase
-    .from('food_logs')
-    .select('*')
+export async function getFoodLogsForRange(userId, startDate, endDate, { supplements = false } = {}) {
+  return selectAll(() => (supplements ? supabase.from('food_logs').select('*') : supabase.from('food_logs').select('*').or(NOT_SUPPLEMENT))
     .eq('user_id', userId)
     .gte('logged_date', startDate)
     .lte('logged_date', endDate)

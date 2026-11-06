@@ -5931,3 +5931,97 @@ create policy "supplements: update own" on public.supplements
 drop policy if exists "supplements: delete own" on public.supplements;
 create policy "supplements: delete own" on public.supplements
   for delete using (auth.uid() = user_id);
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Supplements stay off friends' view (schema update — run against an existing
+-- DB; safe to re-run). Tests: supabase/tests/supplements.test.js
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- A supplement you take is logged as a 0 kcal entry so it counts in your
+-- nutrient totals; it is only for the Nutrients page, so friends' day views and
+-- their item counts leave it out.
+create or replace function public.friends_list(p_day date)
+returns table (
+  friend_id uuid, name text, hidden boolean, items bigint,
+  calories numeric, protein_g numeric, carbs_g numeric, fat_g numeric,
+  calorie_target numeric, protein_target numeric, carbs_target numeric, fat_target numeric,
+  level text
+)
+language plpgsql stable security definer set search_path = public
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  return query
+    select f.friend, coalesce(nullif(trim(p.name), ''), 'Friend'), vis.level = 'none',
+      case when vis.level <> 'none' then t.items else 0 end,
+      case when vis.level <> 'none' then t.calories end,
+      case when vis.level <> 'none' then t.protein end,
+      case when vis.level <> 'none' then t.carbs end,
+      case when vis.level <> 'none' then t.fat end,
+      p.calorie_target::numeric, p.protein_g::numeric, p.carbs_g::numeric, p.fat_g::numeric,
+      vis.level
+    from (
+      select case when user_a = uid then user_b else user_a end as friend
+      from public.friendships where user_a = uid or user_b = uid
+    ) f
+    left join public.profiles p on p.id = f.friend
+    cross join lateral (select public.friends_day_level(f.friend, p_day) as level) vis
+    cross join lateral (
+      select count(*) as items, coalesce(sum(l.calories), 0) as calories, coalesce(sum(l.protein_g), 0) as protein,
+             coalesce(sum(l.carbs_g), 0) as carbs, coalesce(sum(l.fat_g), 0) as fat
+      from public.food_logs l where l.user_id = f.friend and l.logged_date = p_day and l.source is distinct from 'supplement'
+    ) t
+    order by lower(coalesce(nullif(trim(p.name), ''), 'Friend'));
+end;
+$$;
+revoke all on function public.friends_list(date) from public, anon;
+grant execute on function public.friends_list(date) to authenticated;
+
+create or replace function public.friends_day(p_friend uuid, p_day date)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  prof public.profiles%rowtype;
+  lvl text;
+  logs jsonb := '[]'::jsonb;
+  totals jsonb := null;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if not public.friends_are(uid, p_friend) then raise exception 'friends_not_friends'; end if;
+  select * into prof from public.profiles where id = p_friend;
+  lvl := public.friends_day_level(p_friend, p_day);
+  if lvl = 'full' then
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id', l.id, 'meal', l.meal, 'food_name', l.food_name, 'brand', l.brand,
+      'calories', l.calories, 'protein_g', l.protein_g, 'carbs_g', l.carbs_g, 'fat_g', l.fat_g,
+      'serving_grams', l.serving_grams, 'logged_amount', l.logged_amount, 'logged_unit', l.logged_unit,
+      'serving_label', l.serving_label, 'logged_at', l.logged_at, 'created_at', l.created_at,
+      'ingredients', l.ingredients
+    ) order by l.logged_at nulls last, l.created_at), '[]'::jsonb)
+    into logs
+    from public.food_logs l where l.user_id = p_friend and l.logged_date = p_day and l.source is distinct from 'supplement';
+  end if;
+  if lvl <> 'none' then
+    select jsonb_build_object(
+      'items', count(*), 'calories', coalesce(sum(l.calories), 0), 'protein_g', coalesce(sum(l.protein_g), 0),
+      'carbs_g', coalesce(sum(l.carbs_g), 0), 'fat_g', coalesce(sum(l.fat_g), 0))
+    into totals
+    from public.food_logs l where l.user_id = p_friend and l.logged_date = p_day and l.source is distinct from 'supplement';
+  end if;
+  return jsonb_build_object(
+    'friend_id', p_friend,
+    'name', coalesce(nullif(trim(prof.name), ''), 'Friend'),
+    'hidden', lvl = 'none',
+    'level', lvl,
+    'totals', totals,
+    'targets', jsonb_build_object('calories', prof.calorie_target, 'protein_g', prof.protein_g, 'carbs_g', prof.carbs_g, 'fat_g', prof.fat_g),
+    'logs', logs
+  );
+end;
+$$;
+revoke all on function public.friends_day(uuid, date) from public, anon;
+grant execute on function public.friends_day(uuid, date) to authenticated;

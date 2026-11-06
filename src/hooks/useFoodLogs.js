@@ -100,7 +100,10 @@ const cancelled = new Set(); // temp ids deleted before their save finished
 const isTempId = (id) => typeof id === 'string' && id.startsWith('tmp-');
 const pendingRowsFor = (key) => [...pendingSaves.values()].filter((p) => p.key === key).map((p) => p.row);
 
-export function useFoodLogs(date) {
+// A supplement the person took is stored as a 0 kcal entry so it counts in their
+// nutrient totals, but it belongs on the Nutrients page only: every other screen
+// leaves it out unless it asks for it (`{ supplements: true }`).
+export function useFoodLogs(date, { supplements = false } = {}) {
   const { user } = useAuth();
   const key = user && date ? dayKey(user.id, date) : null;
   const cached = key ? days.get(key) : null;
@@ -139,7 +142,7 @@ export function useFoodLogs(date) {
       // fetching them side by side is that a re-render always sees a
       // consistent pair rather than one refreshed a tick before the other.
       const [logData, slotData] = await Promise.all([
-        getFoodLogsForDate(user.id, date),
+        getFoodLogsForDate(user.id, date, { supplements: true }),
         getDaySlots(user.id, date),
       ]);
       const now = days.get(key);
@@ -158,7 +161,8 @@ export function useFoodLogs(date) {
 
   useEffect(() => { refetch(); }, [refetch]);
 
-  const items = useMemo(() => logs.map(mapRow), [logs]);
+  const shownLogs = useMemo(() => (supplements ? logs : logs.filter((l) => l.source !== 'supplement')), [logs, supplements]);
+  const items = useMemo(() => shownLogs.map(mapRow), [shownLogs]);
   const daySlots = useMemo(() => slotRows.map(mapSlotRow), [slotRows]);
 
   const meals = useMemo(() => {
@@ -337,5 +341,5 @@ export function useFoodLogs(date) {
     mutateSlots(key, (rows) => rows.filter((s) => s.id !== id));
   }, [key]);
 
-  return { logs, meals, daySlots, slotTimeline, loading, addFood, deleteFood, updateFood, moveToSlot, addSlot, editSlot, removeSlot, refetch };
+  return { logs: shownLogs, meals, daySlots, slotTimeline, loading, addFood, deleteFood, updateFood, moveToSlot, addSlot, editSlot, removeSlot, refetch };
 }

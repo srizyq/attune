@@ -74,7 +74,7 @@ export default function NutrientFoods() {
   const range = ['7', '30'].includes(params.get('range')) ? params.get('range') : 'day';
   const isRange = range !== 'day';
   const rangeDayCount = range === '30' ? 30 : 7;
-  const { meals, loading: dayLoading } = useFoodLogs(date);
+  const { meals, loading: dayLoading } = useFoodLogs(date, { supplements: true });
   const rangeData = useFoodLogsRange(date, rangeDayCount, isRange);
   const dayItems = useMemo(() => Object.values(meals).flat().map((i) => ({ ...i, loggedDate: date })), [meals, date]);
   const items = isRange ? rangeData.items : dayItems;

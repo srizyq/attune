@@ -30,3 +30,20 @@ describe('profiles.life_stage', () => {
     await expect(asUser(db, a, (q) => q(`update public.profiles set life_stage = 'maybe' where id = $1`, [a]))).rejects.toThrow();
   }, 60000);
 });
+
+describe('supplements and friends', () => {
+  it('a friend never sees a supplement you took, in the day list, the foods, or the item count', async () => {
+    const db = await createDb();
+    const ann = await addUser(db, 'Ann');
+    const bo = await addUser(db, 'Bo');
+    const as = (uid, sql, params) => asUser(db, uid, (q) => q(sql, params));
+    const code = (await as(ann, `select * from public.friends_me()`)).rows[0].invite_code;
+    await as(bo, `select public.friends_add($1)`, [code]);
+    await db.query(`insert into public.food_logs (user_id, logged_date, meal, food_name, calories, source) values ($1,'2026-10-16','lunch','Eggs',300,'local'), ($1,'2026-10-16','snacks','Vitamin D3',0,'supplement')`, [ann]);
+    const d = (await as(bo, `select public.friends_day($1, '2026-10-16') as d`, [ann])).rows[0].d;
+    expect(d.logs.map((l) => l.food_name)).toEqual(['Eggs']);
+    expect(d.totals.items).toBe(1);
+    const row = (await as(bo, `select * from public.friends_list('2026-10-16')`)).rows.find((r) => r.friend_id === ann);
+    expect(Number(row.items)).toBe(1);
+  }, 60000);
+});

@@ -176,7 +176,7 @@ export function useClientFoodLogs(clientId, date) {
     if (!clientId || !date) { setLogs([]); setLoading(false); return; }
     setLoading(true);
     try {
-      setLogs(await getFoodLogsForDate(clientId, date));
+      setLogs(await getFoodLogsForDate(clientId, date, { supplements: true }));
     } catch (err) {
       console.error('Failed to load client food logs:', err);
       setLogs([]);

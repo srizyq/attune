@@ -131,6 +131,8 @@ export async function installFakeBackend(context, { profile = {}, tables = {}, r
       if (req.method() === 'GET' || req.method() === 'HEAD') {
         for (const [key, spec] of url.searchParams) {
           if (['select', 'order', 'limit', 'offset', 'columns', 'on_conflict'].includes(key)) continue;
+          // The one `or` the app sends on food_logs: everything except a taken supplement.
+          if (key === 'or' && spec.includes('source.neq.supplement')) { rows = rows.filter((row) => row.source !== 'supplement'); continue; }
           if (key === 'or' || key === 'and') continue;
           // `col=not.is.null` etc. — the same test, negated.
           if (spec.startsWith('not.')) { rows = rows.filter((row) => !matches(row, key, spec.slice(4))); continue; }

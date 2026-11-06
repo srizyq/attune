@@ -18,7 +18,7 @@ export function useFoodLogsRange(end, days, enabled) {
   useEffect(() => {
     if (!key) return undefined;
     let cancelled = false;
-    getFoodLogsForRange(user.id, dates[0], end)
+    getFoodLogsForRange(user.id, dates[0], end, { supplements: true })
       .then((rows) => { if (!cancelled) setState({ key, rows }); })
       .catch((err) => { console.error('Failed to load food logs for range:', err); if (!cancelled) setState({ key, rows: [] }); });
     return () => { cancelled = true; };

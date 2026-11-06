@@ -124,3 +124,20 @@ test('a saved supplement is taken in one tap and counts in the day', async ({ pa
   await expect(dialog.getByRole('button', { name: 'Save supplement' })).toBeEnabled();
   await assertLayout(page, testInfo, 'x-supplement-form', ctx);
 });
+
+test('a supplement taken counts on the Nutrients page but never appears in the daily log', async ({ page, context }, testInfo) => {
+  const ctx = await openApp({ page, context }, testInfo, {
+    tables: { food_logs: [
+      log('f1', { food_name: 'Chicken salad', source: 'local', calories: 350 }),
+      log('s1', { food_name: 'Vitamin D3 tablet', source: 'supplement', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, vitamin_d_mcg: 25 }),
+    ] },
+  });
+  await page.goto('/log');
+  await settle(page);
+  await expect(page.getByText('Chicken salad').first()).toBeVisible();
+  await expect(page.getByText('Vitamin D3 tablet')).toHaveCount(0);
+  await assertLayout(page, testInfo, 'x-log-without-supplement', ctx);
+  await page.goto('/nutrients/vitaminD');
+  await settle(page);
+  await expect(page.getByTestId('nutrient-foods').getByText('Vitamin D3 tablet').first()).toBeVisible();
+});

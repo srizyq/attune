@@ -89,7 +89,7 @@ export default function Nutrients() {
     setSelectedDate(next);
   }
 
-  const { logs, meals, loading, addFood, daySlots } = useFoodLogs(selectedDate);
+  const { logs, meals, loading, addFood, daySlots } = useFoodLogs(selectedDate, { supplements: true });
   const supplementsApi = useSupplements();
   // The extended nutrients (B vitamins, selenium, ...) are only carried by some
   // food databases: sum just the foods that have them, and say how many did.
