@@ -128,8 +128,8 @@ describe('what the cards say', () => {
     expect(summary.estimatedItems).toBe(1);
   });
   it('says how much was measured, how much estimated, or that there is no data', () => {
-    expect(microNote(summary, 'calcium')).toEqual({ note: 'Data for 1 of 3 foods · estimates for 1 more', noData: false, approx: true });
-    expect(microNote(summary, 'magnesium').note).toBe('Estimated from similar foods (1 of 3)');
+    expect(microNote(summary, 'calcium')).toEqual({ note: null, noData: false, approx: true });
+    expect(microNote(summary, 'magnesium').note).toBeNull();
     expect(microNote(summary, 'zinc')).toEqual({ note: 'No data in the foods logged', noData: true, approx: false });
     expect(microNote(estimateSummary([{ id: 'z', cal: 1, calcium: 5 }], new Map()), 'calcium')).toEqual({ note: null, noData: false, approx: false });
     expect(microNote(estimateSummary([], new Map()), 'calcium').noData).toBe(false); // a day with nothing logged

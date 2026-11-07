@@ -270,8 +270,5 @@ export function microNote(summary, key) {
   const { measured: m, estimated: e } = k;
   if (m === 0 && e === 0) return { note: 'No data in the foods logged', noData: true, approx: false };
   if (m === n) return { note: null, noData: false, approx: false };
-  const note = m > 0 && e > 0 ? `Data for ${m} of ${n} foods · estimates for ${e} more`
-    : m > 0 ? `Data for ${m} of ${n} foods`
-      : `Estimated from similar foods (${e} of ${n})`;
-  return { note, noData: false, approx: e > 0 };
+  return { note: null, noData: false, approx: e > 0 };
 }

@@ -23,10 +23,9 @@ test('foods without micronutrients get marked estimates; unknowns show a dash, n
   });
   await page.goto('/nutrients');
   await settle(page);
-  // Magnesium: nothing measured; one food estimated.
-  await expect(page.getByText('Estimated from similar foods (1 of 3)').first()).toBeVisible({ timeout: 20000 });
-  // Calcium: one measured + one estimated.
-  await expect(page.getByText('Data for 1 of 3 foods · estimates for 1 more')).toBeVisible();
+  // The cards carry no "data for / estimated" footnotes any more.
+  await expect(page.getByText('No data in the foods logged').first()).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText(/Data for \d+ of|Estimated from similar foods \(/)).toHaveCount(0);
   // Vitamin D: no food had it and none could be estimated.
   await expect(page.getByText('No data in the foods logged').first()).toBeVisible();
   const dash = page.getByText('—', { exact: true });
@@ -57,7 +56,6 @@ test('tapping a nutrient lists the foods that supplied it, biggest first, with e
   });
   await page.goto('/nutrients');
   await settle(page);
-  await expect(page.getByText('Data for 1 of 2 foods · estimates for 1 more')).toBeVisible({ timeout: 20000 });
   await page.getByRole('button', { name: /Calcium: which foods supplied it/ }).click();
   const list = page.getByTestId('nutrient-foods');
   await expect(list.getByText('Foods that supplied it')).toBeVisible();

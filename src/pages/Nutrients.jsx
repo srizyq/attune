@@ -187,7 +187,7 @@ export default function Nutrients() {
   function card(key) {
     const n = BY_KEY[key];
     const st = stat[key] || { avg: 0, noData: false, approx: false };
-    const note = isRange && loggedDays > 0 ? `Average of ${loggedDays} logged ${loggedDays === 1 ? 'day' : 'days'}${st.approx ? ' · includes estimates' : ''}` : st.approx ? 'Includes estimates' : null;
+    const note = isRange && loggedDays > 0 ? `Average of ${loggedDays} logged ${loggedDays === 1 ? 'day' : 'days'}` : null;
     return (
       <MicroCard key={key} onOpen={openKey(key)} locked={n.pro && !isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, st.avg)} unit={n.unit} guideline={guide(key, n.guideline)} target={microTargets[key]} defaultTarget={DEFAULT_TARGETS[key]} color={n.color} noData={st.noData} approx={st.approx} note={note} />
     );
