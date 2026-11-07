@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScanPage, ScanCard, Eyebrow, MacroTile } from './scan/ScanKit';
 import { MICRO_NUTRIENTS } from '../lib/microNutrients';
-import { DETAIL_GROUPS, nutrientDetail, detailCoverage } from '../lib/foodDetails';
+import { DETAIL_GROUPS, nutrientDetail } from '../lib/foodDetails';
 import { hasProAccess } from '../lib/proAccess';
 import { useProfile } from '../hooks/useProfile';
 import { targetsFor } from '../lib/nutrientTargets';
@@ -33,7 +33,6 @@ function Row({ nutrient, detail, last }) {
           <span style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 34, textAlign: 'right' }}>{detail.pct < 1 && detail.pct > 0 ? '<1' : Math.round(detail.pct)}%</span>
         </div>
       )}
-      {detail.kind === 'estimated' && <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 3 }}>{detail.via === 'ai' ? 'AI estimate' : 'Estimated from a similar food'}</div>}
     </div>
   );
 }
@@ -53,8 +52,6 @@ export function FoodDetailsPage({ food, onClose, closing, pro }) {
   const targets = targetsFor(profile);
   const portion = food.servingLabel || (food.loggedAmount != null && food.loggedUnit ? `${food.loggedAmount} ${food.loggedUnit}` : null);
   const groups = DETAIL_GROUPS.map((g) => ({ ...g, rows: g.keys.map((key) => ({ key, detail: nutrientDetail(food, key, estimate, targets) })) }));
-  const coverage = detailCoverage(food, estimate);
-  const total = coverage.measured + coverage.estimated + coverage.none;
   return (
     <ScanPage title="Food details" onBack={onClose} closing={closing} zIndex={400} testId="food-details">
       <ScanCard>
@@ -69,9 +66,6 @@ export function FoodDetailsPage({ food, onClose, closing, pro }) {
           <MacroTile kind="carbs" label="Carbs" value={round1(food.carbs || 0)} />
           <MacroTile kind="fat" label="Fat" value={round1(food.fat || 0)} />
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12, lineHeight: 1.4 }} data-testid="food-details-coverage">
-          {coverage.measured} of {total} nutrients measured{coverage.estimated > 0 ? ` · ${coverage.estimated} estimated` : ''}{coverage.none > 0 ? ` · ${coverage.none} not reported` : ''}
-        </div>
       </ScanCard>
       {groups.map((g) => (
         <ScanCard key={g.label}>
@@ -80,8 +74,7 @@ export function FoodDetailsPage({ food, onClose, closing, pro }) {
         </ScanCard>
       ))}
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 4px 12px', lineHeight: 1.45 }}>
-        {coverage.estimated > 0 ? '~ estimated. ' : ''}% is of your daily target.
-        {!isPro && coverage.none > 0 ? ' Pro fills in nutrients a food doesn\u2019t report with AI estimates.' : ''}
+        % is of your daily target.
       </p>
     </ScanPage>
   );

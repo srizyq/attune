@@ -40,7 +40,7 @@ function Row({ row, nutrient, color, onOpen, locked }) {
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: row.kind === 'estimated' ? 'var(--text-secondary)' : 'var(--text-primary)' }}>
-            {row.kind === 'estimated' ? '~' : ''}{fmtAmount(nutrient, row.perDay ?? row.amount)}<span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{nutrient.unit}{row.perDay != null ? '/day' : ''}</span>
+            {fmtAmount(nutrient, row.perDay ?? row.amount)}<span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{nutrient.unit}{row.perDay != null ? '/day' : ''}</span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.share < 1 ? '<1' : Math.round(row.share)}%</div>
           {row.times > 1 && <div style={{ fontSize: 11, color: 'var(--text-hint)' }}>{row.times} times</div>}
@@ -107,7 +107,6 @@ export default function NutrientFoods() {
   const isLimit = LIMIT_KEYS.has(key);
   const info = NUTRIENT_INFO[key];
   const setRange = (value) => setParams(value === 'day' ? { date } : { date, range: value }, { replace: true });
-  const approx = result && result.estimatedTotal > 0;
 
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
@@ -126,9 +125,9 @@ export default function NutrientFoods() {
             <>
               <SegToggle label="Period" value={range} onChange={setRange} style={{ marginBottom: 14 }} options={[{ value: 'day', label: 'Day' }, { value: '7', label: '7-day avg' }, { value: '30', label: '30-day avg' }]} />
               <Card style={{ padding: 22, marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>{isRange ? `Daily average · ${loggedDays} of ${rangeDayCount} days logged` : isToday ? 'Today' : 'Total'}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6 }}>{isRange ? 'Daily average' : isToday ? 'Today' : 'Total'}</div>
                 <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.1 }}>
-                  {shownTotal > 0 || result.count > 0 ? <>{approx ? '~' : ''}{fmtAmount(nutrient, shownTotal)}</> : '—'}
+                  {shownTotal > 0 || result.count > 0 ? fmtAmount(nutrient, shownTotal) : '—'}
                   <span style={{ fontSize: 16, color: 'var(--text-muted)', fontWeight: 500 }}> {nutrient.unit}{target ? ` / ${target}${nutrient.unit}` : ''}</span>
                 </div>
                 {pct !== null && (

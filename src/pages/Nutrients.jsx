@@ -214,9 +214,9 @@ export default function Nutrients() {
                 <SegToggle label="Period" value={range} onChange={setRange} options={RANGES.map(({ value, label }) => ({ value, label }))} />
                 <SegToggle label="Group by" value={view} onChange={setView} options={[{ value: 'type', label: 'By type' }, { value: 'goal', label: 'By goal' }]} />
               </div>
-              {isRange && (
+              {isRange && (rangeLoading || loggedDays === 0) && (
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
-                  {rangeLoading ? 'Loading your logs…' : loggedDays === 0 ? `Nothing logged in these ${rangeDays} days.` : `Daily average over the ${loggedDays} of ${rangeDays} days you logged.`}
+                  {rangeLoading ? 'Loading your logs…' : loggedDays === 0 ? `Nothing logged in these ${rangeDays} days.` : null}
                 </p>
               )}
               <Card style={{ padding: 24, marginBottom: 20 }}>

@@ -39,14 +39,14 @@ describe('DiaryTab nutrients', () => {
     expect(screen.getByText('More minerals')).toBeInTheDocument();
     expect(screen.getByText('Omega fats, caffeine & alcohol')).toBeInTheDocument();
     expect(within(screen.getByTestId('nutrient-thiamin')).getByText(/0\.14/)).toBeInTheDocument(); // not 0.1
-    expect(screen.getAllByText(/Based on 1 of 1 foods logged/).length).toBe(3); // once per extended group
+    expect(screen.queryByText(/Based on 1 of 1 foods logged/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Hide' })).toBeInTheDocument();
   });
 
   it('says so when none of the day\'s foods carried the extended nutrients — and shows a dash, not 0', async () => {
     render(<DiaryTab d={dash({ extendedInfo: { withData: 0, of: 3 } })} />);
     await openAll();
-    expect(screen.getAllByText(/None of the foods logged carry these/).length).toBe(3);
+    expect(screen.queryByText(/None of the foods logged carry these/)).toBeNull();
     expect(within(screen.getByTestId('nutrient-thiamin')).getByText('—')).toBeInTheDocument();
     expect(within(screen.getByTestId('nutrient-thiamin')).queryByText(/^0/)).toBeNull();
   });

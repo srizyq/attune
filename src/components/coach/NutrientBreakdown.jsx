@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardAction } from './shared';
 import { MICRO_GROUPS } from './constants';
-import { MICRO_NUTRIENTS, extendedNote, formatMicro } from '../../lib/microNutrients';
+import { MICRO_NUTRIENTS, formatMicro } from '../../lib/microNutrients';
 import { nutrientGaps, describeGaps } from '../../lib/nutrientGaps';
 
 function Row({ n, value, target, noData }) {
@@ -52,7 +52,6 @@ export default function NutrientBreakdown({ date, foodLoading, hasAnyFood, micro
               {MICRO_GROUPS.map((group) => (
                 <div key={group.label} style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: group.extended ? 4 : 0 }}>{group.label}</div>
-                  {group.extended && extendedNote(extendedInfo) && <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 0 4px', lineHeight: 1.5 }}>{extendedNote(extendedInfo)}</p>}
                   {group.keys.map((key) => {
                     const n = MICRO_NUTRIENTS.find((m) => m.key === key);
                     // None of the day's foods carried it: a dash, not a misleading 0.

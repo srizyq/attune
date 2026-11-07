@@ -93,7 +93,7 @@ describe('Nutrients — averages, goals and personal targets', () => {
     };
     setup({ meals: empty, logs: [], profile: { sex: 'male', date_of_birth: '1990-01-01' } });
     fireEvent.click(screen.getByRole('button', { name: '7-day avg' }));
-    expect(await screen.findByText(/Daily average over the 2 of 7 days you logged/)).toBeInTheDocument();
+    expect(await screen.findByText('Daily average calories')).toBeInTheDocument();
     const card = screen.getByText('Calcium').closest('div').parentElement.parentElement;
     expect(within(card).getByText('400')).toBeInTheDocument(); // (300 + 500) / 2 days
     expect(screen.getByText('Daily average calories')).toBeInTheDocument();
