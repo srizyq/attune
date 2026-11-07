@@ -7,7 +7,7 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 import { hasProAccess } from '../lib/proAccess';
 import { todayLocalDate } from '../lib/patterns';
 import { MICRO_NUTRIENTS } from '../lib/microNutrients';
-import { contributorsFor, contributorsNote, fmtAmount } from '../lib/nutrientContributors';
+import { contributorsFor, fmtAmount } from '../lib/nutrientContributors';
 import { dailyTotals, groupedContributors, loggedDayCount, rangeDates } from '../lib/nutrientRange';
 import { targetFor, targetNote } from '../lib/nutrientTargets';
 import { NUTRIENT_INFO, LIMIT_KEYS } from '../lib/nutrientInfo';
@@ -20,7 +20,6 @@ import Card from '../components/Card';
 import { FoodDetailsPage } from '../components/FoodDetails';
 
 const MEAL_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
-const VIA_LABEL = { ausnut: 'Estimated from a similar food', usda: 'Estimated from a similar food (USDA)', ai: 'AI estimate' };
 
 const portionOf = (item) => item.servingLabel || (item.loggedAmount != null && item.loggedUnit ? `${item.loggedAmount} ${item.loggedUnit}` : null);
 
@@ -50,7 +49,6 @@ function Row({ row, nutrient, color, onOpen, locked }) {
       <div style={{ height: 5, background: 'var(--border-default)', borderRadius: 99, marginTop: 8 }}>
         <div style={{ height: '100%', width: `${Math.max(2, Math.min(100, row.share))}%`, background: color, borderRadius: 99, opacity: row.kind === 'estimated' ? 0.55 : 1 }} />
       </div>
-      {row.kind === 'estimated' && <div style={{ fontSize: 11, color: 'var(--text-hint)', marginTop: 4 }}>{VIA_LABEL[row.via] || VIA_LABEL.ausnut}</div>}
     </Tag>
   );
 }
@@ -110,7 +108,6 @@ export default function NutrientFoods() {
   const info = NUTRIENT_INFO[key];
   const setRange = (value) => setParams(value === 'day' ? { date } : { date, range: value }, { replace: true });
   const approx = result && result.estimatedTotal > 0;
-  const note = result ? contributorsNote(result) : null;
 
   return (
     <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
@@ -140,7 +137,6 @@ export default function NutrientFoods() {
                   </div>
                 )}
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>{pct !== null ? `${Math.round(pct)}% of ${isLimit ? 'the limit' : 'your target'} · ` : ''}{targetInfo.source === 'personal' ? `${targetNote('personal')} (${isLimit ? 'aim for under ' : ''}${target}${nutrient.unit}/day)` : targetInfo.source === 'custom' ? 'Your target' : nutrient.guideline}</div>
-                {note && <div style={{ fontSize: 12, color: 'var(--text-hint)', marginTop: 6, lineHeight: 1.4 }}>{note}</div>}
               </Card>
 
               {isRange && series && loggedDays > 0 && (

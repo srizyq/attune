@@ -268,7 +268,7 @@ export function microNote(summary, key) {
   const n = summary?.of || 0;
   if (!k || n === 0) return { note: null, noData: false, approx: false };
   const { measured: m, estimated: e } = k;
-  if (m === 0 && e === 0) return { note: 'No data in the foods logged', noData: true, approx: false };
+  if (m === 0 && e === 0) return { note: null, noData: true, approx: false };
   if (m === n) return { note: null, noData: false, approx: false };
   return { note: null, noData: false, approx: e > 0 };
 }

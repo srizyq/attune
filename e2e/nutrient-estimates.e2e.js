@@ -24,14 +24,12 @@ test('foods without micronutrients get marked estimates; unknowns show a dash, n
   await page.goto('/nutrients');
   await settle(page);
   // The cards carry no "data for / estimated" footnotes any more.
-  await expect(page.getByText('No data in the foods logged').first()).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText('—', { exact: true }).first()).toBeVisible({ timeout: 20000 });
   await expect(page.getByText(/Data for \d+ of|Estimated from similar foods \(/)).toHaveCount(0);
   // Vitamin D: no food had it and none could be estimated.
-  await expect(page.getByText('No data in the foods logged').first()).toBeVisible();
   const dash = page.getByText('—', { exact: true });
   await expect(dash.first()).toBeVisible();
-  // The B-vitamin group explains where its estimates come from.
-  await expect(page.getByText(/marks totals that include estimates/).first()).toBeVisible();
+  await expect(page.getByText(/marks totals that include estimates/)).toHaveCount(0);
   // The estimate is flagged with a ~ on the total.
   await expect(page.getByText(/^~/).first()).toBeVisible();
   await assertLayout(page, testInfo, 'x-nutrients-estimates', ctx);
@@ -62,7 +60,6 @@ test('tapping a nutrient lists the foods that supplied it, biggest first, with e
   const names = await list.getByRole('button', { name: /see all nutrients/ }).allInnerTexts();
   expect(names[0]).toContain('Cheese slice');
   expect(names[1]).toContain('Greek yoghurt');
-  await expect(list.getByText('Estimated from a similar food').first()).toBeVisible();
   await expect(list.getByText('63%')).toBeVisible(); // 200 of 320
   await assertLayout(page, testInfo, 'x-nutrient-foods', ctx);
   // A row opens that food's full details.
@@ -84,7 +81,6 @@ test('averages over 7 days and the By goal view lay out cleanly, and a nutrient 
   await settle(page);
   await page.getByRole('button', { name: '7-day avg' }).click();
   await expect(page.getByText(/Daily average over the 2 of 7 days you logged/)).toBeVisible({ timeout: 20000 });
-  await expect(page.getByText('Average of 2 logged days').first()).toBeVisible();
   await assertLayout(page, testInfo, 'x-nutrients-average', ctx);
   await page.getByRole('button', { name: 'By goal' }).click();
   await expect(page.getByTestId('goal-bones')).toBeVisible();

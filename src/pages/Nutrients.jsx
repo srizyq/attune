@@ -6,7 +6,7 @@ import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
 import AppNav from '../components/AppNav';
 import MicroCard from '../components/MicroCard';
-import { MICRO_NUTRIENTS, extendedCoverage, extendedNote, extendedSummary, formatMicro } from '../lib/microNutrients';
+import { MICRO_NUTRIENTS, extendedCoverage, formatMicro } from '../lib/microNutrients';
 import { estimateSummary, microNote } from '../lib/microEstimate';
 import { useMicroEstimates } from '../hooks/useMicroEstimates';
 import { MICRO_GROUPS } from '../components/coach/constants';
@@ -114,7 +114,6 @@ export default function Nutrients() {
     return filled;
   }), [items, estimates]);
   const extended = useMemo(() => extendedCoverage(itemsFilled), [itemsFilled]);
-  const extendedInfo = useMemo(() => extendedSummary(items), [items]);
 
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
 
@@ -187,9 +186,8 @@ export default function Nutrients() {
   function card(key) {
     const n = BY_KEY[key];
     const st = stat[key] || { avg: 0, noData: false, approx: false };
-    const note = isRange && loggedDays > 0 ? `Average of ${loggedDays} logged ${loggedDays === 1 ? 'day' : 'days'}` : null;
     return (
-      <MicroCard key={key} onOpen={openKey(key)} locked={n.pro && !isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, st.avg)} unit={n.unit} guideline={guide(key, n.guideline)} target={microTargets[key]} defaultTarget={DEFAULT_TARGETS[key]} color={n.color} noData={st.noData} approx={st.approx} note={note} />
+      <MicroCard key={key} onOpen={openKey(key)} locked={n.pro && !isPremium} onUpgrade={goUpgrade} icon={n.icon} label={n.label} value={formatMicro(n, st.avg)} unit={n.unit} guideline={guide(key, n.guideline)} target={microTargets[key]} defaultTarget={DEFAULT_TARGETS[key]} color={n.color} noData={st.noData} approx={st.approx} />
     );
   }
   // "3 of 5 at 70%+ of target" for a goal's nutrients that have a target to reach.
@@ -218,7 +216,7 @@ export default function Nutrients() {
               </div>
               {isRange && (
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
-                  {rangeLoading ? 'Loading your logs…' : loggedDays === 0 ? `Nothing logged in these ${rangeDays} days.` : `Daily average over the ${loggedDays} of ${rangeDays} days you logged. Foods without data are estimated from similar foods; AI estimates aren't included.`}
+                  {rangeLoading ? 'Loading your logs…' : loggedDays === 0 ? `Nothing logged in these ${rangeDays} days.` : `Daily average over the ${loggedDays} of ${rangeDays} days you logged.`}
                 </p>
               )}
               <Card style={{ padding: 24, marginBottom: 20 }}>
@@ -293,7 +291,6 @@ export default function Nutrients() {
                       <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>PRO</span>
                     )}
                   </div>
-                  {extendedNote(extendedInfo) && <p style={{ fontSize: 11, color: 'var(--text-hint)', margin: '0 0 10px', lineHeight: 1.5 }}>{extendedNote(extendedInfo)}{group.keys.some((k) => summary.perKey[k]?.estimated > 0) ? ' ~ marks totals that include estimates.' : ''}</p>}
                   <div className="grid-3">
                     {group.keys.map(key => {
                       const n = MICRO_NUTRIENTS.find(m => m.key === key);
