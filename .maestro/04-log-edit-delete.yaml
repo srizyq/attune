@@ -1,0 +1,36 @@
+appId: com.sriram.attune
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "DAILY MACRONUTRIENTS"
+    timeout: 45000
+- tapOn: ".*DAILY LOG"
+# starts clean: nothing in Breakfast
+- assertVisible: "BREAKFAST 0 kcal"
+# log: add the saved custom food to Breakfast
+- tapOn:
+    text: ".*Add food"
+    index: 0
+- assertVisible: "FOOD SEARCH"
+- tapOn: ".*Maestro Test F.*"
+- tapOn: ".*Add to Breakfast"
+- tapOn: ".*DAILY LOG"
+- assertVisible: "BREAKFAST.*P 0g.*"
+# edit: change the amount and save
+- tapOn:
+    text: "Maestro Test Food.*"
+    index: 0
+- assertVisible: ".*Amount.*"
+- tapOn:
+    below: ".*Amount.*"
+    index: 0
+- eraseText: 5
+- inputText: "150"
+- tapOn: ".*Save"
+- assertVisible: "BREAKFAST.*P 0g.*"
+# delete: Breakfast goes back to empty
+- tapOn:
+    text: "Maestro Test Food.*"
+    index: 0
+- tapOn: ".*Delete"
+- assertVisible: "BREAKFAST 0 kcal"

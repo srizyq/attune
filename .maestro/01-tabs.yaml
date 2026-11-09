@@ -1,0 +1,15 @@
+appId: com.sriram.attune
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "DAILY MACRONUTRIENTS"
+    timeout: 45000
+- assertVisible: "DASHBOARD"
+- tapOn: ".*DAILY LOG"
+- assertNotVisible: "DAILY MACRONUTRIENTS"
+- tapOn: ".*FRIENDS"
+- assertNotVisible: "DAILY MACRONUTRIENTS"
+- tapOn: ".*SETTINGS"
+- assertNotVisible: "DAILY MACRONUTRIENTS"
+- tapOn: ".*DASHBOARD"
+- assertVisible: "DAILY MACRONUTRIENTS"

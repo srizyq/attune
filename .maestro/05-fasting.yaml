@@ -1,0 +1,23 @@
+appId: com.sriram.attune
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "DAILY MACRONUTRIENTS"
+    timeout: 45000
+- tapOn: "Quick add"
+- tapOn: ".*Fasting"
+- assertVisible: "START A FAST"
+# start a 16h fast: the timer and goal appear
+- tapOn: "Start 16h fast"
+- assertNotVisible: "START A FAST"
+- assertVisible: "Time fasted"
+- assertVisible: "of your 16h goal"
+# discard it so nothing is left running or saved to history
+- scrollUntilVisible:
+    element: ".*Started by mistake.*"
+- tapOn: ".*Discard"
+- tapOn: ".*Yes, discard"
+- scrollUntilVisible:
+    element: "START A FAST"
+    direction: UP
+- assertVisible: "START A FAST"

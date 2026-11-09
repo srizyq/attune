@@ -1,0 +1,15 @@
+appId: com.sriram.attune
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "DAILY MACRONUTRIENTS"
+    timeout: 45000
+- tapOn: "Quick add"
+- assertVisible: ".*Log food"
+- assertVisible: ".*Scan barcode"
+- assertVisible: ".*Log weight"
+- assertVisible: ".*Fasting"
+- assertVisible: ".*Recipes"
+- assertVisible: ".*Custom food"
+- tapOn: ".*Log food"
+- assertVisible: "FOOD SEARCH"

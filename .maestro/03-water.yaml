@@ -1,0 +1,9 @@
+appId: com.sriram.attune
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "DAILY MACRONUTRIENTS"
+    timeout: 45000
+- assertVisible: "WATER"
+- tapOn: ".*250ML"
+- assertNotVisible: "0 / 2L"
