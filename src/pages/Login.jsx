@@ -137,6 +137,7 @@ export default function Login() {
     setError(null);
     const { error: oauthError } = await signInWithProvider(provider);
     if (oauthError) setError(oauthError.message);
+    // Native sign-in sets the session in place; the effect above then routes.
   }
 
   const inputStyle = (filled) => ({

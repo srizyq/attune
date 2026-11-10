@@ -7,7 +7,7 @@ import { getProfile, upsertProfile, upsertWeightLog } from '../../lib/db';
 import { todayLocalDate } from '../../lib/patterns';
 import { getCaptchaToken, captchaOptions } from '../../lib/captcha';
 import OAuthButtons from '../../components/OAuthButtons';
-import { linkProvider, readOAuthError } from '../../lib/oauth';
+import { linkProvider, readOAuthError, isNativeApp } from '../../lib/oauth';
 
 // Writing to `profiles` immediately after a fresh signInAnonymously()
 // can occasionally hit "new row violates row-level security policy"
@@ -208,8 +208,11 @@ export default function Step4() {
     if (name) {
       try { await upsertProfile(userIdRef.current, { name }); } catch { /* non-fatal */ }
     }
-    const { error: linkError } = await linkProvider(provider);
-    if (linkError) setError(linkError.message);
+    const { error: linkError, cancelled } = await linkProvider(provider);
+    if (linkError) { setError(linkError.message); return; }
+    // Native sign-in finishes in place (no redirect back), so re-run this
+    // screen's setup, which now sees a real account and goes to the dashboard.
+    if (isNativeApp() && !cancelled) window.location.assign('/onboarding/step4');
   }
 
   const inputStyle = (filled) => ({

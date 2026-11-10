@@ -1,4 +1,59 @@
+import { Capacitor } from '@capacitor/core';
 import { supabase } from './supabase';
+
+// Inside the iOS app the page runs in an embedded web view, where Google refuses
+// browser-style sign-in (disallowed_useragent) and Apple's sheet isn't available.
+// There the system's own Google / Apple dialogs are used instead, and the identity
+// token they return is exchanged with Supabase directly.
+export const isNativeApp = () => Capacitor.isNativePlatform();
+
+const APPLE_CLIENT_ID = 'com.sriram.attune'; // the app's bundle id; unused by iOS itself
+
+async function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+let nativeReady = null;
+async function nativePlugin() {
+  const { SocialLogin } = await import('@capgo/capacitor-social-login');
+  nativeReady ??= SocialLogin.initialize({
+    apple: { clientId: APPLE_CLIENT_ID },
+    google: {
+      iOSClientId: import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID,
+      iOSServerClientId: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID,
+      mode: 'online',
+    },
+  });
+  await nativeReady;
+  return SocialLogin;
+}
+
+// Returns the same { error } shape as the browser redirect flow. On success the
+// session is set in place (no redirect), so callers move on themselves.
+async function nativeSignIn(provider) {
+  try {
+    const SocialLogin = await nativePlugin();
+    // Supabase wants the raw nonce; the provider signs its SHA-256 into the token.
+    const rawNonce = crypto.randomUUID();
+    const hashedNonce = await sha256Hex(rawNonce);
+    const res = await SocialLogin.login({
+      provider,
+      options: provider === 'apple'
+        ? { scopes: ['email', 'name'], nonce: hashedNonce }
+        : { scopes: ['email', 'profile'], nonce: hashedNonce },
+    });
+    const idToken = res?.result?.idToken;
+    if (!idToken) return { error: new Error('Sign-in did not return an identity token.') };
+    const { error } = await supabase.auth.signInWithIdToken({ provider, token: idToken, nonce: rawNonce });
+    return { error };
+  } catch (err) {
+    // Backing out of the system dialog is not an error worth showing.
+    if (/cancel/i.test(String(err?.message ?? err)) || err?.code === '1001') return { error: null, cancelled: true };
+    return { error: err instanceof Error ? err : new Error(String(err)) };
+  }
+}
 
 // Where the provider sends people back to. Both entry points land on a page
 // that already knows what to do with a freshly signed-in session: Login
@@ -35,6 +90,7 @@ export function enabledOAuthProviders() {
 // Log in (or, for a provider identity we haven't seen, create the account —
 // Login sends those into onboarding afterwards).
 export function signInWithProvider(provider) {
+  if (isNativeApp()) return nativeSignIn(provider);
   return supabase.auth.signInWithOAuth({ provider, options: { redirectTo: oauthLoginRedirectTo } });
 }
 
@@ -43,6 +99,10 @@ export function signInWithProvider(provider) {
 // Step4 upgrades via updateUser rather than a fresh signUp). Needs "Manual
 // linking" enabled in Supabase (Authentication → Sign In / Providers).
 export function linkProvider(provider) {
+  // Natively there is no link-to-guest call for ID tokens, so this signs in (or
+  // creates) the real account instead; Step4 then reloads itself and seeds that
+  // account's profile from the saved onboarding answers.
+  if (isNativeApp()) return nativeSignIn(provider);
   return supabase.auth.linkIdentity({ provider, options: { redirectTo: oauthSignupRedirectTo } });
 }
 
