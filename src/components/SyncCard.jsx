@@ -3,12 +3,14 @@ import { useAuth } from '../hooks/useAuth';
 import { addFoodLog } from '../lib/db';
 import { pendingCount, syncQueue, isOffline } from '../lib/offlineQueue';
 import { showAppToast } from '../lib/appToast';
-import { TOUR_EVENT } from './FirstRunTour';
+import { useNavigate } from 'react-router-dom';
+import { requestTourReplay } from '../lib/tour';
 
 const btn = { flex: 1, minHeight: 44, borderRadius: 12, border: '1px solid var(--card-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'inherit', fontSize: 15, cursor: 'pointer' };
 
 export default function SyncCard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState(pendingCount());
 
@@ -27,7 +29,7 @@ export default function SyncCard() {
       <button style={btn} onClick={sync} disabled={busy}>
         <i className="ti ti-refresh" /> {busy ? 'Syncing…' : `Sync now${pending ? ` (${pending})` : ''}`}
       </button>
-      <button style={btn} onClick={() => window.dispatchEvent(new Event(TOUR_EVENT))}>
+      <button style={btn} onClick={() => { requestTourReplay(); navigate('/dashboard'); }}>
         <i className="ti ti-help-circle" /> Replay tour
       </button>
     </div>

@@ -1,46 +1,137 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-const KEY = 'attune.tourSeen.v1';
-export const TOUR_EVENT = 'attune:tour';
+// A short guided tour of the Dashboard: dims the screen, lights up one thing at
+// a time with a one-line explanation, and moves on when the person taps the lit-up
+// thing. Taps are caught by the overlay (nothing underneath is really pressed), so
+// nothing gets logged or opened by accident. Targets are found by data-tour="…"
+// markers; a step whose target isn't on screen (e.g. Slots for a free account) is skipped.
+import { TOUR_EVENT, tourSeen as seen, markTourSeen as markSeen, takeTourReplay as takeReplay } from '../lib/tour';
 
 const STEPS = [
-  { icon: 'ti-sparkles', title: 'Welcome to Attune', body: 'Log food, see your macros and nutrients, and notice how what you eat makes you feel. Here is a 30-second look around.' },
-  { icon: 'ti-plus', title: 'Log in seconds', body: 'Tap Add to search foods, scan a barcode, snap a photo of your meal, or say what you ate.' },
-  { icon: 'ti-chart-bar', title: 'See the pattern', body: 'Nutrients and Expenditure show how your intake, weight and energy trend over time.' },
-  { icon: 'ti-clock-hour-4', title: 'Fasting and friends', body: 'Time your fasts, and invite friends to see each other’s day and share recipes.' },
-  { icon: 'ti-settings', title: 'Make it yours', body: 'Set goals in Settings. You can replay this tour any time from Settings, and sync offline entries there too.' },
+  { sel: '[data-tour="slots"]', title: 'Plan your day in Slots', body: 'Switch to Slots to split your day into your own time blocks, then tap Add slot to name each one.' },
+  { sel: '[data-tour="calories"]', title: 'Your daily budget', body: 'This ring shows calories left today. The protein, carbs and fat bars sit just below it.' },
+  { sel: '.app-bottom-add, [data-tour="add"]', title: 'Log in seconds', body: 'Tap + to search foods, scan a barcode, snap a photo or say what you ate.' },
+  { sel: '[data-tour="trends"]', title: 'See your trends', body: 'Tap here to watch your intake and weight over time. Tap any macro for full nutrient details.' },
 ];
 
-function seen() { try { return localStorage.getItem(KEY) === '1'; } catch { return true; } }
-function markSeen() { try { localStorage.setItem(KEY, '1'); } catch { /* ignore */ } }
+const PAD = 8;
 
-export default function FirstRunTour({ enabled }) {
-  const [step, setStep] = useState(enabled && !seen() ? 0 : -1);
+function findTarget(sel) {
+  for (const el of document.querySelectorAll(sel)) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) return el;
+  }
+  return null;
+}
+
+// `enabled`: the person has just joined (so the tour should run by itself).
+// `onDashboard`: the Dashboard is the screen showing.
+export default function FirstRunTour({ enabled, onDashboard }) {
+  const [step, setStep] = useState(-1);
+  const [rect, setRect] = useState(null);
+  const stepRef = useRef(-1);
+  useEffect(() => { stepRef.current = step; }, [step]);
+
+  const finish = useCallback(() => { markSeen(); setStep(-1); setRect(null); }, []);
+
+  const nextFrom = useCallback((from) => {
+    for (let i = from + 1; i < STEPS.length; i++) if (findTarget(STEPS[i].sel)) return i;
+    return -1;
+  }, []);
+
+  // Start by itself for a new account, or on request (Replay tour in Settings).
+  useEffect(() => {
+    if (!onDashboard) return undefined;
+    const auto = enabled && !seen();
+    const replay = takeReplay();
+    if (!auto && !replay) return undefined;
+    const t = setTimeout(() => { const first = nextFrom(-1); if (first >= 0) setStep(first); else if (auto) markSeen(); }, 700);
+    return () => clearTimeout(t);
+  }, [enabled, onDashboard, nextFrom]);
 
   useEffect(() => {
-    const open = () => setStep(0);
-    window.addEventListener(TOUR_EVENT, open);
-    return () => window.removeEventListener(TOUR_EVENT, open);
-  }, []);
-  useEffect(() => { if (enabled && !seen()) setStep(0); }, [enabled]);
+    const onReplay = () => {
+      if (!onDashboard) return; // Dashboard picks the stored request up when it opens
+      takeReplay();
+      const first = nextFrom(-1);
+      if (first >= 0) setStep(first);
+    };
+    window.addEventListener(TOUR_EVENT, onReplay);
+    return () => window.removeEventListener(TOUR_EVENT, onReplay);
+  }, [onDashboard, nextFrom]);
 
-  if (step < 0) return null;
+  // Light up the current step's target, and keep it lit through scrolls and resizes.
+  useEffect(() => {
+    if (step < 0) return undefined;
+    const sel = STEPS[step].sel;
+    let tries = 0;
+    const measure = () => {
+      const el = findTarget(sel);
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+      return true;
+    };
+    const el = findTarget(sel);
+    if (el) el.scrollIntoView({ block: 'center', inline: 'nearest' });
+    measure();
+    const poll = setInterval(() => {
+      tries += 1;
+      if (!measure() && tries > 8) { const n = nextFrom(stepRef.current); if (n >= 0) setStep(n); else finish(); }
+    }, 250);
+    const onMove = () => measure();
+    window.addEventListener('resize', onMove);
+    window.addEventListener('scroll', onMove, true);
+    return () => {
+      clearInterval(poll);
+      window.removeEventListener('resize', onMove);
+      window.removeEventListener('scroll', onMove, true);
+    };
+  }, [step, nextFrom, finish]);
+
+  useEffect(() => {
+    if (step < 0) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') finish(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [step, finish]);
+
+  if (step < 0 || !rect) return null;
   const s = STEPS[step];
-  const last = step === STEPS.length - 1;
-  const close = () => { markSeen(); setStep(-1); };
+  const isLast = nextFrom(step) < 0;
+  const hole = { top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2 };
+
+  const onOverlayTap = (e) => {
+    const inside = e.clientX >= hole.left && e.clientX <= hole.left + hole.width && e.clientY >= hole.top && e.clientY <= hole.top + hole.height;
+    if (!inside) return;
+    const n = nextFrom(step);
+    if (n < 0) finish(); else setStep(n);
+  };
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const cardW = Math.min(320, vw - 32);
+  const below = hole.top + hole.height + 12 + 150 < vh;
+  const cardTop = below ? hole.top + hole.height + 12 : Math.max(16, hole.top - 12 - 150);
+  const cardLeft = Math.min(Math.max(16, hole.left + hole.width / 2 - cardW / 2), vw - cardW - 16);
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="App tour" style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: 360, boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 20, padding: 24, textAlign: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        <i className={`ti ${s.icon}`} style={{ fontSize: 36, color: 'var(--accent)' }} />
-        <h2 style={{ margin: '12px 0 8px', fontSize: 20, color: 'var(--text-primary)' }}>{s.title}</h2>
-        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: 'var(--text-muted)' }}>{s.body}</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, margin: '18px 0' }}>
-          {STEPS.map((_, i) => <span key={i} style={{ width: 8, height: 8, borderRadius: 99, background: i === step ? 'var(--accent)' : 'var(--card-border)' }} />)}
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={close} style={{ flex: 1, minHeight: 44, borderRadius: 12, border: '1px solid var(--card-border)', background: 'transparent', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 15, cursor: 'pointer' }}>Skip</button>
-          <button onClick={() => (last ? close() : setStep(step + 1))} style={{ flex: 1, minHeight: 44, borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontFamily: 'inherit', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>{last ? 'Done' : 'Next'}</button>
+    <div role="dialog" aria-modal="true" aria-label="App tour" onClick={onOverlayTap} style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
+      <div aria-hidden="true" style={{
+        position: 'fixed', top: hole.top, left: hole.left, width: hole.width, height: hole.height,
+        borderRadius: 16, boxShadow: '0 0 0 9999px rgba(0,0,0,0.72)', border: '2px solid var(--accent)',
+        pointerEvents: 'none', transition: 'all 200ms ease',
+      }} />
+      <div onClick={(e) => e.stopPropagation()} style={{
+        position: 'fixed', top: cardTop, left: cardLeft, width: cardW, boxSizing: 'border-box',
+        background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, padding: 16,
+        fontFamily: "'Plus Jakarta Sans', sans-serif", boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
+      }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>{s.title}</div>
+        <p style={{ margin: '6px 0 12px', fontSize: 14, lineHeight: 1.45, color: 'var(--text-muted)' }}>{s.body}</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700 }}>{isLast ? 'Tap it to finish' : 'Tap the glowing spot'}</span>
+          <button onClick={finish} style={{ minHeight: 44, padding: '0 8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 14, cursor: 'pointer' }}>Skip tour</button>
         </div>
       </div>
     </div>

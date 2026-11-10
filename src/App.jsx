@@ -90,6 +90,9 @@ function routeAnimClass(pathname) {
   return TAB_PATHS.has(pathname) ? 'route-anim-tab' : 'route-anim-push';
 }
 
+// The tour is for people who have just finished signing up, not existing users.
+const isNewAccount = (u) => !!u?.created_at && Date.now() - new Date(u.created_at).getTime() < 3 * 24 * 3600 * 1000
+
 function AnimatedRoutes() {
   const location = useLocation();
   const navType = useNavigationType(); // 'PUSH' | 'POP' | 'REPLACE'
@@ -132,7 +135,7 @@ function AnimatedRoutes() {
 
   return (
     <>
-    <FirstRunTour enabled={signedIn && !user?.is_anonymous && location.pathname === '/dashboard'} />
+    <FirstRunTour enabled={signedIn && !user?.is_anonymous && isNewAccount(user)} onDashboard={location.pathname === '/dashboard'} />
     <div key={renderedLocation.pathname} className={animClass} onAnimationEnd={() => setAnimClass('')}>
       <Suspense fallback={null}>
       <Routes location={renderedLocation}>

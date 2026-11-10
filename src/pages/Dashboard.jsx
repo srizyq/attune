@@ -1167,7 +1167,7 @@ export default function Dashboard() {
                 </button>
               )}
             </div>
-            <button onClick={() => navigate('/expenditure')} aria-label="View trends" title="View trends" style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid var(--card-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button data-tour="trends" onClick={() => navigate('/expenditure')} aria-label="View trends" title="View trends" style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid var(--card-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <i className="ti ti-trending-up" />
             </button>
           </div>
@@ -1180,7 +1180,7 @@ export default function Dashboard() {
           {/* Hero/calendar pager — swipe (or use the dots) to get from the
               calorie/weight/water glance to the logging calendar. Restored
               per explicit request after a brief stacked-layout experiment. */}
-          <div style={{ marginBottom: '16px' }}>
+          <div data-tour="calories" style={{ marginBottom: '16px' }}>
             <SwipePager
               pages={[
                 <DashboardTopCards
@@ -1246,7 +1246,9 @@ export default function Dashboard() {
                 <i className="ti ti-bookmark" style={{ fontSize: 12 }} /> Recipes
               </span>
               {isPremium && (
-                <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />
+                <span data-tour="slots" style={{ display: 'inline-flex' }}>
+                  <DailyLogViewToggle value={dailyLogView} onChange={handleViewChange} />
+                </span>
               )}
             </div>
             {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 10 }}>{viewSaveError}</p>}
