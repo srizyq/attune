@@ -8,7 +8,7 @@
 // since transcription isn't a Claude API capability).
 
 import { createClient } from '@supabase/supabase-js';
-import { rateLimit, AI_REQUESTS_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
+import { rateLimit, rateLimitByIp, AI_REQUESTS_PER_MINUTE, AI_REQUESTS_PER_IP_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -38,6 +38,11 @@ export default async function handler(req, res) {
   }
 
   if (!(await rateLimit(supabase, `ai:${userData.user.id}`, AI_REQUESTS_PER_MINUTE))) {
+    tooManyRequests(res);
+    return;
+  }
+  // Also per network address, so making many accounts doesn't multiply the allowance.
+  if (!(await rateLimitByIp(req, 'ai', AI_REQUESTS_PER_IP_PER_MINUTE))) {
     tooManyRequests(res);
     return;
   }

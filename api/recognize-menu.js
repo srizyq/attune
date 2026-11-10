@@ -14,7 +14,7 @@ import { withCoachProAccess } from '../src/lib/proAccess.js';
 import { targetsForDate } from '../src/lib/dayTargets.js';
 import { detailPrompt, sanitizeDetail } from './_menuDetail.js';
 import { sanitizeMenuExtras } from './_scanExtras.js';
-import { rateLimit, AI_REQUESTS_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
+import { rateLimit, rateLimitByIp, AI_REQUESTS_PER_MINUTE, AI_REQUESTS_PER_IP_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
 
 // Constructed lazily, after the config check below, rather than at module
 // load — the SDK throws immediately if ANTHROPIC_API_KEY is missing, which
@@ -134,6 +134,11 @@ export default async function handler(req, res) {
   }
   const userId = userData.user.id;
   if (!(await rateLimit(supabase, `ai:${userId}`, AI_REQUESTS_PER_MINUTE))) {
+    tooManyRequests(res);
+    return;
+  }
+  // Also per network address, so making many accounts doesn't multiply the allowance.
+  if (!(await rateLimitByIp(req, 'ai', AI_REQUESTS_PER_IP_PER_MINUTE))) {
     tooManyRequests(res);
     return;
   }

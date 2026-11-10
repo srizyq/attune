@@ -9,6 +9,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 export const AI_REQUESTS_PER_MINUTE = 20;
+// Generous on purpose: a whole household or carrier NAT can share one address.
+export const AI_REQUESTS_PER_IP_PER_MINUTE = 60;
 
 export async function rateLimit(supabase, key, max, windowSeconds = 60) {
   try {
