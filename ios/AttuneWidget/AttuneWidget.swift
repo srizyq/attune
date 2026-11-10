@@ -66,10 +66,9 @@ struct AttuneWidgetView: View {
     }
 }
 
-@main
-struct AttuneWidget: Widget {
+struct AttuneSummaryWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "AttuneWidget", provider: Provider()) { entry in
+        StaticConfiguration(kind: "AttuneSummaryWidget", provider: Provider()) { entry in
             if #available(iOS 17.0, *) {
                 AttuneWidgetView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
             } else {
