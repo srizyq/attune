@@ -20,7 +20,7 @@ test('an owner gets a Team clients list, with each client\'s coach on it', async
   await expect(page.getByText(/^Unread/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Message / })).toHaveCount(0); // messages stay between a coach and their client
   await assertLayout(page, testInfo, 'x-team-clients', ctx);
-  await page.getByRole('button', { name: 'My clients' }).click();
+  await page.getByRole('button', { name: 'Back to Coach' }).click();
   await expect(clientCard(page, 'Amogh Joshi')).toBeVisible();
   await expect(clientCard(page, 'Kai Teamclient')).toHaveCount(0);
 });
@@ -30,8 +30,9 @@ test('a teammate\'s client opens read-only: the data, no editing, no messages, n
   await openTeamClients(page);
   await clientCard(page, 'Kai Teamclient').click();
   await expect(page.getByText('View only · Coach: Mia Mate')).toBeVisible();
-  for (const tab of ['Snapshot', 'Diary', 'Progress']) await expect(page.getByRole('tab', { name: tab })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Plan' })).toHaveCount(0);
+  const sections = page.getByRole('navigation', { name: 'Client sections' });
+  for (const name of ['Diary', 'Progress']) await expect(sections.getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
+  for (const name of ['Plan', 'Messages', 'Private notes']) await expect(sections.getByRole('button', { name: new RegExp(`^${name}`) })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Messages' })).toHaveCount(0);
   // Nothing on the Snapshot invites an edit, and the menu offers no way to change the link.
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
@@ -42,8 +43,9 @@ test('a teammate\'s client opens read-only: the data, no editing, no messages, n
   await page.keyboard.press('Escape');
   await expect(page.getByText('Calories', { exact: true }).first()).toBeVisible();
   await assertLayout(page, testInfo, 'x-team-client-overview', ctx);
-  await page.getByRole('tab', { name: 'Diary' }).click();
+  await sections.getByRole('button', { name: /^Diary/ }).click();
   await expect(page.getByTestId('day-summary')).toBeVisible();
+  await page.getByRole('button', { name: /^Back to / }).click();
   await page.getByRole('button', { name: /All team clients/ }).click();
   await expect(clientCard(page, 'Kai Teamclient')).toBeVisible();
 });

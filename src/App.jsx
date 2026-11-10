@@ -175,7 +175,7 @@ function AnimatedRoutes() {
         <Route path="/settings/privacy" element={<RequireAuth><SettingsPrivacy /></RequireAuth>} />
         <Route path="/settings/privacy/import" element={<RequireAuth><SettingsImport /></RequireAuth>} />
         <Route path="/settings/goals" element={<RequireAuth><SettingsGoals /></RequireAuth>} />
-        <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
+        <Route path="/coach/*" element={<RequireAuth><Coach /></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
         <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
         <Route path="/friends/join/:code" element={<JoinFriend />} />

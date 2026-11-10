@@ -157,7 +157,6 @@ test('Coach is still reachable from the Friends tab', async ({ page, context }, 
   await settle(page);
   await page.getByRole('tab', { name: 'Coach' }).click();
   await expect(page).toHaveURL(/\/coach$/);
-  await expect(page.getByRole('tab', { name: 'Friends' })).toBeVisible();
 });
 
 test('a recipe can be shared with friends from the Recipes page', async ({ page, context }, testInfo) => {

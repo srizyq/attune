@@ -3,29 +3,26 @@ import { openApp, settle, assertLayout } from './harness.js';
 import { findLayoutProblems } from './deviceCheck.js';
 import { COACH_BACKEND, COACH_BACKEND_MANY, clientCard } from './coachFixtures.js';
 
-// Coach page: a "Coach" title (like the Friends tab), then Friends | Coach, the
-// greeting line, then the clients — no My clients | My coach switch (most coaches
+// Coach page: a "Coach" title, the greeting line, then the clients — no My clients | My coach switch (most coaches
 // have no coach of their own; it's a link at the bottom). Each client is its own
 // card with their most urgent reason as a tag inside it, and a client opens in a
-// page with one slim header and four tabs that fit.
+// page with one slim header and a row for each section.
 const top = async (loc) => (await loc.boundingBox()).y;
 
-test('title Coach, then Friends | Coach, then the greeting, then the clients', async ({ page, context }, testInfo) => {
+test('title Coach, then the greeting, then the clients', async ({ page, context }, testInfo) => {
   const ctx = await openApp({ page, context }, testInfo, COACH_BACKEND);
   await page.goto('/coach');
   await settle(page);
   const title = page.getByRole('heading', { name: 'Coach', exact: true });
   await expect(title).toBeVisible();
   await expect(page.getByText('Coach Mode')).toHaveCount(0);
-  const friendsCoach = page.getByRole('tablist', { name: 'Friends sections' });
   const greeting = page.getByText(/need attention/).first();
   const firstClient = clientCard(page, 'Amogh Joshi');
-  await expect(friendsCoach).toBeVisible();
+  await expect(page.getByRole('tablist')).toHaveCount(0);
   await expect(firstClient).toBeVisible();
   await expect(page.getByRole('button', { name: 'My coach' })).toHaveCount(0);
-  const [a, b, c] = [await top(friendsCoach), await top(greeting), await top(firstClient)];
-  expect(await top(title), 'the Coach title is above Friends | Coach').toBeLessThan(a);
-  expect(a, 'Friends | Coach is above the greeting').toBeLessThan(b);
+  const [a, b, c] = [await top(title), await top(greeting), await top(firstClient)];
+  expect(a, 'the Coach title is above the greeting').toBeLessThan(b);
   expect(b, 'the greeting is above the first client').toBeLessThan(c);
   await assertLayout(page, testInfo, 'x-coach-clients', ctx);
 });
@@ -80,7 +77,7 @@ test('inviting is folded away once there are clients, and the + opens it', async
   await expect(page.getByText(/Each invite works once/)).toBeVisible();
 });
 
-test('a client opens with one slim header, data near the top, and four tabs that all fit', async ({ page, context }, testInfo) => {
+test('a client opens with one slim header, data near the top, and a row for each section, no tabs', async ({ page, context }, testInfo) => {
   const ctx = await openApp({ page, context }, testInfo, COACH_BACKEND);
   await page.goto('/coach');
   await settle(page);
@@ -89,25 +86,23 @@ test('a client opens with one slim header, data near the top, and four tabs that
   // Header: back, name, Messages, ⋯ — and no loose Disconnect / group buttons on the page.
   await expect(page.getByRole('button', { name: 'All clients' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Tarun' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Messages' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Messages', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Disconnect client' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Coach', exact: true })).toHaveCount(0); // the page header is the client's
-  for (const name of ['All clients', 'Messages', 'More actions']) expect((await page.getByRole('button', { name }).boundingBox()).height, name).toBeGreaterThanOrEqual(40);
-  // Four tabs, all visible, nothing scrolling sideways.
-  const tabs = page.getByRole('tab');
-  await expect(tabs).toHaveCount(4);
-  const fits = await page.getByRole('tablist', { name: 'Client sections' }).evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
-  expect(fits, 'the four tabs fit without scrolling').toBe(true);
-  // The first real content starts in the top part of the screen, not under a stack of headers.
-  if (testInfo.project.name === 'phone') {
-    const panelTop = await top(page.getByRole('tabpanel'));
-    expect(panelTop, 'content starts near the top on a phone').toBeLessThan(300);
-  }
-  // Every tab, probed for overflow, tiny tap targets and errors.
-  for (const tab of ['Snapshot', 'Diary', 'Progress', 'Plan']) {
-    await page.getByRole('tab', { name: tab }).click();
+  for (const name of ['All clients', 'Messages', 'More actions']) expect((await page.getByRole('button', { name, exact: true }).boundingBox()).height, name).toBeGreaterThanOrEqual(40);
+  // No tabs: each section is a row that opens a page of its own.
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  const sections = page.getByRole('navigation', { name: 'Client sections' });
+  for (const name of ['Diary', 'Progress', 'Plan', 'Messages', 'Private notes']) await expect(sections.getByRole('button', { name: new RegExp(`^${name}`) })).toBeVisible();
+  await assertLayout(page, testInfo, 'x-coach-client-snapshot', ctx);
+  // Every section page, probed for overflow, tiny tap targets and errors.
+  for (const name of ['Diary', 'Progress', 'Plan']) {
+    await sections.getByRole('button', { name: new RegExp(`^${name}`) }).click();
     await settle(page);
-    await assertLayout(page, testInfo, `x-coach-client-${tab.toLowerCase()}`, ctx);
+    await expect(page).toHaveURL(new RegExp(`/coach/clients/[^/]+/${name.toLowerCase()}$`));
+    await assertLayout(page, testInfo, `x-coach-client-${name.toLowerCase()}`, ctx);
+    await page.getByRole('button', { name: /^Back to / }).click();
+    await settle(page);
   }
   // The ⋯ menu holds the occasional actions, including group and (confirmed) disconnect.
   await page.getByRole('button', { name: 'More actions' }).click();
@@ -121,20 +116,19 @@ test('a client opens with one slim header, data near the top, and four tabs that
   await expect(clientCard(page, 'Tarun')).toBeVisible();
 });
 
-test('Messages opens as a sheet from any tab, with quick messages, and Reports is inside Progress', async ({ page, context }, testInfo) => {
+test('Messages is a page of its own, with quick messages, and Reports is inside Progress', async ({ page, context }, testInfo) => {
   const ctx = await openApp({ page, context }, testInfo, COACH_BACKEND);
   await page.goto('/coach');
   await settle(page);
   await clientCard(page, 'Tarun').click();
-  await page.getByRole('tab', { name: 'Diary' }).click();
-  await page.getByRole('button', { name: 'Messages' }).click();
+  await page.getByRole('button', { name: 'Messages', exact: true }).click();
+  await expect(page).toHaveURL(/\/coach\/clients\/[^/]+\/messages$/);
   const sheet = page.getByRole('group', { name: 'Quick messages' });
   await expect(sheet).toBeVisible();
   await sheet.getByRole('button', { name: 'Check in' }).click();
   await expect(page.getByPlaceholder(/Leave a note for Tarun/)).toHaveValue(/^Hi Tarun — just checking in/);
-  await assertLayout(page, testInfo, 'x-coach-messages-sheet', ctx);
-  // Reports: not a tab; a row at the bottom of Progress that opens the builder.
-  await expect(page.getByRole('tab', { name: 'Reports' })).toHaveCount(0);
+  await assertLayout(page, testInfo, 'x-coach-messages-page', ctx);
+  await expect(page.getByRole('tab')).toHaveCount(0);
 });
 
 test('"Message" on a card opens that client straight to their messages', async ({ page, context }, testInfo) => {
@@ -143,7 +137,7 @@ test('"Message" on a card opens that client straight to their messages', async (
   await settle(page);
   await page.getByRole('button', { name: 'Message Tarun', exact: true }).click();
   await expect(page.getByRole('group', { name: 'Quick messages' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Snapshot' })).toHaveAttribute('aria-selected', 'true'); // the page underneath is the Snapshot
+  await expect(page).toHaveURL(/\/coach\/clients\/[^/]+\/messages$/);
 });
 
 test('your own coach is a link at the bottom, with a way back', async ({ page, context }, testInfo) => {
@@ -152,7 +146,8 @@ test('your own coach is a link at the bottom, with a way back', async ({ page, c
   await settle(page);
   await page.getByRole('button', { name: /Your own coach/ }).click();
   await expect(page.getByText(/Not connected to a trainer yet/)).toBeVisible();
-  await page.getByRole('button', { name: /My clients/ }).click();
+  await expect(page).toHaveURL(/\/coach\/my-coach$/);
+  await page.getByRole('button', { name: 'Back to Coach' }).click();
   await expect(clientCard(page, 'Tarun')).toBeVisible();
 });
 

@@ -5,20 +5,14 @@ import { Card, SectionLabel } from './shared';
 import { COMMENT_CATEGORIES } from './constants';
 import PrivateNotesCard from './PrivateNotesCard';
 import FormRow from '../FormRow';
-import SegmentedControl from '../SegmentedControl';
 import VoiceMicButton from '../VoiceMicButton';
 import { QUICK_MESSAGES } from '../../lib/coachNudges';
 
-const VIEWS = [
-  { id: 'thread', label: 'Messages to client', icon: 'ti-message-circle' },
-  { id: 'notes', label: 'Private notes', icon: 'ti-lock' },
-];
 
-// Two clearly separate places to write: what the client will see, and what
-// only the coach will. Keeping them on separate sub-tabs (with the lock icon
-// on the private one) is what stops a private note being posted as a message.
-export default function MessagesTab({ client, clientData, d, onViewed, initialDraft = '' }) {
-  const [view, setView] = useState('thread');
+// Two clearly separate places to write: what the client will see (view="thread"),
+// and what only the coach will (view="notes"). Each is a page of its own, which is
+// what stops a private note being posted as a message.
+export default function MessagesTab({ client, clientData, d, onViewed, initialDraft = '', view = 'thread' }) {
   // A draft can arrive from a "Message about this" button; it sits in the box
   // for the coach to read and change, and is never sent on its own.
   const [commentBody, setCommentBody] = useState(initialDraft);
@@ -50,10 +44,6 @@ export default function MessagesTab({ client, clientData, d, onViewed, initialDr
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <SegmentedControl options={VIEWS} value={view} onChange={setView} fill asTabs ariaLabel="Messages view" />
-      </div>
-
       {view === 'thread' ? (
           <Card style={{ marginBottom: 0 }}>
             <SectionLabel icon="ti-message-circle">Comments</SectionLabel>

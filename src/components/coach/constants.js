@@ -41,9 +41,3 @@ export function avg(nums) {
 // The client view's tabs, in order. Four, so they all fit on a phone without
 // scrolling sideways. Messages is a button in the header (it opens a sheet) and
 // the report builder lives at the bottom of Progress — neither is a daily tab.
-export const TABS = [
-  { id: 'snapshot', label: 'Snapshot', icon: 'ti-layout-dashboard' },
-  { id: 'diary', label: 'Diary', icon: 'ti-clipboard-list' },
-  { id: 'progress', label: 'Progress', icon: 'ti-chart-line' },
-  { id: 'plan', label: 'Plan', icon: 'ti-tools-kitchen-2' },
-];

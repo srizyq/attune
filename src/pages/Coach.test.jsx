@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 
 const state = {};
@@ -14,10 +14,9 @@ vi.mock('../hooks/useCoach', () => ({
   useMyTrainers: () => ({ pending: state.pendingCoach || [], active: [] }),
   useClientMessages: (opts) => { state.messagesOpts = opts; return { unread: state.unread, total: [...state.unread.values()].reduce((n, v) => n + v.unread, 0), markSeen: state.markSeen }; },
 }));
-vi.mock('../hooks/useTeam', () => ({ useTeam: () => ({ team: state.team ?? null }) }));
+vi.mock('../hooks/useTeam', () => ({ useTeam: () => ({ team: state.team ?? null, loading: false }) }));
 vi.mock('../components/AppNav', () => ({ default: () => null }));
 vi.mock('../components/LogoMark', () => ({ default: () => null }));
-vi.mock('../components/friends/FriendsTabs', () => ({ default: () => null }));
 vi.mock('../components/ClientCoachHub', () => ({ default: () => <div>client-hub</div> }));
 vi.mock('../components/coach/TeamCard', () => ({ default: () => <div>team-card</div> }));
 vi.mock('../components/CoachInvitePanel', () => ({ default: () => <div data-testid="invite-panel">invite-panel</div> }));
@@ -34,9 +33,9 @@ vi.mock('../components/coach/ClientList', () => ({
   ),
 }));
 vi.mock('../components/coach/ClientDetail', () => ({
-  default: ({ client, initialTab, onMessagesViewed, readOnly, onBack, backLabel, unreadCount }) => (
+  default: ({ client, section = 'snapshot', onMessagesViewed, readOnly, onBack, backLabel, unreadCount }) => (
     <div>
-      <span data-testid="detail">{client.name} on {initialTab}{readOnly ? ' (read only)' : ''}{unreadCount ? ` unread=${unreadCount}` : ''}</span>
+      <span data-testid="detail">{client.name} on {section}{readOnly ? ' (read only)' : ''}{unreadCount ? ` unread=${unreadCount}` : ''}</span>
       <button onClick={onBack}>{backLabel || 'All clients'}</button>
       {onMessagesViewed && <button onClick={() => onMessagesViewed(client.id)}>view messages</button>}
     </div>
@@ -45,6 +44,7 @@ vi.mock('../components/coach/ClientDetail', () => ({
 
 import Coach from './Coach';
 
+function Where() { return <span data-testid="where">{useLocation().pathname}</span>; }
 const maya = { id: 'l1', client: { id: 'a', name: 'Maya Patel' } };
 const setup = (over = {}) => {
   state.profile = { coach_pass: true, name: 'Sam' };
@@ -52,7 +52,7 @@ const setup = (over = {}) => {
   state.unread = new Map();
   state.markSeen = vi.fn();
   Object.assign(state, over);
-  render(<MemoryRouter><Coach /></MemoryRouter>);
+  render(<MemoryRouter initialEntries={[over.path || '/coach']}><Routes><Route path="/coach/*" element={<><Coach /><Where /></>} /></Routes></MemoryRouter>);
 };
 const order = () => screen.getAllByTestId(/^(client-list|invite-panel)$/).map((e) => e.dataset.testid);
 beforeEach(() => { delete state.messagesOpts; delete state.team; delete state.teamClients; delete state.pendingCoach; });
@@ -95,7 +95,8 @@ describe('Coach page', () => {
     await userEvent.click(screen.getByRole('button', { name: /Your own coach/ }));
     expect(screen.getByText('client-hub')).toBeInTheDocument();
     expect(screen.queryByTestId('client-list')).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: /My clients/ }));
+    expect(screen.getByTestId('where')).toHaveTextContent('/coach/my-coach');
+    await userEvent.click(screen.getByRole('button', { name: 'Back to Coach' }));
     expect(screen.getByTestId('client-list')).toBeInTheDocument();
   });
 
@@ -104,12 +105,13 @@ describe('Coach page', () => {
     expect(screen.getByRole('button', { name: /Your own coach.*1 waiting/ })).toBeInTheDocument();
   });
 
-  it('shows who has written, and tapping them opens their messages (not the Snapshot)', async () => {
+  it('shows who has written, and tapping them opens their messages page (not the Snapshot)', async () => {
     setup({ unread: new Map([['a', { unread: 2, latestAt: new Date().toISOString(), latestBody: 'Can we swap dinner?' }]]) });
     expect(screen.getByText('Messages')).toBeInTheDocument();
     expect(screen.getByText(/Can we swap dinner\?/)).toBeInTheDocument();
     await userEvent.click(screen.getByLabelText('2 new messages'));
     expect(screen.getByTestId('detail')).toHaveTextContent('Maya Patel on messages');
+    expect(screen.getByTestId('where')).toHaveTextContent('/coach/clients/a/messages');
   });
 
   it('opening a client from the list starts on the Snapshot, and viewing messages marks them seen', async () => {
@@ -162,12 +164,15 @@ describe('Coach page', () => {
     it('an owner of a team with other coaches gets a Team clients tab that lists teammates\' clients, read-only', async () => {
       setup({ team: team(true), teamClients: [kai] });
       await userEvent.click(screen.getByRole('button', { name: 'Team clients' }));
+      expect(screen.getByTestId('where')).toHaveTextContent('/coach/team');
       expect(screen.getByTestId('client-list')).toHaveAttribute('data-title', 'Team clients');
       await userEvent.click(screen.getByRole('button', { name: 'open Kai Teamclient' }));
       expect(screen.getByTestId('detail')).toHaveTextContent(/Kai Teamclient on.*\(read only\)/);
+      expect(screen.getByTestId('where')).toHaveTextContent('/coach/team/kai');
       await userEvent.click(screen.getByRole('button', { name: /All team clients/ }));
-      expect(screen.getByTestId('client-list')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'My clients' })).toBeInTheDocument(); // the switch is only here, for owners
+      expect(screen.getByTestId('client-list')).toHaveAttribute('data-title', 'Team clients');
+      await userEvent.click(screen.getByRole('button', { name: 'Back to Coach' }));
+      expect(screen.getByRole('button', { name: 'Team clients' })).toBeInTheDocument(); // the link is only here, for owners
     });
 
     it('has no such tab for a member, for an owner alone on the team, or with no team', () => {

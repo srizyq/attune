@@ -1,5 +1,6 @@
 // src/pages/Coach.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useMyClients, useClientSummaries, useClientMessages, useTeamClients, useMyTrainers } from '../hooks/useCoach';
 import { useTeam } from '../hooks/useTeam';
@@ -14,8 +15,6 @@ import ClientMessagesInbox from '../components/coach/ClientMessagesInbox';
 import CollapsibleSection from '../components/coach/CollapsibleSection';
 import { needsAttention } from '../lib/clientInsights';
 import { todayLocalDate } from '../lib/patterns';
-import FriendsTabs from '../components/friends/FriendsTabs';
-import SegmentedControl from '../components/SegmentedControl';
 
 function timeOfDayGreeting() {
   const h = new Date().getHours();
@@ -24,6 +23,11 @@ function timeOfDayGreeting() {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function Coach() {
+  const navigate = useNavigate();
+  // Everything under /coach is a page of its own, read from the URL:
+  //   /coach  ·  /coach/clients/:id[/:section]  ·  /coach/team[/:id[/:section]]  ·  /coach/my-coach
+  const [area, areaId, areaSection] = (useParams()['*'] || '').split('/').filter(Boolean);
+  const trainerTab = area === 'team' ? 'team' : area === 'my-coach' ? 'my-coach' : 'clients';
   const { profile } = useProfile();
   const { clients, loading: clientsLoading, revoke, setGroup, refetch: refetchClients } = useMyClients();
   const today = todayLocalDate();
@@ -41,27 +45,23 @@ export default function Coach() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [refetchClients, refetchSummaries]);
   const { unread, total: unreadTotal, markSeen } = useClientMessages({ enabled: !!profile?.coach_pass });
-  const [selectedClient, setSelectedClient] = useState(null);
-  // Opening a client from the message list lands on their messages, not Overview.
-  const [initialTab, setInitialTab] = useState('snapshot');
-  const openClient = (client, tab = 'snapshot') => { setInitialTab(tab); setSelectedClient(client); };
+  const openClient = (client, section) => navigate(`/coach/clients/${client.id}${section ? `/${section}` : ''}`);
   // A trainer can *also* be someone else's client (a coach with their own
   // nutritionist, say) — this tab is how they reach that relationship's
   // notes/chat/targets without it being hidden behind their own trainer
   // dashboard, which is what the Coach tab otherwise shows exclusively.
-  const [trainerTab, setTrainerTab] = useState('clients'); // 'clients' | 'team' | 'my-coach'
   // Reaching your own coach is a link at the bottom (with a count if one is waiting
   // for an answer), not a switch above everything — most coaches have none.
   const { pending: pendingCoachLinks } = useMyTrainers();
   const [inviteOpen, setInviteOpen] = useState(false);
 
   // The owner of a team can read (not edit) their teammates' clients.
-  const { team } = useTeam();
+  const { team, loading: teamLoading } = useTeam();
   const isTeamOwner = !!team?.is_owner && (team.members?.length || 0) > 1;
   const teamClients = useTeamClients(today, isTeamOwner);
-  const [selectedTeamClient, setSelectedTeamClient] = useState(null);
-  // If the team goes away (ownership ends) while this tab is open, fall back.
-  useEffect(() => { if (trainerTab === 'team' && team !== undefined && !isTeamOwner) { setTrainerTab('clients'); setSelectedTeamClient(null); } }, [trainerTab, team, isTeamOwner]);
+  const selectedTeamClient = areaId && trainerTab === 'team' ? teamClients.clients.find(r => r.client?.id === areaId)?.client || null : null;
+  // If the team goes away (ownership ends) while this page is open, fall back.
+  useEffect(() => { if (trainerTab === 'team' && !teamLoading && !isTeamOwner) navigate('/coach', { replace: true }); }, [trainerTab, teamLoading, isTeamOwner, navigate]);
   const selectedTeamCoach = selectedTeamClient ? teamClients.summaries.find(s => s.client_id === selectedTeamClient.id)?.coach_name || null : null;
 
   // Rows resolve their own "logged today" status independently (see
@@ -81,6 +81,7 @@ export default function Coach() {
   const isTrainer = !!profile?.coach_pass;
   const attentionCount = summaries.filter(s => needsAttention(s, today)).length;
   const unreadNote = unreadTotal > 0 ? ` · ${unreadTotal} new message${unreadTotal === 1 ? '' : 's'}` : '';
+  const selectedClient = area === 'clients' && areaId ? clients.find(r => r.client?.id === areaId)?.client || null : null;
   const selectedSummary = selectedClient ? summaries.find(s => s.client_id === selectedClient.id) : undefined;
   const selectedRow = selectedClient ? clients.find(r => r.client?.id === selectedClient.id) : undefined;
 
@@ -89,7 +90,7 @@ export default function Coach() {
   const scrollRef = useRef(null);
   const selectedId = selectedClient?.id ?? null;
   const selectedTeamId = selectedTeamClient?.id ?? null;
-  useEffect(() => { scrollRef.current?.scrollTo?.({ top: 0 }); }, [selectedId, selectedTeamId, trainerTab]);
+  useEffect(() => { scrollRef.current?.scrollTo?.({ top: 0 }); }, [selectedId, selectedTeamId, trainerTab, areaSection]);
 
   const hasClients = clients.length > 0;
   const showInvite = () => {
@@ -143,10 +144,11 @@ export default function Coach() {
             summary={selectedSummary}
             row={selectedRow}
             onSetGroup={setGroup}
-            onRevoke={async (id) => { await revoke(id); setSelectedClient(null); }}
-            initialTab={initialTab}
+            onRevoke={async (id) => { await revoke(id); navigate('/coach'); }}
+            section={areaSection}
+            onSection={(sec) => navigate(sec === 'snapshot' ? `/coach/clients/${selectedClient.id}` : `/coach/clients/${selectedClient.id}/${sec}`)}
             onMessagesViewed={markSeen}
-            onBack={() => setSelectedClient(null)}
+            onBack={() => navigate('/coach')}
             unreadCount={unread.get(selectedClient.id)?.unread || 0}
           />
         ) : isTrainer && trainerTab === 'team' && selectedTeamClient ? (
@@ -156,34 +158,26 @@ export default function Coach() {
             summary={teamClients.summaries.find(s => s.client_id === selectedTeamClient.id)}
             readOnly
             coachName={selectedTeamCoach}
-            onBack={() => setSelectedTeamClient(null)}
+            section={areaSection}
+            onSection={(sec) => navigate(sec === 'snapshot' ? `/coach/team/${selectedTeamClient.id}` : `/coach/team/${selectedTeamClient.id}/${sec}`)}
+            onBack={() => navigate('/coach/team')}
             backLabel="All team clients"
           />
         ) : (
           <>
-        {/* A title like the Friends tab has, then Friends | Coach. */}
         <PageHeader
-          title="Coach"
+          title={trainerTab === 'team' ? 'Team clients' : trainerTab === 'my-coach' ? 'Your own coach' : 'Coach'}
+          onBack={trainerTab === 'clients' ? undefined : () => navigate('/coach')}
+          backLabel="Back to Coach"
           right={isTrainer && trainerTab === 'clients' && hasClients ? (
             <button type="button" className="app-icon-btn" onClick={showInvite} aria-label="Add a client"><i className="ti ti-user-plus" aria-hidden="true" /></button>
           ) : undefined}
         />
         <div className="page-pad">
-          <FriendsTabs active="coach" />
           {isTrainer ? (
             <div style={{ marginBottom: 16 }}>
               {trainerTab === 'clients' && (
                 <p style={{ margin: '0 2px 8px', fontSize: 13, lineHeight: 1.4, color: 'var(--text-muted)' }}>{greetingLine}</p>
-              )}
-              {isTeamOwner && trainerTab !== 'my-coach' && (
-                <SegmentedControl
-                  value={trainerTab}
-                  onChange={setTrainerTab}
-                  options={[
-                    { id: 'clients', label: 'My clients' },
-                    { id: 'team', label: 'Team clients' },
-                  ]}
-                />
               )}
             </div>
           ) : null}
@@ -191,14 +185,6 @@ export default function Coach() {
             <ClientCoachHub />
           ) : trainerTab === 'my-coach' ? (
             <>
-              <button
-                type="button"
-                onClick={() => setTrainerTab('clients')}
-                className="btn-press"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 16px', margin: '0 0 14px', background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                <i className="ti ti-arrow-left" aria-hidden="true" /> My clients
-              </button>
               <ClientCoachHub showUpsell={false} />
             </>
           ) : trainerTab === 'team' ? (
@@ -210,7 +196,7 @@ export default function Coach() {
               summaries={teamClients.summaries}
               summariesSupported={teamClients.supported}
               today={today}
-              onSelect={setSelectedTeamClient}
+              onSelect={(c) => navigate(`/coach/team/${c.id}`)}
             />
           ) : (
             <>
@@ -227,9 +213,23 @@ export default function Coach() {
               ) : <>{invitePanel}{clientList}</>}
             </div>
             <div style={{ marginTop: 20 }}><TeamCard /></div>
+            {isTeamOwner && (
+              <button
+                type="button"
+                onClick={() => navigate('/coach/team')}
+                className="btn-press"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: 52, padding: '0 20px', marginTop: 20, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 16, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <i className="ti ti-users-group" aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
+                  Team clients
+                </span>
+                <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setTrainerTab('my-coach')}
+              onClick={() => navigate('/coach/my-coach')}
               className="btn-press"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: 52, padding: '0 20px', marginTop: 20, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 16, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
