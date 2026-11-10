@@ -55,6 +55,10 @@ const Coach = lazy(loadCoach);
 const loadFriends = () => import('./pages/Friends');
 const Friends = lazy(loadFriends);
 const Notifications = lazy(() => import('./pages/Notifications'));
+const SettingsNotifications = lazy(() => import('./pages/SettingsSubPages').then((m) => ({ default: m.SettingsNotifications })));
+const SettingsCoach = lazy(() => import('./pages/SettingsSubPages').then((m) => ({ default: m.SettingsCoach })));
+const SettingsPrivacy = lazy(() => import('./pages/SettingsSubPages').then((m) => ({ default: m.SettingsPrivacy })));
+const SettingsImport = lazy(() => import('./pages/SettingsSubPages').then((m) => ({ default: m.SettingsImport })));
 const loadScan = () => import('./pages/Scan');
 const Scan = lazy(loadScan);
 const loadFriendDay = () => import('./pages/FriendDay');
@@ -166,6 +170,10 @@ function AnimatedRoutes() {
         <Route path="/fasting" element={<RequireAuth><Fasting /></RequireAuth>} />
         <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+        <Route path="/settings/notifications" element={<RequireAuth><SettingsNotifications /></RequireAuth>} />
+        <Route path="/settings/coach" element={<RequireAuth><SettingsCoach /></RequireAuth>} />
+        <Route path="/settings/privacy" element={<RequireAuth><SettingsPrivacy /></RequireAuth>} />
+        <Route path="/settings/privacy/import" element={<RequireAuth><SettingsImport /></RequireAuth>} />
         <Route path="/settings/goals" element={<RequireAuth><SettingsGoals /></RequireAuth>} />
         <Route path="/coach" element={<RequireAuth><Coach /></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />

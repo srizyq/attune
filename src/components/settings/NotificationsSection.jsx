@@ -3,9 +3,9 @@ import { useReminders, useTrainerCommentNotifications, useClientActivityNotifica
 import { useProfile } from '../../hooks/useProfile';
 import { pushSupported } from '../../lib/pushNotifications';
 import { localNotificationsAvailable, getLocalPrefs, setLocalPref } from '../../lib/localNotifications';
-import { SettingsModal, Card, SectionLabel, FieldRow, Toggle } from './primitives';
+import { Card, SectionLabel, FieldRow, Toggle } from './primitives';
 
-export default function NotificationsModal({ onClose, closing }) {
+export default function NotificationsSection() {
   const reminders = useReminders();
   const trainerNotifs = useTrainerCommentNotifications();
   const activityNotifs = useClientActivityNotifications();
@@ -36,7 +36,7 @@ export default function NotificationsModal({ onClose, closing }) {
   const pushGap = native && !pushSupported();
 
   return (
-    <SettingsModal title="Notifications" onClose={onClose} closing={closing}>
+    <>
       <Card style={{ marginBottom: 16 }}>
         <SectionLabel>Reminders</SectionLabel>
         <FieldRow label="Daily reminder">
@@ -114,6 +114,6 @@ export default function NotificationsModal({ onClose, closing }) {
         {localRow('insights', 'Pattern insights', 'A nudge to check your patterns, Wed and Sat')}
         {localError && <p style={{ color: 'var(--danger)', fontSize: 12, margin: '12px 0 0' }}>{localError}</p>}
       </Card>
-    </SettingsModal>
+    </>
   );
 }

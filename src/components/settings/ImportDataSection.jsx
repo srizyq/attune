@@ -8,7 +8,7 @@ import { parseImportFiles } from '../../lib/importers/diary';
 import { planImport, runImport, MAX_ENTRIES } from '../../lib/importers/run';
 import { saveLastImport, loadLastImport, clearLastImport, undoImport } from '../../lib/importers/undo';
 import FormRow from '../FormRow';
-import { SettingsModal, Card, SectionLabel } from './primitives';
+import { Card, SectionLabel } from './primitives';
 
 // Bring a food diary and weight history in from another tracker: pick the
 // export (a .zip or .csv files), see exactly what was understood, then import.
@@ -47,7 +47,7 @@ function UndoSection({ batch, undo, onAsk, onCancel, onConfirm, title }) {
   );
 }
 
-export default function ImportDataModal({ onClose, closing }) {
+export default function ImportDataSection({ onClose }) {
   const { user } = useAuth();
   const { profile } = useProfile();
   const inputRef = useRef(null);
@@ -148,7 +148,7 @@ export default function ImportDataModal({ onClose, closing }) {
   }
 
   return (
-    <SettingsModal title="Import from another app" onClose={onClose} closing={closing}>
+    <>
       <input
         ref={inputRef} type="file" accept=".csv,.tsv,.txt,.zip,text/csv,application/zip" multiple hidden
         data-testid="import-file-input"
@@ -336,6 +336,6 @@ export default function ImportDataModal({ onClose, closing }) {
           </FormRow>
         </>
       )}
-    </SettingsModal>
+    </>
   );
 }

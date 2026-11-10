@@ -199,7 +199,8 @@ test.describe('import from another app', () => {
       await page.getByRole('button', { name: 'Done' }).click();
       await page.reload();
       await settle(page);
-      await page.getByRole('button', { name: /Privacy/ }).first().click();
+      await page.goto('/settings/privacy');
+      await settle(page);
       await page.getByRole('button', { name: 'Import', exact: true }).click();
       await expect(page.getByText(/^Last import — /)).toBeVisible();
       await expect(page.getByText(/3 food entries and 2 weigh-ins came in from that import/)).toBeVisible();
@@ -210,7 +211,8 @@ test.describe('import from another app', () => {
       // and it is gone afterwards — nothing left to undo
       await page.reload();
       await settle(page);
-      await page.getByRole('button', { name: /Privacy/ }).first().click();
+      await page.goto('/settings/privacy');
+      await settle(page);
       await page.getByRole('button', { name: 'Import', exact: true }).click();
       await expect(page.getByText('Bring your history with you')).toBeVisible();
       await expect(page.getByText(/^Last import — /)).toHaveCount(0);

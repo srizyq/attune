@@ -23,9 +23,9 @@ const FAST_WITH_HISTORY = { tables: { fasts: [fastRow(), fastRow({ id: 'fast-0',
 
 const SCENARIOS = [
   { name: 'quick-add-sheet', path: '/dashboard', mobileOnly: true, act: (p) => p.getByRole('button', { name: 'Quick add' }).click() },
-  { name: 'settings-notifications', path: '/settings', act: (p) => p.getByRole('button', { name: /Notifications/ }).first().click() },
-  { name: 'settings-coach', path: '/settings', act: (p) => p.getByRole('button', { name: /Coach Mode/ }).first().click() },
-  { name: 'settings-privacy', path: '/settings', act: (p) => p.getByRole('button', { name: /Privacy/ }).first().click() },
+  { name: 'settings-notifications', path: '/settings', lands: '/settings/notifications', act: (p) => p.getByRole('button', { name: /Notifications/ }).first().click() },
+  { name: 'settings-coach', path: '/settings', lands: '/settings/coach', act: (p) => p.getByRole('button', { name: /Coach Mode/ }).first().click() },
+  { name: 'settings-privacy', path: '/settings', lands: '/settings/privacy', act: (p) => p.getByRole('button', { name: /Privacy/ }).first().click() },
   { name: 'dashboard-log-workout', path: '/dashboard', act: (p) => p.getByRole('button', { name: /Log workout/ }).click() },
   { name: 'dashboard-log-weight', path: '/dashboard', act: (p) => p.getByText(/^weight$/i).first().click() },
   { name: 'dashboard-meals-view', path: '/dashboard', act: async (p) => { await p.getByRole('button', { name: 'Meals' }).first().click(); } },
@@ -73,10 +73,10 @@ const SCENARIOS = [
       await p.getByLabel('Protein percent of calories').blur();
     },
   },
-  { name: 'settings-import-pick', path: '/settings', act: openImportModal },
-  { name: 'settings-import-preview', path: '/settings', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByText('What we found').waitFor(); await p.getByText(/Checking|left alone|None of these/).first().waitFor(); } },
-  { name: 'settings-import-done', path: '/settings', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByRole('button', { name: /^Import 3 entries/ }).click(); await p.getByText('Import complete').waitFor(); } },
-  { name: 'settings-import-undo-confirm', path: '/settings', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByRole('button', { name: /^Import 3 entries/ }).click(); await p.getByText('Import complete').waitFor(); await p.getByRole('button', { name: 'Undo this import' }).click(); await p.getByRole('button', { name: 'Yes, remove them' }).waitFor(); } },
+  { name: 'settings-import-pick', path: '/settings', lands: '/settings/privacy/import', act: openImportModal },
+  { name: 'settings-import-preview', path: '/settings', lands: '/settings/privacy/import', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByText('What we found').waitFor(); await p.getByText(/Checking|left alone|None of these/).first().waitFor(); } },
+  { name: 'settings-import-done', path: '/settings', lands: '/settings/privacy/import', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByRole('button', { name: /^Import 3 entries/ }).click(); await p.getByText('Import complete').waitFor(); } },
+  { name: 'settings-import-undo-confirm', path: '/settings', lands: '/settings/privacy/import', act: async (p) => { await openImportModal(p); await p.getByTestId('import-file-input').setInputFiles({ name: 'Food Diary.csv', mimeType: 'text/csv', buffer: Buffer.from(IMPORT_SAMPLE) }); await p.getByRole('button', { name: /^Import 3 entries/ }).click(); await p.getByText('Import complete').waitFor(); await p.getByRole('button', { name: 'Undo this import' }).click(); await p.getByRole('button', { name: 'Yes, remove them' }).waitFor(); } },
   { name: 'dashboard-checkin-mood', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Mood/ }).click() },
   { name: 'dashboard-checkin-energy', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Energy/ }).click() },
   { name: 'dashboard-checkin-sleep', path: '/dashboard', act: (p) => p.getByRole('button', { name: /^Sleep/ }).click() },
@@ -106,7 +106,7 @@ for (const sc of SCENARIOS) {
     await settle(page);
     await sc.act(page);
     await page.waitForTimeout(500);
-    expect(new URL(page.url()).pathname, 'should still be on the same screen').toBe(sc.path);
+    expect(new URL(page.url()).pathname, 'should be on the expected screen').toBe(sc.lands || sc.path);
     await assertLayout(page, testInfo, `x-${sc.name}`, ctx);
   });
 }

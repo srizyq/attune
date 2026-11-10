@@ -3,10 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useProfile } from '../hooks/useProfile';
 import AppNav from '../components/AppNav';
-import NotificationsModal from '../components/settings/NotificationsModal';
-import CoachModal from '../components/settings/CoachModal';
-import PrivacyModal from '../components/settings/PrivacyModal';
-import ImportDataModal from '../components/settings/ImportDataModal';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 import { isAppAdmin } from '../lib/reports';
@@ -24,15 +20,15 @@ import SyncCard from '../components/SyncCard';
 // Profile card above opens the Community-style profile. Plans &
 // Billing is different: it's for *comparing/choosing* a plan, which needs
 // to be reachable even if you aren't already staring at a paywall — hence
-// its own row (a plain route, not a modal/page like the others), rather
+// its own row (a plain route like the rest), rather
 // than only being reachable from an upsell prompt buried elsewhere.
 const SECTIONS = [
   { id: 'personal', icon: 'ti-id', label: 'Personal details', kind: 'route', path: '/settings/personal' },
   { id: 'goals',   icon: 'ti-target',       label: 'Goals & Targets', kind: 'page' },
-  { id: 'notifs',  icon: 'ti-bell',         label: 'Notifications',   kind: 'modal' },
-  { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'modal' },
+  { id: 'notifs',  icon: 'ti-bell',         label: 'Notifications',   kind: 'route', path: '/settings/notifications' },
+  { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'route', path: '/settings/coach' },
   { id: 'plans',   icon: 'ti-credit-card',  label: 'Plans & Billing', kind: 'route', path: '/pricing' },
-  { id: 'privacy', icon: 'ti-shield-lock',  label: 'Privacy',         kind: 'modal' },
+  { id: 'privacy', icon: 'ti-shield-lock',  label: 'Privacy',         kind: 'route', path: '/settings/privacy' },
   { id: 'report',  icon: 'ti-bug',          label: 'Report a problem', kind: 'route', path: '/settings/report' },
 ];
 
@@ -74,53 +70,28 @@ export default function Settings() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { profile, refetch: refetchProfile } = useProfile();
+  const { profile } = useProfile();
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
 
-  const [openModal, setOpenModal] = useState(null); // null | 'notifs' | 'coach' | 'privacy' | 'import'
-  const [modalClosing, setModalClosing] = useState(false);
   const [query, setQuery] = useState('');
   const [admin, setAdmin] = useState(false);
   useEffect(() => { isAppAdmin().then(setAdmin); }, []);
   const sections = useMemo(() => (admin ? [...SECTIONS, REPORTS_SECTION] : SECTIONS), [admin]);
-
-  function closeModal() {
-    setModalClosing(true);
-    setTimeout(() => { setOpenModal(null); setModalClosing(false); }, 160);
-  }
 
   function openSection(id) {
     const section = sections.find(s => s.id === id);
     if (!section) return;
     if (section.kind === 'page') navigate('/settings/goals');
     else if (section.kind === 'route') navigate(section.path);
-    else setOpenModal(id);
   }
 
-  // Returning from Stripe Checkout — the webhook updates the profile
-  // server-side almost immediately, but this tab's own `profile` state
-  // won't know until it refetches. Coach Pass's status/billing live right
-  // here, so that return polls in place and pops the Coach Mode popup
-  // open. Pro's status/billing now live on the Profile page instead of a
-  // Settings popup, so that return just hands off the same `pro=success`
-  // marker to Profile, which runs its own identical poll there (a fresh
-  // useProfile() call has no shared cache with this one, so the retry
-  // has to happen wherever the data is actually read).
+  // Old Stripe return links land here; Pro's and Coach Pass's status live on
+  // their own pages, so hand off the success marker.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get('pro') === 'success') { navigate('/settings/personal?pro=success', { replace: true }); return; }
-    if (params.get('coach_pass') !== 'success') return;
-    setOpenModal('coach');
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts += 1;
-      refetchProfile();
-      if (attempts >= 5) clearInterval(interval);
-    }, 1500);
-    navigate(location.pathname, { replace: true });
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search]);
+    if (params.get('pro') === 'success') navigate('/settings/personal?pro=success', { replace: true });
+    else if (params.get('coach_pass') === 'success') navigate('/settings/coach?coach_pass=success', { replace: true });
+  }, [location.search, navigate]);
 
   const results = useMemo(() => {
     if (!query.trim()) return null;
@@ -295,10 +266,6 @@ export default function Settings() {
         </div>
       </div>
 
-      {openModal === 'notifs' && <NotificationsModal onClose={closeModal} closing={modalClosing} />}
-      {openModal === 'coach' && <CoachModal onClose={closeModal} closing={modalClosing} />}
-      {openModal === 'privacy' && <PrivacyModal onClose={closeModal} closing={modalClosing} onImport={() => setOpenModal('import')} />}
-      {openModal === 'import' && <ImportDataModal onClose={closeModal} closing={modalClosing} />}
     </div>
   );
 }

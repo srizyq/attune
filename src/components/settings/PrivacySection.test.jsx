@@ -8,7 +8,7 @@ import '@testing-library/jest-dom/vitest';
 const h = vi.hoisted(() => ({ exportMyData: vi.fn() }));
 vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
 vi.mock('../../lib/dataExport', () => ({ exportMyData: (...a) => h.exportMyData(...a), exportFilename: () => 'attune-data-export-2026-10-16.json' }));
-import PrivacyModal from './PrivacyModal';
+import PrivacySection from './PrivacySection';
 
 let clicked;
 beforeEach(() => {
@@ -18,7 +18,7 @@ beforeEach(() => {
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function click() { clicked.push(this.download); });
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-const open = () => render(<MemoryRouter><PrivacyModal onClose={() => {}} /></MemoryRouter>);
+const open = () => render(<MemoryRouter><PrivacySection /></MemoryRouter>);
 
 describe('Privacy → Export my data', () => {
   it('downloads the whole export under a dated name', async () => {

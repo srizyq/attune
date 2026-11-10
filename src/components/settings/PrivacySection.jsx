@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { exportMyData, exportFilename } from '../../lib/dataExport';
-import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
+import { Card, SectionLabel, FieldRow } from './primitives';
 
 function downloadJSON(filename, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -57,9 +57,9 @@ function ExportDataButton() {
   );
 }
 
-export default function PrivacyModal({ onClose, closing, onImport }) {
+export default function PrivacySection({ onImport }) {
   return (
-    <SettingsModal title="Privacy" onClose={onClose} closing={closing}>
+    <>
       <Card style={{ marginBottom: 16 }}>
         <SectionLabel>Your data</SectionLabel>
         <FieldRow label="Export my data">
@@ -93,6 +93,6 @@ export default function PrivacyModal({ onClose, closing, onImport }) {
           </FieldRow>
         </Link>
       </Card>
-    </SettingsModal>
+    </>
   );
 }

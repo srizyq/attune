@@ -6,7 +6,7 @@ import { useMyTrainers } from '../../hooks/useCoach';
 import { uploadCoachLogo } from '../../lib/db';
 import { authedPost } from '../../lib/billing';
 import { coachPassHint, eligibleForCoachTrial, COACH_TRIAL_DAYS } from '../../lib/coachPass';
-import { SettingsModal, Card, SectionLabel, FieldRow } from './primitives';
+import { Card, SectionLabel, FieldRow } from './primitives';
 import FormRow from '../FormRow';
 
 function CoachPassButton({ profile, pendingConfirmation, onGoToProfile, onGoToPricing }) {
@@ -113,7 +113,7 @@ function CoachLogoUpload({ profile, saveProfile }) {
   );
 }
 
-export default function CoachModal({ onClose, closing }) {
+export default function CoachSection() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile, save: saveProfile } = useProfile();
@@ -122,11 +122,9 @@ export default function CoachModal({ onClose, closing }) {
   const pendingConfirmation = !!user?.is_anonymous;
 
   const goToProfile = () => {
-    onClose();
     navigate('/settings/personal');
   };
   const goToPricing = () => {
-    onClose();
     navigate('/pricing');
   };
   const { trainers, loading: trainersLoading, redeemCode, disconnect } = useMyTrainers();
@@ -147,7 +145,7 @@ export default function CoachModal({ onClose, closing }) {
   };
 
   return (
-    <SettingsModal title="Coach Mode" onClose={onClose} closing={closing}>
+    <>
       <Card style={{ marginBottom: 16 }}>
         <SectionLabel>Become a coach</SectionLabel>
         <FieldRow
@@ -190,7 +188,7 @@ export default function CoachModal({ onClose, closing }) {
             // Coach tab — one place to accept, not a second, thinner copy here.
             <FieldRow key={row.id} label={`${row.trainer?.name || 'A coach'} invited you`} hint="Nothing is shared until you accept">
               <button
-                onClick={() => { onClose(); navigate('/coach'); }}
+                onClick={() => navigate('/coach')}
                 style={{ padding: '7px 12px', background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 7, color: 'var(--accent-contrast)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Review
@@ -227,6 +225,6 @@ export default function CoachModal({ onClose, closing }) {
           <p style={{ color: 'var(--danger)', fontSize: 12, margin: '8px 0 0' }}>{inviteStatus}</p>
         )}
       </Card>
-    </SettingsModal>
+    </>
   );
 }
