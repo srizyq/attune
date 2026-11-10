@@ -43,6 +43,8 @@ import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { round1, withBrand } from '../lib/format';
 import FormRow from '../components/FormRow';
 import ListRow from '../components/ListRow';
+import { useFasting } from '../hooks/useFasting';
+import { buildSnapshot, pushWidgetSnapshot, listenForWidgetLinks } from '../lib/widgetBridge';
 import Card from '../components/Card';
 import StatBadge from '../components/StatBadge';
 
@@ -913,7 +915,7 @@ export default function Dashboard() {
     try { await saveProfile({ daily_log_view: v }); } catch { setViewSaveError("Couldn't save — try again."); }
   }
   const { meals, slotTimeline, deleteFood, updateFood, addSlot, editSlot, removeSlot, refetch: refetchFoodLogs } = useFoodLogs(viewedDate);
-  const { checkin, save: saveCheckin } = useCheckins(viewedDate);
+  const { checkin, loading: checkinLoading, save: saveCheckin } = useCheckins(viewedDate);
   // 90 days (not 30) so the pattern engine's more specific candidates
   // (fibre, hydration, sugar, breakfast) have a real chance to each reach
   // their own 5-day-per-bucket minimum, not just the broadest ones — and
@@ -1060,6 +1062,27 @@ export default function Dashboard() {
   const consumedProtein = allItems.reduce((s, i) => s + i.protein, 0);
   const consumedCarbs   = allItems.reduce((s, i) => s + carbsToShow(i.carbs, i.fibre, profile?.net_carbs), 0);
   const consumedFat     = allItems.reduce((s, i) => s + i.fat,     0);
+
+  // Home-screen widget: keep its numbers current, and let its water button add a glass.
+  const { running: runningFast } = useFasting();
+  useEffect(() => {
+    if (!isViewingToday) return;
+    pushWidgetSnapshot(buildSnapshot({
+      calorieTarget: effectiveCalorieTarget, consumed, protein: consumedProtein, carbs: consumedCarbs, fat: consumedFat,
+      targets: { protein: targets.protein.g, carbs: targets.carbs.g, fat: targets.fat.g }, fast: runningFast,
+    }));
+  }, [isViewingToday, effectiveCalorieTarget, consumed, consumedProtein, consumedCarbs, consumedFat, targets.protein.g, targets.carbs.g, targets.fat.g, runningFast]);
+  const [waterTaps, setWaterTaps] = useState(0);
+  useEffect(() => listenForWidgetLinks((where) => {
+    if (where === 'water') { navigate('/dashboard', { replace: true }); setWaterTaps((n) => n + 1); }
+  }), [navigate]);
+  const handledWaterTaps = useRef(0);
+  useEffect(() => {
+    // Wait for today's check-in to load so the glass is added to the real count.
+    if (waterTaps === handledWaterTaps.current || !isViewingToday || checkinLoading) return;
+    handledWaterTaps.current = waterTaps;
+    setGlasses(glasses + 1);
+  });
 
   const byDate = new Map(dailyData.map(d => [d.date, d]));
   // The day strip can be swiped back past the 90 days loaded above, so it
