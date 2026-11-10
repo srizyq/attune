@@ -9,6 +9,7 @@ import { installGlobalErrorReporting } from './lib/reportError'
 import { installRecentErrorCapture } from './lib/recentErrors'
 import { initNativeKeyboard } from './lib/nativeKeyboard'
 import { initLocalNotifications } from './lib/localNotifications'
+import { initTelemetry } from './lib/telemetry'
 
 // The bare `<script>` vite-plugin-pwa injects automatically only calls
 // navigator.serviceWorker.register() — it has no idea a new version ever
@@ -21,6 +22,7 @@ installGlobalErrorReporting()
 installRecentErrorCapture()
 initNativeKeyboard()
 initLocalNotifications()
+initTelemetry()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

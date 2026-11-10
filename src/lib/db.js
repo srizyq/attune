@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { validateImageUpload } from './sanitize.js';
 import { shiftIsoDateKeepLocalTime } from './mealTime';
 import { isMissingFunctionError } from './coachInvite';
 import { selectAll } from './paging';
@@ -1042,9 +1043,10 @@ export async function shareRecipeWithClient(clientId, name, items) {
 }
 
 export async function uploadCoachLogo(userId, file) {
-  const ext = (file.name.split('.').pop() || 'png').toLowerCase();
-  const path = `${userId}/logo.${ext}`;
-  const { error: uploadError } = await supabase.storage.from('coach-logos').upload(path, file, { upsert: true });
+  const check = validateImageUpload(file);
+  if (!check.ok) throw new Error(check.error);
+  const path = `${userId}/logo.${check.ext}`;
+  const { error: uploadError } = await supabase.storage.from('coach-logos').upload(path, file, { upsert: true, contentType: check.contentType });
   if (uploadError) throw uploadError;
   const { data } = supabase.storage.from('coach-logos').getPublicUrl(path);
   return `${data.publicUrl}?t=${Date.now()}`; // cache-bust so a re-upload shows immediately

@@ -1,5 +1,9 @@
 // src/App.jsx
 import { lazy, startTransition, Suspense, useEffect, useState } from 'react'
+import FirstRunTour from './components/FirstRunTour'
+import { track, identifyUser, resetUser } from './lib/telemetry'
+import { syncQueue } from './lib/offlineQueue'
+import { addFoodLog } from './lib/db'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
 import { AuthProvider } from './context/AuthProvider'
 import { ProfileProvider } from './context/ProfileProvider'
@@ -97,6 +101,15 @@ function AnimatedRoutes() {
   const { user } = useAuth();
   const signedIn = !!user;
   useEffect(() => (signedIn ? preloadPages(PRELOAD) : undefined), [signedIn]);
+  useEffect(() => { if (user?.id) identifyUser(user.id); else resetUser(); }, [user?.id]);
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    const run = () => syncQueue(addFoodLog, user.id).then(({ synced }) => { if (synced) window.location.reload(); }).catch(() => {});
+    run();
+    window.addEventListener('online', run);
+    return () => window.removeEventListener('online', run);
+  }, [user?.id]);
+  useEffect(() => { track('screen_view', { path: location.pathname.replace(/\/[0-9a-f-]{8,}.*/i, '/:id') }); }, [location.pathname]);
 
   useEffect(() => {
     if (!locationChanged(location, renderedLocation)) return;
@@ -118,6 +131,8 @@ function AnimatedRoutes() {
   }, [location, renderedLocation, navType]);
 
   return (
+    <>
+    <FirstRunTour enabled={signedIn && !user?.is_anonymous && location.pathname === '/dashboard'} />
     <div key={renderedLocation.pathname} className={animClass} onAnimationEnd={() => setAnimClass('')}>
       <Suspense fallback={null}>
       <Routes location={renderedLocation}>
@@ -165,6 +180,7 @@ function AnimatedRoutes() {
       </Routes>
       </Suspense>
     </div>
+    </>
   );
 }
 

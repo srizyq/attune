@@ -6,6 +6,8 @@ import { mapSlotRow, buildSlotTimeline } from '../lib/daySlots';
 import { extendedFromRow, EXTENDED_KEYS } from '../lib/microNutrients';
 import { buildFoodLogRow, buildFoodLogPatch } from '../lib/foodLogRows';
 import { showAppToast } from '../lib/appToast';
+import { enqueueFood, isNetworkError } from '../lib/offlineQueue';
+import { track } from '../lib/telemetry';
 
 export function mapRow(row) {
   return {
@@ -239,6 +241,7 @@ export function useFoodLogs(date, { supplements = false } = {}) {
     const dayAtLog = key;
     mutateLogs(dayAtLog, (rows) => [...rows, tempRow]);
 
+    track('food_logged', { source: food.source || 'manual' });
     const promise = addFoodLog(user.id, entry).then((created) => {
       pendingSaves.delete(tempId);
       if (cancelled.delete(tempId)) {
@@ -255,9 +258,15 @@ export function useFoodLogs(date, { supplements = false } = {}) {
       });
       return created.id;
     }).catch((err) => {
-      console.error('Failed to save food:', err);
       pendingSaves.delete(tempId);
       cancelled.delete(tempId);
+      if (isNetworkError(err)) {
+        // Offline: keep the row on screen and save it for later (see lib/offlineQueue).
+        enqueueFood(user.id, entry);
+        showAppToast(`${food.name} saved offline — it will sync when you're back online`, false);
+        return null;
+      }
+      console.error('Failed to save food:', err);
       mutateLogs(dayAtLog, (rows) => rows.filter((r) => r.id !== tempId));
       showAppToast(`Couldn't save ${food.name} — it wasn't added, try again`, true);
       return null;

@@ -60,7 +60,7 @@ describe('useFoodLogs: instant changes', () => {
   });
 
   it('takes a food back out and says so when the server refuses it', async () => {
-    addFoodLog.mockRejectedValueOnce(new Error('offline'));
+    addFoodLog.mockRejectedValueOnce(new Error('violates check constraint'));
     const { result } = renderHook(() => useFoodLogs('2026-09-21'));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => { await result.current.addFood({ name: 'Salmon', cal: 200 }, 'dinner', null); });
@@ -93,7 +93,7 @@ describe('useFoodLogs: instant changes', () => {
 
   it('shows an edit at once and undoes it if saving fails', async () => {
     h.rows = [row()];
-    updateFoodLog.mockRejectedValueOnce(new Error('offline'));
+    updateFoodLog.mockRejectedValueOnce(new Error('violates check constraint'));
     const { result } = renderHook(() => useFoodLogs('2026-09-21'));
     await waitFor(() => expect(result.current.meals.lunch).toHaveLength(1));
     await act(async () => { await result.current.updateFood('r1', { cal: 250 }); });

@@ -10,6 +10,7 @@ import ImportDataModal from '../components/settings/ImportDataModal';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 import { isAppAdmin } from '../lib/reports';
+import SyncCard from '../components/SyncCard';
 
 // Which "page" each section opens as — short sections (a couple of field
 // rows) are quick to check and dismiss, so they open as a popup right
@@ -201,6 +202,8 @@ export default function Settings() {
             </div>
             <i className="ti ti-chevron-right" style={{ color: 'var(--text-hint)', fontSize: 16, flexShrink: 0 }} />
           </button>
+
+          <SyncCard />
 
           {/* Search — jumps straight to an individual setting instead of
               requiring you to already know which section it's under. */}

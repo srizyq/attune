@@ -6025,3 +6025,10 @@ end;
 $$;
 revoke all on function public.friends_day(uuid, date) from public, anon;
 grant execute on function public.friends_day(uuid, date) to authenticated;
+
+-- ── Security hardening (2026-11-10) ──────────────────────────────────────────
+-- coach-logos: images only, 5 MB max. Blocks .php/.jsp/.html etc. at the storage layer.
+update storage.buckets
+   set file_size_limit = 5242880,
+       allowed_mime_types = array['image/jpeg','image/png','image/webp','image/gif']
+ where id = 'coach-logos';
