@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // screen. Taps are caught by the overlay (nothing underneath is really pressed), so
 // nothing gets logged or opened by accident. Targets are found by data-tour="…"
 // markers; a step whose target isn't on screen (e.g. Slots for a free account) is skipped.
+import ModalPortal from './ModalPortal';
 import { TOUR_EVENT, tourSeen as seen, markTourSeen as markSeen, takeTourReplay as takeReplay } from '../lib/tour';
 
 const STEPS = [
@@ -116,26 +117,28 @@ export default function FirstRunTour({ enabled, onDashboard }) {
   const cardLeft = Math.min(Math.max(16, hole.left + hole.width / 2 - cardW / 2), vw - cardW - 16);
 
   return (
+    <ModalPortal>
     <div role="dialog" aria-modal="true" aria-label="App tour" onClick={onOverlayTap} style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
       <div aria-hidden="true" style={{
         position: 'fixed', top: hole.top, left: hole.left, width: hole.width, height: hole.height,
-        borderRadius: 16, boxShadow: '0 0 0 9999px rgba(0,0,0,0.88)', border: '2px dashed var(--accent)',
+        borderRadius: 16, boxShadow: '0 0 0 9999px color-mix(in srgb, var(--bg-primary) 88%, transparent)', border: '2px dashed var(--accent)',
         pointerEvents: 'none', transition: 'all 200ms ease',
       }} />
       <button onClick={(e) => { e.stopPropagation(); finish(); }} style={{
         position: 'fixed', top: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 12px)', right: 16, minHeight: 44, padding: '0 8px',
-        background: 'none', border: 'none', color: '#fff', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, fontWeight: 700, cursor: 'pointer',
+        background: 'none', border: 'none', color: 'var(--text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, fontWeight: 700, cursor: 'pointer',
       }}>Skip</button>
       <div style={{
         position: 'fixed', top: cardTop, left: cardLeft, width: cardW, boxSizing: 'border-box', textAlign: 'center',
-        fontFamily: "'Plus Jakarta Sans', sans-serif", pointerEvents: 'none', textShadow: '0 1px 10px rgba(0,0,0,0.9)',
+        fontFamily: "'Plus Jakarta Sans', sans-serif", pointerEvents: 'none', textShadow: '0 1px 10px var(--bg-primary)',
       }}>
-        <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{s.title}</div>
-        <p style={{ margin: '6px 0 14px', fontSize: 14, lineHeight: 1.45, color: 'rgba(255,255,255,0.82)' }}>{s.body}</p>
+        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>{s.title}</div>
+        <p style={{ margin: '6px 0 14px', fontSize: 14, lineHeight: 1.45, color: 'var(--text-muted)' }}>{s.body}</p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }} aria-label={`Step ${shown.indexOf(step) + 1} of ${shown.length}`}>
-          {shown.map((i) => <span key={i} style={{ width: 8, height: 8, borderRadius: 99, background: i === step ? 'var(--accent)' : 'rgba(255,255,255,0.35)' }} />)}
+          {shown.map((i) => <span key={i} style={{ width: 8, height: 8, borderRadius: 99, background: i === step ? 'var(--accent)' : 'color-mix(in srgb, var(--text-primary) 25%, transparent)' }} />)}
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
