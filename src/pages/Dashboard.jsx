@@ -1158,14 +1158,16 @@ export default function Dashboard() {
                 <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-secondary)' }} />
                 {dateStr}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em', marginTop: 4, lineHeight: 1.2 }}>
-                {isViewingToday ? `${greeting}, ${name}` : viewedDate > today ? `${name}'s plan` : `${name}'s log`}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em', lineHeight: 1.2, minWidth: 0 }}>
+                  {isViewingToday ? `${greeting}, ${name}` : viewedDate > today ? `${name}'s plan` : `${name}'s log`}
+                </div>
+                {!isViewingToday && (
+                  <button onClick={() => navigate('/dashboard')} aria-label="Back to today" style={{ flexShrink: 0, background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 999, color: 'var(--accent-secondary)', fontSize: 12, fontWeight: 800, cursor: 'pointer', padding: '4px 12px', minHeight: 28, fontFamily: 'inherit' }}>
+                    Today
+                  </button>
+                )}
               </div>
-              {!isViewingToday && (
-                <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '13px', fontWeight: 800, cursor: 'pointer', padding: '6px 0', minHeight: 28, fontFamily: 'inherit' }}>
-                  Back to today
-                </button>
-              )}
             </div>
             <button data-tour="trends" onClick={() => navigate('/expenditure')} aria-label="View trends" title="View trends" style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid var(--card-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <i className="ti ti-trending-up" />

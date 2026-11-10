@@ -26,8 +26,8 @@ for (const theme of ['light', 'dark']) {
     await assertLayout(page, testInfo, `x-coach-bell-header-${theme}`, ctx);
 
     await bell.click();
-    const sheet = page.getByText('Coach messages');
-    await expect(sheet).toBeVisible();
+    await expect(page).toHaveURL(/\/notifications/);
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
     await expect(page.getByText('Great week — keep the protein up.')).toBeVisible();
     await expect(page.getByText('Weight is trending nicely.')).toBeVisible();
     await expect(page.getByText('Thanks coach!')).toHaveCount(0);
@@ -46,7 +46,8 @@ test('dashboard · the unread dot clears once the bell has been opened', async (
   await settle(page);
   await expect(page.getByTestId('coach-unread-dot')).toBeVisible();
   await page.getByRole('button', { name: /Messages from your coach/ }).click();
-  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page).toHaveURL(/\/notifications/);
+  await page.getByRole('button', { name: 'Back to Dashboard' }).click();
   await expect(page.getByTestId('coach-unread-dot')).toHaveCount(0);
   await page.reload();
   await settle(page);
