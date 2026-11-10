@@ -8,6 +8,7 @@
 // since transcription isn't a Claude API capability).
 
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, AI_REQUESTS_PER_MINUTE, tooManyRequests } from './_rateLimit.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -33,6 +34,11 @@ export default async function handler(req, res) {
   const { data: userData, error: userError } = await supabase.auth.getUser(token);
   if (userError || !userData?.user) {
     res.status(401).json({ error: 'Sign in required.' });
+    return;
+  }
+
+  if (!(await rateLimit(supabase, `ai:${userData.user.id}`, AI_REQUESTS_PER_MINUTE))) {
+    tooManyRequests(res);
     return;
   }
 
