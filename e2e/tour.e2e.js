@@ -13,9 +13,8 @@ test('tour-walks-through-the-dashboard', async ({ page, context }, testInfo) => 
   const titles = [];
   for (let i = 0; i < 4 && await dialog.isVisible(); i++) {
     titles.push(await dialog.locator('div').filter({ hasText: /^[A-Z]/ }).first().innerText().catch(() => ''));
-    // The lit-up hole is the only element with the accent border; tap its centre.
-    const box = await dialog.locator('div[aria-hidden="true"]').boundingBox();
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    // A tap anywhere moves on (here: well away from the lit-up spot).
+    await page.mouse.click(200, 400);
     await page.waitForTimeout(500);
   }
   await expect(dialog).toBeHidden();

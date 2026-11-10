@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // A short guided tour of the Dashboard: dims the screen, lights up one thing at
-// a time with a one-line explanation, and moves on when the person taps the lit-up
-// thing. Taps are caught by the overlay (nothing underneath is really pressed), so
+// a time with a one-line explanation, and moves on when the person taps anywhere on the
+// screen. Taps are caught by the overlay (nothing underneath is really pressed), so
 // nothing gets logged or opened by accident. Targets are found by data-tour="…"
 // markers; a step whose target isn't on screen (e.g. Slots for a free account) is skipped.
 import { TOUR_EVENT, tourSeen as seen, markTourSeen as markSeen, takeTourReplay as takeReplay } from '../lib/tour';
@@ -98,40 +98,42 @@ export default function FirstRunTour({ enabled, onDashboard }) {
 
   if (step < 0 || !rect) return null;
   const s = STEPS[step];
-  const isLast = nextFrom(step) < 0;
   const hole = { top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2 };
 
-  const onOverlayTap = (e) => {
-    const inside = e.clientX >= hole.left && e.clientX <= hole.left + hole.width && e.clientY >= hole.top && e.clientY <= hole.top + hole.height;
-    if (!inside) return;
+  const onOverlayTap = () => {
     const n = nextFrom(step);
     if (n < 0) finish(); else setStep(n);
   };
 
+  // One dot per step that is actually on this screen (Slots is Pro-only).
+  const shown = STEPS.map((st, i) => (i === step || findTarget(st.sel) ? i : -1)).filter((i) => i >= 0);
+
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const cardW = Math.min(320, vw - 32);
-  const below = hole.top + hole.height + 12 + 150 < vh;
-  const cardTop = below ? hole.top + hole.height + 12 : Math.max(16, hole.top - 12 - 150);
+  const below = hole.top + hole.height + 12 + 140 < vh;
+  const cardTop = below ? hole.top + hole.height + 12 : Math.max(70, hole.top - 12 - 140);
   const cardLeft = Math.min(Math.max(16, hole.left + hole.width / 2 - cardW / 2), vw - cardW - 16);
 
   return (
     <div role="dialog" aria-modal="true" aria-label="App tour" onClick={onOverlayTap} style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
       <div aria-hidden="true" style={{
         position: 'fixed', top: hole.top, left: hole.left, width: hole.width, height: hole.height,
-        borderRadius: 16, boxShadow: '0 0 0 9999px rgba(0,0,0,0.72)', border: '2px solid var(--accent)',
+        borderRadius: 16, boxShadow: '0 0 0 9999px rgba(0,0,0,0.88)', border: '2px dashed var(--accent)',
         pointerEvents: 'none', transition: 'all 200ms ease',
       }} />
-      <div onClick={(e) => e.stopPropagation()} style={{
-        position: 'fixed', top: cardTop, left: cardLeft, width: cardW, boxSizing: 'border-box',
-        background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, padding: 16,
-        fontFamily: "'Plus Jakarta Sans', sans-serif", boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
+      <button onClick={(e) => { e.stopPropagation(); finish(); }} style={{
+        position: 'fixed', top: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 12px)', right: 16, minHeight: 44, padding: '0 8px',
+        background: 'none', border: 'none', color: '#fff', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 15, fontWeight: 700, cursor: 'pointer',
+      }}>Skip</button>
+      <div style={{
+        position: 'fixed', top: cardTop, left: cardLeft, width: cardW, boxSizing: 'border-box', textAlign: 'center',
+        fontFamily: "'Plus Jakarta Sans', sans-serif", pointerEvents: 'none', textShadow: '0 1px 10px rgba(0,0,0,0.9)',
       }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>{s.title}</div>
-        <p style={{ margin: '6px 0 12px', fontSize: 14, lineHeight: 1.45, color: 'var(--text-muted)' }}>{s.body}</p>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700 }}>{isLast ? 'Tap it to finish' : 'Tap the glowing spot'}</span>
-          <button onClick={finish} style={{ minHeight: 44, padding: '0 8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: 14, cursor: 'pointer' }}>Skip tour</button>
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{s.title}</div>
+        <p style={{ margin: '6px 0 14px', fontSize: 14, lineHeight: 1.45, color: 'rgba(255,255,255,0.82)' }}>{s.body}</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }} aria-label={`Step ${shown.indexOf(step) + 1} of ${shown.length}`}>
+          {shown.map((i) => <span key={i} style={{ width: 8, height: 8, borderRadius: 99, background: i === step ? 'var(--accent)' : 'rgba(255,255,255,0.35)' }} />)}
         </div>
       </div>
     </div>
