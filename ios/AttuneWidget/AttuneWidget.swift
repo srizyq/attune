@@ -28,19 +28,19 @@ func loadSnapshot() -> Snapshot {
     )
 }
 
-struct Entry: TimelineEntry { let date: Date; let snap: Snapshot }
+struct SummaryEntry: TimelineEntry { let date: Date; let snap: Snapshot }
 
-struct Provider: TimelineProvider {
-    func placeholder(in context: Context) -> Entry { Entry(date: .now, snap: loadSnapshot()) }
-    func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) { completion(placeholder(in: context)) }
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
+struct SummaryProvider: TimelineProvider {
+    func placeholder(in context: Context) -> SummaryEntry { SummaryEntry(date: .now, snap: loadSnapshot()) }
+    func getSnapshot(in context: Context, completion: @escaping (SummaryEntry) -> Void) { completion(placeholder(in: context)) }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<SummaryEntry>) -> Void) {
         let entry = placeholder(in: context)
         completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(15 * 60))))
     }
 }
 
 struct AttuneWidgetView: View {
-    let entry: Entry
+    let entry: SummaryEntry
     @Environment(\.widgetFamily) var family
 
     var body: some View {
@@ -52,8 +52,7 @@ struct AttuneWidgetView: View {
                 Text("P \(s.protein)g · C \(s.carbs)g · F \(s.fat)g left").font(.footnote)
             }
             if let start = s.fastStart {
-                let end = start.addingTimeInterval(s.fastTargetHours * 3600)
-                Label { Text(timerInterval: start...max(end, start.addingTimeInterval(1)), countsDown: false) } icon: { Image(systemName: "clock") }
+                Label { Text(start, style: .timer) } icon: { Image(systemName: "clock") }
                     .font(.footnote)
             }
             Spacer(minLength: 0)
@@ -68,7 +67,7 @@ struct AttuneWidgetView: View {
 
 struct AttuneSummaryWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "AttuneSummaryWidget", provider: Provider()) { entry in
+        StaticConfiguration(kind: "AttuneSummaryWidget", provider: SummaryProvider()) { entry in
             if #available(iOS 17.0, *) {
                 AttuneWidgetView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
             } else {
