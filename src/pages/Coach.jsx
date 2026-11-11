@@ -8,6 +8,7 @@ import AppNav from '../components/AppNav';
 import PageHeader from '../components/PageHeader';
 import ClientCoachHub from '../components/ClientCoachHub';
 import CoachInvitePanel from '../components/CoachInvitePanel';
+import PageLinks from '../components/PageLinks';
 import ClientList from '../components/coach/ClientList';
 import TeamCard from '../components/coach/TeamCard';
 import ClientDetail from '../components/coach/ClientDetail';
@@ -174,6 +175,7 @@ export default function Coach() {
           ) : undefined}
         />
         <div className="page-pad">
+          {trainerTab === 'clients' && <PageLinks links={[{ to: '/friends', icon: 'ti-users-group', label: 'Friends' }]} />}
           {isTrainer ? (
             <div style={{ marginBottom: 16 }}>
               {trainerTab === 'clients' && (
@@ -240,18 +242,7 @@ export default function Coach() {
               </span>
               <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
             </button>
-            <button
-              type="button"
-              onClick={() => navigate('/friends')}
-              className="btn-press"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: 52, padding: '0 20px', marginTop: 12, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 16, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <i className="ti ti-users-group" aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
-                Friends
-              </span>
-              <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
-            </button>
+
             </>
           )}
         </div>

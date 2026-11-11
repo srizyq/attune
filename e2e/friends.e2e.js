@@ -155,7 +155,7 @@ test('Coach is still reachable from the Friends page', async ({ page, context },
   await openApp({ page, context }, testInfo);
   await page.goto('/friends');
   await settle(page);
-  await page.getByRole('button', { name: /^Coach/ }).last().click();
+  await page.getByRole('navigation', { name: 'Shortcuts' }).getByRole('button', { name: 'Coach' }).click();
   await expect(page).toHaveURL(/\/coach$/);
 });
 
@@ -277,7 +277,7 @@ for (const theme of ['dark', 'light']) {
     const ctx = await openApp({ page, context }, testInfo, { rpc: { ...THREE, friends_recipes: byFriend({ [FRIEND_ID]: [RECIPE, RECIPE_PHOTO], [SAM_ID]: [SAM_RECIPE] }) }, profile: { theme } });
     await page.goto('/friends');
     await settle(page);
-    await page.getByRole('button', { name: /^Recipes from friends/ }).click();
+    await page.getByRole('navigation', { name: 'Shortcuts' }).getByRole('button', { name: 'Recipes' }).click();
     await expect(page).toHaveURL(/\/friends\/recipes$/);
     await expect(page.getByTestId('friend-recipe')).toHaveCount(3);
     await expect(page.getByTestId('friend-recipe').first()).toContainText('Overnight oats'); // newest first
@@ -325,7 +325,7 @@ test('Friends has no tabs: recipes is a page with a way back, and the old tab li
   await page.goto('/friends');
   await settle(page);
   await expect(page.getByRole('tab')).toHaveCount(0);
-  await page.getByRole('button', { name: /^Recipes from friends/ }).click();
+  await page.getByRole('navigation', { name: 'Shortcuts' }).getByRole('button', { name: 'Recipes' }).click();
   await page.getByRole('button', { name: 'Back to Friends' }).click();
   await expect(page).toHaveURL(/\/friends$/);
   await expect(page.getByTestId('friend-circles')).toBeVisible();

@@ -8,6 +8,7 @@ import PageHeader from '../components/PageHeader';
 import PullIndicator from '../components/PullIndicator';
 import Toast from '../components/Toast';
 import Avatar from '../components/Avatar';
+import PageLinks from '../components/PageLinks';
 import ShareCard from '../components/friends/ShareCard';
 import FriendCircles from '../components/friends/FriendCircles';
 import DaySummary from '../components/DaySummary';
@@ -36,25 +37,6 @@ function FriendCard({ friend, onOpen }) {
         {body && <DaySummary compact totals={totals} targets={targets} />}
       </button>
     </ScanCard>
-  );
-}
-
-function LinkRow({ icon, label, hint, to }) {
-  const navigate = useNavigate();
-  return (
-    <button
-      type="button"
-      className="btn-press"
-      onClick={() => navigate(to)}
-      style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '6px 16px', marginBottom: 10, background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-primary)', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}
-    >
-      <i className={`ti ${icon}`} aria-hidden="true" style={{ fontSize: 18, color: 'var(--accent)' }} />
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: 'block', fontSize: 14, fontWeight: 700 }}>{label}</span>
-        <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{hint}</span>
-      </span>
-      <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
-    </button>
   );
 }
 
@@ -115,11 +97,6 @@ export default function Friends() {
           </>
         )}
 
-        <div style={{ marginTop: 16 }}>
-          <LinkRow icon="ti-tools-kitchen-2" label="Recipes from friends" hint="What your friends have shared" to="/friends/recipes" />
-          <LinkRow icon="ti-users" label="Coach" hint="Your coach, or coaching clients" to="/coach" />
-        </div>
-
         <ShareCard
           level={f.shareLevel} levelsSupported={f.levelsSupported} dayHidden={f.dayHidden}
           onLevel={guard(f.changeLevel)} onHideToday={guard(f.changeDayHidden)}
@@ -139,6 +116,7 @@ export default function Friends() {
           right={f.code ? <button type="button" className="app-icon-btn" aria-label="Invite a friend" title="Invite a friend" onClick={invite}><i className="ti ti-user-plus" /></button> : undefined}
         />
         <div className="page-pad" style={{ maxWidth: 700 }}>
+          <PageLinks links={[{ to: '/coach', icon: 'ti-users', label: 'Coach' }, { to: '/friends/recipes', icon: 'ti-tools-kitchen-2', label: 'Recipes' }]} />
           {content}
         </div>
       </div>

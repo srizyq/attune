@@ -187,6 +187,7 @@ test('a coach can reach Friends from the Coach page', async ({ page, context }, 
   await openApp({ page, context }, testInfo, COACH_BACKEND);
   await page.goto('/coach');
   await settle(page);
-  await page.getByRole('button', { name: 'Friends', exact: true }).click();
+  await expect(page.getByRole('navigation', { name: 'Shortcuts' }).getByRole('button', { name: 'Friends' })).toBeInViewport();
+  await page.getByRole('navigation', { name: 'Shortcuts' }).getByRole('button', { name: 'Friends' }).click();
   await expect(page).toHaveURL(/\/friends$/);
 });
