@@ -1,13 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useProfile } from '../hooks/useProfile';
 import { getFoodLogsForDate, copyFoodLogs, getDaySlots, copyDaySlots } from '../lib/db';
 import { toggleGroup, rowsToCopy, COPY_DEST_SAME } from '../lib/copyMeals';
 import { mapRow } from '../hooks/useFoodLogs';
 import { mapSlotRow, formatSlotTime } from '../lib/daySlots';
-import { useClosingTransition } from '../hooks/useClosingTransition';
 import { todayLocalDate } from '../lib/patterns';
 import { withBrand } from '../lib/format';
-import DaySelector from './DaySelector';
+import DaySelector from '../components/DaySelector';
+import AppNav from '../components/AppNav';
+import PageHeader from '../components/PageHeader';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snacks'];
@@ -44,8 +47,8 @@ function CheckMark({ state }) {
   );
 }
 
-// Copies food from another day onto destDate (whatever day DailyLog is
-// showing): pick the source day on the week strip (starts on yesterday),
+// Copy from another day (a page, /log/copy?date=&mode=): copies food onto
+// destDate (whatever day DailyLog was showing): pick the source day on the week strip (starts on yesterday),
 // then choose what to bring over. Everything starts ticked, so copying the
 // whole day is still one tap; a meal header ticks/unticks that whole meal,
 // and each item can be toggled on its own. "Put in" optionally files the
@@ -56,9 +59,19 @@ function CheckMark({ state }) {
 // mode="slots" (Slots view) previews and copies the source day's day_slots
 // instead of its meal groups, via copyDaySlots (which also recreates the
 // slot rows themselves, not just the items in them — see lib/db.js).
-export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meals' }) {
+export default function CopyDay() {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { user } = useAuth();
-  const { closing, close } = useClosingTransition(onClose);
+  const { profile } = useProfile();
+  const today0 = todayLocalDate();
+  const requested = params.get('date');
+  const destDate = /^\d{4}-\d{2}-\d{2}$/.test(requested || '') ? requested : today0;
+  const mode = params.get('mode') === 'slots' ? 'slots' : 'meals';
+  const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
+  // Back to the log on the day being filled in. Copying re-mounts it, so it
+  // refetches and shows what was just copied.
+  const close = () => navigate('/log', { state: { date: destDate } });
   const [sourceDate, setSourceDate] = useState(() => shiftDateStr(destDate, -1));
   const [rows, setRows] = useState([]);
   const [slotRows, setSlotRows] = useState([]);
@@ -104,8 +117,7 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
       setCopying(true);
       setError(null);
       try {
-        const result = await copyDaySlots(user.id, sourceDate, destDate);
-        onCopied(result);
+        await copyDaySlots(user.id, sourceDate, destDate);
         close();
       } catch {
         setError("Couldn't copy — try again.");
@@ -117,8 +129,7 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
     setCopying(true);
     setError(null);
     try {
-      const created = await copyFoodLogs(user.id, rowsToCopy(rows, selected, destMeal), destDate);
-      onCopied(created);
+      await copyFoodLogs(user.id, rowsToCopy(rows, selected, destMeal), destDate);
       close();
     } catch {
       setError("Couldn't copy — try again.");
@@ -133,24 +144,19 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
     ? 'today'
     : new Date(destDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 
+  const title = mode === 'slots' ? 'Copy slots' : 'Copy meals';
   return (
-    <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
-      <div
-        onClick={e => e.stopPropagation()}
-        className={`modal-panel${closing ? ' is-closing' : ''}`}
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: 'calc(var(--vvh, 100vh) * 0.85)', display: 'flex', flexDirection: 'column' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>{mode === 'slots' ? 'Copy slots' : 'Copy meals'} to {destLabel}</span>
-          <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}><span className="x-mark" aria-hidden="true" /></button>
-        </div>
-
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
+    <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
+      <AppNav active="log" initials={initials} />
+      <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        <PageHeader title={title} subtitle={`to ${destLabel}`} onBack={close} backLabel="Back to Daily log" />
+        <div className="page-pad">
+        <div style={{ padding: '0 0 14px', flexShrink: 0 }}>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Copy from</div>
           <DaySelector selectedDate={sourceDate} onSelect={setSourceDate} />
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 20px', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ padding: '10px 0' }}>
           {loading ? (
             <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Loading…</p>
           ) : !hasSource ? (
@@ -214,7 +220,7 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
         </div>
 
         {mode === 'meals' && hasSource && !loading && (
-          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-default)', flexShrink: 0 }}>
+          <div style={{ padding: '12px 0', borderTop: '1px solid var(--border-default)' }}>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Put in</div>
             <div role="radiogroup" aria-label="Put copied items in" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {[[COPY_DEST_SAME, 'Same meal'], ...MEAL_ORDER.map((m) => [m, MEAL_LABELS[m]])].map(([value, label]) => {
@@ -241,13 +247,13 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
           </div>
         )}
 
-        {error && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', padding: '0 20px 8px', flexShrink: 0 }}>{error}</p>}
+        {error && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', padding: '0 0 8px' }}>{error}</p>}
 
-        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-default)', flexShrink: 0 }}>
+        <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg-primary)', padding: '12px 0', borderTop: '1px solid var(--border-default)' }}>
           <button
             onClick={handleCopy}
             disabled={!canCopy || copying}
-            style={{ width: '100%', background: !canCopy || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 600, color: !canCopy || copying ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: !canCopy || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            style={{ width: '100%', background: !canCopy || copying ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8, padding: '12px', minHeight: 44, fontSize: 13, fontWeight: 600, color: !canCopy || copying ? 'var(--text-muted)' : 'var(--accent-contrast)', cursor: !canCopy || copying ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
           >
             {copying
               ? 'Copying…'
@@ -257,6 +263,7 @@ export default function CopyDayModal({ destDate, onClose, onCopied, mode = 'meal
                   ? `Copy ${selectedItems.length} item${selectedItems.length === 1 ? '' : 's'} · ${Math.round(selectedCal)} kcal`
                   : hasSource ? 'Select something to copy' : 'Copy'}
           </button>
+        </div>
         </div>
       </div>
     </div>

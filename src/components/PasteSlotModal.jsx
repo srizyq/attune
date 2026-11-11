@@ -12,7 +12,7 @@ function shiftDateStr(dateStr, days) {
   return todayLocalDate(d);
 }
 
-// "Paste slot" — CopyDayModal's sibling for Slots mode: instead of copying
+// "Paste slot" — the Copy page's sibling for Slots mode: instead of copying
 // a whole day, pick ONE slot from another day and add it (its label/time/
 // target, plus whatever was logged in it) as a new slot appended onto the
 // day currently being viewed. Never touches destDate's existing slots —

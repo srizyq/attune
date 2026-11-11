@@ -18,7 +18,6 @@ import QuickMacroSheet from '../components/QuickMacroSheet';
 import PasteSlotModal from '../components/PasteSlotModal';
 import DaySelector from '../components/DaySelector';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
-import CopyDayModal from '../components/CopyDayModal';
 import Toast from '../components/Toast';
 import { round1, withBrand } from '../lib/format';
 import { useCopyYesterday } from '../hooks/useCopyYesterday';
@@ -82,7 +81,6 @@ export default function DailyLog() {
   const [pullRef, pullState] = usePullToRefresh(() => refetch());
   // One ref for the scroll container, shared by both gestures.
   const setScrollEl = useCallback((el) => { pullRef.current = el; swipeRef.current = el; }, [pullRef, swipeRef]);
-  const [showCopyModal, setShowCopyModal] = useState(false);
   const [showCopyMenu, setShowCopyMenu] = useState(false);
   const [showPasteSlotModal, setShowPasteSlotModal] = useState(false);
   const [showQuickMacro, setShowQuickMacro] = useState(false);
@@ -118,7 +116,7 @@ export default function DailyLog() {
 
   // Slots mode's "Copy yesterday" — copyFromYesterday (above) only knows
   // the meal enum, so this bypasses it and calls the slot-aware copy
-  // directly, same as CopyDayModal's mode="slots" does for "Copy from
+  // directly, same as the Copy page's mode=="slots" does for "Copy from
   // another day…" below.
   async function handleCopyYesterdaySlots() {
     if (copyingYesterdaySlots) return;
@@ -166,7 +164,7 @@ export default function DailyLog() {
                 <div onClick={() => setShowCopyMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 41, minWidth: 210, background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.35)', overflow: 'hidden' }}>
                   <button onClick={() => { setShowCopyMenu(false); showSlots ? handleCopyYesterdaySlots() : copyFromYesterday(); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy yesterday</button>
-                  <button onClick={() => { setShowCopyMenu(false); setShowCopyModal(true); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: showSlots ? '1px solid var(--border-default)' : 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy from another day…</button>
+                  <button onClick={() => { setShowCopyMenu(false); navigate(`/log/copy?date=${selectedDate}&mode=${showSlots ? 'slots' : 'meals'}`); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: showSlots ? '1px solid var(--border-default)' : 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy from another day…</button>
                   {showSlots && (
                     <button onClick={() => { setShowCopyMenu(false); setShowPasteSlotModal(true); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Paste slot…</button>
                   )}
@@ -283,14 +281,6 @@ export default function DailyLog() {
         </div>
       </div>
 
-      {showCopyModal && (
-        <CopyDayModal
-          destDate={selectedDate}
-          onClose={() => setShowCopyModal(false)}
-          onCopied={refetch}
-          mode={showSlots ? 'slots' : 'meals'}
-        />
-      )}
       {showPasteSlotModal && (
         <PasteSlotModal
           destDate={selectedDate}

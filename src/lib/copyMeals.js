@@ -1,4 +1,4 @@
-// Pure helpers behind CopyDayModal's "pick which items to copy" UI, kept out
+// Pure helpers behind the Copy page's "pick which items to copy" UI, kept out
 // of the component so the selection/remap rules are testable on their own.
 
 export const COPY_DEST_SAME = 'same';
