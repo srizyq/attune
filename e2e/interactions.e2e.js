@@ -38,7 +38,7 @@ const SCENARIOS = [
   // either — .last() works because "Copy meals" sits earlier in the DOM
   // than the view toggle. Explicit click keeps this self-contained
   // regardless of the fixture profile's own daily_log_view default.
-  { name: 'daily-log-edit-item', path: '/log', act: async (p) => { await p.getByRole('button', { name: 'Meals' }).last().click(); await p.getByText('Grilled chicken').first().click(); } },
+  { name: 'daily-log-edit-item', path: '/log', lands: '/log/item/', act: async (p) => { await p.getByRole('button', { name: 'Meals' }).last().click(); await p.getByText('Grilled chicken').first().click(); } },
   // 1M / 3M show one bar per week; before that, 30-90 hidden date labels each
   // took up width and pushed the calorie card off the right of the screen.
   { name: 'dashboard-chart-1m', path: '/dashboard', act: async (p) => { await p.getByRole('button', { name: '1M', exact: true }).click(); } },
@@ -89,6 +89,7 @@ const SCENARIOS = [
     // above.
     name: 'daily-log-edit-item-save-bar',
     path: '/log',
+    lands: '/log/item/',
     act: async (p) => {
       await p.getByRole('button', { name: 'Meals' }).last().click();
       await p.getByText('Grilled chicken').first().click();
@@ -105,7 +106,11 @@ for (const sc of SCENARIOS) {
     await settle(page);
     await sc.act(page);
     await page.waitForTimeout(500);
-    expect(new URL(page.url()).pathname, 'should be on the expected screen').toBe(sc.lands || sc.path);
+    const here = new URL(page.url()).pathname;
+    const want = sc.lands || sc.path;
+    // A `lands` ending in "/" is a prefix (a page with an id in its path).
+    if (want.endsWith('/') && want !== '/') expect(here, 'should be on the expected screen').toMatch(new RegExp(`^${want}[^/]+$`));
+    else expect(here, 'should be on the expected screen').toBe(want);
     await assertLayout(page, testInfo, `x-${sc.name}`, ctx);
   });
 }

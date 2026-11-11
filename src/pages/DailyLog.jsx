@@ -58,9 +58,8 @@ export default function DailyLog() {
   const isToday = selectedDate === today;
 
   const { note: nutritionCoachNote, dismiss: dismissNutritionCoachNote } = useCoachNote('nutrition', selectedDate);
-  const { meals, daySlots, slotTimeline, loading, deleteFood, updateFood, moveToSlot, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
+  const { meals, daySlots, slotTimeline, loading, deleteFood, moveToSlot, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
-  const [expandedId, setExpandedId] = useState(null);
 
   // Pull down to refresh; swipe right/left for the previous/next day.
   // `swipeKey` remounts the page body on a swipe so it slides in from the
@@ -71,7 +70,6 @@ export default function DailyLog() {
       const next = shiftDate(d, delta);
       return next > latestDate(today) ? d : next;
     });
-    setExpandedId(null);
     setSwipe((s) => ({ key: s.key + 1, from: delta > 0 ? 'right' : 'left' }));
   }, [today]);
   const swipeRef = useDaySwipe({ onPrev: () => goDay(-1), onNext: selectedDate >= latestDate(today) ? null : () => goDay(1) });
@@ -142,7 +140,7 @@ export default function DailyLog() {
 
         <div key={swipe.key} className={`page-pad${swipe.from ? ` day-slide-from-${swipe.from}` : ''}`} style={{ maxWidth: 700 }}>
           <div style={{ marginBottom: 20 }}>
-            <DaySelector allowFuture selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setExpandedId(null); }} />
+            <DaySelector allowFuture selectedDate={selectedDate} onSelect={setSelectedDate} />
             <div style={{ marginTop: 16 }}>
               <div data-testid="log-date" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                 <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-secondary)' }} />
@@ -162,7 +160,6 @@ export default function DailyLog() {
               <SlotTimeline
                 segments={slotTimeline}
                 onDelete={handleDeleteItem}
-                onSave={updateFood}
                 onNavigateAdd={(slot) => navigate('/food', { state: { date: selectedDate, presetSlotId: slot.id, presetTime: slot.slotTime } })}
                 onAddSlot={addSlot}
                 onEditSlot={editSlot}
@@ -218,10 +215,7 @@ export default function DailyLog() {
                             <LogItemRow
                               key={item.id}
                               item={item}
-                              isExpanded={expandedId === item.id}
-                              onToggle={() => setExpandedId(prev => (prev === item.id ? null : item.id))}
                               onDelete={() => handleDeleteItem(item.id)}
-                              onSave={async (fields) => { await updateFood(item.id, fields); setExpandedId(null); }}
                             />
                           ))
                         )}

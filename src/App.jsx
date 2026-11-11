@@ -38,6 +38,8 @@ const loadSettingsGoals = () => import('./pages/SettingsGoals');
 const SettingsGoals = lazy(loadSettingsGoals);
 const loadProfile = () => import('./pages/Profile');
 const Profile = lazy(loadProfile);
+const loadEditLogItem = () => import('./pages/EditLogItem');
+const EditLogItem = lazy(loadEditLogItem);
 const loadLogWorkout = () => import('./pages/LogWorkout');
 const LogWorkout = lazy(loadLogWorkout);
 const loadQuickMacro = () => import('./pages/QuickMacro');
@@ -185,6 +187,7 @@ function AnimatedRoutes() {
         <Route path="/fasting" element={<RequireAuth><Fasting /></RequireAuth>} />
         <Route path="/log/quick-macro" element={<RequireAuth><QuickMacro /></RequireAuth>} />
         <Route path="/log/paste-slot" element={<RequireAuth><PasteSlot /></RequireAuth>} />
+        <Route path="/log/item/:id" element={<RequireAuth><EditLogItem /></RequireAuth>} />
         <Route path="/log/copy" element={<RequireAuth><CopyDay /></RequireAuth>} />
         <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />

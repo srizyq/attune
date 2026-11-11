@@ -103,7 +103,7 @@ function DragChip({ drag }) {
 
 // One food in a slot: a drag handle beside the usual row, or — while selecting —
 // a checkbox row instead.
-function ItemLine({ item, ctx, expandedItemId, onToggleItem, onDelete, onSave }) {
+function ItemLine({ item, ctx, onDelete }) {
   if (ctx.selecting) {
     const checked = ctx.selected.has(item.id);
     return (
@@ -126,12 +126,7 @@ function ItemLine({ item, ctx, expandedItemId, onToggleItem, onDelete, onSave })
       <div style={{ flex: 1, minWidth: 0 }}>
         <LogItemRow
           item={item}
-          isExpanded={expandedItemId === item.id}
-          onToggle={() => onToggleItem(item.id)}
           onDelete={() => onDelete(item.id)}
-          onSave={async (fields) => { await onSave(item.id, fields); onToggleItem(item.id); }}
-          slots={ctx.slots}
-          isPremium
         />
       </div>
     </div>
@@ -213,9 +208,8 @@ function SelectBar({ count, onMove, onGroup, onCancel }) {
 // each showing its own kcal/macro totals and logged items in an expandable
 // card. A slot with nothing logged in it yet shows its stored macro targets
 // ("balance") and a prompt to log against it instead of an item list.
-export default function SlotTimeline({ segments, onDelete, onSave, onNavigateAdd, onAddSlot, onEditSlot, onDeleteSlot, onMoveToSlot, onGroupIntoSlot, emptyMessage = 'Nothing set up for this day yet.' }) {
+export default function SlotTimeline({ segments, onDelete, onNavigateAdd, onAddSlot, onEditSlot, onDeleteSlot, onMoveToSlot, onGroupIntoSlot, emptyMessage = 'Nothing set up for this day yet.' }) {
   const [openSlots, setOpenSlots] = useState({});
-  const [expandedItemId, setExpandedItemId] = useState(null);
   const [addingSlot, setAddingSlot] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState(() => new Set());
@@ -260,10 +254,7 @@ export default function SlotTimeline({ segments, onDelete, onSave, onNavigateAdd
               isLast={isLast}
               isOpen={selecting || !!openSlots[seg.id]}
               onToggle={() => setOpenSlots((o) => ({ ...o, [seg.id]: !o[seg.id] }))}
-              expandedItemId={expandedItemId}
-              onToggleItem={(id) => setExpandedItemId((prev) => (prev === id ? null : id))}
               onDelete={onDelete}
-              onSave={onSave}
               ctx={ctx}
               dropActive={drag?.over === seg.id}
               onNavigateAdd={onNavigateAdd}
@@ -277,10 +268,7 @@ export default function SlotTimeline({ segments, onDelete, onSave, onNavigateAdd
               isLast={isLast}
               isOpen={selecting || !!openSlots[seg.id]}
               onToggle={() => setOpenSlots((o) => ({ ...o, [seg.id]: !o[seg.id] }))}
-              expandedItemId={expandedItemId}
-              onToggleItem={(id) => setExpandedItemId((prev) => (prev === id ? null : id))}
               onDelete={onDelete}
-              onSave={onSave}
               ctx={ctx}
               dropActive={drag?.over === NONE}
             />
@@ -320,7 +308,7 @@ export default function SlotTimeline({ segments, onDelete, onSave, onNavigateAdd
   );
 }
 
-function SlotEntry({ segment, isLast, isOpen, onToggle, expandedItemId, onToggleItem, onDelete, onSave, ctx, dropActive, onNavigateAdd, onEditSlot, onDeleteSlot }) {
+function SlotEntry({ segment, isLast, isOpen, onToggle, onDelete, ctx, dropActive, onNavigateAdd, onEditSlot, onDeleteSlot }) {
   const { id, label, slotTime, items } = segment;
   const t = totals(items);
   const balance = targetParts(segment);
@@ -408,7 +396,7 @@ function SlotEntry({ segment, isLast, isOpen, onToggle, expandedItemId, onToggle
         ) : isOpen && (
           <div style={{ borderTop: '1px solid var(--border-default)' }}>
             {items.map((item) => (
-              <ItemLine key={item.id} item={item} ctx={ctx} expandedItemId={expandedItemId} onToggleItem={onToggleItem} onDelete={onDelete} onSave={onSave} />
+              <ItemLine key={item.id} item={item} ctx={ctx} onDelete={onDelete} />
             ))}
             <button onClick={() => onNavigateAdd(segment)} style={{ width: '100%', background: 'none', border: 'none', borderTop: '1px solid var(--border-default)', color: 'var(--accent-dark)', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '10px 12px', textAlign: 'left', fontFamily: 'inherit' }}>
               APPEND TO {label.toUpperCase()}
@@ -420,7 +408,7 @@ function SlotEntry({ segment, isLast, isOpen, onToggle, expandedItemId, onToggle
   );
 }
 
-function UnsortedEntry({ segment, isLast, isOpen, onToggle, expandedItemId, onToggleItem, onDelete, onSave, ctx, dropActive }) {
+function UnsortedEntry({ segment, isLast, isOpen, onToggle, onDelete, ctx, dropActive }) {
   const { items } = segment;
   const t = totals(items);
   return (
@@ -434,7 +422,7 @@ function UnsortedEntry({ segment, isLast, isOpen, onToggle, expandedItemId, onTo
         {isOpen && (
           <div style={{ borderTop: '1px solid var(--border-default)' }}>
             {items.map((item) => (
-              <ItemLine key={item.id} item={item} ctx={ctx} expandedItemId={expandedItemId} onToggleItem={onToggleItem} onDelete={onDelete} onSave={onSave} />
+              <ItemLine key={item.id} item={item} ctx={ctx} onDelete={onDelete} />
             ))}
           </div>
         )}

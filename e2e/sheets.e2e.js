@@ -6,7 +6,6 @@ import { openApp, settle, assertLayout } from './harness.js';
 // theme colours, in light mode too (a sheet portalled into <body> instead of
 // the theme wrapper came out dark for light-mode users).
 const SHEETS = [
-  { name: 'log-item', path: '/log', buttons: ['Save', 'Delete'], open: async (p) => { await p.getByRole('button', { name: 'Meals' }).last().click(); await p.getByText('Grilled chicken').first().click(); } },
 ];
 
 for (const theme of ['dark', 'light']) {

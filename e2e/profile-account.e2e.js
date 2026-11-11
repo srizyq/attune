@@ -73,3 +73,18 @@ test('Log workout is a page: saves and returns to the dashboard', async ({ page,
   await expect(page).toHaveURL(/\/dashboard$/);
   expect(writes.length).toBeGreaterThan(0);
 });
+
+test('Editing a logged food is a page: change the amount, save, and come back', async ({ page, context }, testInfo) => {
+  await openApp({ page, context }, testInfo, {});
+  await page.goto('/log');
+  await settle(page);
+  await page.getByRole('button', { name: 'Meals' }).last().click();
+  await page.getByText('Grilled chicken').first().click();
+  await expect(page).toHaveURL(/\/log\/item\//);
+  const writes = [];
+  page.on('request', (r) => { if (r.url().includes('/rest/v1/food_logs') && r.method() === 'PATCH') writes.push(r.postData()); });
+  await page.getByLabel('Amount').fill('2');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page).toHaveURL(/\/log$/);
+  await expect.poll(() => writes.length).toBeGreaterThan(0);
+});

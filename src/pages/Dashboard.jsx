@@ -585,10 +585,8 @@ function WorkoutRow({ workout: w, type, onDelete }) {
 }
 
 // ─── Meal Log ─────────────────────────────────────────────────────────────────
-function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, onCopyYesterday, copyingYesterday }) {
+function MealLog({ groups, onDelete, onNavigateFood, yesterdayByMeal, onCopyYesterday, copyingYesterday }) {
   const [open, setOpen] = useState({});
-  const [expandedId, setExpandedId] = useState(null);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {groups.map(({ key, label, items }) => {
@@ -627,10 +625,7 @@ function MealLog({ groups, onDelete, onSave, onNavigateFood, yesterdayByMeal, on
                     <LogItemRow
                       key={item.id}
                       item={item}
-                      isExpanded={expandedId === item.id}
-                      onToggle={() => setExpandedId(prev => (prev === item.id ? null : item.id))}
                       onDelete={() => onDelete(item.id)}
-                      onSave={async (fields) => { await onSave(item.id, fields); setExpandedId(null); }}
                     />
                   ))
                 )}
@@ -817,7 +812,7 @@ export default function Dashboard() {
     setViewSaveError(null);
     try { await saveProfile({ daily_log_view: v }); } catch { setViewSaveError("Couldn't save — try again."); }
   }
-  const { meals, slotTimeline, deleteFood, updateFood, addSlot, editSlot, removeSlot, refetch: refetchFoodLogs } = useFoodLogs(viewedDate);
+  const { meals, slotTimeline, deleteFood, addSlot, editSlot, removeSlot, refetch: refetchFoodLogs } = useFoodLogs(viewedDate);
   const { checkin, loading: checkinLoading, save: saveCheckin } = useCheckins(viewedDate);
   // 90 days (not 30) so the pattern engine's more specific candidates
   // (fibre, hydration, sugar, breakfast) have a real chance to each reach
@@ -1152,7 +1147,6 @@ export default function Dashboard() {
               <SlotTimeline
                 segments={slotTimeline}
                 onDelete={handleDeleteFoodItem}
-                onSave={updateFood}
                 onNavigateAdd={(slot) => navigate('/food', { state: { date: viewedDate, presetSlotId: slot.id, presetTime: slot.slotTime } })}
                 onAddSlot={addSlot}
                 onEditSlot={editSlot}
@@ -1163,7 +1157,6 @@ export default function Dashboard() {
               <MealLog
                 groups={Object.entries(meals).map(([key, items]) => ({ key, label: key.charAt(0).toUpperCase() + key.slice(1), items }))}
                 onDelete={handleDeleteFoodItem}
-                onSave={updateFood}
                 onNavigateFood={(key) => navigate('/food', { state: { date: viewedDate, openMeal: key } })}
                 yesterdayByMeal={yesterdayByMeal}
                 onCopyYesterday={copyFromYesterday}
