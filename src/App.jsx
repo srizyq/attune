@@ -38,6 +38,10 @@ const loadSettingsGoals = () => import('./pages/SettingsGoals');
 const SettingsGoals = lazy(loadSettingsGoals);
 const loadProfile = () => import('./pages/Profile');
 const Profile = lazy(loadProfile);
+const loadLogWorkout = () => import('./pages/LogWorkout');
+const LogWorkout = lazy(loadLogWorkout);
+const loadQuickMacro = () => import('./pages/QuickMacro');
+const QuickMacro = lazy(loadQuickMacro);
 const loadPasteSlot = () => import('./pages/PasteSlot');
 const PasteSlot = lazy(loadPasteSlot);
 const loadCopyDay = () => import('./pages/CopyDay');
@@ -175,9 +179,11 @@ function AnimatedRoutes() {
         <Route path="/progress" element={<Navigate to="/expenditure" replace />} />
         <Route path="/nutrients" element={<RequireAuth><Nutrients /></RequireAuth>} />
         <Route path="/nutrients/:key" element={<RequireAuth><NutrientFoods /></RequireAuth>} />
+        <Route path="/workout/log" element={<RequireAuth><LogWorkout /></RequireAuth>} />
         <Route path="/weight/log" element={<RequireAuth><LogWeight /></RequireAuth>} />
         <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />
         <Route path="/fasting" element={<RequireAuth><Fasting /></RequireAuth>} />
+        <Route path="/log/quick-macro" element={<RequireAuth><QuickMacro /></RequireAuth>} />
         <Route path="/log/paste-slot" element={<RequireAuth><PasteSlot /></RequireAuth>} />
         <Route path="/log/copy" element={<RequireAuth><CopyDay /></RequireAuth>} />
         <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />

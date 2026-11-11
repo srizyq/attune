@@ -1,12 +1,30 @@
 import { useEffect, useState } from 'react';
-import { SettingsModal } from './settings/primitives';
-import { WORKOUT_TYPES, INTENSITIES, estimateWorkoutCalories } from '../lib/workoutMath';
-import SegmentedControl from './SegmentedControl';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useProfile } from '../hooks/useProfile';
+import { useWorkoutLogs } from '../hooks/useWorkoutLogs';
+import { WORKOUT_TYPES, INTENSITIES, estimateWorkoutCalories, weightInKg } from '../lib/workoutMath';
+import { todayLocalDate } from '../lib/patterns';
+import AppNav from '../components/AppNav';
+import PageHeader from '../components/PageHeader';
+import SegmentedControl from '../components/SegmentedControl';
 
 const labelStyle = { fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' };
-const fieldStyle = { width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, padding: '10px 12px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
+const fieldStyle = { width: '100%', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: 8, padding: '11px 12px', minHeight: 44, color: 'var(--text-primary)', fontSize: 16, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
 
-export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) {
+// Log a workout (a page, /workout/log?date=): type, intensity, duration, and a
+// MET-estimated calorie figure you can overwrite. Saves onto the day the
+// Dashboard was showing and returns to it.
+export default function LogWorkout() {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const { profile } = useProfile();
+  const requested = params.get('date');
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(requested || '') ? requested : todayLocalDate();
+  const { create } = useWorkoutLogs(date);
+  const weightKg = weightInKg(profile);
+  const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
+  const close = () => navigate('/dashboard', { state: { date } });
+
   const [type, setType] = useState(WORKOUT_TYPES[0].id);
   const [intensity, setIntensity] = useState('moderate');
   const [duration, setDuration] = useState('30');
@@ -31,8 +49,8 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
     setSaving(true);
     setError(null);
     try {
-      await onSave({ type, intensity, durationMinutes, caloriesBurned: caloriesBurned || 0 });
-      onClose();
+      await create({ type, intensity, durationMinutes, caloriesBurned: caloriesBurned || 0 });
+      close();
     } catch (err) {
       console.error('Failed to save workout:', err);
       setError("Couldn't save — try again.");
@@ -42,9 +60,13 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
   }
 
   return (
-    <SettingsModal title="Log a workout" onClose={onClose} closing={closing}>
-      <div style={{ padding: 20 }}>
-        <label style={labelStyle}>Type</label>
+    <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
+      <AppNav active="dashboard" initials={initials} />
+      <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        <PageHeader title="Log a workout" subtitle={date === todayLocalDate() ? 'Today' : date} onBack={close} backLabel="Back to Dashboard" />
+        <div className="page-pad">
+          <div style={{ maxWidth: 520 }}>
+        <div style={labelStyle}>Type</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 18 }}>
           {WORKOUT_TYPES.map(t => (
             <button
@@ -64,19 +86,20 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
           ))}
         </div>
 
-        <label style={labelStyle}>Intensity</label>
+        <div style={labelStyle}>Intensity</div>
         <div style={{ marginBottom: 18 }}>
           <SegmentedControl options={INTENSITIES} value={intensity} onChange={setIntensity} fill />
         </div>
 
         <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
           <div style={{ flex: 1 }}>
-            <label style={labelStyle}>Duration (min)</label>
-            <input type="number" min="0" step="any" value={duration} onChange={e => setDuration(e.target.value)} style={fieldStyle} />
+            <label htmlFor="wk-dur" style={labelStyle}>Duration (min)</label>
+            <input id="wk-dur" type="number" min="0" step="any" value={duration} onChange={e => setDuration(e.target.value)} style={fieldStyle} />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={labelStyle}>Calories burned</label>
+            <label htmlFor="wk-cal" style={labelStyle}>Calories burned</label>
             <input
+              id="wk-cal"
               type="number" min="0" step="any" value={calories}
               onChange={e => { setCaloriesTouched(true); setCalories(e.target.value); }}
               style={fieldStyle}
@@ -91,13 +114,15 @@ export default function LogWorkoutModal({ weightKg, onClose, onSave, closing }) 
           disabled={saving}
           style={{
             width: '100%', background: saving ? 'var(--border-default)' : 'var(--accent)', border: 'none', borderRadius: 8,
-            padding: '12px', fontSize: 14, fontWeight: 600, color: saving ? 'var(--text-muted)' : 'var(--accent-contrast)',
+            padding: '12px', minHeight: 44, fontSize: 14, fontWeight: 600, color: saving ? 'var(--text-muted)' : 'var(--accent-contrast)',
             cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
           }}
         >
           {saving ? 'Saving…' : 'Save workout'}
         </button>
+          </div>
+        </div>
       </div>
-    </SettingsModal>
+    </div>
   );
 }

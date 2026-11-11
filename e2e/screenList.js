@@ -16,6 +16,8 @@ export const SCREENS = [
   { name: 'coach', path: '/coach' },
   { name: 'friends', path: '/friends', wait: 'No friends yet' },
   { name: 'profile', path: '/profile' },
+  { name: 'log-workout', path: '/workout/log' },
+  { name: 'quick-macro', path: '/log/quick-macro' },
   { name: 'paste-slot', path: '/log/paste-slot' },
   { name: 'copy-day', path: '/log/copy' },
   { name: 'log-weight', path: '/weight/log' },

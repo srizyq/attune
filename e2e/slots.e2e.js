@@ -160,3 +160,17 @@ test('dropping a food back where it already is does nothing', async ({ page, con
   await page.waitForTimeout(300);
   expect(patches).toHaveLength(0);
 });
+
+test('Quick macro is a page: logs a manual entry and returns to the log', async ({ page, context }, testInfo) => {
+  await openApp({ page, context }, testInfo, PRO);
+  await page.goto('/log');
+  await settle(page);
+  await page.getByRole('button', { name: /Quick Macro/ }).click();
+  await expect(page).toHaveURL(/\/log\/quick-macro\?date=/);
+  const writes = [];
+  page.on('request', (r) => { if (r.url().includes('/rest/v1/food_logs') && r.method() === 'POST') writes.push(r.postData()); });
+  await page.getByLabel('Calories').fill('250');
+  await page.getByRole('button', { name: 'Log it' }).click();
+  await expect(page).toHaveURL(/\/log$/);
+  expect(writes.join('')).toContain('250');
+});

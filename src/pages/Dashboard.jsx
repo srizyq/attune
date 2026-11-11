@@ -14,11 +14,9 @@ import { useWorkoutLogs, useWorkoutLogsRange } from '../hooks/useWorkoutLogs';
 import { todayLocalDate, dateNDaysAgo, dateRange, computeStreak } from '../lib/patterns';
 import { goalMacroSplits, buildTargets, defaultPace } from '../lib/calorieTargets';
 import { toKg, fromKg } from '../lib/adaptiveTDEE';
-import { weightInKg, getWorkoutType } from '../lib/workoutMath';
-import { useClosingTransition } from '../hooks/useClosingTransition';
+import { getWorkoutType } from '../lib/workoutMath';
 import AppNav from '../components/AppNav';
 import CoachInbox from '../components/CoachInbox';
-import LogWorkoutModal from '../components/LogWorkoutModal';
 import LogItemRow from '../components/LogItemRow';
 import LogCalendar from '../components/LogCalendar';
 import SlotTimeline from '../components/SlotTimeline';
@@ -508,7 +506,7 @@ function MacroGroup({ onDetails, children }) {
 // Steps has no real data source yet — Apple Health / Google Fit / Health
 // Connect are native-only APIs, unreachable from a PWA — so it stays a
 // placeholder. Burned is real: manually-logged workouts (see
-// LogWorkoutModal/useWorkoutLogs), MET-estimated from type/intensity/
+// the Log workout page/useWorkoutLogs), MET-estimated from type/intensity/
 // duration and editable, feeding back into the day's calorie budget.
 function ActivityStat({ icon, iconColor = 'var(--text-primary)', label, value, active, chip }) {
   return (
@@ -829,9 +827,7 @@ export default function Dashboard() {
   const { dailyData, refetch: refetchHistory } = useHistory(dateNDaysAgo(90), today);
   const weightUnit = profile?.unit === 'imperial' ? 'lb' : 'kg';
   const { logs: weightLogs, latest: latestWeight, refetch: refetchWeights } = useWeightLogs(dateNDaysAgo(89), today);
-  const { workouts, totalCaloriesBurned, create: createWorkout, remove: removeWorkout, refetch: refetchWorkouts } = useWorkoutLogs(viewedDate);
-  const [showWorkoutModal, setShowWorkoutModal] = useState(false);
-  const { closing: workoutModalClosing, close: closeWorkoutModal } = useClosingTransition(() => setShowWorkoutModal(false));
+  const { workouts, totalCaloriesBurned, remove: removeWorkout, refetch: refetchWorkouts } = useWorkoutLogs(viewedDate);
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
   const [toastAction, setToastAction] = useState(null);
@@ -863,11 +859,6 @@ export default function Dashboard() {
     } catch {
       showToast("Couldn't delete workout — try again", true);
     }
-  }
-
-  async function handleLogWorkout(entry) {
-    await createWorkout(entry);
-    refetchBurnedByDate();
   }
 
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(viewedDate + 'T00:00:00'); d.setDate(1); return d; });
@@ -1132,7 +1123,7 @@ export default function Dashboard() {
           <ActivityRow
             workouts={workouts}
             totalCaloriesBurned={totalCaloriesBurned}
-            onLogWorkout={() => setShowWorkoutModal(true)}
+            onLogWorkout={() => navigate(`/workout/log?date=${viewedDate}`)}
             onDeleteWorkout={handleDeleteWorkout}
           />
 
@@ -1186,14 +1177,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {showWorkoutModal && (
-        <LogWorkoutModal
-          weightKg={weightInKg(profile)}
-          closing={workoutModalClosing}
-          onClose={closeWorkoutModal}
-          onSave={handleLogWorkout}
-        />
-      )}
       {toast && <Toast message={toast} error={toastError} action={toastAction} duration={toastAction ? 5000 : 2200} onDone={() => setToast(null)} />}
     </div>
   );

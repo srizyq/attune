@@ -13,7 +13,6 @@ import { useCoachNote } from '../hooks/useCoach';
 import LogItemRow from '../components/LogItemRow';
 import SlotTimeline from '../components/SlotTimeline';
 import QuickAddBar from '../components/QuickAddBar';
-import QuickMacroSheet from '../components/QuickMacroSheet';
 import DaySelector from '../components/DaySelector';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import Toast from '../components/Toast';
@@ -59,7 +58,7 @@ export default function DailyLog() {
   const isToday = selectedDate === today;
 
   const { note: nutritionCoachNote, dismiss: dismissNutritionCoachNote } = useCoachNote('nutrition', selectedDate);
-  const { meals, daySlots, slotTimeline, loading, deleteFood, updateFood, moveToSlot, addFood, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
+  const { meals, daySlots, slotTimeline, loading, deleteFood, updateFood, moveToSlot, addSlot, editSlot, removeSlot, refetch } = useFoodLogs(selectedDate);
   const [open, setOpen] = useState({ breakfast: true, lunch: true, dinner: true, snacks: true });
   const [expandedId, setExpandedId] = useState(null);
 
@@ -79,7 +78,6 @@ export default function DailyLog() {
   const [pullRef, pullState] = usePullToRefresh(() => refetch());
   // One ref for the scroll container, shared by both gestures.
   const setScrollEl = useCallback((el) => { pullRef.current = el; swipeRef.current = el; }, [pullRef, swipeRef]);
-  const [showQuickMacro, setShowQuickMacro] = useState(false);
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
   const [toastAction, setToastAction] = useState(null);
@@ -179,7 +177,7 @@ export default function DailyLog() {
               <QuickAddBar
                 selectedDate={selectedDate}
                 currentSlotId={slotFromTime(daySlots)?.id ?? null}
-                onOpenQuickMacro={() => setShowQuickMacro(true)}
+                onOpenQuickMacro={() => navigate(`/log/quick-macro?date=${selectedDate}`)}
               />
             </>
           ) : (
@@ -240,12 +238,6 @@ export default function DailyLog() {
         </div>
       </div>
 
-      {showQuickMacro && (
-        <QuickMacroSheet
-          onClose={() => setShowQuickMacro(false)}
-          onSubmit={(food) => addFood(food, undefined, new Date(), slotFromTime(daySlots)?.id ?? null)}
-        />
-      )}
       {toast && <Toast message={toast} error={toastError} action={toastAction} duration={toastAction ? 5000 : 2200} onDone={() => setToast(null)} />}
     </div>
   );

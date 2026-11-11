@@ -60,3 +60,16 @@ test('Copy from another day is a page and returns to the log', async ({ page, co
   await page.getByRole('button', { name: 'Back to Daily log' }).click();
   await expect(page).toHaveURL(/\/log$/);
 });
+
+test('Log workout is a page: saves and returns to the dashboard', async ({ page, context }, testInfo) => {
+  await openApp({ page, context }, testInfo, {});
+  await page.goto('/dashboard');
+  await settle(page);
+  await page.getByRole('button', { name: /Log workout|Log a workout/ }).first().click();
+  await expect(page).toHaveURL(/\/workout\/log\?date=/);
+  const writes = [];
+  page.on('request', (r) => { if (r.url().includes('/rest/v1/workout_logs') && r.method() === 'POST') writes.push(r.postData()); });
+  await page.getByRole('button', { name: 'Save workout' }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  expect(writes.length).toBeGreaterThan(0);
+});
