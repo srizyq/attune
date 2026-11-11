@@ -172,7 +172,7 @@ test.describe('quick add sheet', () => {
     await settle(page);
     await page.getByRole('button', { name: 'Quick add' }).click();
     await page.getByRole('button', { name: 'Log weight' }).click();
-    await expect(page).toHaveURL(/\/expenditure$/);
+    await expect(page).toHaveURL(/\/weight\/log$/);
   });
 
   test('dragging the sheet down still dismisses it', async ({ page, context }, testInfo) => {

@@ -23,7 +23,6 @@ import MacroSplitBar from '../components/MacroSplitBar';
 import { targetsForDate, dayTargetsActive } from '../lib/dayTargets';
 import PageHeader from '../components/PageHeader';
 import SegmentedControl from '../components/SegmentedControl';
-import FormRow from '../components/FormRow';
 import Card from '../components/Card';
 import ThisWeekCard from '../components/ThisWeekCard';
 import { weeklySummary } from '../lib/weeklySummary';
@@ -125,57 +124,6 @@ function WeekBars({ days, calorieTarget, targetFor }) {
   );
 }
 
-// The dashboard's weight tile also has its own quick-log popup
-// (WeightLogModal in Dashboard.jsx) for logging without leaving that
-// page — this button is the equivalent entry point for anyone already
-// on this page instead.
-function LogWeightButton({ unit, onLog }) {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  async function submit() {
-    if (!value || saving) return;
-    setSaving(true);
-    try {
-      await onLog(Number(value), unit);
-      setValue('');
-      setOpen(false);
-    } catch (err) {
-      console.error('Failed to log weight:', err);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)} style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        + Log weight
-      </button>
-    );
-  }
-
-  return (
-    <FormRow>
-      <input
-        type="number" autoFocus value={value} onChange={e => setValue(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') setOpen(false); }}
-        placeholder={`Weight (${unit})`}
-        style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 7, padding: '6px 10px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
-      />
-      <div style={{ display: 'flex', gap: 8 }}>
-        <FormRow.Button icon="ti-device-floppy" primary onClick={submit} disabled={!value || saving}>
-          {saving ? 'Saving…' : 'Save'}
-        </FormRow.Button>
-        <FormRow.Button icon="ti-x" onClick={() => setOpen(false)}>
-          Cancel
-        </FormRow.Button>
-      </div>
-    </FormRow>
-  );
-}
-
 export default function Expenditure() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -226,7 +174,7 @@ export default function Expenditure() {
   // trend), so it gets its own fetch scoped to WEIGHT_RANGES instead of
   // reusing the buffered fetch above.
   const weightRangeDays = WEIGHT_RANGES.find(r => r.id === weightRange)?.days;
-  const { logs: chartWeightLogs, loading: chartWeightLoading, logWeight } = useWeightLogs(
+  const { logs: chartWeightLogs, loading: chartWeightLoading } = useWeightLogs(
     weightRangeDays ? dateNDaysAgo(weightRangeDays - 1) : null,
     today
   );
@@ -539,7 +487,9 @@ export default function Expenditure() {
           <Card ref={weightSectionRef} style={{ padding: 20, marginBottom: 24 }}>
             <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', marginBottom: 10 }}>Weight</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
-              <LogWeightButton unit={weightUnit} onLog={(w, u) => logWeight(today, w, u)} />
+              <button onClick={() => navigate('/weight/log')} style={{ background: 'var(--accent-bg)', border: '1px solid var(--border-active)', borderRadius: 7, padding: '6px 12px', minHeight: 36, fontSize: 12, fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                + Log weight
+              </button>
               <select
                 value={weightRange}
                 onChange={e => setWeightRange(e.target.value)}

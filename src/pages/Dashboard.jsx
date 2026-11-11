@@ -42,6 +42,7 @@ import PullIndicator from '../components/PullIndicator';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { round1, withBrand } from '../lib/format';
 import FormRow from '../components/FormRow';
+import WeightSparkline from '../components/WeightSparkline';
 import ListRow from '../components/ListRow';
 import { useFasting } from '../hooks/useFasting';
 import { buildSnapshot, pushWidgetSnapshot, listenForWidgetLinks } from '../lib/widgetBridge';
@@ -111,102 +112,6 @@ function WeightCard({ latest, weightTrendKg, weightUnit, recentWeights, targetWe
 // longer requires leaving the dashboard at all. Leads with a small trend
 // sparkline of recent entries so logging feels like adding one point to
 // a story, not filling a bare form.
-function WeightSparkline({ points, color }) {
-  if (points.length < 2) return null;
-  const w = 240, h = 56, pad = 6;
-  const max = Math.max(...points), min = Math.min(...points);
-  const span = max - min || 1;
-  const norm = (v) => h - pad - ((v - min) / span) * (h - pad * 2);
-  const coords = points.map((v, i) => [(i / (points.length - 1)) * w, norm(v)]);
-  const linePts = coords.map(p => p.join(',')).join(' ');
-  const areaPts = `0,${h} ${linePts} ${w},${h}`;
-  const last = coords[coords.length - 1];
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: h, display: 'block' }}>
-      <polygon points={areaPts} fill={color} opacity="0.08" />
-      <polyline points={linePts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r="4" fill="var(--bg-card)" stroke={color} strokeWidth="2" />
-    </svg>
-  );
-}
-
-function WeightLogModal({ weightLogs, latest, unit, onSave, onClose, onViewTrend, closing }) {
-  const [value, setValue] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const recent = [...weightLogs]
-    .sort((a, b) => a.logged_date.localeCompare(b.logged_date))
-    .slice(-10)
-    .map(w => round1(fromKg(toKg(w.weight, w.unit), unit)));
-
-  async function submit() {
-    if (!value || saving) return;
-    setSaving(true);
-    try {
-      await onSave(Number(value));
-      onClose();
-    } catch (err) {
-      console.error('Failed to log weight:', err);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div onClick={onClose} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} className={`modal-panel${closing ? ' is-closing' : ''}`} style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 340, padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Log weight</span>
-          <button className="hit-slop" aria-label="Close" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', cursor: 'pointer', fontSize: 18, padding: 4, lineHeight: 1 }}><span className="x-mark" aria-hidden="true" /></button>
-        </div>
-
-        {recent.length >= 2 && (
-          <div style={{ marginBottom: 16 }}>
-            <WeightSparkline points={recent} color="var(--accent)" />
-          </div>
-        )}
-
-        <div style={{ textAlign: 'center', marginBottom: 4 }}>
-          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Last logged</span>
-        </div>
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>
-            {latest ? `${latest.weight}${latest.unit}` : '—'}
-          </span>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <FormRow>
-            <input
-              type="number"
-              inputMode="decimal"
-              autoFocus
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') submit(); }}
-              placeholder={`Weight (${unit})`}
-              style={{
-                width: '100%', boxSizing: 'border-box', padding: '11px 14px', background: 'var(--bg-primary)', border: '1px solid var(--border-default)',
-                borderRadius: 10, color: 'var(--text-primary)', fontSize: 15, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: 'none',
-              }}
-            />
-            <FormRow.Button icon="ti-device-floppy" primary onClick={submit} disabled={!value || saving}>
-              {saving ? '…' : 'Save'}
-            </FormRow.Button>
-          </FormRow>
-        </div>
-
-        <button
-          onClick={onViewTrend}
-          style={{ width: '100%', minHeight: 24, background: 'none', border: 'none', color: 'var(--accent-dark)', fontSize: 13, cursor: 'pointer', padding: '6px 0', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-        >
-          View trend
-        </button>
-      </div>
-    </div>
-  );
-}
-
 const WATER_SEGMENTS = 5;
 
 function WaterCard({ glasses, targetGlasses, setGlasses }) {
@@ -923,9 +828,7 @@ export default function Dashboard() {
   // hand instead of a second fetch.
   const { dailyData, refetch: refetchHistory } = useHistory(dateNDaysAgo(90), today);
   const weightUnit = profile?.unit === 'imperial' ? 'lb' : 'kg';
-  const { logs: weightLogs, latest: latestWeight, logWeight, refetch: refetchWeights } = useWeightLogs(dateNDaysAgo(89), today);
-  const [showWeightModal, setShowWeightModal] = useState(false);
-  const { closing: weightModalClosing, close: closeWeightModal } = useClosingTransition(() => setShowWeightModal(false));
+  const { logs: weightLogs, latest: latestWeight, refetch: refetchWeights } = useWeightLogs(dateNDaysAgo(89), today);
   const { workouts, totalCaloriesBurned, create: createWorkout, remove: removeWorkout, refetch: refetchWorkouts } = useWorkoutLogs(viewedDate);
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const { closing: workoutModalClosing, close: closeWorkoutModal } = useClosingTransition(() => setShowWorkoutModal(false));
@@ -1111,7 +1014,7 @@ export default function Dashboard() {
     baseTarget: calorieTargetFor(date),
   }));
 
-  // Same recent-points derivation as WeightLogModal's own sparkline below
+  // Same recent-points derivation as the Log weight page's sparkline
   // — kept in sync intentionally, since both are "the last handful of real
   // entries," not two different windows that could quietly drift apart.
   const recentWeights = [...weightLogs]
@@ -1198,7 +1101,7 @@ export default function Dashboard() {
                   weightUnit={weightUnit}
                   recentWeights={recentWeights}
                   targetWeight={profile?.target_weight}
-                  onWeightClick={() => setShowWeightModal(true)}
+                  onWeightClick={() => navigate(`/weight/log?date=${viewedDate}`)}
                   glasses={glasses}
                   targetGlasses={profile?.water_target || 8}
                   setGlasses={setGlasses}
@@ -1283,17 +1186,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {showWeightModal && (
-        <WeightLogModal
-          weightLogs={weightLogs}
-          latest={latestWeight}
-          unit={weightUnit}
-          closing={weightModalClosing}
-          onClose={closeWeightModal}
-          onSave={(w) => logWeight(viewedDate, w, weightUnit)}
-          onViewTrend={() => { closeWeightModal(); navigate('/expenditure', { state: { scrollTo: 'weight' } }); }}
-        />
-      )}
       {showWorkoutModal && (
         <LogWorkoutModal
           weightKg={weightInKg(profile)}

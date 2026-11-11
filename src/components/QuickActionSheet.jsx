@@ -8,10 +8,8 @@ import { useClosingTransition } from '../hooks/useClosingTransition';
 //
 // Scans open their own pages (/scan/barcode, /scan/photo, /scan/menu); Recipes now has its own real page
 // (src/pages/Recipes.jsx) instead of landing on the general search page
-// or a cramped popup. Log weight goes to Expenditure (Progress's old
-// weight chart lives there now) — that's the only place a new weight
-// entry can be logged from since the dashboard's inline weight form was
-// replaced by a glance-tile there. Fasting opens its own page (timer, goal and
+// or a cramped popup. Log weight goes to its own page (the same one the
+// Dashboard weight tile and Expenditure's button open). Fasting opens its own page (timer, goal and
 // history), where a fast is started and ended.
 const TOP_ACTIONS = [
   { id: 'log-food', label: 'Log food', icon: 'ti-search', to: '/food' },
@@ -20,7 +18,7 @@ const TOP_ACTIONS = [
   { id: 'menu', label: 'Scan menu', icon: 'ti-tools-kitchen-2', to: '/scan/menu' },
 ];
 const BOTTOM_ACTIONS = [
-  { id: 'weight', label: 'Log weight', icon: 'ti-scale', to: '/expenditure' },
+  { id: 'weight', label: 'Log weight', icon: 'ti-scale', to: '/weight/log' },
   { id: 'fasting', label: 'Fasting', icon: 'ti-hourglass-high', to: '/fasting' },
   { id: 'recipes', label: 'Recipes', icon: 'ti-bookmark', to: '/recipes' },
   { id: 'custom-food', label: 'Custom food', icon: 'ti-plus', to: '/food', state: { openCreateFood: true } },

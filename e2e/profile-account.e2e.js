@@ -35,3 +35,17 @@ test('Delete account is a page, needs DELETE typed, and Cancel goes back', async
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page).toHaveURL(/\/settings\/personal$/);
 });
+
+test('Log weight is a page: saves a weight and returns to where you came from', async ({ page, context }, testInfo) => {
+  await openApp({ page, context }, testInfo, {});
+  await page.goto('/expenditure');
+  await settle(page);
+  await page.getByRole('button', { name: /Log weight/ }).first().click();
+  await expect(page).toHaveURL(/\/weight\/log$/);
+  const writes = [];
+  page.on('request', (r) => { if (r.url().includes('/rest/v1/weight_logs') && r.method() !== 'GET') writes.push(r.postData()); });
+  await page.getByLabel(/Weight \(/).fill('81.2');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page).toHaveURL(/\/expenditure$/);
+  expect(writes.join('')).toContain('81.2');
+});

@@ -51,7 +51,7 @@ const SCENARIOS = [
   { name: 'food-create-custom', path: '/food', act: (p) => p.getByTitle('Create a custom food').click() },
   { name: 'food-expand-result', path: '/food', act: async (p) => { await p.getByText('Almonds').first().click(); } },
   { name: 'food-search-typing', path: '/food', act: async (p) => { await p.getByPlaceholder(/Search any food/).fill('chicken breast with a very long search phrase that keeps going'); } },
-  { name: 'expenditure-log-weight', path: '/expenditure', act: (p) => p.getByRole('button', { name: /Log weight/ }).first().click() },
+  { name: 'expenditure-log-weight', path: '/expenditure', lands: '/weight/log', act: (p) => p.getByRole('button', { name: /Log weight/ }).first().click() },
   { name: 'account-logout-warning', path: '/settings/personal', backend: { session: { is_anonymous: true, email: '', new_email: 'sam@example.test' } }, act: (p) => p.getByRole('button', { name: 'Log out' }).click() },
   { name: 'food-created-tab', path: '/food', act: (p) => p.getByRole('button', { name: 'Created' }).click() },
   {
