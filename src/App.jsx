@@ -54,6 +54,7 @@ const loadCoach = () => import('./pages/Coach');
 const Coach = lazy(loadCoach);
 const loadFriends = () => import('./pages/Friends');
 const Friends = lazy(loadFriends);
+const FriendRecipesPage = lazy(() => import('./pages/FriendRecipesPage'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const SettingsNotifications = lazy(() => import('./pages/SettingsSubPages').then((m) => ({ default: m.SettingsNotifications })));
 const SettingsCoach = lazy(() => import('./pages/SettingsSubPages').then((m) => ({ default: m.SettingsCoach })));
@@ -177,6 +178,7 @@ function AnimatedRoutes() {
         <Route path="/settings/goals" element={<RequireAuth><SettingsGoals /></RequireAuth>} />
         <Route path="/coach/*" element={<RequireAuth><Coach /></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
+        <Route path="/friends/recipes" element={<RequireAuth><FriendRecipesPage /></RequireAuth>} />
         <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
         <Route path="/friends/join/:code" element={<JoinFriend />} />
         <Route path="/friends/:id" element={<RequireAuth><FriendDay /></RequireAuth>} />

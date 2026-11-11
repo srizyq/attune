@@ -151,11 +151,11 @@ test('the old Community address lands on Friends', async ({ page, context }, tes
   await expect(page).toHaveURL(/\/friends$/);
 });
 
-test('Coach is still reachable from the Friends tab', async ({ page, context }, testInfo) => {
+test('Coach is still reachable from the Friends page', async ({ page, context }, testInfo) => {
   await openApp({ page, context }, testInfo);
   await page.goto('/friends');
   await settle(page);
-  await page.getByRole('tab', { name: 'Coach' }).click();
+  await page.getByRole('button', { name: /^Coach/ }).last().click();
   await expect(page).toHaveURL(/\/coach$/);
 });
 
@@ -168,7 +168,7 @@ test('a recipe can be shared with friends from the Recipes page', async ({ page,
   await expect(page.getByText('Big breakfast is now shared with your friends')).toBeVisible();
 });
 
-// ── sharing levels, friend circles, the Recipes tab ──────────────────────────
+// ── sharing levels, friend circles, the Recipes page ──────────────────────────
 const SAM_ID = '44444444-4444-4444-8444-444444444444';
 const calls = (rpcCalls, name) => rpcCalls.filter((c) => c[0] === name).map((c) => c[1]);
 
@@ -273,12 +273,12 @@ const SAM_RECIPE = { id: 'r3', name: 'Overnight oats', servings: 2, created_at: 
 const byFriend = (map) => (req) => map[JSON.parse(req.postData() || '{}').p_friend] || [];
 
 for (const theme of ['dark', 'light']) {
-  test(`the Recipes tab lists what friends shared, with photos and who from · ${theme}`, async ({ page, context }, testInfo) => {
+  test(`the Recipes page lists what friends shared, with photos and who from · ${theme}`, async ({ page, context }, testInfo) => {
     const ctx = await openApp({ page, context }, testInfo, { rpc: { ...THREE, friends_recipes: byFriend({ [FRIEND_ID]: [RECIPE, RECIPE_PHOTO], [SAM_ID]: [SAM_RECIPE] }) }, profile: { theme } });
     await page.goto('/friends');
     await settle(page);
-    await page.getByRole('tab', { name: 'Recipes' }).click();
-    await expect(page).toHaveURL(/\/friends\?tab=recipes$/);
+    await page.getByRole('button', { name: /^Recipes from friends/ }).click();
+    await expect(page).toHaveURL(/\/friends\/recipes$/);
     await expect(page.getByTestId('friend-recipe')).toHaveCount(3);
     await expect(page.getByTestId('friend-recipe').first()).toContainText('Overnight oats'); // newest first
     await expect(page.getByTestId('friend-recipe').filter({ hasText: 'Chia pudding' })).toContainText('From Jordan Lee');
@@ -289,9 +289,9 @@ for (const theme of ['dark', 'light']) {
   });
 }
 
-test('the Recipes tab can be narrowed to one friend', async ({ page, context }, testInfo) => {
+test('the Recipes page can be narrowed to one friend', async ({ page, context }, testInfo) => {
   await openApp({ page, context }, testInfo, { rpc: { ...THREE, friends_recipes: byFriend({ [FRIEND_ID]: [RECIPE], [SAM_ID]: [SAM_RECIPE] }) } });
-  await page.goto('/friends?tab=recipes');
+  await page.goto('/friends/recipes');
   await settle(page);
   await expect(page.getByTestId('friend-recipe')).toHaveCount(2);
   await page.getByRole('group', { name: 'Show recipes from' }).getByRole('button', { name: 'Sam' }).first().click();
@@ -303,7 +303,7 @@ test('saving a friend\'s recipe copies it, with its tags and prep time', async (
   const posts = [];
   page.on('request', (r) => { if (r.method() === 'POST' && r.url().includes('/rest/v1/saved_meals')) posts.push(JSON.parse(r.postData() || '{}')); });
   await openApp({ page, context }, testInfo, { rpc: { ...THREE, friends_recipes: byFriend({ [FRIEND_ID]: [RECIPE_PHOTO] }) } });
-  await page.goto('/friends?tab=recipes');
+  await page.goto('/friends/recipes');
   await settle(page);
   await page.getByRole('button', { name: 'Save to my recipes' }).click();
   await expect(page.getByText('Chia pudding saved to your recipes')).toBeVisible();
@@ -312,22 +312,25 @@ test('saving a friend\'s recipe copies it, with its tags and prep time', async (
   expect(posts[0].photo_path).toBeUndefined(); // the photo stays the friend's
 });
 
-test('the Recipes tab says so when nobody has shared one', async ({ page, context }, testInfo) => {
+test('the Recipes page says so when nobody has shared one', async ({ page, context }, testInfo) => {
   await openApp({ page, context }, testInfo, { rpc: { ...THREE, friends_recipes: [] } });
-  await page.goto('/friends?tab=recipes');
+  await page.goto('/friends/recipes');
   await settle(page);
   await expect(page.getByText('No shared recipes yet')).toBeVisible();
   await expect(page.getByText(/When a friend shares one/)).toBeVisible();
 });
 
-test('Recipes and Friends tabs switch without piling up history, and Coach still works', async ({ page, context }, testInfo) => {
+test('Friends has no tabs: recipes is a page with a way back, and the old tab link still lands there', async ({ page, context }, testInfo) => {
   await openApp({ page, context }, testInfo, { rpc: THREE });
   await page.goto('/friends');
   await settle(page);
-  await page.getByRole('tab', { name: 'Recipes' }).click();
-  await page.getByRole('tab', { name: 'Friends' }).click();
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  await page.getByRole('button', { name: /^Recipes from friends/ }).click();
+  await page.getByRole('button', { name: 'Back to Friends' }).click();
   await expect(page).toHaveURL(/\/friends$/);
   await expect(page.getByTestId('friend-circles')).toBeVisible();
+  await page.goto('/friends?tab=recipes');
+  await expect(page).toHaveURL(/\/friends\/recipes$/);
 });
 
 const SIZES = [[280, 653], [320, 568], [375, 667], [390, 844], [430, 932], [667, 375], [744, 1133], [1280, 720]];
@@ -339,7 +342,7 @@ for (const theme of ['light', 'dark']) {
     const problems = [];
     for (const [width, height] of SIZES) {
       await page.setViewportSize({ width, height });
-      for (const [label, path] of [['friends', '/friends'], ['recipes', '/friends?tab=recipes'], ['friend day', `/friends/${FRIEND_ID}`]]) {
+      for (const [label, path] of [['friends', '/friends'], ['recipes', '/friends/recipes'], ['friend day', `/friends/${FRIEND_ID}`]]) {
         await page.goto(path); await settle(page);
         for (const p of await page.evaluate(findLayoutProblems)) problems.push(`${width}x${height} ${label}: ${p.check} — ${p.msg}`);
       }

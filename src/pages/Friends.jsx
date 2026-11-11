@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
 import { useFriends } from '../hooks/useFriends';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
@@ -8,10 +8,8 @@ import PageHeader from '../components/PageHeader';
 import PullIndicator from '../components/PullIndicator';
 import Toast from '../components/Toast';
 import Avatar from '../components/Avatar';
-import FriendsTabs from '../components/friends/FriendsTabs';
 import ShareCard from '../components/friends/ShareCard';
 import FriendCircles from '../components/friends/FriendCircles';
-import FriendRecipes from '../components/friends/FriendRecipes';
 import DaySummary from '../components/DaySummary';
 import { ScanCard, Eyebrow, Chip, PrimaryButton } from '../components/scan/ScanKit';
 import { friendLink, friendlyFriendsError } from '../lib/friends';
@@ -41,13 +39,31 @@ function FriendCard({ friend, onOpen }) {
   );
 }
 
+function LinkRow({ icon, label, hint, to }) {
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      className="btn-press"
+      onClick={() => navigate(to)}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '6px 16px', marginBottom: 10, background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 14, color: 'var(--text-primary)', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}
+    >
+      <i className={`ti ${icon}`} aria-hidden="true" style={{ fontSize: 18, color: 'var(--accent)' }} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: 14, fontWeight: 700 }}>{label}</span>
+        <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{hint}</span>
+      </span>
+      <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
+    </button>
+  );
+}
+
 export default function Friends() {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const today = useMemo(() => todayLocalDate(), []);
   const f = useFriends(today);
   const [params] = useSearchParams();
-  const tab = params.get('tab') === 'recipes' ? 'recipes' : 'friends';
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
   const showToast = (message, isError = false) => { setToast(message); setToastError(isError); };
@@ -69,6 +85,9 @@ export default function Friends() {
     try { await fn(value); } catch (err) { showToast(friendlyFriendsError(err), true); }
   };
 
+  // Old links to the Recipes tab.
+  if (params.get('tab') === 'recipes') return <Navigate to="/friends/recipes" replace />;
+
   let content;
   if (f.loading) {
     content = <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</p>;
@@ -80,9 +99,7 @@ export default function Friends() {
       </div>
     );
   } else {
-    content = tab === 'recipes' ? (
-      <FriendRecipes friends={f.friends} onToast={showToast} />
-    ) : (
+    content = (
       <>
         {f.friends.length === 0 ? (
           <ScanCard style={{ padding: '22px 18px', textAlign: 'center' }}>
@@ -97,6 +114,11 @@ export default function Friends() {
             {f.friends.map((fr) => <FriendCard key={fr.id} friend={fr} onOpen={() => navigate(`/friends/${fr.id}`)} />)}
           </>
         )}
+
+        <div style={{ marginTop: 16 }}>
+          <LinkRow icon="ti-tools-kitchen-2" label="Recipes from friends" hint="What your friends have shared" to="/friends/recipes" />
+          <LinkRow icon="ti-users" label="Coach" hint="Your coach, or coaching clients" to="/coach" />
+        </div>
 
         <ShareCard
           level={f.shareLevel} levelsSupported={f.levelsSupported} dayHidden={f.dayHidden}
@@ -117,7 +139,6 @@ export default function Friends() {
           right={f.code ? <button type="button" className="app-icon-btn" aria-label="Invite a friend" title="Invite a friend" onClick={invite}><i className="ti ti-user-plus" /></button> : undefined}
         />
         <div className="page-pad" style={{ maxWidth: 700 }}>
-          <FriendsTabs active={tab} />
           {content}
         </div>
       </div>
