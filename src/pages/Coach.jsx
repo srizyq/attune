@@ -240,6 +240,18 @@ export default function Coach() {
               </span>
               <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
             </button>
+            <button
+              type="button"
+              onClick={() => navigate('/friends')}
+              className="btn-press"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: 52, padding: '0 20px', marginTop: 12, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: 16, color: 'var(--text-secondary)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <i className="ti ti-users-group" aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
+                Friends
+              </span>
+              <i className="ti ti-chevron-right" aria-hidden="true" style={{ color: 'var(--text-hint)' }} />
+            </button>
             </>
           )}
         </div>

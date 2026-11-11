@@ -182,3 +182,11 @@ for (const theme of ['light', 'dark']) {
     expect(ctx.consoleErrors).toEqual([]);
   });
 }
+
+test('a coach can reach Friends from the Coach page', async ({ page, context }, testInfo) => {
+  await openApp({ page, context }, testInfo, COACH_BACKEND);
+  await page.goto('/coach');
+  await settle(page);
+  await page.getByRole('button', { name: 'Friends', exact: true }).click();
+  await expect(page).toHaveURL(/\/friends$/);
+});

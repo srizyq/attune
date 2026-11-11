@@ -100,6 +100,12 @@ describe('Coach page', () => {
     expect(screen.getByTestId('client-list')).toBeInTheDocument();
   });
 
+  it('has a Friends row, since a coach\'s bottom nav shows Coach where everyone else sees Friends', async () => {
+    setup();
+    await userEvent.click(screen.getByRole('button', { name: 'Friends' }));
+    expect(screen.queryByTestId('client-list')).toBeNull();
+  });
+
   it('says when your own coach is waiting for an answer, so an invite is never buried', () => {
     setup({ pendingCoach: [{ id: 'p1' }] });
     expect(screen.getByRole('button', { name: /Your own coach.*1 waiting/ })).toBeInTheDocument();
