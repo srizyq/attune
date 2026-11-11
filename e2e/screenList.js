@@ -16,6 +16,7 @@ export const SCREENS = [
   { name: 'coach', path: '/coach' },
   { name: 'friends', path: '/friends', wait: 'No friends yet' },
   { name: 'profile', path: '/profile' },
-  { name: 'personal-details', path: '/settings/personal' },
+  { name: 'account', path: '/settings/personal' },
+  { name: 'account-delete', path: '/settings/personal/delete' },
 ];
 

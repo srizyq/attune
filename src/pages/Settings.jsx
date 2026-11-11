@@ -15,15 +15,14 @@ import SyncCard from '../components/SyncCard';
 // room a full page gives it, matching how Nutrients/Profile/Expenditure
 // already work as their own screens instead of a modal.
 //
-// Account (session/subscription management for a plan you already have)
-// lives under Personal details (name, body stats, sign out, theme). The
-// Profile card above opens the Community-style profile. Plans &
+// Account (plan, theme, sign out, delete) is its own row; name and body
+// stats live on the Profile page the card above opens. Plans &
 // Billing is different: it's for *comparing/choosing* a plan, which needs
 // to be reachable even if you aren't already staring at a paywall — hence
 // its own row (a plain route like the rest), rather
 // than only being reachable from an upsell prompt buried elsewhere.
 const SECTIONS = [
-  { id: 'personal', icon: 'ti-id', label: 'Personal details', kind: 'route', path: '/settings/personal' },
+  { id: 'personal', icon: 'ti-id', label: 'Account', kind: 'route', path: '/settings/personal' },
   { id: 'goals',   icon: 'ti-target',       label: 'Goals & Targets', kind: 'page' },
   { id: 'notifs',  icon: 'ti-bell',         label: 'Notifications',   kind: 'route', path: '/settings/notifications' },
   { id: 'coach',   icon: 'ti-users',        label: 'Coach Mode',      kind: 'route', path: '/settings/coach' },
@@ -35,6 +34,9 @@ const SECTIONS = [
 // One entry per individual setting (not per section) so a search like
 // "protein" or "reminder" jumps straight to the right section instead of
 // requiring you to already know which one it lives under.
+// Reachable from search only — the Profile card at the top is its row.
+const PROFILE_SECTION = { id: 'profile', icon: 'ti-user', label: 'Profile', kind: 'route', path: '/profile' };
+
 const SEARCH_INDEX = [
   { section: 'goals', label: 'Weight goal', keywords: 'goal lose maintain build weight' },
   { section: 'goals', label: 'Activity level', keywords: 'activity sedentary light moderate active exercise' },
@@ -48,9 +50,9 @@ const SEARCH_INDEX = [
   { section: 'coach', label: 'Coach Mode', keywords: 'coach mode client dashboard' },
   { section: 'coach', label: 'My trainer', keywords: 'trainer invite code connect' },
   { section: 'plans', label: 'Compare Pro & Coach Pass', keywords: 'pricing plans pro coach pass subscribe billing upgrade price compare' },
-  { section: 'personal', label: 'Name', keywords: 'name personal details' },
-  { section: 'personal', label: 'Units', keywords: 'units metric imperial kg lb cm' },
-  { section: 'personal', label: 'Age, weight and height', keywords: 'age weight height body stats' },
+  { section: 'profile', label: 'Name', keywords: 'name personal details profile' },
+  { section: 'profile', label: 'Units', keywords: 'units metric imperial kg lb cm' },
+  { section: 'profile', label: 'Age, weight and height', keywords: 'age weight height body stats' },
   { section: 'personal', label: 'Account status', keywords: 'account email guest sign in' },
   { section: 'personal', label: 'Pro features', keywords: 'pro premium upgrade' },
   { section: 'personal', label: 'Theme', keywords: 'theme dark light appearance' },
@@ -79,7 +81,7 @@ export default function Settings() {
   const sections = useMemo(() => (admin ? [...SECTIONS, REPORTS_SECTION] : SECTIONS), [admin]);
 
   function openSection(id) {
-    const section = sections.find(s => s.id === id);
+    const section = [...sections, PROFILE_SECTION].find(s => s.id === id);
     if (!section) return;
     if (section.kind === 'page') navigate('/settings/goals');
     else if (section.kind === 'route') navigate(section.path);
@@ -198,7 +200,7 @@ export default function Settings() {
             ) : (
               <div style={{ marginBottom: 8 }}>
                 {results.map(r => {
-                  const section = SECTIONS.find(s => s.id === r.section);
+                  const section = [...SECTIONS, PROFILE_SECTION].find(s => s.id === r.section);
                   if (!section) return null;
                   return (
                     <button

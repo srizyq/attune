@@ -38,6 +38,8 @@ const loadSettingsGoals = () => import('./pages/SettingsGoals');
 const SettingsGoals = lazy(loadSettingsGoals);
 const loadProfile = () => import('./pages/Profile');
 const Profile = lazy(loadProfile);
+const loadAccountDelete = () => import('./pages/AccountDelete');
+const AccountDelete = lazy(loadAccountDelete);
 const loadMyProfile = () => import('./pages/MyProfile');
 const MyProfile = lazy(loadMyProfile);
 const loadPricing = () => import('./pages/Pricing');
@@ -186,6 +188,7 @@ function AnimatedRoutes() {
         <Route path="/join/:code" element={<JoinCoach />} />
         <Route path="/profile" element={<RequireAuth><MyProfile /></RequireAuth>} />
         <Route path="/settings/personal" element={<RequireAuth><Profile /></RequireAuth>} />
+        <Route path="/settings/personal/delete" element={<RequireAuth><AccountDelete /></RequireAuth>} />
         <Route path="/settings/report" element={<RequireAuth><ReportProblem /></RequireAuth>} />
         <Route path="/admin/reports" element={<RequireAuth><AdminReports /></RequireAuth>} />
         <Route path="/pricing" element={<RequireAuth><Pricing /></RequireAuth>} />

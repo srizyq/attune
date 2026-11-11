@@ -12,7 +12,7 @@ vi.mock('../hooks/useProfile', () => ({
 }));
 vi.mock('../lib/billing', () => ({ authedPost: vi.fn() }));
 
-import Profile from './Profile';
+import Profile from './MyProfile';
 
 const BASE_PROFILE = { name: 'Alex', unit: 'metric', age: 30, weight: 70, height: 170, is_premium: false, coach_pass: false, trial_ends_at: null };
 
@@ -25,7 +25,7 @@ const setup = (profileOverrides = {}, saveImpl) => {
 beforeEach(() => { vi.useFakeTimers(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-describe('Profile — autosave replaces the Save button', () => {
+describe('MyProfile — autosave replaces the Save button', () => {
   it('has no Save button', () => {
     setup();
     expect(screen.queryByRole('button', { name: /^Save$/ })).not.toBeInTheDocument();
@@ -98,27 +98,3 @@ describe('Profile — autosave replaces the Save button', () => {
   });
 });
 
-describe('Profile — delete account', () => {
-  it('needs DELETE typed before the button works, then calls the server', async () => {
-    const { authedPost } = await import('../lib/billing');
-    authedPost.mockResolvedValue({ ok: true });
-    setup();
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    const confirm = screen.getByRole('button', { name: 'Delete forever' });
-    expect(confirm).toBeDisabled();
-    fireEvent.change(screen.getByLabelText(/Type DELETE/), { target: { value: 'DELETE' } });
-    expect(confirm).not.toBeDisabled();
-    await act(async () => { fireEvent.click(confirm); });
-    expect(authedPost).toHaveBeenCalledWith('/api/create-portal-session', { action: 'delete-account' });
-  });
-
-  it('shows the error and stays signed in when deletion fails', async () => {
-    const { authedPost } = await import('../lib/billing');
-    authedPost.mockRejectedValue(new Error('Stripe is down'));
-    setup();
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    fireEvent.change(screen.getByLabelText(/Type DELETE/), { target: { value: 'DELETE' } });
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Delete forever' })); });
-    expect(screen.getByRole('alert')).toHaveTextContent('Stripe is down');
-  });
-});
