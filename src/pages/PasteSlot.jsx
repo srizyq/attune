@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useProfile } from '../hooks/useProfile';
 import { getFoodLogsForDate, getDaySlots, pasteSlot } from '../lib/db';
 import { mapSlotRow, formatSlotTime } from '../lib/daySlots';
-import { useClosingTransition } from '../hooks/useClosingTransition';
 import { todayLocalDate } from '../lib/patterns';
-import DaySelector from './DaySelector';
+import DaySelector from '../components/DaySelector';
+import AppNav from '../components/AppNav';
+import PageHeader from '../components/PageHeader';
 
 function shiftDateStr(dateStr, days) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -17,9 +20,16 @@ function shiftDateStr(dateStr, days) {
 // target, plus whatever was logged in it) as a new slot appended onto the
 // day currently being viewed. Never touches destDate's existing slots —
 // see pasteSlot in lib/db.js.
-export default function PasteSlotModal({ destDate, onClose, onPasted }) {
+export default function PasteSlot() {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { user } = useAuth();
-  const { closing, close } = useClosingTransition(onClose);
+  const { profile } = useProfile();
+  const requested = params.get('date');
+  const destDate = /^\d{4}-\d{2}-\d{2}$/.test(requested || '') ? requested : todayLocalDate();
+  const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
+  // Back to the log on the day being filled in (it refetches when it mounts).
+  const close = () => navigate('/log', { state: { date: destDate } });
   const [sourceDate, setSourceDate] = useState(() => shiftDateStr(destDate, -1));
   const [slotRows, setSlotRows] = useState([]);
   const [itemRows, setItemRows] = useState([]);
@@ -61,8 +71,7 @@ export default function PasteSlotModal({ destDate, onClose, onPasted }) {
     try {
       const sourceSlotRow = slotRows.find((r) => r.id === slot.id);
       const items = itemsBySlot.get(slot.id) || [];
-      const result = await pasteSlot(user.id, sourceSlotRow, items, destDate);
-      onPasted(result);
+      await pasteSlot(user.id, sourceSlotRow, items, destDate);
       close();
     } catch {
       setError("Couldn't paste that slot — try again.");
@@ -76,23 +85,17 @@ export default function PasteSlotModal({ destDate, onClose, onPasted }) {
     : new Date(destDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div onClick={close} className={`modal-backdrop${closing ? ' is-closing' : ''}`} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`modal-panel${closing ? ' is-closing' : ''}`}
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--card-border)', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: 'calc(var(--vvh, 100vh) * 0.85)', display: 'flex', flexDirection: 'column' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Paste a slot onto {destLabel}</span>
-          <button className="hit-slop" aria-label="Close" onClick={close} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}><span className="x-mark" aria-hidden="true" /></button>
-        </div>
-
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
+    <div style={{ display: 'flex', height: 'var(--app-h)', overflow: 'hidden', background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", color: 'var(--text-primary)' }}>
+      <AppNav active="log" initials={initials} />
+      <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+        <PageHeader title="Paste a slot" subtitle={`onto ${destLabel}`} onBack={close} backLabel="Back to Daily log" />
+        <div className="page-pad">
+        <div style={{ padding: '0 0 14px' }}>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Copy from</div>
           <DaySelector selectedDate={sourceDate} onSelect={setSourceDate} />
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 20px', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ padding: '10px 0' }}>
           {loading ? (
             <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Loading…</p>
           ) : slots.length === 0 ? (
@@ -107,7 +110,7 @@ export default function PasteSlotModal({ destDate, onClose, onPasted }) {
                   onClick={() => handlePaste(slot)}
                   disabled={!!pastingId}
                   style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px',
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', minHeight: 48,
                     background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)',
                     cursor: pastingId ? 'not-allowed' : 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   }}
@@ -127,7 +130,8 @@ export default function PasteSlotModal({ destDate, onClose, onPasted }) {
           )}
         </div>
 
-        {error && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', padding: '0 20px 14px', flexShrink: 0 }}>{error}</p>}
+        {error && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>{error}</p>}
+        </div>
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { useFoodLogs } from '../hooks/useFoodLogs';
 import { todayLocalDate } from '../lib/patterns';
 import { latestDate } from '../lib/weekStrip';
 import { slotFromTime } from '../lib/daySlots';
-import { copyDaySlots } from '../lib/db';
 import AppNav from '../components/AppNav';
 import CoachNote from '../components/CoachNote';
 import TodayPlanStrip from '../components/TodayPlanStrip';
@@ -15,7 +14,6 @@ import LogItemRow from '../components/LogItemRow';
 import SlotTimeline from '../components/SlotTimeline';
 import QuickAddBar from '../components/QuickAddBar';
 import QuickMacroSheet from '../components/QuickMacroSheet';
-import PasteSlotModal from '../components/PasteSlotModal';
 import DaySelector from '../components/DaySelector';
 import DailyLogViewToggle from '../components/DailyLogViewToggle';
 import Toast from '../components/Toast';
@@ -81,10 +79,7 @@ export default function DailyLog() {
   const [pullRef, pullState] = usePullToRefresh(() => refetch());
   // One ref for the scroll container, shared by both gestures.
   const setScrollEl = useCallback((el) => { pullRef.current = el; swipeRef.current = el; }, [pullRef, swipeRef]);
-  const [showCopyMenu, setShowCopyMenu] = useState(false);
-  const [showPasteSlotModal, setShowPasteSlotModal] = useState(false);
   const [showQuickMacro, setShowQuickMacro] = useState(false);
-  const [copyingYesterdaySlots, setCopyingYesterdaySlots] = useState(false);
   const [toast, setToast] = useState(null);
   const [toastError, setToastError] = useState(false);
   const [toastAction, setToastAction] = useState(null);
@@ -114,30 +109,6 @@ export default function DailyLog() {
     }
   }
 
-  // Slots mode's "Copy yesterday" — copyFromYesterday (above) only knows
-  // the meal enum, so this bypasses it and calls the slot-aware copy
-  // directly, same as the Copy page's mode=="slots" does for "Copy from
-  // another day…" below.
-  async function handleCopyYesterdaySlots() {
-    if (copyingYesterdaySlots) return;
-    setCopyingYesterdaySlots(true);
-    try {
-      const yesterday = new Date(selectedDate + 'T00:00:00');
-      yesterday.setDate(yesterday.getDate() - 1);
-      const result = await copyDaySlots(profile.id, todayLocalDate(yesterday), selectedDate);
-      if (result.slots.length === 0) {
-        showToast('No slots set up yesterday', true);
-      } else {
-        await refetch();
-        showToast(`Copied ${result.slots.length} slot${result.slots.length === 1 ? '' : 's'} from yesterday`);
-      }
-    } catch {
-      showToast("Couldn't copy — try again", true);
-    } finally {
-      setCopyingYesterdaySlots(false);
-    }
-  }
-
   const initials = (profile?.name || 'A').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'A';
   const totalCal = Object.values(meals).flat().reduce((s, i) => s + i.cal, 0);
   const dateStr = isToday
@@ -156,21 +127,9 @@ export default function DailyLog() {
           backLabel="Back to Dashboard"
           right={
             <div style={{ position: 'relative', display: 'flex', flexShrink: 0, gap: 8 }}>
-            <button onClick={() => setShowCopyMenu(v => !v)} title="Copy meals" aria-label="Copy meals" className="app-icon-btn">
+            <button onClick={() => navigate(`/log/copy?date=${selectedDate}&mode=${showSlots ? 'slots' : 'meals'}`)} title="Copy meals" aria-label="Copy meals" className="app-icon-btn">
               <i className="ti ti-copy" />
             </button>
-            {showCopyMenu && (
-              <>
-                <div onClick={() => setShowCopyMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 41, minWidth: 210, background: 'var(--bg-subtle)', border: '1px solid var(--border-default)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.35)', overflow: 'hidden' }}>
-                  <button onClick={() => { setShowCopyMenu(false); showSlots ? handleCopyYesterdaySlots() : copyFromYesterday(); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy yesterday</button>
-                  <button onClick={() => { setShowCopyMenu(false); navigate(`/log/copy?date=${selectedDate}&mode=${showSlots ? 'slots' : 'meals'}`); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: showSlots ? '1px solid var(--border-default)' : 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Copy from another day…</button>
-                  {showSlots && (
-                    <button onClick={() => { setShowCopyMenu(false); setShowPasteSlotModal(true); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '12px 14px', fontSize: 13, color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'inherit' }}>Paste slot…</button>
-                  )}
-                </div>
-              </>
-            )}
           </div>
           }
         >
@@ -281,13 +240,6 @@ export default function DailyLog() {
         </div>
       </div>
 
-      {showPasteSlotModal && (
-        <PasteSlotModal
-          destDate={selectedDate}
-          onClose={() => setShowPasteSlotModal(false)}
-          onPasted={refetch}
-        />
-      )}
       {showQuickMacro && (
         <QuickMacroSheet
           onClose={() => setShowQuickMacro(false)}

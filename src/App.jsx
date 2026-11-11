@@ -38,6 +38,8 @@ const loadSettingsGoals = () => import('./pages/SettingsGoals');
 const SettingsGoals = lazy(loadSettingsGoals);
 const loadProfile = () => import('./pages/Profile');
 const Profile = lazy(loadProfile);
+const loadPasteSlot = () => import('./pages/PasteSlot');
+const PasteSlot = lazy(loadPasteSlot);
 const loadCopyDay = () => import('./pages/CopyDay');
 const CopyDay = lazy(loadCopyDay);
 const loadLogWeight = () => import('./pages/LogWeight');
@@ -176,6 +178,7 @@ function AnimatedRoutes() {
         <Route path="/weight/log" element={<RequireAuth><LogWeight /></RequireAuth>} />
         <Route path="/expenditure" element={<RequireAuth><Expenditure /></RequireAuth>} />
         <Route path="/fasting" element={<RequireAuth><Fasting /></RequireAuth>} />
+        <Route path="/log/paste-slot" element={<RequireAuth><PasteSlot /></RequireAuth>} />
         <Route path="/log/copy" element={<RequireAuth><CopyDay /></RequireAuth>} />
         <Route path="/log" element={<RequireAuth><DailyLog /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />

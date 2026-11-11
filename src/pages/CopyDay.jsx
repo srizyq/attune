@@ -11,6 +11,7 @@ import { withBrand } from '../lib/format';
 import DaySelector from '../components/DaySelector';
 import AppNav from '../components/AppNav';
 import PageHeader from '../components/PageHeader';
+import PageLinks from '../components/PageLinks';
 
 const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snacks'];
@@ -151,6 +152,7 @@ export default function CopyDay() {
       <div className="app-content-pad" style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
         <PageHeader title={title} subtitle={`to ${destLabel}`} onBack={close} backLabel="Back to Daily log" />
         <div className="page-pad">
+          {mode === 'slots' && <PageLinks links={[{ to: `/log/paste-slot?date=${destDate}`, icon: 'ti-clipboard', label: 'Paste just one slot' }]} />}
         <div style={{ padding: '0 0 14px', flexShrink: 0 }}>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Copy from</div>
           <DaySelector selectedDate={sourceDate} onSelect={setSourceDate} />

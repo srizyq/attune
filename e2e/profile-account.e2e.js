@@ -55,7 +55,6 @@ test('Copy from another day is a page and returns to the log', async ({ page, co
   await page.goto('/log');
   await settle(page);
   await page.getByRole('button', { name: 'Copy meals' }).click();
-  await page.getByText('Copy from another day').click();
   await expect(page).toHaveURL(/\/log\/copy\?date=/);
   await expect(page.getByRole('heading', { name: 'Copy meals' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to Daily log' }).click();
