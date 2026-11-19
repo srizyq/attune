@@ -107,7 +107,15 @@ test('a saved supplement is taken in one tap and counts in the day', async ({ pa
   await expect(card.getByText(/Vitamin D 25mcg/)).toBeVisible();
   await card.getByRole('button', { name: /Take Vitamin D3/ }).click();
   await expect(card.getByText('✓ 1×')).toBeVisible();
+  // An accidental extra tap can be undone.
+  await card.getByRole('button', { name: /Take Vitamin D3/ }).click();
+  await expect(card.getByText('✓ 2×')).toBeVisible();
+  await card.getByRole('button', { name: /Undo one Vitamin D3/ }).click();
+  await expect(card.getByText('✓ 1×')).toBeVisible();
   await assertLayout(page, testInfo, 'x-nutrients-supplements', ctx);
+  await card.getByRole('button', { name: /Undo one Vitamin D3/ }).click();
+  await expect(card.getByText('Take', { exact: true })).toBeVisible();
+  await card.getByRole('button', { name: /Take Vitamin D3/ }).click();
   // The add form opens, needs a name and an amount, and lays out within the screen.
   await card.getByRole('button', { name: /Add/ }).click();
   const dialog = page.getByRole('dialog', { name: 'Add a supplement' });

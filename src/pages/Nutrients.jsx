@@ -89,7 +89,7 @@ export default function Nutrients() {
     setSelectedDate(next);
   }
 
-  const { logs, meals, loading, addFood, daySlots } = useFoodLogs(selectedDate, { supplements: true });
+  const { logs, meals, loading, addFood, deleteFood, daySlots } = useFoodLogs(selectedDate, { supplements: true });
   const supplementsApi = useSupplements();
   // The extended nutrients (B vitamins, selenium, ...) are only carried by some
   // food databases: sum just the foods that have them, and say how many did.
@@ -239,7 +239,7 @@ export default function Nutrients() {
                     const slotId = isPremium && (profile?.daily_log_view || 'meals') === 'slots' ? slotFor(daySlots, { at }) : null;
                     return addFood(food, undefined, at, slotId);
                   }}
-                  onCreate={supplementsApi.create} onRemove={supplementsApi.remove}
+                  onUntake={deleteFood} onCreate={supplementsApi.create} onRemove={supplementsApi.remove}
                 />
               )}
               {!generic && (<>

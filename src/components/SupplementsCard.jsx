@@ -70,10 +70,17 @@ function AddSupplement({ onSave, onClose }) {
  * being viewed (it then counts in every nutrient total), or add a new one.
  * `items` is the day's logged items, to show how many of each were taken.
  */
-export default function SupplementsCard({ supplements, items, onTake, onCreate, onRemove, dayLabel }) {
+export default function SupplementsCard({ supplements, items, onTake, onUntake, onCreate, onRemove, dayLabel }) {
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(null);
   const takenCount = (name) => (items || []).filter((i) => isSupplement(i) && i.name === name).length;
+
+  // Undo one: drop the most recently logged entry of this supplement.
+  function untake(row) {
+    const mine = (items || []).filter((i) => isSupplement(i) && i.name === row.name);
+    const last = mine[mine.length - 1];
+    if (last && onUntake) onUntake(last.id);
+  }
 
   async function take(row) {
     setBusy(row.id);
@@ -98,6 +105,12 @@ export default function SupplementsCard({ supplements, items, onTake, onCreate, 
               <div style={{ fontSize: 14, fontWeight: 600, overflowWrap: 'anywhere' }}>{row.name}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{row.serving_label} · {supplementSummary(row)}</div>
             </div>
+            {taken > 0 && onUntake && (
+              <button type="button" onClick={() => untake(row)} aria-label={`Undo one ${row.name} ${dayLabel || ''}`.trim()}
+                style={{ flexShrink: 0, width: 44, height: 44, background: 'none', border: '1px solid var(--border-default)', borderRadius: 10, color: 'var(--text-secondary)', fontSize: 18, fontWeight: 700, cursor: 'pointer' }}>
+                <i className="ti ti-minus" aria-hidden="true" />
+              </button>
+            )}
             <button type="button" onClick={() => take(row)} disabled={busy === row.id} aria-label={`Take ${row.name} ${dayLabel || ''}`.trim()}
               style={{ flexShrink: 0, minHeight: 44, minWidth: 64, padding: '0 14px', background: taken ? 'var(--accent-bg)' : 'var(--accent)', border: taken ? '1px solid var(--border-active)' : 'none', borderRadius: 10, color: taken ? 'var(--accent)' : 'var(--accent-contrast)', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
               {taken ? `✓ ${taken}×` : 'Take'}
