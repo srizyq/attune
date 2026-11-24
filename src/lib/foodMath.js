@@ -96,6 +96,30 @@ export function editServings(item, amount, unitId) {
   return amountToServings(n, unitId, item.servingGrams);
 }
 
+// The inverse of editServings: what amount, in `unitId`, makes `servings` of
+// the item as it is saved. Lets the edit page switch units without changing
+// how much food it describes (1 serving -> 170g, not 1g), and set a quick
+// multiplier (0.5x, 2x) in whichever unit is showing. Weight-less items have
+// only the calorie "amount". 0 when the unit can't describe this item.
+export function editAmountFor(item, servings, unitId) {
+  const s = Number(servings) || 0;
+  if (s <= 0) return 0;
+  const round = n => Math.round(n * 100) / 100;
+  if (!item.servingGrams) return round(s * (item.cal || 0));
+  if (unitId === "serving") {
+    const gps = gramsPerServing(item);
+    return gps ? round((s * item.servingGrams) / gps) : 0;
+  }
+  const unit = UNITS.find(u => u.id === unitId);
+  return unit?.toGrams ? round((s * item.servingGrams) / unit.toGrams) : 0;
+}
+
+// How far the +/- buttons move the amount in each unit.
+export function editStep(unitId, hasKnownWeight = true) {
+  if (!hasKnownWeight) return 10;
+  return { serving: 0.5, g: 10, ml: 10, kg: 0.1, lb: 0.1, oz: 1 }[unitId] || 1;
+}
+
 // Every field scaleFood scales — shared here so summing (below) touches
 // exactly the same set instead of two lists silently drifting apart.
 const NUTRIENT_FIELDS = [

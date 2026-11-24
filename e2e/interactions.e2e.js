@@ -93,7 +93,7 @@ const SCENARIOS = [
     act: async (p) => {
       await p.getByRole('button', { name: 'Meals' }).last().click();
       await p.getByText('Grilled chicken').first().click();
-      await p.getByRole('button', { name: 'Save', exact: true }).waitFor();
+      await p.getByRole('button', { name: /^Save (to .* Log|changes)$/ }).waitFor();
     },
   },
 ];

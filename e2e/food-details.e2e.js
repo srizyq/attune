@@ -31,7 +31,8 @@ test('a logged food opens its full details', async ({ page, context }, testInfo)
   await page.goto('/log');
   await settle(page);
   await page.getByText('Salmon fillet').first().click();
-  await page.getByRole('button', { name: 'See details' }).click();
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'See all nutrients' }).click();
   const details = await expectDetails(page, /./);
   // Something this food has no figure for says so instead of 0.
   await expect(details.getByText('Not reported').first()).toBeVisible();

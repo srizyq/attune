@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  amountToServings, gramsPerServing, initialEditState, editUnitsFor, editServings,
+  amountToServings, gramsPerServing, initialEditState, editUnitsFor, editServings, editAmountFor, editStep,
   formatAmountUnit, scaleFood, caloriesLookInconsistent,
 } from './foodMath';
 
@@ -156,5 +156,49 @@ describe('caloriesLookInconsistent', () => {
 
   it('flags calories that are far too high as well as too low', () => {
     expect(caloriesLookInconsistent(food(300, 2.1, 22, 5.7))).toBe(true);
+  });
+});
+
+describe('editAmountFor — the inverse of editServings', () => {
+  it('turns servings into the amount for each unit', () => {
+    expect(editAmountFor(oneServing, 1, 'serving')).toBe(1);
+    expect(editAmountFor(oneServing, 1, 'g')).toBe(60);
+    expect(editAmountFor(oneServing, 2, 'g')).toBe(120);
+    expect(editAmountFor(oneServing, 1, 'kg')).toBe(0.06);
+    expect(editAmountFor(oneServing, 1, 'oz')).toBe(2.12);
+  });
+  it('round-trips with editServings in every unit', () => {
+    for (const unit of ['serving', 'g', 'kg', 'lb', 'oz']) {
+      for (const s of [0.5, 1, 1.5, 2]) {
+        const amount = editAmountFor(oneServing, s, unit);
+        // kg/lb round to two places, so the round trip is only as exact as that.
+        expect(editServings(oneServing, amount, unit)).toBeCloseTo(s, unit === 'kg' || unit === 'lb' ? 0 : 1);
+      }
+    }
+  });
+  it('a serving item saved as 3 servings still means 1 serving = a third of its weight', () => {
+    const three = { ...base, servingGrams: 300, loggedAmount: 3, loggedUnit: 'serving' };
+    expect(editAmountFor(three, 1, 'serving')).toBe(3);
+    expect(editAmountFor(three, 0.5, 'serving')).toBe(1.5);
+    expect(editAmountFor(three, 1, 'g')).toBe(300);
+  });
+  it('weight-less items only have calories', () => {
+    const loose = { ...base };
+    expect(editAmountFor(loose, 1.5, 'serving')).toBe(300);
+    expect(editServings(loose, 300, 'serving')).toBeCloseTo(1.5);
+  });
+  it('a unit that cannot describe the item gives 0, and so does an empty amount', () => {
+    expect(editAmountFor({ ...base, servingGrams: 60, loggedAmount: 60, loggedUnit: 'g' }, 1, 'serving')).toBe(0);
+    expect(editAmountFor(oneServing, 0, 'g')).toBe(0);
+    expect(editAmountFor(oneServing, 1, 'cup')).toBe(0);
+  });
+});
+
+describe('editStep', () => {
+  it('moves by a sensible amount in each unit', () => {
+    expect(editStep('serving')).toBe(0.5);
+    expect(editStep('g')).toBe(10);
+    expect(editStep('kg')).toBe(0.1);
+    expect(editStep('serving', false)).toBe(10);
   });
 });
