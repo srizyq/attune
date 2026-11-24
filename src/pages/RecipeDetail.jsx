@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonHero, SkeletonCard } from '../components/Skeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -107,7 +108,13 @@ export default function RecipeDetail() {
     try { await savedMeals.setFavourite(recipe.id, !recipe.favourite); } catch { showAppToast("Couldn't change that. Try again.", true); }
   }
 
-  if (savedMeals.loading) return null;
+  if (savedMeals.loading) {
+    return (
+      <ScanPage title="Recipe" onBack={goBack} testId="recipe-detail">
+        <SkeletonGroup label="Loading recipe"><SkeletonHero height={210} /><SkeletonCard lines={3} /><SkeletonCard lines={4} /></SkeletonGroup>
+      </ScanPage>
+    );
+  }
   if (!recipe) {
     return (
       <ScanPage title="Recipe" onBack={goBack} testId="recipe-detail">

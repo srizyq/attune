@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonStats, SkeletonCard } from '../components/Skeleton';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -138,7 +139,7 @@ export default function FriendDay() {
   const name = day?.name || 'Friend';
   let body;
   if (status === 'loading') {
-    body = <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</p>;
+    body = <SkeletonGroup label="Loading their day"><SkeletonStats /><SkeletonCard lines={3} /><SkeletonCard lines={3} /></SkeletonGroup>;
   } else if (status === 'error') {
     body = (
       <div role="alert" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>

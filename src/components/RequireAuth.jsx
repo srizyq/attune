@@ -1,3 +1,4 @@
+import { PageSkeleton } from './Skeleton';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ThemeProvider } from '../context/ThemeProvider';
@@ -9,18 +10,7 @@ export default function RequireAuth({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div style={{
-        minHeight: 'var(--app-h)', background: 'var(--bg-primary)', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: '50%',
-          border: '3px solid var(--border-default)', borderTopColor: 'var(--accent)',
-          animation: 'spin 0.8s linear infinite',
-        }} />
-      </div>
-    );
+    return <PageSkeleton label="Checking your session" />;
   }
 
   if (!user) return <Navigate to="/onboarding/welcome" replace />;

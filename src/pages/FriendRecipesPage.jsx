@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonRows } from '../components/Skeleton';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -27,7 +28,7 @@ export default function FriendRecipesPage() {
         <PageHeader title="Friends' recipes" onBack={() => navigate('/friends')} backLabel="Back to Friends" />
         <div className="page-pad" style={{ maxWidth: 700 }}>
           {f.loading ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</p>
+            <SkeletonGroup label="Loading recipes"><SkeletonRows rows={3} /></SkeletonGroup>
           ) : f.error && !f.code ? (
             <div role="alert" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{friendlyFriendsError(f.error)}</div>
           ) : (

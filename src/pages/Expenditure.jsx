@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonStats, SkeletonCard } from '../components/Skeleton';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -397,7 +398,7 @@ export default function Expenditure() {
           </div>
 
           {/* average / difference + expenditure trend */}
-          {loading ? null : !hasEnoughData ? (
+          {loading ? <SkeletonGroup label="Loading your progress"><SkeletonStats cols={3} /><SkeletonCard lines={4} height={240} /></SkeletonGroup> : !hasEnoughData ? (
             hasAnyLogs && (
               <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)', fontSize: 13, background: 'var(--bg-subtle)', border: '1px dashed var(--border-strong)', borderRadius: 12, marginBottom: 20 }}>
                 <i className="ti ti-chart-line" style={{ fontSize: 32, color: 'var(--text-hint)', display: 'block', marginBottom: 10 }} />

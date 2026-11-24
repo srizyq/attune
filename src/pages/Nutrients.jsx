@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonStats, SkeletonCard } from '../components/Skeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -208,7 +209,7 @@ export default function Nutrients() {
         </PageHeader>
 
         <div className="page-pad" style={{ maxWidth: 700 }}>
-          {loading ? null : (
+          {loading ? <SkeletonGroup label="Loading nutrients"><SkeletonStats cols={3} /><SkeletonCard lines={3} /><SkeletonCard lines={3} /></SkeletonGroup> : (
             <>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                 <SegToggle label="Period" value={range} onChange={setRange} options={RANGES.map(({ value, label }) => ({ value, label }))} />

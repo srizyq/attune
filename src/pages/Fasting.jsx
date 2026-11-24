@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonCard } from '../components/Skeleton';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -343,7 +344,7 @@ export default function Fasting() {
                 Fasting isn't switched on for this account yet. It needs a one-time database update — check back shortly.
               </div>
             </ScanCard>
-          ) : loading ? null : (
+          ) : loading ? <SkeletonGroup label="Loading your fast"><SkeletonCard lines={2} height={220} /><SkeletonCard lines={3} /></SkeletonGroup> : (
             <>
               {error && <p role="alert" style={{ color: 'var(--danger)', fontSize: 13, margin: '0 0 12px' }}>{error}</p>}
               {running

@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonCard } from '../components/Skeleton';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -155,7 +156,7 @@ export default function DailyLog() {
 
           {nutritionCoachNote && <CoachNote note={nutritionCoachNote} onDismiss={dismissNutritionCoachNote} style={{ marginBottom: 20 }} />}
 
-          {loading ? null : showSlots ? (
+          {loading ? <SkeletonGroup label="Loading your day"><SkeletonCard lines={3} /><SkeletonCard lines={3} /><SkeletonCard lines={2} /></SkeletonGroup> : showSlots ? (
             <>
               <SlotTimeline
                 segments={slotTimeline}

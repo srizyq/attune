@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonRows } from '../components/Skeleton';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -52,7 +53,7 @@ export default function Notifications() {
         <PageHeader title="Notifications" onBack={() => navigate('/dashboard')} backLabel="Back to Dashboard" />
         <div className="page-pad" style={{ maxWidth: 720 }}>
           {loading ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center' }}>Loading…</p>
+            <SkeletonGroup label="Loading messages"><SkeletonRows rows={3} round /></SkeletonGroup>
           ) : messages.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>Nothing from your coach yet.</p>
           ) : (

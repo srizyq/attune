@@ -1,3 +1,4 @@
+import { Skeleton, SkeletonGroup, SkeletonStats, SkeletonCard } from '../components/Skeleton';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -56,7 +57,9 @@ export default function EditLogItem() {
   if (!item) {
     return (
       <ScanPage title="Entry editor" onBack={back} backLabel="Back" testId="edit-log-item">
-        <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>{loading ? 'Loading…' : "That entry isn't there any more."}</p>
+        {loading
+          ? <SkeletonGroup label="Loading entry"><Skeleton h={26} w="55%" style={{ margin: '4px 0 18px' }} /><SkeletonStats /><SkeletonCard lines={2} height={150} /><SkeletonCard lines={2} /></SkeletonGroup>
+          : <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>That entry isn't there any more.</p>}
       </ScanPage>
     );
   }

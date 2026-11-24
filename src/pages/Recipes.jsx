@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonHero, SkeletonRows } from '../components/Skeleton';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -117,7 +118,7 @@ export default function Recipes() {
             </>
           )}
 
-          {savedMeals.loading ? null : rows.length === 0 ? (
+          {savedMeals.loading ? <SkeletonGroup label="Loading recipes"><SkeletonHero /><SkeletonRows rows={2} /></SkeletonGroup> : rows.length === 0 ? (
             <ScanCard style={{ textAlign: 'center', padding: 32 }}>
               <i className="ti ti-tools-kitchen-2" aria-hidden="true" style={{ fontSize: 28, color: 'var(--text-hint)' }} />
               <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>

@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonRows } from '../components/Skeleton';
 import { useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useProfile } from '../hooks/useProfile';
@@ -72,7 +73,7 @@ export default function Friends() {
 
   let content;
   if (f.loading) {
-    content = <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading…</p>;
+    content = <SkeletonGroup label="Loading friends"><SkeletonRows rows={3} round /></SkeletonGroup>;
   } else if (f.error && !f.code) {
     content = (
       <div role="alert" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>

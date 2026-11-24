@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonLines } from '../Skeleton';
 import { useState } from 'react';
 import DaySelector from '../DaySelector';
 import LogItemRow from '../LogItemRow';
@@ -43,7 +44,7 @@ export default function DiaryTab({ d }) {
       <Card>
         <SectionLabel icon="ti-chart-donut">Summary — {date}</SectionLabel>
         {foodLoading ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
+          <SkeletonGroup label="Loading"><SkeletonLines lines={3} h={14} gap={12} last="45%" /></SkeletonGroup>
         ) : (
           <DaySummary totals={d.dayTotals} targets={d.dayTargets} />
         )}
@@ -53,7 +54,7 @@ export default function DiaryTab({ d }) {
         <Card style={{ marginBottom: 0 }}>
           <SectionLabel icon="ti-clipboard-list">Food log — {date}</SectionLabel>
           {foodLoading ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+            <SkeletonGroup label="Loading"><SkeletonLines lines={3} h={14} gap={12} last="45%" /></SkeletonGroup>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {Object.entries(meals).map(([mealKey, items]) => {

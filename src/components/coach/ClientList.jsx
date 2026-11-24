@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonLines } from '../Skeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { useHistory } from '../../hooks/useHistory';
 import { todayLocalDate, dateNDaysAgo } from '../../lib/patterns';
@@ -203,7 +204,7 @@ export default function ClientList({ clients, loading, summaries, summariesSuppo
       <Card style={{ marginBottom: 0 }}>
         {heading}
         {loading ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading…</p>
+          <SkeletonGroup label="Loading"><SkeletonLines lines={3} h={14} gap={12} last="45%" /></SkeletonGroup>
         ) : !hasClients ? (
           <div style={{ textAlign: 'center', padding: '20px 12px' }}>
             <i className="ti ti-users" style={{ fontSize: 28, color: 'var(--text-hint)' }} />

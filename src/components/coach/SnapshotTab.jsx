@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonLines } from '../Skeleton';
 import { useRef, useState } from 'react';
 import DayHeatmapStrip from '../DayHeatmapStrip';
 import MacroSplitBar from '../MacroSplitBar';
@@ -50,7 +51,7 @@ export default function SnapshotTab({ clientData, d, editingTargets, setEditingT
       <Card>
         <SectionLabel icon="ti-chart-donut">Today</SectionLabel>
         {historyLoading ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Loading…</p>
+          <SkeletonGroup label="Loading"><SkeletonLines lines={3} h={14} gap={12} last="45%" /></SkeletonGroup>
         ) : d.todayTotals?.calories > 0 ? (
           <DaySummary totals={d.todayTotals} targets={d.todayTargets} />
         ) : (

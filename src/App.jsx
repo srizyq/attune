@@ -1,4 +1,5 @@
 // src/App.jsx
+import { PageSkeleton } from './components/Skeleton';
 import { lazy, startTransition, Suspense, useEffect, useState } from 'react'
 import FirstRunTour from './components/FirstRunTour'
 import { track, identifyUser, resetUser } from './lib/telemetry'
@@ -157,7 +158,7 @@ function AnimatedRoutes() {
     <>
     <FirstRunTour enabled={signedIn && !user?.is_anonymous && isNewAccount(user)} onDashboard={location.pathname === '/dashboard'} />
     <div key={renderedLocation.pathname} className={animClass} onAnimationEnd={() => setAnimClass('')}>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageSkeleton />}>
       <Routes location={renderedLocation}>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
@@ -286,18 +287,7 @@ function Landing() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div style={{
-        minHeight: 'var(--app-h)', background: 'var(--bg-primary)', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: '50%',
-          border: '3px solid var(--border-default)', borderTopColor: 'var(--accent)',
-          animation: 'spin 0.8s linear infinite',
-        }} />
-      </div>
-    );
+    return <PageSkeleton label="Checking your session" />;
   }
   return <Navigate to={user ? '/dashboard' : '/onboarding/welcome'} replace />;
 }

@@ -1,3 +1,4 @@
+import { SkeletonGroup, SkeletonRows } from '../components/Skeleton';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -97,7 +98,7 @@ export default function PasteSlot() {
 
         <div style={{ padding: '10px 0' }}>
           {loading ? (
-            <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Loading…</p>
+            <SkeletonGroup label="Loading"><SkeletonRows rows={3} thumb={32} lines={1} /></SkeletonGroup>
           ) : slots.length === 0 ? (
             <p style={{ color: 'var(--text-hint)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>No slots set up on this day.</p>
           ) : (
