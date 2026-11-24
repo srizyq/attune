@@ -99,3 +99,42 @@ export function PageSkeleton({ label = 'Loading' }) {
     </SkeletonGroup>
   );
 }
+
+// The dashboard's top block: weight and water on the left, today's calories on
+// the right. Uses the same responsive grid class as the real cards.
+export function DashboardHeroSkeleton() {
+  return (
+    <SkeletonGroup label="Loading your calories" testId="dash-hero-skeleton">
+      <div className="dash-top-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 12, alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </div>
+        <ScanCard style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '20px 16px' }}>
+          <Skeleton h={10} w="35%" />
+          <Skeleton w={150} h={150} r={99} />
+          <Skeleton h={12} w="55%" />
+        </ScanCard>
+      </div>
+    </SkeletonGroup>
+  );
+}
+
+// "Daily macronutrients": a label, then protein / carbs / fat tiles.
+export function DashboardMacrosSkeleton() {
+  return (
+    <SkeletonGroup label="Loading your macros" testId="dash-macros-skeleton">
+      <ScanCard style={{ padding: '16px 14px 14px', marginBottom: 20 }}>
+        <Skeleton h={10} w="40%" style={{ margin: '0 2px 16px' }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+              <Skeleton w={64} h={64} r={99} />
+              <Skeleton h={10} w="60%" />
+            </div>
+          ))}
+        </div>
+      </ScanCard>
+    </SkeletonGroup>
+  );
+}

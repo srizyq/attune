@@ -1,4 +1,5 @@
 // src/pages/Dashboard.jsx
+import { SkeletonGroup, SkeletonLines, DashboardHeroSkeleton, DashboardMacrosSkeleton } from '../components/Skeleton';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -800,7 +801,7 @@ export default function Dashboard() {
   // nav ceiling) stay anchored to real `today`.
   const viewedDate = location.state?.date || today;
   const isViewingToday = viewedDate === today;
-  const { profile, save: saveProfile, refetch: refetchProfile } = useProfile();
+  const { profile, loading: profileLoading, save: saveProfile, refetch: refetchProfile } = useProfile();
   const isPremium = hasProAccess(profile); // a Coach Pass includes Pro — see lib/proAccess.js
   // Same default/derivation as DailyLog.jsx — reading the same profile
   // field is what keeps a choice made on either page in sync with the
@@ -812,7 +813,10 @@ export default function Dashboard() {
     setViewSaveError(null);
     try { await saveProfile({ daily_log_view: v }); } catch { setViewSaveError("Couldn't save — try again."); }
   }
-  const { meals, slotTimeline, deleteFood, addSlot, editSlot, removeSlot, refetch: refetchFoodLogs } = useFoodLogs(viewedDate);
+  const { meals, slotTimeline, loading: foodLoading, deleteFood, addSlot, editSlot, removeSlot, refetch: refetchFoodLogs } = useFoodLogs(viewedDate);
+  // Until the profile and the day's food arrive every number would read zero, so
+  // show placeholders in their place instead.
+  const booting = (profileLoading && !profile) || foodLoading;
   const { checkin, loading: checkinLoading, save: saveCheckin } = useCheckins(viewedDate);
   // 90 days (not 30) so the pattern engine's more specific candidates
   // (fibre, hydration, sugar, breakfast) have a real chance to each reach
@@ -1072,7 +1076,7 @@ export default function Dashboard() {
               calorie/weight/water glance to the logging calendar. Restored
               per explicit request after a brief stacked-layout experiment. */}
           <div data-tour="calories" style={{ marginBottom: '16px' }}>
-            <SwipePager
+            {booting ? <DashboardHeroSkeleton /> : <SwipePager
               pages={[
                 <DashboardTopCards
                   consumed={consumed}
@@ -1106,14 +1110,14 @@ export default function Dashboard() {
                   streak={streak}
                 />,
               ]}
-            />
+            />}
           </div>
 
-          <MacroGroup onDetails={() => navigate('/nutrients', { state: { date: viewedDate } })}>
+          {booting ? <DashboardMacrosSkeleton /> : <MacroGroup onDetails={() => navigate('/nutrients', { state: { date: viewedDate } })}>
             <MacroCell label="Protein" value={consumedProtein} target={targets.protein.g} color={PROTEIN} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
             <MacroCell label={carbsLabel(profile?.net_carbs)} value={consumedCarbs} target={targets.carbs.g} color={CARBS} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
             <MacroCell label="Fat" value={consumedFat} target={targets.fat.g} color={FAT} onClick={() => navigate('/nutrients', { state: { date: viewedDate } })} />
-          </MacroGroup>
+          </MacroGroup>}
 
           <ActivityRow
             workouts={workouts}
@@ -1130,7 +1134,7 @@ export default function Dashboard() {
               <span onClick={() => navigate('/log')} style={{ ...CARD_LABEL, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 Daily food log <i className="ti ti-chevron-right" style={{ fontSize: 13 }} />
               </span>
-              <StatBadge>{Math.round(consumed)} kcal logged</StatBadge>
+              {!booting && <StatBadge>{Math.round(consumed)} kcal logged</StatBadge>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', gap: 10 }}>
               <span onClick={() => navigate('/recipes')} style={{ color: 'var(--text-hint)', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
@@ -1143,7 +1147,9 @@ export default function Dashboard() {
               )}
             </div>
             {viewSaveError && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 10 }}>{viewSaveError}</p>}
-            {showSlots ? (
+            {booting ? (
+              <SkeletonGroup label="Loading your food log" testId="dash-log-skeleton"><SkeletonLines lines={4} h={14} gap={14} last="45%" /></SkeletonGroup>
+            ) : showSlots ? (
               <SlotTimeline
                 segments={slotTimeline}
                 onDelete={handleDeleteFoodItem}

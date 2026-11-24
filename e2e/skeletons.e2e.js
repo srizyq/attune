@@ -22,6 +22,7 @@ function hold(page, match) {
 const SCREENS = [
   { name: 'daily-log', url: `/log?date=${TODAY}`, table: '**/rest/v1/food_logs*', label: 'Loading your day', ready: (p) => expect(p.getByText('Vanilla Greek Yogurt').first()).toBeVisible() },
   { name: 'entry-editor', url: `/log/item/e1?date=${TODAY}`, table: '**/rest/v1/food_logs*', label: 'Loading entry', ready: (p) => expect(p.getByRole('heading', { level: 1 })).toHaveText('Vanilla Greek Yogurt') },
+  { name: 'dashboard', url: '/dashboard', table: '**/rest/v1/food_logs*', label: 'Loading your calories', also: ['Loading your macros', 'Loading your food log'], ready: (p) => expect(p.getByText('114 kcal logged')).toBeVisible() },
   { name: 'recipes', url: '/recipes', table: '**/rest/v1/saved_meals*', label: 'Loading recipes', ready: (p) => expect(p.getByText('Big breakfast').first()).toBeVisible() },
 ];
 
@@ -35,10 +36,12 @@ for (const theme of ['dark', 'light']) {
       await expect(sk).toBeVisible();
       expect(await sk.locator('.skeleton').count()).toBeGreaterThan(2);
       await assertLayout(page, testInfo, `skeleton-${s.name}-${theme}`, { scroll: false });
+      for (const other of s.also || []) await expect(page.getByRole('status', { name: other })).toBeVisible();
       release();
       await s.ready(page);
       await settle(page);
       await expect(page.getByRole('status', { name: s.label })).toHaveCount(0);
+      for (const other of s.also || []) await expect(page.getByRole('status', { name: other })).toHaveCount(0);
     });
   }
 }
